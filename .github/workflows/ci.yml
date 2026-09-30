@@ -47,7 +47,7 @@ jobs:
       release_gate_mode: ${{ steps.policy.outputs.release_gate_mode }}
     steps:
       - id: policy
-        uses: qwts/qwts-agent-ci/.github/actions/ci-policy@f651d5e6aa17ebee3d5956b45c0378cbcf9c29fa
+        uses: qwts/qwts-agent-ci/.github/actions/ci-policy@2378825c47a663e894566c05e7800e50149ffae8
 
   merge-evidence:
     name: Verify merged commit evidence
@@ -122,7 +122,7 @@ jobs:
       # cache and launches npm through the bounded-command runner at the same
       # pinned commit.
       - name: Install locked dependencies
-        uses: qwts/qwts-agent-ci/.github/actions/bounded-dependency-install@f651d5e6aa17ebee3d5956b45c0378cbcf9c29fa
+        uses: qwts/qwts-agent-ci/.github/actions/bounded-dependency-install@2378825c47a663e894566c05e7800e50149ffae8
         env:
           NPM_CONFIG_CACHE: ${{ runner.temp }}/ci-dependency-cache/npm
         with:
@@ -137,7 +137,7 @@ jobs:
           attempts: '2'
           retry-delay-seconds: '5'
       - name: Workflow runtime policy
-        uses: qwts/qwts-agent-ci/.github/actions/ci-runtime-check@f651d5e6aa17ebee3d5956b45c0378cbcf9c29fa
+        uses: qwts/qwts-agent-ci/.github/actions/ci-runtime-check@2378825c47a663e894566c05e7800e50149ffae8
       - name: Lint
         run: npm run lint:markdown
       # ENG-0282: every first-party pin in this repository's workflows must be
@@ -147,7 +147,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: qwts/qwts-agent-ci
-          ref: f651d5e6aa17ebee3d5956b45c0378cbcf9c29fa
+          ref: 2378825c47a663e894566c05e7800e50149ffae8
           path: .ci-tooling
           persist-credentials: false
       - name: Pin reachability
@@ -207,7 +207,7 @@ jobs:
           node-version: 22
           package-manager-cache: false
       - name: Seed trusted default-branch dependency cache
-        uses: qwts/qwts-agent-ci/.github/actions/bounded-dependency-install@f651d5e6aa17ebee3d5956b45c0378cbcf9c29fa
+        uses: qwts/qwts-agent-ci/.github/actions/bounded-dependency-install@2378825c47a663e894566c05e7800e50149ffae8
         env:
           NPM_CONFIG_CACHE: ${{ runner.temp }}/ci-dependency-cache/npm
         with:
