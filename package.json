@@ -1,0 +1,16 @@
+{
+  "name": "agent-comms",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Harness-independent agent communication for the qwts fleet",
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
+  "scripts": {
+    "lint:markdown": "markdownlint docs/ AGENTS.md README.md CONTRIBUTING.md",
+    "lint:markdown:fix": "markdownlint docs/ AGENTS.md README.md CONTRIBUTING.md --fix"
+  },
+  "devDependencies": {
+    "markdownlint-cli": "^0.49.1"
+  }
+}

@@ -1,0 +1,4 @@
+# governed:agent-harness-format:start
+# Harness adapters live in the user directory (ENG-0384). This repository
+# has no managed harness files for a formatter to skip.
+# governed:agent-harness-format:end

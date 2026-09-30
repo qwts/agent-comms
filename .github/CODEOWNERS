@@ -1,0 +1,15 @@
+# Require repository-owner review for all changes when branch protection enables
+# code-owner reviews.
+* @qwts
+
+# Keep repository governance files explicitly owned even if more specific rules
+# are added later.
+/.github/ @qwts
+
+# Agent primitives: text agents read as directives. Named explicitly rather
+# than relying on the `*` wildcard above, so they survive any future
+# relaxation of it.
+AGENTS.md   @qwts
+
+# Architecture decisions.
+/docs/decisions/ @qwts
