@@ -42,14 +42,20 @@ daemon's loopback port or its state file.
      `agentBot.agentId` git config, the same source the registered reach-back
      MCP server trusts. The broker authenticates the account
      ([ADR-0006](ADR-0006-machine-broker-between-persona-accounts.md)) and
-     accepts a soul only from the account that joined it.
+     accepts a soul only from the account that joined it. Because any process
+     in the account can edit that config, the soul is a **claim**, not an
+     authenticated sender: the broker records the account as the verified
+     sender and the soul as `claimed`, recipients and GeniusBar show it that
+     way, and rate limits and idempotency keys are scoped to the account.
+     Nothing may grant authority on a claimed soul.
    - **Hardened:** the daemon keeps the binding secret in the worktree's
      private git dir, mode 0600, with the bind token's custody, so the
      worktree's MCP server and CLI share one binding. Today the bind token is
      single-use and only the first caller holds the secret, so a CLI that
      exits after each call cannot bind twice. The change is specified here and
-     built in agent-bot-identity. Once it ships, the CLI presents the binding
-     and the git config is no longer trusted.
+     built in agent-bot-identity. Once it ships, the CLI presents the binding,
+     the account's daemon vouches for the soul to the broker, the soul becomes
+     a `verified` sender, and the git config is no longer trusted.
 
    A call from a directory with no soul fails with `unbound`. There is no
    machine-wide default soul, and one CLI process never acts for two souls.
@@ -72,7 +78,8 @@ daemon's loopback port or its state file.
    Display names, such as the census's `quiet-heron-42`, are for people and
    never route. An ambiguous name is an error.
 7. **Discovery is the census, filtered by authorization.** A soul lists only
-   peers it may message. Filtering happens before counting and paging, so
+   joined peers it may message, under the mailbox rules of
+   [ADR-0006](ADR-0006-machine-broker-between-persona-accounts.md). Filtering happens before counting and paging, so
    hidden souls leave no trace. Joining publishes an allowlisted census row
    to the broker, so discovery works across accounts.
    Self-declared capabilities are labelled as claims.
@@ -98,8 +105,9 @@ daemon's loopback port or its state file.
   daemon's authorization, not by the kernel. The account boundary is the
   kernel-enforced one.
 - In the bootstrap phase any process in an account can claim any of that
-  account's souls by editing git config. The broker still confines it to its
-  own account. The hardened phase narrows the claim to processes that can
+  account's souls by editing git config. The broker confines it to its own
+  account and labels the soul as claimed, so the forgery is visible and
+  limited to attribution inside one persona. The hardened phase narrows the claim to processes that can
   read the worktree's private git dir, and a leaked secret idles out.
 - Harness and model changes do not change a soul. A new conversation is a
   new soul and a new address.

@@ -26,8 +26,13 @@ events and cooperative cancellation.
    account through the broker's authorization
    ([ADR-0006](ADR-0006-machine-broker-between-persona-accounts.md)), not
    through a gateway per account. Outbound routes name configured external
-   agents. An inbound listener exposes only capabilities the owner selects,
-   and opening one beyond loopback is a separate deployment decision.
+   agents. An inbound listener exposes only capabilities the owner selects.
+   Every inbound caller authenticates with a scheme its agent card declares,
+   and the credential maps to an enrolled principal with allowed souls and
+   operations, deny by default. A caller with no mapped principal is refused
+   before any capability runs. Until that path exists and is tested, the
+   listener is loopback only; opening it wider is a separate deployment
+   decision.
 2. **Protocol 1.0, and only standard bindings.** The gateway implements the
    1.0.1 specification and negotiates version 1.0. The CLI and daemon
    contracts are application APIs, not an A2A binding, and are never

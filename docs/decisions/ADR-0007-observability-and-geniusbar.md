@@ -21,8 +21,12 @@ client; the broker holds the machine census
 
 ## Decision
 
-1. **GeniusBar reads the broker.** It is a client in the owner's paired
-   account. It lists joined souls from the broker's census, with each
+1. **GeniusBar reads the broker.** It connects with the owner's human
+   principal credential
+   ([ADR-0006](ADR-0006-machine-broker-between-persona-accounts.md)). The
+   broker returns only census rows that principal is authorized to see; the
+   owner's principal is normally allowed every soul, but a narrower grant
+   narrows the list. It lists those souls, with each
    subagent that has not joined nested under its parent
    ([ADR-0003](ADR-0003-agents-are-souls-humans-are-principals.md)). The
    census row carries the account, soul, display name, harness, parent,
@@ -31,7 +35,9 @@ client; the broker holds the machine census
    the census derives display names, so it stays the same across restarts.
    It never routes, authenticates, or distinguishes two souls on its own.
 3. **Clicking a Dudle opens a chat as the owner.** Messages go through the
-   broker, attributed to the owner's human principal. Other actions, such as
+   broker with the human principal credential, which is the only way a
+   message is attributed to the owner, and the recipient's receive rules
+   apply. Other actions, such as
    starting an agent or approving a proposal, go through the same
    authorization as the CLI or the daemon. GeniusBar holds no authority of
    its own.
@@ -76,8 +82,8 @@ client; the broker holds the machine census
 
 ## Consequences
 
-- One place shows every agent on the machine, and the owner can reach any of
-  them with a click.
+- One place shows every agent on the machine that the owner may see, and
+  the owner can reach any of them with a click.
 - GeniusBar is a native app in its own repository. This series defines the
   broker contract it reads; it does not decide the app's design.
 - Collector coverage will be partial and parsers need upkeep as harness log

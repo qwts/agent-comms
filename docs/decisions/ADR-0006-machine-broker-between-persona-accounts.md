@@ -23,15 +23,22 @@ this record is the repository side of it.
 ## Decision
 
 1. **One broker per machine, installed by the owner.** It listens on a Unix
-   socket in `/Users/Shared/Public/agent-comms/`. The directory belongs to a
-   group the owner creates for the agent accounts and the owner, with mode
-   0770, so accounts outside the group cannot connect. The broker keeps its
+   socket in `/Users/Shared/Public/agent-comms/`. The directory is owned by
+   the account that runs the broker, with mode 0755, so no client account can
+   remove or replace the socket. The socket itself belongs to a group the
+   owner creates for the agent accounts and the owner, with mode 0660, so
+   accounts outside the group cannot connect. Before connecting, the CLI
+   checks that the directory and socket are owned by the expected broker
+   account and refuses otherwise. The broker keeps its
    store in its own private state directory, never in the shared space.
 2. **It starts in the owner's account, then moves to a service account.** The
    bootstrap release runs the broker as a LaunchAgent in the owner's account,
    which fast user switching keeps logged in. The target is a LaunchDaemon
    running as a dedicated account, so the broker also survives the owner
-   logging out. The socket path and protocol do not change between the two.
+   logging out. Moving to it transfers ownership of the directory, socket,
+   and store to that account and changes the expected owner the CLI checks.
+   The socket path and protocol do not change. Until then, the broker is down
+   while the owner is logged out, and sends fail loudly.
 3. **The broker authenticates accounts.** Each account pairs once:
    `agent-comms account pair`, run in that account, creates a credential in
    its home with mode 0600 and shows a short code. The owner approves the code
@@ -45,24 +52,36 @@ this record is the repository side of it.
    account that joined it
    ([ADR-0003](ADR-0003-agents-are-souls-humans-are-principals.md)). A sender
    field naming another account is rejected.
-5. **Addresses are `<account>/<agent_id>`.** The account short name is the
+5. **Mailboxes have owners and receive rules.** Only the account that joined
+   a soul may read, watch, or acknowledge its mailbox, or leave for it.
+   Joining is the soul's consent to receive from joined peers on this
+   machine; at join, its account may narrow that to an allowlist of accounts
+   or souls, and the broker enforces it on every send and task operation.
+   The A2A gateway applies the same rules after its own principal check
+   ([ADR-0005](ADR-0005-a2a-at-the-broker-edge.md)). Discovery shows a caller
+   only the souls it may send to.
+6. **Addresses are `<account>/<agent_id>`.** The account short name is the
    persona's roster slug. Names and avatars are display only.
-6. **The broker stores and forwards.** Mailboxes follow
+7. **The broker stores and forwards.** Mailboxes follow
    [ADR-0004](ADR-0004-durable-mailbox-and-waking.md). A message for a
    logged-out account waits in its recipient's mailbox until retention ends.
-7. **The owner's chats cross accounts through the broker.** GeniusBar runs in
-   the owner's account, which pairs like any other. A message it sends is
-   attributed to the owner's human principal, not to a soul, and the
-   recipient sees it as a human message. The recipient account's daemon still
+8. **The owner's chats cross accounts through the broker.** Pairing the
+   owner's account authenticates that account, not the human, and delegate
+   harnesses also run there (ENG-0339 decision 3). GeniusBar therefore pairs
+   a second, separate credential for the owner's human principal, kept in the
+   owner's login keychain with access limited to the signed GeniusBar app.
+   Only a send made with that credential is attributed to the human
+   principal; anything else from the owner's account is an account or soul
+   message like any other. The recipient sees a human message. The recipient account's daemon still
    applies its principal rules before any turn runs on the owner's behalf.
-8. **Loops are bounded.** Every message carries a reply depth, one more than
+9. **Loops are bounded.** Every message carries a reply depth, one more than
    the message it answers, and the broker rejects depths over a published
    limit. Per-sender and per-pair rate limits cap bursts. Replies to a
    message the sender wrote itself are rejected.
-9. **Chat services are human gateways only.** Telegram and Slack reach one
+10. **Chat services are human gateways only.** Telegram and Slack reach one
    account's daemon through its principal adapters. They never carry machine
    traffic between accounts, and bot-to-bot modes stay off for fleet bots.
-10. **Cross-machine routing is out of scope here.** Execution identities are
+11. **Cross-machine routing is out of scope here.** Execution identities are
     workstation-local under ENG-0081, so joining machines needs its own
     decision. The expected direction is a hosted hub at `unforgiven.ai` that
     machine brokers connect to outbound, as the agent-bot GitHub webhook

@@ -41,15 +41,21 @@ while accounts are logged out.
    The broker writes it durably before it reports success. A failed write is
    an error, never a silent drop.
 2. **Idempotency matches `/v1`.** Every send carries an idempotency key. The
-   same sender and key return the original `message_id`; the same key with a
-   different body is a `conflict`. The deduplication window is published with
+   broker stores a fingerprint of the whole send request: recipient, kind,
+   body, artifact references, and correlation IDs. The same sender, key, and
+   fingerprint return the original `message_id`; the same key with any
+   different field is a `conflict`. The deduplication window is published with
    the retention limits.
 3. **Reading, receipt, and work are separate.**
-   - `agent-comms inbox read --after CURSOR` returns a bounded page and a new
-     cursor. `inbox watch` streams one JSON message per line from a cursor.
-     Both return the same message IDs.
-   - A cursor is a read position. `agent-comms inbox ack <message_id>`
-     records a durable receipt.
+   - `agent-comms inbox read` returns a bounded page starting at the first
+     unacknowledged message. `inbox watch` streams one JSON message per line
+     from the same point. Both return the same message IDs.
+   - A cursor pages forward within one reading session only. The durable
+     restart point is the acknowledgement watermark, so a reader that crashes
+     before acknowledging sees the message again. A cursor is never a
+     substitute for an acknowledgement.
+   - `agent-comms inbox ack <message_id>` records a durable receipt. The
+     watermark advances past each contiguous run of acknowledged messages.
    - Task acceptance and completion are task events
      ([ADR-0005](ADR-0005-a2a-at-the-broker-edge.md)), never inferred from a
      read or a receipt.

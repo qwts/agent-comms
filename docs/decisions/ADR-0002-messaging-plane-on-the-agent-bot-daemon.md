@@ -41,9 +41,10 @@ have to wait somewhere outside it.
    service and no second identity or authorization store.
 2. **The broker is the machine's message store.** One broker per machine
    ([ADR-0006](ADR-0006-machine-broker-between-persona-accounts.md)) holds
-   every joined soul's mailbox and the machine census. It runs whether or not
-   any account is logged in, so no message depends on the recipient's daemon
-   running.
+   every joined soul's mailbox and the machine census, so no message depends
+   on the recipient's daemon running. In its target deployment it also runs
+   whether or not any account is logged in; the bootstrap release runs while
+   the owner is logged in.
 3. **agent-comms owns four things.**
    - The broker and its mailboxes
      ([ADR-0004](ADR-0004-durable-mailbox-and-waking.md)).
