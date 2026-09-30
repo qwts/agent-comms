@@ -1,0 +1,54 @@
+{
+  "include": [
+    "docs/**/*.md",
+    "README.md",
+    "CONTRIBUTING.md",
+    "AGENTS.md"
+  ],
+  "indexes": ["README.md"],
+  "tokenBudgets": {
+    "perDoc": 2600,
+    "bankSlack": 0.25,
+    "overrides": [],
+    "contextSets": []
+  },
+  "structure": {
+    "maxHeadingDepth": 4,
+    "summaryWithinTokens": 250,
+    "requiredFields": [
+      {
+        "glob": "docs/decisions/ADR-*.md",
+        "fields": [
+          {
+            "name": "Status",
+            "pattern": "^(Proposed|Accepted|Superseded by ADR-\\d{4})$"
+          },
+          {
+            "name": "Date",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          {
+            "name": "Issue",
+            "pattern": "^qwts/agent-comms#\\d+$"
+          }
+        ]
+      }
+    ]
+  },
+  "antiPatterns": {
+    "positionalReferences": true,
+    "unresolvedPlaceholders": true,
+    "duplicateParagraphs": {
+      "minLength": 160,
+      "allow": []
+    },
+    "terminology": []
+  },
+  "integrity": {
+    "links": true,
+    "orphans": true,
+    "stalePaths": {
+      "roots": ["docs"]
+    }
+  }
+}
