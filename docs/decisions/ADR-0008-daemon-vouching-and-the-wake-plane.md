@@ -3,6 +3,7 @@
 **Status:** Accepted
 **Date:** 2026-10-01
 **Issue:** qwts/agent-comms#25
+**Amended:** 2026-10-01 (binding proofs, qwts/agent-bot-identity#270)
 
 ## Context
 
@@ -97,6 +98,41 @@ Three facts shape the contract:
    the soul's worktree. The turn's prompt names the message IDs and nothing
    else. The setting is a daemon principal operation with a secret-free
    receipt. With it off, the outcome is `waiting`.
+
+## Amendment 1: binding proofs (2026-10-01)
+
+**Issue:** qwts/agent-bot-identity#270
+
+Decisions 3 and 8 had clients send the binding secret in `x-agent-binding`.
+That presents the secret to whatever accepts TCP at the binding file's
+loopback URL. While the daemon is down its port is free, so another local
+uid can hold it and keep a secret that authenticates every binding route.
+That uid is outside the same-account boundary in Consequences.
+
+Clients now send a one-time proof instead, and never the secret:
+
+```
+x-agent-binding-proof: v1.<keyId>.<unix seconds>.<nonce>.<mac>
+```
+
+- The key is `sha256(secret)`, which the daemon registry already stores.
+- `keyId` is `sha256("agent-binding-id\0" ‖ key)` in base64url, so the
+  daemon can find the binding without the key being sent.
+- `mac` is HMAC-SHA256 under the key, over the method, the path, the daemon
+  `host:port` the client is calling (spelled as the binding URL spells it),
+  the timestamp, and the nonce.
+- The daemon checks the MAC against its own address. It accepts the
+  timestamp only within 60 seconds and refuses any nonce it has seen.
+
+A process squatting the port learns one spent proof that names the squatted
+port. That proof fails at the daemon's real port. The squatter can still
+answer a client falsely, for example with fake wake frames, but it cannot
+act as the soul.
+
+For compatibility, the daemon still accepts the bare `x-agent-binding` from
+older clients. agent-comms 0.2.1 and agent-bot-identity's clients send only
+proofs. The client half lives in a dependency-free module that both
+repositories carry identically.
 
 ## Consequences
 

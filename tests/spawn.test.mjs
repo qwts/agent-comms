@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { sha256 } from '../lib/broker.mjs';
 import { admin, call, callPrincipal, loadCredential } from '../lib/client.mjs';
 import { withBroker } from './helpers/broker.mjs';
+import { PROOF_HEADER, bindingKey, checkBindingProof, parseBindingProof } from '../lib/binding-proof.mjs';
 
 const BIN = fileURLToPath(new URL('../bin/agent-comms.mjs', import.meta.url));
 
@@ -37,7 +38,9 @@ async function fixture(run) {
       requests += 1;
       assert.equal(req.method, 'POST');
       assert.equal(req.url, '/v0/vouch');
-      assert.equal(req.headers['x-agent-binding'], secret);
+      assert.equal(req.headers['x-agent-binding'], undefined);
+      const proof = parseBindingProof(req.headers[PROOF_HEADER]);
+      assert.ok(proof && checkBindingProof(proof, bindingKey(secret), { method: 'POST', path: '/v0/vouch', authority: `127.0.0.1:${daemon.address().port}` }));
       assert.equal(req.headers.authorization, undefined);
       let body = '';
       req.on('data', (chunk) => { body += chunk; });

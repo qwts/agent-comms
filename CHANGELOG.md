@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- The soul-token fetch sends a one-time binding proof (`x-agent-binding-proof`)
+  instead of the binding secret (ADR-0008 amendment 1,
+  qwts/agent-bot-identity#270). A process holding the daemon's loopback port
+  while the daemon is down no longer learns a reusable secret. Needs an
+  agent-bot daemon that accepts proofs.
+
 ## [0.2.0] - 2026-10-01
 
 ### Added

@@ -10,6 +10,7 @@ import { test } from 'node:test';
 
 import { resolveBinding, soulContext, vouch } from '../lib/client.mjs';
 import { CommsError } from '../lib/errors.mjs';
+import { PROOF_HEADER, bindingKey, checkBindingProof, parseBindingProof } from '../lib/binding-proof.mjs';
 
 const makeBinding = (daemon) => ({ v: 1, agentId: 'agent_binding_test', parent: 'agent_parent_test', account: 'test', daemon, secret: 'binding-secret' });
 function folder(t) {
@@ -44,14 +45,16 @@ test('binding resolution accepts the explicit file and rejects untrusted permiss
   assert.throws(() => resolveBinding({ AGENT_BOT_BINDING: file }, root), { code: 'binding-untrusted' });
 });
 
-test('vouch sends the binding secret and audience, signs a token, and reuses one token per process', async (t) => {
+test('vouch sends a binding proof (never the secret) and audience, signs a token, and reuses one token per process', async (t) => {
   const { privateKey, publicKey } = generateKeyPairSync('ed25519');
   let requests = 0;
   const server = http.createServer((req, res) => {
     requests += 1;
     assert.equal(req.method, 'POST');
     assert.equal(req.url, '/v0/vouch');
-    assert.equal(req.headers['x-agent-binding'], 'binding-secret');
+    assert.equal(req.headers['x-agent-binding'], undefined);
+    const proof = parseBindingProof(req.headers[PROOF_HEADER]);
+    assert.ok(proof && checkBindingProof(proof, bindingKey('binding-secret'), { method: 'POST', path: '/v0/vouch', authority: `127.0.0.1:${server.address().port}` }));
     let body = '';
     req.on('data', (chunk) => { body += chunk; });
     req.on('end', () => {
