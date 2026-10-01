@@ -1,6 +1,6 @@
 // Census and health, read as the owner's human principal (ADR-0007 decisions 1
-// and 9). The requests go straight to the sockets: the principal credential is
-// the app's to hold, and no client helper carries one yet.
+// and 9). Raw socket requests also verify authorization independently of the
+// supported principal client API.
 
 import assert from 'node:assert/strict';
 import { randomBytes, randomUUID } from 'node:crypto';
@@ -193,11 +193,14 @@ test('rows are filtered by the principal grant', async () => {
   assert.equal(refused.reply.error.code, 'bad-request');
 });
 
-test('account credentials cannot read the census and principal credentials cannot send', async () => {
+test('account credentials cannot read the census and principal credentials cannot impersonate souls', async () => {
   assert.equal((await census(owner)).error.code, 'unauthenticated');
   assert.equal((await census(persona)).error.code, 'unauthenticated');
   assert.equal((await census({ principal: principal.principal, secret: 'wrong' })).error.code, 'unauthenticated');
   assert.equal((await census()).ok, true);
+  assert.equal((await census({ ...principal, account: owner.account })).error.code, 'unauthenticated');
+  const mixed = await request(paths.socket, { op: 'join', agentId: luna, auth: { ...owner, principal: principal.principal } });
+  assert.equal(mixed.reply.error.code, 'unauthenticated');
 
   for (const payload of [
     { op: 'join', agentId: luna },
