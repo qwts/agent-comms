@@ -143,7 +143,7 @@ test('census reports one row per soul, subagents included', async () => {
   assert.deepEqual(idsOf(reply), [luna, heron, guest]);
   assert.deepEqual(rowOf(reply, heron), {
     account: 'owner', agentId: heron, name: 'quiet-heron-42', harness: null,
-    parent: luna, presence: 'joined', unacked: 0, lastWake: null,
+    parent: luna, presence: 'joined', unacked: 0, lastWake: null, hardened: false, verification: 'claimed',
   });
 });
 

@@ -37,6 +37,10 @@ const COMMANDS = [
   { name: 'census', args: [], flags: [] },
   { name: 'health', args: [], flags: [] },
   { name: 'account pair', args: [], flags: ['broker'] },
+  { name: 'account pairings', args: [], flags: [] },
+  { name: 'account approve', args: ['CODE'], flags: [] },
+  { name: 'account revoke', args: ['ACCOUNT'], flags: ['kind'] },
+  { name: 'account harden', args: ['ACCOUNT'], flags: [], booleans: ['off'] },
   { name: 'account status', args: [], flags: [] },
   { name: 'broker run', args: [], flags: ['group'] },
   { name: 'broker install', args: [], flags: ['group'] },
@@ -166,10 +170,7 @@ async function run(argv, env) {
   const asSoul = (request) => call(paths, loadCredential(client), { ...request, agentId: resolveSoul(env) });
 
   switch (command) {
-    case 'whoami': {
-      const credential = loadCredential(client);
-      return print({ ok: true, account: credential.account, agentId: resolveSoul(env), verification: 'claimed' });
-    }
+    case 'whoami': return print(await asSoul({ op: 'whoami' }));
     case 'join': {
       const allow = flags.allow === undefined ? null : flags.allow.split(',').map((entry) => entry.trim()).filter(Boolean);
       return print(await asSoul({
@@ -260,8 +261,12 @@ async function run(argv, env) {
         process.stderr.write(`Ask the owner to approve this pairing: agent-comms broker approve ${result.code}\n`);
         return print(result);
       }
+      if (sub === 'pairings') return print(await admin(paths, { op: 'pairings' }));
+      if (sub === 'approve') return print(await admin(paths, { op: 'approve', code: rest[0] }));
+      if (sub === 'revoke') return print(await admin(paths, { op: 'revoke', account: rest[0], kind: flags.kind }));
+      if (sub === 'harden') return print(await admin(paths, { op: 'harden', account: rest[0], off: flags.off }));
       if (sub === 'status') return print(await call(paths, loadCredential(client), { op: 'pair-status' }));
-      return fail('usage', 'account needs pair or status');
+      return fail('usage', 'account needs pair, status, pairings, approve, revoke, or harden');
     }
     case 'broker': {
       if (sub === 'install') return print(install(installOptions({ group: flags.group })));
