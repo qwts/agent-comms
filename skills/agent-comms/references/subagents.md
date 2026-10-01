@@ -28,7 +28,14 @@ QWTS_AGENT_ID=<agent-id> agent-comms join --parent <parent-id>
 `--parent` records provenance only: it nests you under your parent in the
 census and GeniusBar, and grants your parent no authority over you. If you
 omit `--parent`, `join` reads the parent from your agent-bot identity record;
-an explicit `--parent` always wins.
+an explicit `--parent` always wins. The field is `parentId`, read from
+`$XDG_STATE_HOME/agent-bot/agent-identities/<agent-id>.json` (default
+`~/.local/state/agent-bot/agent-identities`). Missing or unreadable records
+leave the parent unset. Tests may override `AGENT_BOT_IDENTITIES_DIR`.
+Creating an identity alone does not add it to the census; it must join.
+
+There is no `--as` or `--soul` override in this CLI. `QWTS_AGENT_ID` is the
+identity selector and takes precedence over the worktree binding.
 
 Every subsequent `agent-comms` call in this task must set the same
 `QWTS_AGENT_ID`, or it acts for whatever soul the directory claims and breaks

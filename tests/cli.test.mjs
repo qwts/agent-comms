@@ -54,6 +54,16 @@ function cli(args, env) {
 }
 
 for (const args of [
+  // LaunchAgent behavior uses injected seams in launchagent.test.mjs. These
+  // invalid invocations must stop before any real launchctl or install writes.
+  ['broker', 'install'], ['broker', 'install', '--group'],
+  ['broker', 'install', '--group', 'bad/group'], ['broker', 'install', 'extra'],
+  ['broker', 'uninstall', 'extra'], ['broker', 'uninstall', '--group', 'staff'],
+  ['broker', 'status', 'extra'], ['broker', 'status', '--group'],
+  ['broker', 'status', '--body', 'x'],
+  ['inbox', 'watch', '--full=true'], ['peers', '--full'],
+  ['worker', 'run', '--turn-timeout', '1.5'], ['worker', 'run', '--allow-full-access=true'],
+  ['admin', 'principal-approve'], ['admin', 'principal-revoke'], ['principal', 'pair', '--grant', 'x'],
   ['peers', '--bogus'], ['peers', '--body', 'no'], ['inbox', 'watch', '--limit', '1'],
   ['broker', 'approve'], ['broker', 'revoke'], ['skill', 'show'],
   ['send'], ['inbox', 'ack'], ['leave', 'extra'], ['broker', 'approve', 'one', 'two'],
@@ -68,6 +78,15 @@ for (const args of [
     assert.equal(JSON.parse(result.stdout).error.code, 'usage');
   });
 }
+
+test('help lists LaunchAgent commands without invoking them', async (t) => {
+  const { env } = fixture(t);
+  const result = await cli(['--help'], env);
+  assert.equal(result.exit, 0, result.stderr);
+  assert.match(result.stdout, /agent-comms broker install \[--group VALUE\]/);
+  assert.match(result.stdout, /agent-comms broker uninstall\n/);
+  assert.match(result.stdout, /agent-comms broker status \[--group VALUE\]/);
+});
 
 for (const args of [['--version'], ['join', '--version'], ['inbox', 'read', '--version']]) {
   test(`${args.join(' ')} prints the version without validating the command`, async (t) => {
@@ -158,5 +177,20 @@ for (const signal of ['SIGINT', 'SIGTERM']) {
     assert.deepEqual(await exited, [0, null], stderr);
     assert.equal(stderr, '');
     await closed;
+  });
+}
+
+for (const code of ['not-joined', 'not-approved', 'unauthenticated', 'soul-taken', 'usage']) {
+  test(`watch does not retry ${code}`, async (t) => {
+    const { paths, env } = fixture(t);
+    let connections = 0;
+    await serve(t, paths.socket, (socket) => {
+      connections += 1;
+      socket.once('data', () => socket.end(`${JSON.stringify({ ok: false, error: { code, message: 'refused' } })}\n`));
+    });
+    const result = await cli(['inbox', 'watch'], env);
+    assert.equal(result.exit, code === 'usage' ? 2 : 1);
+    assert.equal(JSON.parse(result.stdout).error.code, code);
+    assert.equal(connections, 1);
   });
 }

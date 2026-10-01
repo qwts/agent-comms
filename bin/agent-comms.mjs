@@ -10,9 +10,11 @@ import { readFileSync } from 'node:fs';
 import process from 'node:process';
 
 import { Broker } from '../lib/broker.mjs';
-import { admin, call, loadCredential, pair, resolveSoul, stream } from '../lib/client.mjs';
+import { install, installOptions, jobOptions, status, uninstall } from '../lib/broker/launchagent.mjs';
+import { admin, call, loadCredential, pair, pairPrincipal, callPrincipal, loadPrincipalCredential, resolveParent, resolveSoul, watch } from '../lib/client.mjs';
 import { CommsError, fail } from '../lib/errors.mjs';
 import { brokerPaths, clientPaths } from '../lib/paths.mjs';
+import { runWorker } from '../lib/worker/index.mjs';
 import * as skill from '../lib/skill.mjs';
 
 const VERSION = '0.1.0';
@@ -25,11 +27,21 @@ const COMMANDS = [
   { name: 'peers', args: [], flags: [] },
   { name: 'send', args: ['TO'], flags: ['body', 'body-file', 'kind', 'key', 'reply-to', 'correlation'] },
   { name: 'inbox read', args: [], flags: ['after', 'limit'] },
-  { name: 'inbox watch', args: [], flags: [] },
+  { name: 'inbox watch', args: [], flags: [], booleans: ['full'] },
   { name: 'inbox ack', args: ['MESSAGE_ID'], variadic: true, flags: [] },
+  { name: 'worker run', args: [], flags: ['harness', 'workspace', 'model', 'effort', 'sandbox', 'turn-timeout', 'metrics', 'tier', 'config', 'name', 'parent', 'allow'], booleans: ['allow-full-access'] },
+  { name: 'principal pair', args: [], flags: ['name'] },
+  { name: 'admin principals', args: [], flags: [] },
+  { name: 'admin principal-approve', args: ['CODE'], flags: ['grant'] },
+  { name: 'admin principal-revoke', args: ['PRINCIPAL'], flags: [] },
+  { name: 'census', args: [], flags: [] },
+  { name: 'health', args: [], flags: [] },
   { name: 'account pair', args: [], flags: ['broker'] },
   { name: 'account status', args: [], flags: [] },
   { name: 'broker run', args: [], flags: ['group'] },
+  { name: 'broker install', args: [], flags: ['group'] },
+  { name: 'broker uninstall', args: [], flags: [] },
+  { name: 'broker status', args: [], flags: ['group'] },
   { name: 'broker pairings', args: [], flags: [] },
   { name: 'broker approve', args: ['CODE'], flags: [] },
   { name: 'broker revoke', args: ['ACCOUNT'], flags: [] },
@@ -42,8 +54,8 @@ const COMMANDS = [
 const HELP = `agent-comms ${VERSION}: messages between agents on this machine
 
 Usage:
-${COMMANDS.map(({ name, args, variadic, flags }) =>
-    `  agent-comms ${name}${args.map((arg) => ` ${arg}${variadic ? '...' : ''}`).join('')}${flags.map((flag) => ` [--${flag} VALUE]`).join('')}`).join('\n')}
+${COMMANDS.map(({ name, args, variadic, flags, booleans = [] }) =>
+    `  agent-comms ${name}${args.map((arg) => ` ${arg}${variadic ? '...' : ''}`).join('')}${flags.map((flag) => ` [--${flag} VALUE]`).join('')}${booleans.map((flag) => ` [--${flag}]`).join('')}`).join('\n')}
   agent-comms --help
   agent-comms --version
 
@@ -58,6 +70,7 @@ function parse(argv) {
   const positional = [];
   const flags = {};
   const valueFlags = new Set(COMMANDS.flatMap((command) => command.flags));
+  const booleanFlags = new Set(['help', 'version', ...COMMANDS.flatMap((command) => command.booleans ?? [])]);
   let literal = false;
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -75,7 +88,7 @@ function parse(argv) {
       const value = inline ?? argv[(i += 1)];
       if (value === undefined || (inline === undefined && value.startsWith('--'))) fail('usage', `--${name} needs a value`);
       flags[name] = value;
-    } else if (['help', 'version'].includes(name)) {
+    } else if (booleanFlags.has(name)) {
       if (inline !== undefined) fail('usage', `--${name} takes no value`);
       flags[name] = true;
     } else {
@@ -88,7 +101,7 @@ function parse(argv) {
   for (const flag of Object.keys(flags)) {
     // --help and --version are global: they work after any command, as before.
     if (flag === 'help' || flag === 'version') continue;
-    if (!schema?.flags.includes(flag)) fail('usage', `unknown option --${flag} for ${schema?.name ?? 'agent-comms'}`);
+    if (!schema?.flags.includes(flag) && !schema?.booleans?.includes(flag)) fail('usage', `unknown option --${flag} for ${schema?.name ?? 'agent-comms'}`);
   }
   if (schema && !flags.help && !flags.version) {
     const count = positional.length - schema.name.split(' ').length;
@@ -154,7 +167,7 @@ async function run(argv, env) {
     case 'join': {
       const allow = flags.allow === undefined ? null : flags.allow.split(',').map((entry) => entry.trim()).filter(Boolean);
       return print(await asSoul({
-        op: 'join', name: flags.name ?? null, harness: flags.harness ?? null, parent: flags.parent ?? null, allow,
+        op: 'join', name: flags.name ?? null, harness: flags.harness ?? null, parent: flags.parent ?? resolveParent(env), allow,
       }));
     }
     case 'leave': return print(await asSoul({ op: 'leave' }));
@@ -186,7 +199,7 @@ async function run(argv, env) {
         process.on('SIGINT', cancel);
         process.on('SIGTERM', cancel);
         try {
-          return await stream(paths, credential, { op: 'watch', agentId: resolveSoul(env) }, (event) => {
+          return await watch(paths, credential, { op: 'watch', agentId: resolveSoul(env), mode: flags.full ? 'full' : 'wake' }, (event) => {
             process.stdout.write(`${JSON.stringify(event)}\n`);
           }, { signal: controller.signal });
         } finally {
@@ -196,6 +209,45 @@ async function run(argv, env) {
       }
       return fail('usage', 'inbox needs read, watch, or ack');
     }
+    case 'worker': {
+      const worker = runWorker({
+        env, harness: flags.harness, workspace: flags.workspace, model: flags.model, effort: flags.effort,
+        sandbox: flags.sandbox, turnTimeoutMs: integer(flags['turn-timeout'], 'turn-timeout'),
+        metrics: flags.metrics, tier: flags.tier, config: flags.config, allowFullAccess: flags['allow-full-access'],
+        name: flags.name, parent: flags.parent ?? resolveParent(env),
+        allow: flags.allow === undefined ? null : flags.allow.split(',').map((entry) => entry.trim()).filter(Boolean),
+      });
+      let stopping;
+      const stop = () => (stopping ??= worker.stop());
+      process.on('SIGINT', stop);
+      process.on('SIGTERM', stop);
+      try {
+        const address = await worker.ready;
+        if (stopping) await worker.stop();
+        else process.stdout.write(`${JSON.stringify({ address })}\n`);
+      } catch (error) {
+        await worker.stop();
+        process.off('SIGINT', stop);
+        process.off('SIGTERM', stop);
+        throw error;
+      }
+      return undefined;
+    }
+    case 'principal': {
+      const result = await pairPrincipal(paths, client, flags.name, env);
+      process.stderr.write(`Ask the owner to approve this pairing: agent-comms admin principal-approve ${result.code}\n`);
+      return print(result);
+    }
+    case 'admin': {
+      if (sub === 'principals') return print(await admin(paths, { op: 'principals' }));
+      if (sub === 'principal-approve') return print(await admin(paths, {
+        op: 'principal-approve', code: rest[0],
+        grant: flags.grant === undefined ? null : flags.grant.split(',').map((entry) => entry.trim()).filter(Boolean),
+      }));
+      return print(await admin(paths, { op: 'principal-revoke', principal: rest[0] }));
+    }
+    case 'census':
+    case 'health': return print(await callPrincipal(paths, loadPrincipalCredential(client), { op: command }));
     case 'account': {
       if (sub === 'pair') {
         const result = await pair(paths, client, flags.broker ?? env.AGENT_COMMS_BROKER_ACCOUNT);
@@ -206,6 +258,12 @@ async function run(argv, env) {
       return fail('usage', 'account needs pair or status');
     }
     case 'broker': {
+      if (sub === 'install') return print(install(installOptions({ group: flags.group })));
+      if (sub === 'uninstall') return print(uninstall(jobOptions()));
+      if (sub === 'status') return print(await status({
+        ...jobOptions({ paths }), group: flags.group,
+        listPairings: () => admin(paths, { op: 'pairings' }),
+      }));
       if (sub === 'run') {
         const broker = await new Broker({ paths, gid: flags.group === undefined ? null : groupId(flags.group) }).start();
         process.stderr.write(`agent-comms broker listening on ${paths.socket}\n`);
@@ -217,7 +275,7 @@ async function run(argv, env) {
       if (sub === 'pairings') return print(await admin(paths, { op: 'pairings' }));
       if (sub === 'approve') return print(await admin(paths, { op: 'approve', code: rest[0] }));
       if (sub === 'revoke') return print(await admin(paths, { op: 'revoke', account: rest[0] }));
-      return fail('usage', 'broker needs run, pairings, approve, or revoke');
+      return fail('usage', 'broker needs run, install, uninstall, status, pairings, approve, or revoke');
     }
     case 'skill': {
       if (!sub) return process.stdout.write(skill.router());
