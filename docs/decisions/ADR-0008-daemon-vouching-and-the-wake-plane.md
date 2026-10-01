@@ -1,6 +1,6 @@
 # ADR-0008: The daemon vouches for souls and carries their wakes
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-01
 **Issue:** qwts/agent-comms#25
 

@@ -30,4 +30,4 @@ supersede them instead.
 | [ADR-0005](ADR-0005-a2a-at-the-broker-edge.md) | A2A at the broker edge, and tasks that link to invocations | Accepted |
 | [ADR-0006](ADR-0006-machine-broker-between-persona-accounts.md) | A machine broker routes between persona accounts | Accepted |
 | [ADR-0007](ADR-0007-observability-and-geniusbar.md) | GeniusBar shows the hub, and runtime metrics stay optional | Accepted |
-| [ADR-0008](ADR-0008-daemon-vouching-and-the-wake-plane.md) | The daemon vouches for souls and carries their wakes | Proposed |
+| [ADR-0008](ADR-0008-daemon-vouching-and-the-wake-plane.md) | The daemon vouches for souls and carries their wakes | Accepted |
