@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-01
+
 ### Security
 
 - The soul-token fetch sends a one-time binding proof (`x-agent-binding-proof`)
