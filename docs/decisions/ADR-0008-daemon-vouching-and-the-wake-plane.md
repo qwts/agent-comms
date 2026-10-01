@@ -112,7 +112,7 @@ That uid is outside the same-account boundary in Consequences.
 Clients now send a one-time proof instead, and never the secret:
 
 ```
-x-agent-binding-proof: v1.<keyId>.<unix seconds>.<nonce>.<mac>
+x-agent-binding-proof: v1.<keyId>.<unix milliseconds>.<nonce>.<mac>
 ```
 
 - The key is `sha256(secret)`, which the daemon registry already stores.
@@ -123,6 +123,9 @@ x-agent-binding-proof: v1.<keyId>.<unix seconds>.<nonce>.<mac>
   the timestamp, and the nonce.
 - The daemon checks the MAC against its own address. It accepts the
   timestamp only within 60 seconds and refuses any nonce it has seen.
+- The daemon refuses proofs made before it started. Its nonce cache does not
+  survive a restart, so a proof captured while it was down must not be
+  replayable when it comes back on the same port.
 
 A process squatting the port learns one spent proof that names the squatted
 port. That proof fails at the daemon's real port. The squatter can still
