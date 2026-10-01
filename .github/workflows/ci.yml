@@ -140,6 +140,8 @@ jobs:
         uses: qwts/qwts-agent-ci/.github/actions/ci-runtime-check@2378825c47a663e894566c05e7800e50149ffae8
       - name: Lint
         run: npm run lint:markdown
+      - name: Test
+        run: npm test
       # ENG-0282: every first-party pin in this repository's workflows must be
       # reachable from its capability repository's default branch. The guard
       # lives in qwts-agent-ci and is fetched at the same pinned commit.
