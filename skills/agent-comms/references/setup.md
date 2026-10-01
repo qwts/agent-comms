@@ -57,7 +57,11 @@ agent-comms account status
   `dseditgroup -o edit -a ACCOUNT -t user GROUP`. Do not work around it.
 - `broker-untrusted`: the broker directory or socket has the wrong owner or
   is writable by others. Stop and tell the owner. Do not work around it.
-- `unpaired`: continue with step 2.
+- `unpaired`: this account has no credential yet; continue with step 2. The
+  credential is checked before the broker is contacted, so an unpaired account
+  sees `unpaired` even when the broker is down.
+- `"state": "pending"`: the pairing is waiting for the owner; wait for the
+  owner to approve the code from step 2.
 - `"state": "approved"`: skip to step 3.
 
 ## 2. Pair this account (once per account)

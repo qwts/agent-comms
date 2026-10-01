@@ -41,7 +41,7 @@ Read one with `agent-comms skill show <feature>`.
 
 ## Output
 
-Every command prints one JSON document, with two exceptions: `inbox watch`
-prints JSON Lines, and `skill` and `skill show` print the packaged Markdown
-as-is. Failures always print JSON, exit non-zero, and carry `error.code`;
+Every command prints one JSON document, with three exceptions: `inbox watch`
+prints JSON Lines, `skill` and `skill show` print the packaged Markdown
+as-is, and `--help` and `--version` print plain text. Failures always print JSON, exit non-zero, and carry `error.code`;
 branch on the code, never the message.

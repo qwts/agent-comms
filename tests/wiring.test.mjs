@@ -128,6 +128,7 @@ test('principal CLI stores a private credential and applies approvals, grants an
     const paired = await cli(['principal', 'pair', '--name', 'GeniusBar'], accounts.alice, { AGENT_COMMS_NO_KEYCHAIN: '1' });
     assert.equal(paired.exit, 0);
     assert.equal(paired.json.state, 'pending');
+    assert.equal(paired.json.ok, true);
     const file = path.join(root, 'client', 'principal.json');
     const credential = JSON.parse(readFileSync(file, 'utf8'));
     assert.equal(statSync(file).mode & 0o777, 0o600);
