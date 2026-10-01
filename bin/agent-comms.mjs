@@ -242,7 +242,7 @@ async function run(argv, env) {
     case 'principal': {
       const result = await pairPrincipal(paths, client, flags.name, env);
       process.stderr.write(`Ask the owner to approve this pairing: agent-comms admin principal-approve ${result.code}\n`);
-      return print(result);
+      return print({ ok: true, ...result });
     }
     case 'admin': {
       if (sub === 'principals') return print(await admin(paths, { op: 'principals' }));
