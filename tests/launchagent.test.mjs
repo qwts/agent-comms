@@ -78,9 +78,23 @@ test('install refuses a group that does not exist, before any side effect', () =
   });
   assert.throws(() => options({ group: null }), { code: 'usage' });
   assert.throws(() => options({ gidOf: () => undefined }), { code: 'broker-group-missing' });
+  assert.throws(() => options({ group: undefined }), { code: 'usage' });
   assert.equal(exists(path.dirname(plist)), false);
   assert.equal(exists(logDir), false);
   assert.deepEqual(calls, []);
+});
+
+test('single-account install needs no group lookup and emits owner-only run mode', () => {
+  calls.length = 0;
+  const single = installOptions({ mode: 'single-account', home: brokerHome, uid: UID, paths, env,
+    gidOf: () => assert.fail('group lookup must not run'), launchctl });
+  assert.equal(single.gid, null);
+  assert.deepEqual(single.args.slice(-3), ['broker', 'run', '--single-account']);
+  const result = install(single);
+  assert.equal(result.group, undefined);
+  assert.equal(result.gid, null);
+  assert.match(readFileSync(plist, 'utf8'), /--single-account/);
+  assert.throws(() => installOptions({ mode: 'single-account', group: AGENT_GROUP }), { code: 'usage' });
 });
 
 test('a group name that could address another job, or this label, is refused', () => {
@@ -90,6 +104,7 @@ test('a group name that could address another job, or this label, is refused', (
 });
 
 test('install writes an absolute plist that launchd can run and then loads it', () => {
+  calls.length = 0;
   const result = install(options());
   assert.equal(result.installed, true);
   assert.equal(result.gid, 800);
