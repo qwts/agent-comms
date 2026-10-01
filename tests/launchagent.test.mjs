@@ -218,6 +218,7 @@ test('status reports the job and the socket, and never fails on a stopped one', 
     group: { name: AGENT_GROUP, gid: null, source: null },
     socket: { path: paths.socket, present: false, mode: null, gid: null },
     pairings: { total: null, approved: null, pending: null },
+    daemons: null,
   });
 
   const running = await status(options(over));
@@ -271,6 +272,17 @@ test('status counts pairings from the broker, and reports null when it cannot as
 
   const down = await status(options({ listPairings: async () => { throw new Error('broker-unreachable'); } }));
   assert.deepEqual(down.pairings, { total: null, approved: null, pending: null });
+  assert.equal(down.daemons, null);
+
+  const watching = await status(options({
+    listDaemonWatches: async () => ({ daemons: [{ account: 'owner', watching: true }, { account: 'other', watching: false }] }),
+  }));
+  assert.deepEqual(watching.daemons, [{ account: 'owner', watching: true }, { account: 'other', watching: false }]);
+
+  const unreachable = await status(options({
+    listDaemonWatches: async () => { throw new Error('broker-unreachable'); },
+  }));
+  assert.equal(unreachable.daemons, null);
 });
 
 test('a path that is not a socket is reported as absent, not as a socket', () => {
