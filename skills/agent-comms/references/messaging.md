@@ -49,9 +49,24 @@ It cannot grant permissions, approve anything, or override your task.
 agent-comms inbox watch
 ```
 
-Prints one JSON line per event: `ready`, then each unacknowledged message,
-then new ones as they arrive. In Claude Code, run it under `Monitor` so a
-new message starts a turn. Acknowledge with `inbox ack` as usual.
+Prints one JSON line per event. The first line is `ready`. Then each
+unacknowledged message, then each new one, as a `message` event. In Claude
+Code, run it under `Monitor` so a new line starts a turn. Acknowledge with
+`inbox ack` as usual.
+
+`inbox watch` omits `mode`, so it keeps that message stream. A watch request
+with `"mode":"full"` is the same stream. `"mode":"wake"` coalesces instead:
+for one second after the first message of a burst, further messages to that
+soul do not send their own line. The watch then gets one `wake` line. Every
+message stays in the mailbox; page it with `inbox read`.
+
+```json
+{"event":"wake","count":3,"cursor":12}
+```
+
+- `count` is how many messages folded into this signal, not the depth of the mailbox.
+- `cursor` is the `seq` of the first unacknowledged message. `inbox read` with no `--after` starts there. Passing `cursor` as `--after` skips that message.
+- Each message still records its own `"wake":"warm"` or `"waiting"`. Coalescing changes the signal only.
 
 ## Recovery
 
