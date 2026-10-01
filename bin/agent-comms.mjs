@@ -148,9 +148,15 @@ function groupId(name) {
 
 const print = (value) => process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
 
+// inbox watch speaks JSON Lines, and a reader of its stream (the worker's watch
+// child among them) parses one line at a time, so its final error has to be one
+// line too or the refusal it carries is never seen.
+let jsonLines = false;
+
 async function run(argv, env) {
   const { positional, flags } = parse(argv);
   const [command, sub, ...rest] = positional;
+  jsonLines = command === 'inbox' && sub === 'watch';
   const paths = brokerPaths(env);
   const client = clientPaths(env);
 
@@ -291,7 +297,9 @@ async function run(argv, env) {
 
 run(process.argv.slice(2), process.env).catch((error) => {
   const code = error instanceof CommsError ? error.code : 'internal';
-  print({ ok: false, error: { code, message: error.message } });
+  const failure = { ok: false, error: { code, message: error.message } };
+  if (jsonLines) process.stdout.write(`${JSON.stringify(failure)}\n`);
+  else print(failure);
   process.stderr.write(`agent-comms: ${error.message}\n`);
   process.exit(code === 'usage' ? 2 : 1);
 });
