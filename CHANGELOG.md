@@ -22,6 +22,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `--broker` pairs with that account's own broker. Group mode is unchanged
   when `--group` and `--broker` are given.
 
+### Changed
+
+- Platform behaviour sits behind four seams under `lib/platform/` (#63,
+  ADR-0059 decision 4): local channel, secret store, service startup, and
+  account isolation. macOS behaviour is unchanged; each Windows adapter
+  fails with `platform-not-implemented`. A test rejects `process.platform`
+  outside the seams.
+
 ## [0.2.1] - 2026-10-01
 
 ### Security

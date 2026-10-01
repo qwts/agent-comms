@@ -4,7 +4,7 @@
 // stdout carries one JSON document, or JSON Lines for `inbox watch`;
 // diagnostics go to stderr; every failure exits non-zero with a stable code.
 
-import { execFileSync } from 'node:child_process';
+import { groupId } from '../lib/platform/account-isolation.mjs';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import process from 'node:process';
@@ -129,25 +129,6 @@ function readBody(flags) {
   if (flags['body-file'] === '-') return readFileSync(0, 'utf8');
   if (flags['body-file'] !== undefined) return readFileSync(flags['body-file'], 'utf8');
   return fail('usage', 'send needs --body or --body-file');
-}
-
-function groupId(name) {
-  if (/^\d+$/.test(name)) return Number(name);
-  try {
-    // macOS keeps groups in Directory Services, not /etc/group.
-    const out = execFileSync('/usr/bin/dscl', ['.', '-read', `/Groups/${name}`, 'PrimaryGroupID'], { encoding: 'utf8' });
-    const id = out.match(/PrimaryGroupID:\s*(\d+)/)?.[1];
-    if (id) return Number(id);
-  } catch {
-    // not macOS, or no such group
-  }
-  try {
-    const line = readFileSync('/etc/group', 'utf8').split('\n').find((entry) => entry.startsWith(`${name}:`));
-    if (line) return Number(line.split(':')[2]);
-  } catch {
-    // no /etc/group
-  }
-  return fail('usage', `cannot resolve group ${name}; pass its numeric id`);
 }
 
 const print = (value) => process.stdout.write(`${JSON.stringify(value, null, 2)}\n`);
