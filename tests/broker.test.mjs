@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFile, spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { appendFileSync, chmodSync, mkdirSync, mkdtempSync, rmSync, statSync, symlinkSync } from 'node:fs';
+import { appendFileSync, chmodSync, mkdirSync, mkdtempSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
@@ -125,6 +125,7 @@ test('allowlists hide a soul from senders it does not accept', async () => {
 });
 
 test('watch streams unacknowledged and new messages, and send reports a warm wake', async () => {
+  const backlog = await cli(['send', bob, '--body', 'sent before the watch', '--key', 'k8-backlog']);
   const watcher = spawn(process.execPath, [BIN, 'inbox', 'watch'], { env: { ...env, QWTS_AGENT_ID: bob } });
   const events = [];
   const seen = (predicate) => new Promise((resolve) => {
@@ -142,6 +143,7 @@ test('watch streams unacknowledged and new messages, and send reports a warm wak
     events.push(...lines.filter(Boolean).map((line) => JSON.parse(line)));
   });
   await seen((event) => event.event === 'ready');
+  await seen((event) => event.message?.id === backlog.json.messageId);
   const sent = await cli(['send', bob, '--body', 'are you there', '--key', 'k8']);
   assert.equal(sent.json.wake, 'warm');
   await seen((event) => event.message?.id === sent.json.messageId);
@@ -172,15 +174,85 @@ test('the client refuses a broker directory others can write', async () => {
   }
 });
 
-test('state survives a restart, and a torn tail is cut off', async () => {
+test('state and wake outcomes survive a restart, and a torn tail is cut off by bytes', async () => {
   const before = await cli(['inbox', 'read'], alice);
+  const warm = (await cli(['inbox', 'read', '--limit', '100'], bob)).json.messages.find((m) => m.body === 'are you there');
+  assert.equal(warm.wake, 'warm');
   await broker.stop();
-  appendFileSync(path.join(paths.state, 'events.jsonl'), '{"t":"message","mess');
+  // A crash mid-record that ends inside a multibyte character.
+  const snowman = Buffer.from('☃');
+  appendFileSync(path.join(paths.state, 'events.jsonl'), Buffer.concat([Buffer.from('{"t":"message","body":"'), snowman.subarray(0, 2)]));
   broker = await new Broker({ paths }).start();
   const afterRestart = await cli(['inbox', 'read'], alice);
   assert.deepEqual(afterRestart.json.messages.map((m) => m.id), before.json.messages.map((m) => m.id));
-  const sent = await cli(['send', bob, '--body', 'after restart', '--key', 'k9']);
+  const rewoken = (await cli(['inbox', 'read', '--limit', '100'], bob)).json.messages.find((m) => m.id === warm.id);
+  assert.equal(rewoken.wake, 'warm');
+  const sent = await cli(['send', bob, '--body', 'after restart ☃', '--key', 'k9']);
   assert.equal(sent.exit, 0, JSON.stringify(sent.json));
+
+  // The record appended after the cut must replay on the next restart.
+  await broker.stop();
+  broker = await new Broker({ paths }).start();
+  const replayed = (await cli(['inbox', 'read', '--limit', '100'], bob)).json.messages.find((m) => m.id === sent.json.messageId);
+  assert.equal(replayed.body, 'after restart ☃');
+});
+
+test('send refuses a body that would not fit in a read page once escaped', async () => {
+  const file = path.join(root, 'nul-body');
+  writeFileSync(file, '\0'.repeat(21_500));
+  await expectCode(['send', bob, '--body-file', file, '--key', 'k-nul'], 'message-too-large');
+});
+
+test('a second broker refuses to take over a live socket', async () => {
+  await assert.rejects(new Broker({ paths }).start(), (error) => error.code === 'broker-running');
+  const alive = await cli(['peers']);
+  assert.equal(alive.exit, 0, JSON.stringify(alive.json));
+});
+
+test('the broker refuses a state directory others can write', async () => {
+  const stateDir = path.join(root, 'b3');
+  mkdirSync(stateDir, { mode: 0o700 });
+  chmodSync(stateDir, 0o777);
+  const other = new Broker({
+    paths: brokerPaths({ ...env, AGENT_COMMS_SHARED_DIR: path.join(root, 's3'), AGENT_COMMS_BROKER_STATE_DIR: stateDir }),
+  });
+  await assert.rejects(other.start(), (error) => error.code === 'state-dir-untrusted');
+  assert.equal(other.state.messages.size, 0);
+});
+
+test('the client refuses a credential directory others can write', async () => {
+  chmodSync(env.AGENT_COMMS_CLIENT_STATE_DIR, 0o777);
+  try {
+    await expectCode(['peers'], 'client-dir-untrusted');
+  } finally {
+    chmodSync(env.AGENT_COMMS_CLIENT_STATE_DIR, 0o700);
+  }
+});
+
+test('a retry gets its original answer after the recipient leaves', async () => {
+  const dave = `agent_${randomUUID()}`;
+  await cli(['join', '--name', 'dave'], dave);
+  const first = await cli(['send', dave, '--body', 'before you go', '--key', 'k-dave']);
+  assert.equal(first.exit, 0, JSON.stringify(first.json));
+  await cli(['leave'], dave);
+  const retry = await cli(['send', dave, '--body', 'before you go', '--key', 'k-dave']);
+  assert.equal(retry.json.duplicate, true);
+  assert.equal(retry.json.messageId, first.json.messageId);
+  await expectCode(['send', dave, '--body', 'a new message', '--key', 'k-dave-2'], 'unknown-recipient');
+});
+
+test('a read page stays within one protocol line', async () => {
+  const erin = `agent_${randomUUID()}`;
+  await cli(['join', '--name', 'erin'], erin);
+  const body = 'x'.repeat(30 * 1024);
+  for (let i = 0; i < 6; i += 1) {
+    const sent = await cli(['send', erin, '--body', body, '--key', `k-erin-${i}`]);
+    assert.equal(sent.exit, 0, JSON.stringify(sent.json));
+  }
+  const page = await cli(['inbox', 'read', '--limit', '100'], erin);
+  assert.equal(page.exit, 0, JSON.stringify(page.json));
+  assert.ok(page.json.messages.length >= 1 && page.json.messages.length < 6);
+  assert.equal(page.json.remaining, 6 - page.json.messages.length);
 });
 
 test('an unbound caller fails with unbound', async () => {
