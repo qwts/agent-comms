@@ -29,7 +29,7 @@ Usage:
   agent-comms inbox read [--after CURSOR] [--limit N]
   agent-comms inbox watch          streams JSON Lines until interrupted
   agent-comms inbox ack MESSAGE_ID...
-  agent-comms account pair | account status
+  agent-comms account pair --broker ACCOUNT | account status
   agent-comms broker run [--group GROUP] | broker pairings
   agent-comms broker approve CODE | broker revoke ACCOUNT
   agent-comms skill | skill list | skill show FEATURE | skill path
@@ -42,7 +42,7 @@ broker verifies only the account. Read \`agent-comms skill\` before first use.
 
 const VALUE_FLAGS = new Set([
   'name', 'harness', 'parent', 'allow', 'body', 'body-file', 'kind', 'key', 'reply-to', 'correlation',
-  'after', 'limit', 'group',
+  'after', 'limit', 'group', 'broker',
 ]);
 
 function parse(argv) {
@@ -158,7 +158,7 @@ async function run(argv, env) {
     }
     case 'account': {
       if (sub === 'pair') {
-        const result = await pair(paths, client);
+        const result = await pair(paths, client, flags.broker ?? env.AGENT_COMMS_BROKER_ACCOUNT);
         process.stderr.write(`Ask the owner to approve this pairing: agent-comms broker approve ${result.code}\n`);
         return print(result);
       }

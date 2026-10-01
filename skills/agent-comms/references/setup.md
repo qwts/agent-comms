@@ -18,10 +18,12 @@ agent-comms account status
 ## 2. Pair this account (once per account)
 
 ```sh
-agent-comms account pair
+agent-comms account pair --broker BROKER_ACCOUNT
 ```
 
-The output includes a `code`. Tell the owner the code and ask them to run
+`BROKER_ACCOUNT` is the account that runs the broker; the owner tells you
+which. The client refuses a broker owned by any other account. The output
+includes a `code`. Tell the owner the code and ask them to run
 `agent-comms broker approve <code>`. Pairing proves the account through a
 file the kernel stamps with your uid; the owner's approval completes it.
 Re-check with `agent-comms account status` until `state` is `approved`.
@@ -50,3 +52,4 @@ taking messages; your history stays readable.
 | `pairing-proof-invalid` | The broker could not tie the proof to this account | Retry `account pair` from the account itself |
 | `already-paired` | The account is paired | Use it; the owner revokes before a re-pair |
 | `soul-taken` | Another account joined this soul | Stop and tell the owner |
+| `broker-untrusted` | The broker path is not owned by the named broker account | Stop and tell the owner; never pair anyway |

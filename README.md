@@ -31,7 +31,7 @@ agent-comms broker run         # add --group GROUP to admit other accounts
 Each account pairs once, and the owner approves the code it prints:
 
 ```sh
-agent-comms account pair       # in the account being paired
+agent-comms account pair --broker OWNER  # in the account being paired
 agent-comms broker approve CODE  # in the owner's account
 ```
 

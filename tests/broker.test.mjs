@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { execFile, spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { appendFileSync, chmodSync, mkdtempSync, rmSync, statSync } from 'node:fs';
+import { appendFileSync, chmodSync, mkdirSync, mkdtempSync, rmSync, statSync, symlinkSync } from 'node:fs';
+import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
@@ -45,7 +46,7 @@ const expectCode = async (args, code, soul) => {
 
 before(async () => {
   broker = await new Broker({ paths }).start();
-  const paired = await cli(['account', 'pair']);
+  const paired = await cli(['account', 'pair', '--broker', os.userInfo().username]);
   assert.equal(paired.exit, 0, JSON.stringify(paired.json));
   await expectCode(['join'], 'not-approved');
   const approved = await cli(['broker', 'approve', paired.json.code]);
@@ -153,7 +154,7 @@ test('a pairing proof from another uid is refused', async () => {
     uidOf: () => process.getuid() + 1,
   }).start();
   try {
-    const { json } = await cli(['account', 'pair'], alice, {
+    const { json } = await cli(['account', 'pair', '--broker', os.userInfo().username], alice, {
       AGENT_COMMS_SHARED_DIR: path.join(root, 's2'), AGENT_COMMS_CLIENT_STATE_DIR: path.join(root, 'c2'),
     });
     assert.equal(json.error.code, 'pairing-proof-invalid');
@@ -192,4 +193,52 @@ test('an unbound caller fails with unbound', async () => {
   });
   assert.notEqual(exit, 0);
   assert.equal(json.error.code, 'unbound');
+});
+
+test('an oversized line is refused and the connection dropped, newline or not', async () => {
+  for (const tail of ['\n', '']) {
+    const reply = await new Promise((resolve) => {
+      const socket = net.createConnection(paths.socket);
+      let data = '';
+      socket.on('connect', () => socket.write(`${'x'.repeat(200 * 1024)}${tail}`));
+      socket.on('data', (chunk) => {
+        data += chunk;
+      });
+      socket.on('close', () => resolve(data));
+      socket.on('error', (error) => {
+        data += `ERR ${error.code}`;
+      });
+    });
+    // The broker refuses and drops the connection, usually while the client is
+    // still writing, so the client sees either the refusal or a broken pipe.
+    assert.match(reply, /line exceeds the protocol limit|ERR (EPIPE|ECONNRESET)/);
+  }
+  const stillUp = await cli(['peers']);
+  assert.equal(stillUp.exit, 0);
+});
+
+test('the broker refuses a symlinked shared directory', async () => {
+  const real = path.join(root, 'elsewhere');
+  mkdirSync(real);
+  const link = path.join(root, 'linked');
+  symlinkSync(real, link);
+  const planted = new Broker({
+    paths: brokerPaths({ ...env, AGENT_COMMS_SHARED_DIR: link, AGENT_COMMS_BROKER_STATE_DIR: path.join(root, 'b3') }),
+  });
+  await assert.rejects(planted.start(), { code: 'shared-dir-untrusted' });
+});
+
+test('pairing refuses a broker owned by an account other than the named one', async () => {
+  const { json } = await cli(['account', 'pair', '--broker', 'root'], alice, { AGENT_COMMS_CLIENT_STATE_DIR: path.join(root, 'c3') });
+  assert.equal(json.error.code, 'broker-untrusted');
+});
+
+test('revoking an account closes its watches and hides its souls at once', async () => {
+  const watcher = spawn(process.execPath, [BIN, 'inbox', 'watch'], { env: { ...env, QWTS_AGENT_ID: bob } });
+  const closed = new Promise((resolve) => watcher.on('exit', resolve));
+  await new Promise((resolve) => watcher.stdout.once('data', resolve));
+  const revoked = await cli(['broker', 'revoke', os.userInfo().username]);
+  assert.equal(revoked.json.watchesClosed, 1);
+  await closed;
+  await expectCode(['peers'], 'unauthenticated');
 });
