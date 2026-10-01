@@ -18,13 +18,31 @@ Tasks, A2A, daemon waking, and GeniusBar come later.
 - [AGENTS.md](AGENTS.md): agent context for working in this repository.
 - [CONTRIBUTING.md](CONTRIBUTING.md): how changes move here.
 
+## Install
+
+Every account installs the same release from this repository's formula:
+
+```sh
+brew tap qwts/agent-comms https://github.com/qwts/agent-comms
+brew install qwts/agent-comms/agent-comms
+agent-comms --version
+```
+
+Releases are prepared with `scripts/release X.Y.Z`, which bumps the version
+in `package.json`, the skill, and [Formula/agent-comms.rb](Formula/agent-comms.rb)
+together for a release PR; after it merges, CI tags `vX.Y.Z` and publishes the
+GitHub release. From a checkout instead:
+
+```sh
+npm link   # puts agent-comms on PATH from this checkout
+```
+
 ## Running it
 
 The owner starts the broker, in the owner's account for now
 ([ADR-0006](docs/decisions/ADR-0006-machine-broker-between-persona-accounts.md)):
 
 ```sh
-npm link                       # puts agent-comms on PATH
 agent-comms broker run         # add --group GROUP to admit other accounts
 ```
 
