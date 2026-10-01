@@ -267,7 +267,7 @@ test('status counts pairings from the broker, and reports null when it cannot as
   const answered = await status(options({
     listPairings: async () => ({ pairings: [{ state: 'approved' }, { state: 'approved' }, { state: 'pending' }] }),
   }));
-  assert.deepEqual(answered.pairings, { total: 3, approved: 2, pending: 1 });
+  assert.deepEqual(answered.pairings, { total: 3, approved: 2, pending: 1, accounts: Array.from({ length: 3 }, () => ({ account: undefined, hardened: false })) });
 
   const down = await status(options({ listPairings: async () => { throw new Error('broker-unreachable'); } }));
   assert.deepEqual(down.pairings, { total: null, approved: null, pending: null });

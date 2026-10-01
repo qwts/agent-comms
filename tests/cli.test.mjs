@@ -65,6 +65,8 @@ for (const args of [
   ['worker', 'run', '--turn-timeout', '1.5'], ['worker', 'run', '--allow-full-access=true'],
   ['admin', 'principal-approve'], ['admin', 'principal-revoke'], ['principal', 'pair', '--grant', 'x'],
   ['peers', '--bogus'], ['peers', '--body', 'no'], ['inbox', 'watch', '--limit', '1'],
+  ['account', 'approve'], ['account', 'revoke'], ['account', 'harden'],
+  ['account', 'harden', 'test', '--off=true'], ['account', 'pairings', 'extra'],
   ['broker', 'approve'], ['broker', 'revoke'], ['skill', 'show'],
   ['send'], ['inbox', 'ack'], ['leave', 'extra'], ['broker', 'approve', 'one', 'two'],
   ['join', '--name'], ['join', '--name', '--harness', 'test'], ['peers', '-x'],
