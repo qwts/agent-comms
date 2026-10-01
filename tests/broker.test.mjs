@@ -23,7 +23,7 @@ const waitFor = async (description, predicate, timeoutMs = 3000) => {
 const newSoul = () => `agent_${randomUUID()}`;
 
 const watch = (env, soul) => {
-  const child = spawn(process.execPath, [new URL('../bin/agent-comms.mjs', import.meta.url).pathname, 'inbox', 'watch'], {
+  const child = spawn(process.execPath, [new URL('../bin/agent-comms.mjs', import.meta.url).pathname, 'inbox', 'watch', '--full'], {
     env: { ...env, QWTS_AGENT_ID: soul },
   });
   const events = [];

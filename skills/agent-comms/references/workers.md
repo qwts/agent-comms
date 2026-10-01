@@ -38,6 +38,10 @@ A `workspace-write` turn has no network, so it cannot reach the broker itself.
 The worker's own reply is how an answer comes back, and a turn that must talk
 to the hub needs a wider sandbox.
 
+After joining, the CLI prints `{"address":"<account>/<agent_id>"}` once and
+stays in the foreground. SIGINT or SIGTERM calls the worker's stop routine;
+an interrupted turn keeps its message unacknowledged for the next run.
+
 ## Tiers
 
 A tier is a named set of turn settings, so a run carries a name instead of
