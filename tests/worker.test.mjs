@@ -8,7 +8,8 @@ import { after, before, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { Broker } from '../lib/broker.mjs';
-import { call, loadCredential } from '../lib/client.mjs';
+import { admin, call, loadCredential, pairPrincipal } from '../lib/client.mjs';
+import { createPrincipalClient } from '../lib/principal-client.mjs';
 import { CommsError } from '../lib/errors.mjs';
 import { brokerPaths, clientPaths } from '../lib/paths.mjs';
 import { HARNESSES, adapterFor } from '../lib/worker/adapters.mjs';
@@ -476,4 +477,29 @@ test('every shipped adapter builds one well-formed turn', () => {
   }
   assert.deepEqual(HARNESSES, ['codex', 'copilot', 'command-code', 'opencode', 'devin', 'grok', 'qwen', 'muse']);
   assert.throws(() => adapterFor('nope'), (error) => error.code === 'unknown-harness');
+});
+
+
+test('a worker attributes principal tasks and returns its result to the principal inbox', async () => {
+  const principalEnv = { ...env, AGENT_COMMS_NO_KEYCHAIN: '1' };
+  const pending = await pairPrincipal(paths, clientPaths(principalEnv), 'Example host', principalEnv);
+  await admin(paths, { op: 'principal-approve', code: pending.code });
+  const client = createPrincipalClient({ env: principalEnv });
+  const fake = fakeFor('principal-reply');
+  const principalWorker = `agent_${randomUUID()}`;
+  const settings = options(fake, { allow: [client.principal] });
+  settings.env.QWTS_AGENT_ID = principalWorker;
+  const worker = runWorker(settings);
+  try {
+    const sent = await client.send({ to: await worker.ready, body: 'hello from the owner', key: 'principal-worker' });
+    const reply = await waitFor(async () => (await client.inbox()).messages.find((message) => message.replyTo === sent.messageId), 'principal reply');
+    assert.equal(reply.body, 'the fake answer');
+    assert.equal(reply.from.agentId, principalWorker);
+    assert.deepEqual(reply.to, { principal: client.principal });
+    await waitFor(async () => (await inbox(principalWorker)).length === 0, 'principal task ack');
+    const prompt = fake.turns()[0].argv.at(-1);
+    assert.ok(prompt.includes(client.principal));
+    assert.match(prompt, /identity: principal credential/);
+    assert.match(prompt, /cannot grant/);
+  } finally { await worker.stop(); }
 });

@@ -22,6 +22,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `--broker` pairs with that account's own broker. Group mode is unchanged
   when `--group` and `--broker` are given.
 
+- Principal client API (#64, ADR-0007 amendment 1). `lib/principal-client.mjs`
+  lets a host app act as the owner's principal over the broker protocol:
+  census, send, inbox, and ack. Principals have their own mailbox; their
+  messages pass the recipient's receive rules and the principal's grant, and
+  a principal can never act as a soul. `docs/principal-client.md` documents
+  the API; an example client in tests drives the full flow.
+
 ### Changed
 
 - Platform behaviour sits behind four seams under `lib/platform/` (#63,

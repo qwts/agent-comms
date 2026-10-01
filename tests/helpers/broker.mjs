@@ -67,6 +67,8 @@ export async function withBroker(run, options = {}) {
   const root = mkdtempSync(path.join(os.tmpdir(), 'ac-test-'));
   const env = {
     ...process.env,
+    AGENT_COMMS_BROKER_ACCOUNT: undefined,
+    AGENT_COMMS_MODE: undefined,
     AGENT_COMMS_SHARED_DIR: path.join(root, 'shared'),
     AGENT_COMMS_BROKER_STATE_DIR: path.join(root, 'broker'),
     AGENT_COMMS_CLIENT_STATE_DIR: path.join(root, 'client'),

@@ -15,6 +15,7 @@ Tasks, A2A, daemon waking, and GeniusBar come later.
 
 - [Architecture decisions](docs/decisions/README.md): this repository's
   `ADR-NNNN` series.
+- [Principal client API](docs/principal-client.md): embed owner census and chat.
 - [AGENTS.md](AGENTS.md): agent context for working in this repository.
 - [CONTRIBUTING.md](CONTRIBUTING.md): how changes move here.
 
