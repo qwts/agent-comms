@@ -3,6 +3,7 @@
 **Status:** Accepted
 **Date:** 2026-09-30
 **Issue:** qwts/agent-comms#7
+**Amended:** 2026-10-01 (any principal client, qwts/agent-comms#59)
 
 ## Context
 
@@ -97,3 +98,27 @@ client; the broker holds the machine census
   formats.
 - **Transcript ingestion for richer debugging:** rejected by default. The
   privacy and retention cost is too high.
+
+## Amendment 1: any principal client (2026-10-01)
+
+**Issue:** qwts/agent-comms#59
+
+GeniusBar is now a product that is downloaded, bundles agent-comms
+([ADR-0059](ADR-0059-host-apps-embed-agent-comms.md)), and may run on
+Windows. It may also move to another organization. What applies:
+
+1. **The broker serves principal clients, and GeniusBar is one of them.**
+   Decisions 1, 3, and 9 describe any principal client. Nothing in
+   agent-comms names one. The stored-credential name is set by the host
+   (ADR-0059 decision 2).
+2. **Launching is a request, not a process start.** Decision 4 changes:
+   the client asks the broker to launch a soul in an account, and that
+   account's daemon starts the harness and joins it. A client never starts
+   processes in another account.
+3. **Collectors run in the daemon.** Decision 5's collectors run beside the
+   daemon in the soul's account and report through the broker. A client
+   shows what they report and reads no logs itself.
+4. **"A native app" no longer applies.** The first consequence's "native
+   app" means any host app. Its design, platforms, and toolkit are decided
+   in that app's own repository.
+
