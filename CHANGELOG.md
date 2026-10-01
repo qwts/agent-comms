@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Host-supplied service label, stored-credential name, log directory and state
+  directories through one environment configuration (ADR-0059 decision 2,
+  #61). Existing names remain compatibility defaults. LaunchAgent installation
+  preserves overrides across login; CLI lifecycle and principal pairing tests
+  verify host-selected names. Setup documents the variables and migration.
+
 ## [0.2.1] - 2026-10-01
 
 ### Security

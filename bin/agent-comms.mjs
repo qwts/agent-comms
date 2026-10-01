@@ -12,6 +12,7 @@ import process from 'node:process';
 import { Broker } from '../lib/broker.mjs';
 import { install, installOptions, jobOptions, status, uninstall } from '../lib/broker/launchagent.mjs';
 import { admin, call, loadCredential, pair, pairPrincipal, callPrincipal, loadPrincipalCredential, resolveParent, soulContext, vouch, watch } from '../lib/client.mjs';
+import { HOST_CONFIG } from '../lib/host-config.mjs';
 import { CommsError, fail } from '../lib/errors.mjs';
 import { brokerPaths, clientPaths } from '../lib/paths.mjs';
 import { runWorker } from '../lib/worker/index.mjs';
@@ -160,8 +161,8 @@ async function run(argv, env) {
   const { positional, flags } = parse(argv);
   const [command, sub, ...rest] = positional;
   jsonLines = command === 'inbox' && sub === 'watch';
-  const paths = brokerPaths(env);
-  const client = clientPaths(env);
+  const paths = brokerPaths(env, HOST_CONFIG);
+  const client = clientPaths(env, HOST_CONFIG);
 
   if (flags.version) return process.stdout.write(`agent-comms ${VERSION}\n`);
   if (flags.help || !command) return process.stdout.write(HELP);
@@ -250,7 +251,7 @@ async function run(argv, env) {
       return undefined;
     }
     case 'principal': {
-      const result = await pairPrincipal(paths, client, flags.name, env);
+      const result = await pairPrincipal(paths, client, flags.name, env, HOST_CONFIG);
       process.stderr.write(`Ask the owner to approve this pairing: agent-comms admin principal-approve ${result.code}\n`);
       return print({ ok: true, ...result });
     }
@@ -278,10 +279,10 @@ async function run(argv, env) {
       return fail('usage', 'account needs pair, status, pairings, approve, revoke, or harden');
     }
     case 'broker': {
-      if (sub === 'install') return print(install(installOptions({ group: flags.group })));
-      if (sub === 'uninstall') return print(uninstall(jobOptions()));
+      if (sub === 'install') return print(install(installOptions({ group: flags.group, host: HOST_CONFIG })));
+      if (sub === 'uninstall') return print(uninstall(jobOptions({ host: HOST_CONFIG })));
       if (sub === 'status') return print(await status({
-        ...jobOptions({ paths }), group: flags.group,
+        ...jobOptions({ paths, host: HOST_CONFIG }), group: flags.group,
         listPairings: () => admin(paths, { op: 'pairings' }),
         listDaemonWatches: () => admin(paths, { op: 'daemon-watches' }),
       }));
