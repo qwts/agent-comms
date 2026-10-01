@@ -12,6 +12,7 @@ import process from 'node:process';
 import { Broker } from '../lib/broker.mjs';
 import { install, installOptions, jobOptions, status, uninstall } from '../lib/broker/launchagent.mjs';
 import { admin, call, loadCredential, pair, pairPrincipal, callPrincipal, loadPrincipalCredential, resolveParent, soulContext, vouch, watch } from '../lib/client.mjs';
+import { HOST_CONFIG } from '../lib/host-config.mjs';
 import { CommsError, fail } from '../lib/errors.mjs';
 import { brokerPaths, clientPaths } from '../lib/paths.mjs';
 import { runWorker } from '../lib/worker/index.mjs';
@@ -42,8 +43,8 @@ const COMMANDS = [
   { name: 'account revoke', args: ['ACCOUNT'], flags: ['kind'] },
   { name: 'account harden', args: ['ACCOUNT'], flags: [], booleans: ['off'] },
   { name: 'account status', args: [], flags: [] },
-  { name: 'broker run', args: [], flags: ['group'] },
-  { name: 'broker install', args: [], flags: ['group'] },
+  { name: 'broker run', args: [], flags: ['group'], booleans: ['single-account'] },
+  { name: 'broker install', args: [], flags: ['group'], booleans: ['single-account'] },
   { name: 'broker uninstall', args: [], flags: [] },
   { name: 'broker status', args: [], flags: ['group'] },
   { name: 'broker pairings', args: [], flags: [] },
@@ -160,8 +161,8 @@ async function run(argv, env) {
   const { positional, flags } = parse(argv);
   const [command, sub, ...rest] = positional;
   jsonLines = command === 'inbox' && sub === 'watch';
-  const paths = brokerPaths(env);
-  const client = clientPaths(env);
+  const paths = brokerPaths(env, HOST_CONFIG);
+  const client = clientPaths(env, HOST_CONFIG);
 
   if (flags.version) return process.stdout.write(`agent-comms ${VERSION}\n`);
   if (flags.help || !command) return process.stdout.write(HELP);
@@ -250,7 +251,7 @@ async function run(argv, env) {
       return undefined;
     }
     case 'principal': {
-      const result = await pairPrincipal(paths, client, flags.name, env);
+      const result = await pairPrincipal(paths, client, flags.name, env, HOST_CONFIG);
       process.stderr.write(`Ask the owner to approve this pairing: agent-comms admin principal-approve ${result.code}\n`);
       return print({ ok: true, ...result });
     }
@@ -266,7 +267,11 @@ async function run(argv, env) {
     case 'health': return print(await callPrincipal(paths, loadPrincipalCredential(client), { op: command }));
     case 'account': {
       if (sub === 'pair') {
-        const result = await pair(paths, client, flags.broker ?? env.AGENT_COMMS_BROKER_ACCOUNT);
+        // Naming a broker account means the multi-account broker; with none
+        // named there is no other account, so the broker is this account's own.
+        const brokerAccount = flags.broker ?? env.AGENT_COMMS_BROKER_ACCOUNT;
+        const mode = env.AGENT_COMMS_MODE ?? (brokerAccount ? 'group' : 'single-account');
+        const result = await pair(paths, client, brokerAccount, undefined, mode);
         process.stderr.write(`Ask the owner to approve this pairing: agent-comms broker approve ${result.code}\n`);
         return print(result);
       }
@@ -278,15 +283,16 @@ async function run(argv, env) {
       return fail('usage', 'account needs pair, status, pairings, approve, revoke, or harden');
     }
     case 'broker': {
-      if (sub === 'install') return print(install(installOptions({ group: flags.group })));
-      if (sub === 'uninstall') return print(uninstall(jobOptions()));
+      if (sub === 'install') return print(install(installOptions({ group: flags.group, mode: flags['single-account'] || !flags.group ? 'single-account' : 'group', host: HOST_CONFIG })));
+      if (sub === 'uninstall') return print(uninstall(jobOptions({ host: HOST_CONFIG })));
       if (sub === 'status') return print(await status({
-        ...jobOptions({ paths }), group: flags.group,
+        ...jobOptions({ paths, host: HOST_CONFIG }), group: flags.group,
         listPairings: () => admin(paths, { op: 'pairings' }),
         listDaemonWatches: () => admin(paths, { op: 'daemon-watches' }),
       }));
       if (sub === 'run') {
-        const broker = await new Broker({ paths, gid: flags.group === undefined ? null : groupId(flags.group) }).start();
+        const mode = flags['single-account'] ? 'single-account' : (flags.group ? 'group' : 'single-account');
+        const broker = await new Broker({ paths, mode, gid: flags.group === undefined ? null : groupId(flags.group) }).start();
         process.stderr.write(`agent-comms broker listening on ${paths.socket}\n`);
         const shutdown = () => broker.stop().then(() => process.exit(0));
         process.on('SIGINT', shutdown);

@@ -4,6 +4,24 @@ Side effects: `local-write`.
 
 ## 0. Owner setup, once per machine
 
+### One account (default)
+
+When every agent runs in the owner's own account, no group or administrator
+is needed:
+
+```sh
+agent-comms broker install
+agent-comms account pair
+agent-comms broker approve CODE
+```
+
+The broker serves only this account: the rendezvous and proof directories
+are 0700 and the socket is 0600. `account pair` with no `--broker` pairs with
+this account's own broker. Use the group setup below only when agents run
+in separate persona accounts.
+
+### Separate persona accounts
+
 Agents do not run this section. If the broker is not installed, stop and ask
 the owner for it; do not start a broker yourself.
 
@@ -45,6 +63,53 @@ pairing counts, and whether each account's daemon is watching.
 `"daemons": null` means the broker could not be asked. `"running": true`
 with `"present": false` on the socket means the job is loaded but the broker
 is not answering; check the log files above.
+
+## Host configuration
+
+A host sets these environment variables before starting the CLI. One host
+configuration object supplies the service, stored credential, and directory
+names. Unset or empty variables keep existing installations' defaults.
+
+| Variable | Default |
+| --- | --- |
+| `AGENT_COMMS_SERVICE_LABEL` | `dev.qwts.agent-comms.broker` |
+| `AGENT_COMMS_CREDENTIAL_NAME` | `qwts.GeniusBar.principal` |
+| `AGENT_COMMS_LOG_DIR` | `~/Library/Logs/agent-comms` |
+| `AGENT_COMMS_SHARED_DIR` | `/Users/Shared/Public/agent-comms` |
+| `AGENT_COMMS_BROKER_STATE_DIR` | `$XDG_STATE_HOME/agent-comms-broker` |
+| `AGENT_COMMS_CLIENT_STATE_DIR` | `$XDG_STATE_HOME/agent-comms` |
+
+`XDG_STATE_HOME` defaults to `~/.local/state`. Directory overrides resolve
+relative to the CLI's working directory; use absolute paths for embedded
+hosts. A literal `~` in a variable is not expanded. Service and credential
+names accept letters, digits, dots, underscores and hyphens, starting with a
+letter, digit or underscore. Other names fail before any write.
+
+For example, set these for every invocation from the host:
+
+```sh
+export AGENT_COMMS_SERVICE_LABEL=org.example.helper
+export AGENT_COMMS_CREDENTIAL_NAME=org.example.owner
+export AGENT_COMMS_LOG_DIR="$HOME/Library/Logs/Example"
+export AGENT_COMMS_SHARED_DIR="$HOME/Example/shared"
+export AGENT_COMMS_BROKER_STATE_DIR="$HOME/Example/broker"
+export AGENT_COMMS_CLIENT_STATE_DIR="$HOME/Example/client"
+```
+
+Install pins the configured names and resolved directories in the LaunchAgent
+so they survive login without the host's shell environment. It also pins
+state directories derived from an explicit `XDG_STATE_HOME`. The plist stays
+in `~/Library/LaunchAgents/<service-label>.plist`; logs are `broker.log` and
+`broker.err.log` inside the configured log directory. Use the same variables
+for status, uninstall, pairing, and later client commands. Client accounts
+must agree on the shared directory; their private state directories may differ.
+
+Changing names does not migrate or remove an old service or credential.
+Uninstall the old service using its original configuration before installing
+the new one, and pair a fresh principal for the new stored-credential name.
+The legacy names live only in compatibility defaults data; executable code
+has no knowledge of a host app. This implements ADR-0059 decision 2 (#61);
+account isolation and platform seams are separate changes.
 
 ## 1. Check the broker
 
@@ -135,12 +200,12 @@ Binding possession proves the soul. Another process in the same OS account
 can read a mode 0600 binding and act as that soul. R2 does not isolate those
 processes; peer credentials remain future work.
 
-## Pair GeniusBar (principal)
+## Pair a principal client
 
 From an approved account, request a separate owner credential:
 
 ```sh
-agent-comms principal pair --name GeniusBar
+agent-comms principal pair --name Example
 ```
 
 The output contains `principal`, `code`, and `state`, never the secret. Ask
@@ -159,9 +224,9 @@ cannot send messages. Revoke it with
 
 The credential lives in `principal.json` beside the account credential in
 the client state directory, with mode 0600. On macOS it is also saved to the
-login keychain under service `qwts.GeniusBar.principal` and account
-`principal`, where GeniusBar reads it. One login holds one GeniusBar
-principal, so pairing again replaces the keychain item; revoke the old
+login keychain under the configured stored-credential name and account
+`principal`, where the host reads it. One login holds one principal per
+stored-credential name, so pairing again replaces that item; revoke the old
 principal afterwards. Tests can set `AGENT_COMMS_NO_KEYCHAIN=1` to skip
 that write. A `keychain-write-failed` error means the local credential was
 saved but the keychain write failed; do not print or share the local secret.

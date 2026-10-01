@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Host-supplied service label, stored-credential name, log directory and state
+  directories through one environment configuration (ADR-0059 decision 2,
+  #61). Existing names remain compatibility defaults. LaunchAgent installation
+  preserves overrides across login; CLI lifecycle and principal pairing tests
+  verify host-selected names. Setup documents the variables and migration.
+
+- One-account broker mode (#62, ADR-0059 decision 3). `broker install` with
+  no `--group` (or `--single-account`) installs a broker that serves only
+  the account running it: no group and no administrator. The rendezvous and
+  proof directories are 0700 and the socket is 0600. `account pair` with no
+  `--broker` pairs with that account's own broker. Group mode is unchanged
+  when `--group` and `--broker` are given.
+
 ## [0.2.1] - 2026-10-01
 
 ### Security

@@ -9,7 +9,12 @@ import { test } from 'node:test';
 
 import { Broker } from '../lib/broker.mjs';
 import { brokerPaths } from '../lib/paths.mjs';
+import { checkBrokerCustody } from '../lib/client.mjs';
 import { call, pairAccount, withBroker } from './helpers/broker.mjs';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+
+const runCli = promisify(execFile);
 
 const waitFor = async (description, predicate, timeoutMs = 3000) => {
   const deadline = Date.now() + timeoutMs;
@@ -51,6 +56,15 @@ test('the shared directory and socket keep client accounts out', async () => wit
   assert.equal(statSync(paths.proofs).mode & 0o7777, 0o1777);
   assert.equal(statSync(paths.state).mode & 0o777, 0o700);
 }));
+
+test('single-account custody accepts only the owner-owned private rendezvous', async () => withBroker(async ({ paths, broker }) => {
+  assert.equal(broker.mode, 'single-account');
+  assert.equal(statSync(paths.shared).uid, process.getuid());
+  assert.equal(statSync(paths.socket).uid, process.getuid());
+  assert.equal(statSync(paths.socket).mode & 0o777, 0o600);
+  assert.doesNotThrow(() => checkBrokerCustody(paths, process.getuid(), 'single-account'));
+  assert.throws(() => checkBrokerCustody(paths, process.getuid() + 1, 'single-account'), { code: 'broker-untrusted' });
+}, { brokerOptions: { mode: 'single-account' } }));
 
 test('peers lists other joined souls by address', async () => withBroker(async ({ cli, accounts }) => {
   const { json } = await cli(['peers']);
@@ -295,3 +309,28 @@ test('revoking an account closes its watches and hides its souls at once', async
     watcher.child.kill();
   }
 }, { brokerOptions: { uidOf: (account) => account === 'other' ? process.getuid() : account === os.userInfo().username ? process.getuid() : null } }));
+
+test('single-account mode pairs, joins, sends, and wakes without a group', async () => {
+  await withBroker(async ({ env, paths, broker, accounts }) => {
+    // This fixture starts through the same Broker mode as `broker run --single-account`.
+    assert.equal(statSync(paths.shared).mode & 0o777, 0o700);
+    assert.equal(statSync(paths.proofs).mode & 0o777, 0o700);
+    assert.equal(statSync(paths.socket).mode & 0o777, 0o600);
+    assert.equal(broker.mode, 'single-account');
+    const sender = accounts.alice;
+    const recipient = accounts.bob;
+    // Existing setup pairings already exercise CLI pair+approve+join. Send wakes
+    // the recipient account's watch stream, which is the end-to-end wake path.
+    const watcher = watch(env, recipient);
+    await watcher.wait('ready event', (event) => event.event === 'ready');
+    try {
+      const { stdout } = await runCli(process.execPath, [new URL('../bin/agent-comms.mjs', import.meta.url).pathname,
+        'send', recipient, '--body', 'wake me'], { env: { ...env, QWTS_AGENT_ID: sender } });
+      const sent = JSON.parse(stdout);
+      assert.equal(sent.wake, 'warm');
+      await watcher.wait('message wake', (event) => event.event === 'message');
+    } finally {
+      watcher.child.kill('SIGTERM');
+    }
+  }, { brokerOptions: { mode: 'single-account' } });
+});

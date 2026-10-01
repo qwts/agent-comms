@@ -79,7 +79,7 @@ export async function withBroker(run, options = {}) {
   };
   let broker;
   try {
-    broker = await new Broker({ paths, ...options.brokerOptions }).start();
+    broker = await new Broker({ paths, mode: options.brokerOptions?.mode ?? 'group', ...options.brokerOptions }).start();
     const cli = (args, soul = accounts.alice, extraEnv = {}) => runCli(args, {
       ...env,
       QWTS_AGENT_ID: soul,
@@ -91,7 +91,10 @@ export async function withBroker(run, options = {}) {
       AGENT_COMMS_CLIENT_STATE_DIR: path.join(root, `client-${account}`),
       ...extraEnv,
     });
-    const paired = await cli(['account', 'pair', '--broker', owner]);
+    const pairArgs = options.brokerOptions?.mode === 'single-account'
+      ? ['account', 'pair'] : ['account', 'pair', '--broker', owner];
+    // No AGENT_COMMS_MODE: the mode follows from whether a broker account is named.
+    const paired = await cli(pairArgs, accounts.alice);
     if (paired.exit !== 0) throw new Error(`pair failed: ${JSON.stringify(paired.json)}`);
     const approved = await cli(['broker', 'approve', paired.json.code]);
     if (approved.exit !== 0) throw new Error(`approval failed: ${JSON.stringify(approved.json)}`);
