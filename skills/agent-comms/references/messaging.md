@@ -2,6 +2,10 @@
 
 Side effects: `local-write`.
 
+`agent-bot identity spawn` joins the child automatically by calling
+`agent-comms join` with the child's binding; no hook needs installing. Keep
+that binding in the child's environment for every messaging command.
+
 ## Find a peer
 
 ```sh
@@ -9,7 +13,10 @@ agent-comms peers
 ```
 
 Lists joined souls you may message, each with an `address`. Names are for
-people; always send to the `address`.
+people; always send to the `address`. Each peer's `verification` records
+its last successful soul request: `verified` with a valid daemon token,
+`claimed` without one. Messages keep their sender's verification at send
+time. Neither label authorizes a received request.
 
 ## Send
 
