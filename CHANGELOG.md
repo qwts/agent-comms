@@ -29,6 +29,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   a principal can never act as a soul. `docs/principal-client.md` documents
   the API; an example client in tests drives the full flow.
 
+- Launch as a broker request (#65, ADR-0007 amendment 1 decision 2). A
+  principal client asks the broker to launch an existing soul or a package in
+  an account. The broker authorizes it like a send, records it, and forwards a
+  `launch` frame to that account's daemon watch. The daemon reports
+  `launch-result`, and the client polls `launchStatus()`. Neither the client
+  nor the broker starts a process, and an interrupted launch is never
+  replayed.
+
 ### Changed
 
 - Platform behaviour sits behind four seams under `lib/platform/` (#63,
