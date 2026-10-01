@@ -56,7 +56,7 @@ function cli(args, env) {
 for (const args of [
   // LaunchAgent behavior uses injected seams in launchagent.test.mjs. These
   // invalid invocations must stop before any real launchctl or install writes.
-  ['broker', 'install'], ['broker', 'install', '--group'],
+  ['broker', 'install', '--group'],
   ['broker', 'install', '--group', 'bad/group'], ['broker', 'install', 'extra'],
   ['broker', 'uninstall', 'extra'], ['broker', 'uninstall', '--group', 'staff'],
   ['broker', 'status', 'extra'], ['broker', 'status', '--group'],
@@ -85,7 +85,7 @@ test('help lists LaunchAgent commands without invoking them', async (t) => {
   const { env } = fixture(t);
   const result = await cli(['--help'], env);
   assert.equal(result.exit, 0, result.stderr);
-  assert.match(result.stdout, /agent-comms broker install \[--group VALUE\]/);
+  assert.match(result.stdout, /agent-comms broker install \[--group VALUE\] \[--single-account\]/);
   assert.match(result.stdout, /agent-comms broker uninstall\n/);
   assert.match(result.stdout, /agent-comms broker status \[--group VALUE\]/);
 });
