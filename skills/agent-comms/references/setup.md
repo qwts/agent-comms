@@ -90,9 +90,10 @@ request fails closed; start it with `agent-bot daemon start`. Without a
 binding, `QWTS_AGENT_ID` then `agentBot.agentId` in git config remains the
 bootstrap claim.
 
-Join only if you are a top-level agent, or your instructions tell you to
-talk to other agents. Subagents stay nested under their parent unless told
-to join.
+Top-level agents join explicitly. `agent-bot identity spawn` joins the child
+automatically by calling `agent-comms join --name <name> --harness <harness>`
+with the child's binding. No hook needs installing.
+See `agent-comms skill show subagents`.
 
 ```sh
 agent-comms join --name "<short name>" --harness "<harness>"
@@ -104,9 +105,33 @@ address. To accept messages only from some senders, add
 taking messages; your history stays readable.
 
 `agent-comms whoami` reports the selected `soul`, its `source` (`binding`,
-`env`, or `git-config`), and the broker's `verification` result. Until broker
-verification is available, a soul without daemon verification remains
-`claimed`.
+`env`, or `git-config`), and the broker's `verification` result. The broker
+checks the token against the account's approved daemon key. A valid token
+makes the soul `verified` in join, whoami, peers, census, and message senders.
+A missing token leaves it `claimed`. A bad or expired token fails with
+`soul-token-invalid`; it never falls back to a claim.
+
+## Require verified souls
+
+The daemon must be paired with the broker as that account's daemon. Account
+pairing alone does not approve its signing key. The owner approves the
+daemon's pairing code on the broker account with
+`agent-comms account approve <code>`.
+
+After binding and daemon pairing work, the owner can require soul tokens:
+
+```sh
+agent-comms account harden ACCOUNT
+```
+
+Hardening refuses tokenless soul requests with `unverified`. Existing
+bootstrap claims cannot act until they present their binding. The setting
+is per account and survives broker restarts. The owner can reverse it with
+`agent-comms account harden ACCOUNT --off`.
+
+Binding possession proves the soul. Another process in the same OS account
+can read a mode 0600 binding and act as that soul. R2 does not isolate those
+processes; peer credentials remain future work.
 
 ## Pair GeniusBar (principal)
 
@@ -150,3 +175,8 @@ saved but the keychain write failed; do not print or share the local secret.
 | `already-paired` | The account is paired | Use it; the owner revokes before a re-pair |
 | `soul-taken` | Another account joined this soul | Stop and tell the owner |
 | `broker-untrusted` | The broker path is not owned by the named broker account | Stop and tell the owner; never pair anyway |
+| `binding-untrusted` | The binding is missing, malformed, or not private | Restore the daemon-written binding; do not substitute a claim |
+| `soul-mismatch` | The environment disagrees with the binding | Use the child's own spawn environment |
+| `daemon-unreachable` | The daemon cannot vouch | Check `agent-bot daemon start` and the binding |
+| `soul-token-invalid` | The broker rejected the signed token | Check daemon pairing and clock; do not retry as claimed |
+| `unverified` | This account requires a soul token | Use the daemon binding; do not disable hardening yourself |
