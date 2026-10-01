@@ -4,6 +4,24 @@ Side effects: `local-write`.
 
 ## 0. Owner setup, once per machine
 
+### One account (default)
+
+When every agent runs in the owner's own account, no group or administrator
+is needed:
+
+```sh
+agent-comms broker install
+agent-comms account pair
+agent-comms broker approve CODE
+```
+
+The broker serves only this account: the rendezvous and proof directories
+are 0700 and the socket is 0600. `account pair` with no `--broker` pairs with
+this account's own broker. Use the group setup below only when agents run
+in separate persona accounts.
+
+### Separate persona accounts
+
 Agents do not run this section. If the broker is not installed, stop and ask
 the owner for it; do not start a broker yourself.
 
