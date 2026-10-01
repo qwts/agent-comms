@@ -418,11 +418,19 @@ test('hardened accounts accept daemon wakes and reports without a soul token', a
 
 test('revoking a daemon closes its stream and rejects its credential', async () => {
   const watcher = openStream({ op: 'account-watch', auth: personaDaemonAuth });
+  const soul = openStream({ op: 'watch', auth: persona, agentId: guest, mode: 'wake' });
   await until(() => watcher.events.some((event) => event.event === 'ready'), 'daemon ready');
+  await until(() => soul.events.some((event) => event.event === 'ready'), 'soul ready');
   const revoked = await request(paths.admin, { op: 'revoke', account: 'persona', kind: 'daemon' });
   assert.equal(revoked.reply.state, 'revoked');
   assert.equal(revoked.reply.watchesClosed, 1);
   await until(() => watcher.socket.destroyed, 'server closes revoked daemon stream');
+  // Only the daemon credential was revoked: the soul's own watch stays warm.
+  assert.equal(soul.socket.destroyed, false);
+  const warm = await send('still warm', guest);
+  const page = await request(paths.socket, { op: 'read', auth: persona, agentId: guest });
+  assert.equal(page.reply.messages.find((message) => message.id === warm.messageId).wake, 'warm');
+  await closeSocket(soul.socket);
   assert.equal(rowOf(await census(), guest).daemonWatching, false);
   for (const op of ['account-watch', 'wake-report']) {
     const denied = await request(paths.socket, {
@@ -432,6 +440,22 @@ test('revoking a daemon closes its stream and rejects its credential', async () 
   }
   // Account membership remains valid; a newly approved daemon can reconnect.
   assert.equal(rowOf(await census(), guest).presence, 'joined');
+  await pairDaemon('persona', personaDaemonSecret);
+});
+
+test('approving a replacement daemon key closes streams opened with the old key', async () => {
+  const watcher = openStream({ op: 'account-watch', auth: personaDaemonAuth });
+  await until(() => watcher.events.some((event) => event.event === 'ready'), 'daemon ready');
+  const rotated = randomBytes(32).toString('hex');
+  await pairDaemon('persona', rotated);
+  await until(() => watcher.socket.destroyed, 'server closes the stream of the replaced key');
+  const stale = await request(paths.socket, {
+    op: 'wake-report', auth: personaDaemonAuth, agentId: guest, messageIds: ['msg_missing'], outcome: 'waiting',
+  });
+  assert.equal(stale.reply.error.code, 'unauthenticated');
+  const fresh = openStream({ op: 'account-watch', auth: { daemon: 'persona', secret: rotated } });
+  await until(() => fresh.events.some((event) => event.event === 'ready'), 'new key ready');
+  await closeSocket(fresh.socket);
   await pairDaemon('persona', personaDaemonSecret);
 });
 
