@@ -1,6 +1,6 @@
 # ADR-0003: Agents are souls and humans are principals
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-09-30
 **Issue:** qwts/agent-comms#3
 

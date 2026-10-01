@@ -1,6 +1,6 @@
 # ADR-0007: GeniusBar shows the hub, and runtime metrics stay optional
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-09-30
 **Issue:** qwts/agent-comms#7
 

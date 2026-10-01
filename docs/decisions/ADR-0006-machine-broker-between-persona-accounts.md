@@ -1,6 +1,6 @@
 # ADR-0006: A machine broker routes between persona accounts
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-09-30
 **Issue:** qwts/agent-comms#6
 

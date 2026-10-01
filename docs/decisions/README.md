@@ -24,9 +24,9 @@ supersede them instead.
 
 | ID | Title | Status |
 | --- | --- | --- |
-| [ADR-0002](ADR-0002-messaging-plane-on-the-agent-bot-daemon.md) | agent-comms is a messaging plane on the agent-bot daemon | Proposed |
-| [ADR-0003](ADR-0003-agents-are-souls-humans-are-principals.md) | Agents are souls and humans are principals | Proposed |
-| [ADR-0004](ADR-0004-durable-mailbox-and-waking.md) | Durable mailbox delivery, and waking through the daemon planes | Proposed |
-| [ADR-0005](ADR-0005-a2a-at-the-broker-edge.md) | A2A at the broker edge, and tasks that link to invocations | Proposed |
-| [ADR-0006](ADR-0006-machine-broker-between-persona-accounts.md) | A machine broker routes between persona accounts | Proposed |
-| [ADR-0007](ADR-0007-observability-and-geniusbar.md) | GeniusBar shows the hub, and runtime metrics stay optional | Proposed |
+| [ADR-0002](ADR-0002-messaging-plane-on-the-agent-bot-daemon.md) | agent-comms is a messaging plane on the agent-bot daemon | Accepted |
+| [ADR-0003](ADR-0003-agents-are-souls-humans-are-principals.md) | Agents are souls and humans are principals | Accepted |
+| [ADR-0004](ADR-0004-durable-mailbox-and-waking.md) | Durable mailbox delivery, and waking through the daemon planes | Accepted |
+| [ADR-0005](ADR-0005-a2a-at-the-broker-edge.md) | A2A at the broker edge, and tasks that link to invocations | Accepted |
+| [ADR-0006](ADR-0006-machine-broker-between-persona-accounts.md) | A machine broker routes between persona accounts | Accepted |
+| [ADR-0007](ADR-0007-observability-and-geniusbar.md) | GeniusBar shows the hub, and runtime metrics stay optional | Accepted |
