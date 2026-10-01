@@ -1,0 +1,100 @@
+# Release: tag and publish vX.Y.Z when a version bump lands on main.
+#
+# A release starts as a PR prepared with scripts/release, which bumps every
+# version site together. After it merges, CI runs on the default-branch push;
+# when that run succeeds, this workflow releases that exact commit if its
+# package.json version has no tag yet. Agents never push tags.
+#
+# Per the CI execution policy (qwts-agent-ci docs/ci-execution-policy.md,
+# "Tagging and release workflows"), this consumes the CI run's complete-suite
+# evidence instead of rerunning merge gates, fails closed on provenance, and
+# does only release-specific work: package, checksum, and smoke the packaged
+# tree. Every action is pinned to a 40-hex commit (ENG-0355, ENG-0282).
+name: Release
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release
+    # Only a successful default-branch push run is evidence for the merged
+    # commit; merge-group and dispatch runs name other SHAs.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - id: plan
+        name: Decide whether this commit is a new release
+        run: |
+          version=$(node -p 'require("./package.json").version')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          # scripts/release dates the version's CHANGELOG section, so an
+          # undated version on main is still in progress, not a release.
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/v$version" >/dev/null 2>&1; then
+            echo "v$version is already tagged; nothing to release."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          elif ! grep -q "^## \[$version\] - " CHANGELOG.md; then
+            echo "v$version has no dated CHANGELOG section yet; nothing to release."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Verify provenance
+        if: steps.plan.outputs.release == 'true'
+        run: |
+          # The commit must be on the protected default branch.
+          status=$(gh api "repos/$GITHUB_REPOSITORY/compare/$SHA...main" --jq .status)
+          case "$status" in identical|ahead) ;; *) echo "::error::$SHA is not on main ($status)"; exit 1 ;; esac
+          # Every version site must agree with package.json.
+          node --test tests/version.test.mjs
+      - name: Package and smoke the release tree
+        if: steps.plan.outputs.release == 'true'
+        env:
+          VERSION: ${{ steps.plan.outputs.version }}
+        run: |
+          name="agent-comms-$VERSION"
+          git archive --format=tar.gz --prefix="$name/" -o "$RUNNER_TEMP/$name.tar.gz" "$SHA"
+          (cd "$RUNNER_TEMP" && sha256sum "$name.tar.gz" > "$name.tar.gz.sha256")
+          mkdir "$RUNNER_TEMP/smoke"
+          tar -xzf "$RUNNER_TEMP/$name.tar.gz" -C "$RUNNER_TEMP/smoke"
+          tree="$RUNNER_TEMP/smoke/$name"
+          test "$(node "$tree/bin/agent-comms.mjs" --version)" = "agent-comms $VERSION"
+          node "$tree/bin/agent-comms.mjs" skill list | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{if(!JSON.parse(s).ok)process.exit(1)})'
+          # Release notes are the version's CHANGELOG section.
+          awk -v v="$VERSION" '/^## \[/{on = index($0, "## [" v "]") == 1; next} on' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          grep -q '[^[:space:]]' "$RUNNER_TEMP/notes.md" || { echo "::error::CHANGELOG section for $VERSION is empty"; exit 1; }
+      - name: Tag and publish
+        if: steps.plan.outputs.release == 'true'
+        env:
+          VERSION: ${{ steps.plan.outputs.version }}
+        run: |
+          gh release create "v$VERSION" --repo "$GITHUB_REPOSITORY" --target "$SHA" \
+            --title "v$VERSION" --notes-file "$RUNNER_TEMP/notes.md" \
+            "$RUNNER_TEMP/agent-comms-$VERSION.tar.gz" "$RUNNER_TEMP/agent-comms-$VERSION.tar.gz.sha256"
