@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- One-account broker mode (#62, ADR-0059 decision 3). `broker install` with
+  no `--group` (or `--single-account`) installs a broker that serves only
+  the account running it: no group and no administrator. The rendezvous and
+  proof directories are 0700 and the socket is 0600. `account pair` with no
+  `--broker` pairs with that account's own broker. Group mode is unchanged
+  when `--group` and `--broker` are given.
+
 ## [0.2.1] - 2026-10-01
 
 ### Security

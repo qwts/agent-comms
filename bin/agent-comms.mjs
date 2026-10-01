@@ -266,8 +266,11 @@ async function run(argv, env) {
     case 'health': return print(await callPrincipal(paths, loadPrincipalCredential(client), { op: command }));
     case 'account': {
       if (sub === 'pair') {
-        const mode = env.AGENT_COMMS_MODE ?? 'group';
-        const result = await pair(paths, client, flags.broker ?? env.AGENT_COMMS_BROKER_ACCOUNT, undefined, mode);
+        // Naming a broker account means the multi-account broker; with none
+        // named there is no other account, so the broker is this account's own.
+        const brokerAccount = flags.broker ?? env.AGENT_COMMS_BROKER_ACCOUNT;
+        const mode = env.AGENT_COMMS_MODE ?? (brokerAccount ? 'group' : 'single-account');
+        const result = await pair(paths, client, brokerAccount, undefined, mode);
         process.stderr.write(`Ask the owner to approve this pairing: agent-comms broker approve ${result.code}\n`);
         return print(result);
       }
@@ -279,7 +282,7 @@ async function run(argv, env) {
       return fail('usage', 'account needs pair, status, pairings, approve, revoke, or harden');
     }
     case 'broker': {
-      if (sub === 'install') return print(install(installOptions({ group: flags.group, mode: flags['single-account'] ? 'single-account' : 'group' })));
+      if (sub === 'install') return print(install(installOptions({ group: flags.group, mode: flags['single-account'] || !flags.group ? 'single-account' : 'group' })));
       if (sub === 'uninstall') return print(uninstall(jobOptions()));
       if (sub === 'status') return print(await status({
         ...jobOptions({ paths }), group: flags.group,

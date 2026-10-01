@@ -93,7 +93,8 @@ export async function withBroker(run, options = {}) {
     });
     const pairArgs = options.brokerOptions?.mode === 'single-account'
       ? ['account', 'pair'] : ['account', 'pair', '--broker', owner];
-    const paired = await cli(pairArgs, accounts.alice, { AGENT_COMMS_MODE: options.brokerOptions?.mode ?? 'group' });
+    // No AGENT_COMMS_MODE: the mode follows from whether a broker account is named.
+    const paired = await cli(pairArgs, accounts.alice);
     if (paired.exit !== 0) throw new Error(`pair failed: ${JSON.stringify(paired.json)}`);
     const approved = await cli(['broker', 'approve', paired.json.code]);
     if (approved.exit !== 0) throw new Error(`approval failed: ${JSON.stringify(approved.json)}`);
