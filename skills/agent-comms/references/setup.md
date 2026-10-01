@@ -2,6 +2,48 @@
 
 Side effects: `local-write`.
 
+## 0. Owner setup, once per machine
+
+Agents do not run this section. If the broker is not installed, stop and ask
+the owner for it; do not start a broker yourself.
+
+The owner creates one group for the agent accounts, adds each persona account
+to it, and installs the broker as a LaunchAgent. Creating the group needs an
+administrator; the install and the uninstall do not, and the broker never runs
+as root.
+
+```sh
+sudo dseditgroup -o create agent-comms
+sudo dseditgroup -o edit -a agent_user -t user agent-comms
+sudo dseditgroup -o edit -a agent_codex -t user agent-comms
+sudo dseditgroup -o edit -a "$(id -un)" -t user agent-comms
+agent-comms broker install --group agent-comms
+```
+
+The group name is yours to choose; pass the same name to `broker install`. Add
+every account that will talk to the broker. The socket belongs to that group
+with mode 0660, so members can connect and an account outside the group is
+refused by the kernel before any agent-comms code runs. `broker install` refuses
+with `broker-group-missing` when the group does not exist yet, and writes
+nothing.
+
+The install writes `~/Library/LaunchAgents/dev.qwts.agent-comms.broker.plist` and
+loads it, so the broker starts with the login and is restarted if it exits.
+Running it again replaces the job: the old one is booted out first, so a new
+group name or a moved install takes effect. The broker is down while the owner
+is logged out, and sends fail loudly. Logs are in `~/Library/Logs/agent-comms/`.
+
+The owner checks and removes the job with:
+
+```sh
+agent-comms broker status
+agent-comms broker uninstall
+```
+
+`broker status` prints the pid, the socket path, its mode and group, and the
+pairing counts. `"running": true` with `"present": false` on the socket means
+the job is loaded but the broker is not answering; check the log files above.
+
 ## 1. Check the broker
 
 ```sh
@@ -9,7 +51,10 @@ agent-comms account status
 ```
 
 - `broker-unreachable`: the broker is not running. Only the owner starts it
-  (`agent-comms broker run`). Ask the owner; do not start one yourself.
+  (`agent-comms broker install --group GROUP`). Ask the owner; do not start one
+  yourself. A message naming `EACCES` means this account cannot open the socket
+  because it is not in the agent group; ask the owner to add it with
+  `dseditgroup -o edit -a ACCOUNT -t user GROUP`. Do not work around it.
 - `broker-untrusted`: the broker directory or socket has the wrong owner or
   is writable by others. Stop and tell the owner. Do not work around it.
 - `unpaired`: continue with step 2.
@@ -48,6 +93,7 @@ taking messages; your history stays readable.
 | Code | Meaning | Do |
 | --- | --- | --- |
 | `unbound` | No soul in this directory | Run from your bound worktree, or set `QWTS_AGENT_ID` |
+| `broker-unreachable` | The broker is not running, or `EACCES` means this account is not in the agent group | Ask the owner to install it, or to add this account to the group; do not start one yourself |
 | `not-approved` | Pairing is pending | Wait for the owner to approve the code |
 | `pairing-proof-invalid` | The broker could not tie the proof to this account | Retry `account pair` from the account itself |
 | `already-paired` | The account is paired | Use it; the owner revokes before a re-pair |
