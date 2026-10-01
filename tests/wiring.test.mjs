@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 
 import { Broker } from '../lib/broker.mjs';
 import { resolveParent } from '../lib/client.mjs';
+import { watchInbox } from '../lib/worker/watch.mjs';
 import { withBroker } from './helpers/broker.mjs';
 
 const BIN = fileURLToPath(new URL('../bin/agent-comms.mjs', import.meta.url));
@@ -105,6 +106,20 @@ test('watch exits nonzero on a typed refusal', async () => {
     const result = await cli(['inbox', 'watch'], soul());
     assert.equal(result.exit, 1);
     assert.equal(result.json.error.code, 'not-joined');
+  });
+});
+
+test('a worker watch sees the refusal as one JSON line and does not respawn', async () => {
+  await withBroker(async ({ env }) => {
+    const events = [];
+    const failures = [];
+    const watching = watchInbox({
+      soul: soul(), env, onEvent: (event) => events.push(event), log: (...args) => failures.push(args.join(' ')),
+    });
+    assert.deepEqual(await watching.closed, { code: 1, signal: null });
+    assert.deepEqual(failures, []);
+    assert.equal(events.length, 1);
+    assert.equal(events[0].error.code, 'not-joined');
   });
 });
 

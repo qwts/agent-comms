@@ -112,8 +112,10 @@ cannot send messages. Revoke it with
 
 The credential lives in `principal.json` beside the account credential in
 the client state directory, with mode 0600. On macOS it is also saved to the
-login keychain under service `qwts.GeniusBar.principal`, using its principal
-ID as the keychain account. Tests can set `AGENT_COMMS_NO_KEYCHAIN=1` to skip
+login keychain under service `qwts.GeniusBar.principal` and account
+`principal`, where GeniusBar reads it. One login holds one GeniusBar
+principal, so pairing again replaces the keychain item; revoke the old
+principal afterwards. Tests can set `AGENT_COMMS_NO_KEYCHAIN=1` to skip
 that write. A `keychain-write-failed` error means the local credential was
 saved but the keychain write failed; do not print or share the local secret.
 
