@@ -11,7 +11,7 @@ import process from 'node:process';
 
 import { Broker } from '../lib/broker.mjs';
 import { install, installOptions, jobOptions, status, uninstall } from '../lib/broker/launchagent.mjs';
-import { admin, call, loadCredential, pair, pairPrincipal, callPrincipal, loadPrincipalCredential, resolveParent, soulContext, vouch, watch } from '../lib/client.mjs';
+import { admin, call, loadCredential, pair, pairPrincipal, callPrincipal, loadPrincipalCredential, resolveParent, resolveSoul, watch } from '../lib/client.mjs';
 import { CommsError, fail } from '../lib/errors.mjs';
 import { brokerPaths, clientPaths } from '../lib/paths.mjs';
 import { runWorker } from '../lib/worker/index.mjs';
@@ -65,8 +65,9 @@ ${COMMANDS.map(({ name, args, variadic, flags, booleans = [] }) =>
 
 send requires --body TEXT or --body-file FILE (use - for stdin).
 inbox watch streams JSON Lines until interrupted.
-TO is <account>/<agent_id> or a bare agent_id. Souls come from a daemon binding
-when present, otherwise from the bootstrap claim. Read \`agent-comms skill\` before first use.
+TO is <account>/<agent_id> or a bare agent_id. The soul is QWTS_AGENT_ID or
+the worktree's agentBot.agentId; in this release it is a claim, and the
+broker verifies only the account. Read \`agent-comms skill\` before first use.
 `;
 
 function parse(argv) {
@@ -166,18 +167,10 @@ async function run(argv, env) {
   if (flags.version) return process.stdout.write(`agent-comms ${VERSION}\n`);
   if (flags.help || !command) return process.stdout.write(HELP);
 
-  const asSoul = async (request) => {
-    const context = soulContext(env);
-    const soulToken = await vouch(context);
-    const payload = request.op === 'join' && request.parent == null ? { ...request, parent: context.parent } : request;
-    return call(paths, loadCredential(client), { ...payload, agentId: context.agentId, ...(soulToken ? { soulToken } : {}) });
-  };
+  const asSoul = (request) => call(paths, loadCredential(client), { ...request, agentId: resolveSoul(env) });
 
   switch (command) {
-    case 'whoami': {
-      const context = soulContext(env);
-      return print({ ...(await asSoul({ op: 'whoami' })), soul: context.agentId, source: context.source });
-    }
+    case 'whoami': return print(await asSoul({ op: 'whoami' }));
     case 'join': {
       const allow = flags.allow === undefined ? null : flags.allow.split(',').map((entry) => entry.trim()).filter(Boolean);
       return print(await asSoul({
@@ -213,9 +206,7 @@ async function run(argv, env) {
         process.on('SIGINT', cancel);
         process.on('SIGTERM', cancel);
         try {
-          const context = soulContext(env);
-          const soulToken = await vouch(context);
-          return await watch(paths, credential, { op: 'watch', agentId: context.agentId, ...(soulToken ? { soulToken } : {}), mode: flags.full ? 'full' : 'wake' }, (event) => {
+          return await watch(paths, credential, { op: 'watch', agentId: resolveSoul(env), mode: flags.full ? 'full' : 'wake' }, (event) => {
             process.stdout.write(`${JSON.stringify(event)}\n`);
           }, { signal: controller.signal });
         } finally {
@@ -283,6 +274,7 @@ async function run(argv, env) {
       if (sub === 'status') return print(await status({
         ...jobOptions({ paths }), group: flags.group,
         listPairings: () => admin(paths, { op: 'pairings' }),
+        listDaemonWatches: () => admin(paths, { op: 'daemon-watches' }),
       }));
       if (sub === 'run') {
         const broker = await new Broker({ paths, gid: flags.group === undefined ? null : groupId(flags.group) }).start();

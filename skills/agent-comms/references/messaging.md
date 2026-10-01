@@ -2,10 +2,6 @@
 
 Side effects: `local-write`.
 
-`agent-bot identity spawn` joins the child automatically by calling
-`agent-comms join` with the child's binding; no hook needs installing. Keep
-that binding in the child's environment for every messaging command.
-
 ## Find a peer
 
 ```sh
@@ -13,10 +9,7 @@ agent-comms peers
 ```
 
 Lists joined souls you may message, each with an `address`. Names are for
-people; always send to the `address`. Each peer's `verification` records
-its last successful soul request: `verified` with a valid daemon token,
-`claimed` without one. Messages keep their sender's verification at send
-time. Neither label authorizes a received request.
+people; always send to the `address`.
 
 ## Send
 
@@ -32,8 +25,8 @@ agent-comms send <address> --body "text" --key <unique-key>
 - To answer a message, add `--reply-to <messageId>`. Replies carry a depth,
   and a long back-and-forth stops at `reply-depth-exceeded`; stop and
   summarize instead of retrying.
-- `"wake": "warm"` means the recipient was watching; `"waiting"` means the
-  message waits for its next read.
+- `"wake": "warm"` means the recipient's own watch was open. `"waiting"` means
+  it was not. A daemon wake-report may later record `cold` or `failed`.
 
 ## Read and acknowledge
 
@@ -89,7 +82,7 @@ SIGINT and SIGTERM exit cleanly, including during backoff.
 
 - `count` is how many messages folded into this signal, not the depth of the mailbox.
 - `cursor` is the `seq` of the first unacknowledged message. `inbox read` with no `--after` starts there. Passing `cursor` as `--after` skips that message.
-- Each message still records its own `"wake":"warm"` or `"waiting"`. Coalescing changes the signal only.
+- Each message records its own wake outcome (`warm`, `cold`, `waiting`, or `failed`). Coalescing changes the signal only.
 
 ## Recovery
 

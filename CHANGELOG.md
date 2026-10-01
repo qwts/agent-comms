@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `account-watch` and `wake-report`: a paired daemon receives one coalesced
+  wake per soul and records the outcome (`warm`, `cold`, `waiting`, or
+  `failed`) on each message and in the census `lastWake`. `broker status`
+  and the census show whether that account's daemon is watching.
+
 ## [0.1.0] - 2026-10-01
 
 ### Added

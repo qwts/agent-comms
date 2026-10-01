@@ -89,17 +89,6 @@ test('watch defaults to wake and full watch reconnects without replaying recent 
   });
 });
 
-test('whoami reports the resolved soul, source, and broker verification', async () => {
-  await withBroker(async ({ cli, accounts }) => {
-    const result = await cli(['whoami'], accounts.alice);
-    assert.equal(result.exit, 0, JSON.stringify(result.json));
-    assert.equal(result.json.soul, accounts.alice);
-    assert.equal(result.json.agentId, accounts.alice);
-    assert.equal(result.json.source, 'env');
-    assert.equal(result.json.verification, 'claimed');
-  });
-});
-
 for (const signal of ['SIGINT', 'SIGTERM']) {
   test(`watch exits during backoff on ${signal}`, async (t) => {
     await withBroker(async ({ env, broker, accounts }) => {
@@ -157,7 +146,7 @@ test('principal CLI stores a private credential and applies approvals, grants an
   });
 });
 
-test('join accepts an explicit parent and never reads agent-bot identity files', async () => {
+test('join inherits parentId, explicit parent wins, and only joined identities enter the census', async () => {
   await withBroker(async ({ root, cli, accounts }) => {
     const identities = path.join(root, 'identities');
     mkdirSync(identities);
@@ -165,7 +154,7 @@ test('join accepts an explicit parent and never reads agent-bot identity files',
     const unjoined = soul();
     for (const id of [child, unjoined]) writeFileSync(path.join(identities, `${id}.json`), JSON.stringify({ parentId: accounts.alice }));
     const env = { AGENT_BOT_IDENTITIES_DIR: identities };
-    assert.equal((await cli(['join', '--parent', accounts.alice], child, env)).exit, 0);
+    assert.equal((await cli(['join'], child, env)).exit, 0);
     const peers = (await cli(['peers'])).json.peers;
     assert.equal(peers.find((entry) => entry.agentId === child).parent, accounts.alice);
     const paired = await cli(['principal', 'pair'], accounts.alice, { AGENT_COMMS_NO_KEYCHAIN: '1' });
