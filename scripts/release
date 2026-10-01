@@ -2,8 +2,8 @@
 # Prepare a release PR for agent-comms.
 #
 # Bumps every version site together (package.json, package-lock.json, the
-# skill's qwts-validated, the formula's tag and version) and dates the
-# CHANGELOG's Unreleased section, so the drift check in tests/version.test.mjs
+# CLI's VERSION, the skill's qwts-validated, the formula's tag and version)
+# and dates the CHANGELOG's Unreleased section, so the drift check in tests/version.test.mjs
 # stays green. It does not commit, tag, or push: open a PR with the result.
 # When that PR merges and CI passes on main, the Release workflow tags the
 # merged commit vX.Y.Z and publishes the GitHub release. Agents never push
@@ -26,7 +26,8 @@ root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 skill="$root/skills/agent-comms/SKILL.md"
 formula="$root/Formula/agent-comms.rb"
 changelog="$root/CHANGELOG.md"
-for file in "$root/package.json" "$skill" "$formula" "$changelog"; do
+cli="$root/bin/agent-comms.mjs"
+for file in "$root/package.json" "$cli" "$skill" "$formula" "$changelog"; do
     if [[ -z "$root" || ! -f "$file" ]]; then
         echo "Error: run from inside an agent-comms checkout (missing ${file#"$root"/})" >&2
         exit 1
@@ -74,10 +75,11 @@ if ! grep -q '^## \[Unreleased\]' "$changelog"; then
 fi
 
 npm version "$version" --no-git-tag-version --allow-same-version >/dev/null
+sed -i.bak -E "s/^(const VERSION = ')[0-9]+\.[0-9]+\.[0-9]+(';)/\1${version}\2/" "$cli"
 sed -i.bak -E "s/^([[:space:]]*qwts-validated:[[:space:]]*\")[0-9]+\.[0-9]+\.[0-9]+(\")/\1${version}\2/" "$skill"
 sed -i.bak -E "s/^([[:space:]]*tag:[[:space:]]*\")v[0-9]+\.[0-9]+\.[0-9]+(\")/\1v${version}\2/" "$formula"
 sed -i.bak -E "s/^([[:space:]]*version \")[0-9]+\.[0-9]+\.[0-9]+(\")/\1${version}\2/" "$formula"
-rm -f "$skill.bak" "$formula.bak"
+rm -f "$cli.bak" "$skill.bak" "$formula.bak"
 # BSD sed cannot insert a newline in a replacement, so date the section in node.
 node -e '
 const fs = require("node:fs");
@@ -87,7 +89,7 @@ fs.writeFileSync(file, fs.readFileSync(file, "utf8")
 ' "$changelog" "$version" "$(date -u +%Y-%m-%d)"
 
 # Each rewrite must have matched: a sed that matches nothing exits 0.
-for check in "$skill:qwts-validated: \"$version\"" "$formula:tag:   \"v$version\"" "$formula:version \"$version\"" "$changelog:## [$version] - "; do
+for check in "$cli:const VERSION = '$version';" "$skill:qwts-validated: \"$version\"" "$formula:tag:   \"v$version\"" "$formula:version \"$version\"" "$changelog:## [$version] - "; do
     if ! grep -qF "${check#*:}" "${check%%:*}"; then
         echo "Error: could not set the version in ${check%%:*}; fix it by hand" >&2
         exit 1
