@@ -63,3 +63,4 @@ new message starts a turn. Acknowledge with `inbox ack` as usual.
 | `mailbox-full` | The recipient has too many unacknowledged messages | Wait and retry later; do not resend in a loop |
 | `message-too-large` | Body over 32 KiB | Send a file path or artifact reference instead |
 | `broker-unreachable` | The broker is down | Tell the owner; the message was not sent |
+| `broker-timeout` | The broker took longer than 10 s to answer | The outcome is unknown: the broker may have applied the request. Read your inbox or peers before retrying, and retry a send with the same `--key` so it cannot duplicate |

@@ -17,52 +17,83 @@ import * as skill from '../lib/skill.mjs';
 
 const VERSION = '0.1.0';
 
+// Each row owns its positional arity and value flags; help uses the same schema.
+const COMMANDS = [
+  { name: 'join', args: [], flags: ['name', 'harness', 'parent', 'allow'] },
+  { name: 'leave', args: [], flags: [] },
+  { name: 'whoami', args: [], flags: [] },
+  { name: 'peers', args: [], flags: [] },
+  { name: 'send', args: ['TO'], flags: ['body', 'body-file', 'kind', 'key', 'reply-to', 'correlation'] },
+  { name: 'inbox read', args: [], flags: ['after', 'limit'] },
+  { name: 'inbox watch', args: [], flags: [] },
+  { name: 'inbox ack', args: ['MESSAGE_ID'], variadic: true, flags: [] },
+  { name: 'account pair', args: [], flags: ['broker'] },
+  { name: 'account status', args: [], flags: [] },
+  { name: 'broker run', args: [], flags: ['group'] },
+  { name: 'broker pairings', args: [], flags: [] },
+  { name: 'broker approve', args: ['CODE'], flags: [] },
+  { name: 'broker revoke', args: ['ACCOUNT'], flags: [] },
+  { name: 'skill', args: [], flags: [] },
+  { name: 'skill list', args: [], flags: [] },
+  { name: 'skill show', args: ['FEATURE'], flags: [] },
+  { name: 'skill path', args: [], flags: [] },
+];
+
 const HELP = `agent-comms ${VERSION}: messages between agents on this machine
 
 Usage:
-  agent-comms join [--name NAME] [--harness NAME] [--parent AGENT_ID] [--allow LIST]
-  agent-comms leave
-  agent-comms whoami
-  agent-comms peers
-  agent-comms send TO (--body TEXT | --body-file FILE | --body-file -)
-                   [--kind KIND] [--key KEY] [--reply-to MESSAGE_ID] [--correlation ID]
-  agent-comms inbox read [--after CURSOR] [--limit N]
-  agent-comms inbox watch          streams JSON Lines until interrupted
-  agent-comms inbox ack MESSAGE_ID...
-  agent-comms account pair --broker ACCOUNT | account status
-  agent-comms broker run [--group GROUP] | broker pairings
-  agent-comms broker approve CODE | broker revoke ACCOUNT
-  agent-comms skill | skill list | skill show FEATURE | skill path
+${COMMANDS.map(({ name, args, variadic, flags }) =>
+    `  agent-comms ${name}${args.map((arg) => ` ${arg}${variadic ? '...' : ''}`).join('')}${flags.map((flag) => ` [--${flag} VALUE]`).join('')}`).join('\n')}
+  agent-comms --help
   agent-comms --version
 
+send requires --body TEXT or --body-file FILE (use - for stdin).
+inbox watch streams JSON Lines until interrupted.
 TO is <account>/<agent_id> or a bare agent_id. The soul is QWTS_AGENT_ID or
 the worktree's agentBot.agentId; in this release it is a claim, and the
 broker verifies only the account. Read \`agent-comms skill\` before first use.
 `;
 
-const VALUE_FLAGS = new Set([
-  'name', 'harness', 'parent', 'allow', 'body', 'body-file', 'kind', 'key', 'reply-to', 'correlation',
-  'after', 'limit', 'group', 'broker',
-]);
-
 function parse(argv) {
   const positional = [];
   const flags = {};
+  const valueFlags = new Set(COMMANDS.flatMap((command) => command.flags));
+  let literal = false;
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
-    if (!arg.startsWith('--') || arg === '--') {
+    if (!literal && arg === '--') {
+      literal = true;
+      continue;
+    }
+    if (literal || !arg.startsWith('-') || arg === '-') {
       positional.push(arg);
       continue;
     }
+    if (!arg.startsWith('--')) fail('usage', `unknown option ${arg}`);
     const [name, inline] = arg.slice(2).split(/=(.*)/s, 2);
-    if (VALUE_FLAGS.has(name)) {
+    if (valueFlags.has(name)) {
       const value = inline ?? argv[(i += 1)];
-      if (value === undefined) fail('usage', `--${name} needs a value`);
+      if (value === undefined || (inline === undefined && value.startsWith('--'))) fail('usage', `--${name} needs a value`);
       flags[name] = value;
     } else if (['help', 'version'].includes(name)) {
+      if (inline !== undefined) fail('usage', `--${name} takes no value`);
       flags[name] = true;
     } else {
       fail('usage', `unknown option --${name}`);
+    }
+  }
+  const schema = COMMANDS.find((entry) => entry.name === positional.slice(0, 2).join(' '))
+    ?? COMMANDS.find((entry) => entry.name === positional[0]);
+  if (positional.length && !schema) fail('usage', `unknown command ${positional[0]}; see agent-comms --help`);
+  for (const flag of Object.keys(flags)) {
+    // --help and --version are global: they work after any command, as before.
+    if (flag === 'help' || flag === 'version') continue;
+    if (!schema?.flags.includes(flag)) fail('usage', `unknown option --${flag} for ${schema?.name ?? 'agent-comms'}`);
+  }
+  if (schema && !flags.help && !flags.version) {
+    const count = positional.length - schema.name.split(' ').length;
+    if (count < schema.args.length || (!schema.variadic && count > schema.args.length)) {
+      fail('usage', `${schema.name} expects ${schema.args.join(' ') || 'no positional arguments'}${schema.variadic ? '...' : ''}`);
     }
   }
   return { positional, flags };
@@ -150,9 +181,18 @@ async function run(argv, env) {
       }
       if (sub === 'watch') {
         const credential = loadCredential(client);
-        return stream(paths, credential, { op: 'watch', agentId: resolveSoul(env) }, (event) => {
-          process.stdout.write(`${JSON.stringify(event)}\n`);
-        });
+        const controller = new AbortController();
+        const cancel = () => controller.abort();
+        process.on('SIGINT', cancel);
+        process.on('SIGTERM', cancel);
+        try {
+          return await stream(paths, credential, { op: 'watch', agentId: resolveSoul(env) }, (event) => {
+            process.stdout.write(`${JSON.stringify(event)}\n`);
+          }, { signal: controller.signal });
+        } finally {
+          process.off('SIGINT', cancel);
+          process.off('SIGTERM', cancel);
+        }
       }
       return fail('usage', 'inbox needs read, watch, or ack');
     }
