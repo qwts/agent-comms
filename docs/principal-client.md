@@ -127,3 +127,63 @@ previously supported only principal reads, so this adds principal message
 endpoints and mailboxes, plus a small worker reply-routing adjustment. There
 are no deviations from ADR-0007 amendment 1 or new dependencies. Launch and
 host application implementation remain in their separate issues.
+
+## Request a daemon launch
+
+`client.launch({ account, soul, harness, name? })` launches an existing soul;
+use `package` instead of `soul` for a package path in the target account.
+Exactly one is required. The broker never opens that path. Account names
+follow the pairing grammar, soul IDs are `agent_<uuid>`, package paths are
+nonblank strings of at most 4096 characters, harness names at most 64, and
+optional display names at most 128. Strings cannot contain control characters.
+The daemon validates package contents and supported harnesses locally.
+
+The principal must be approved and the target account paired and approved.
+Existing souls require the principal's account, soul, or address grant and
+receive allowlist permission; they may have left the hub. Packages require
+an account grant or the unrestricted default grant. Soul-only grants cannot
+create new souls. Launches share the principal send rate limit.
+
+The result is `{ ok, requestId, status: 'pending', agentId: null }`.
+Poll `client.launchStatus(requestId)` (wire op `launch-status`) for the same
+shape with terminal status `launched` or `failed`. A successful result names
+the joined soul; a failure may have a null agentId. Status access requires
+the original principal and current target authorization. Unknown or hidden
+requests return `unknown-launch`. There is no launch message in the inbox.
+
+An account without an open daemon watch fails with `daemon-unavailable`.
+An accepted request is fsynced as `launch-request` before forwarding to
+exactly one live account-watch connection. It is never broadcast or retried.
+The new newline-delimited watch frame is:
+
+```json
+{"event":"launch","requestId":"launch_<uuid>","principal":"principal_<uuid>","account":"persona","soul":"agent_<uuid>","harness":"codex","name":"Example"}
+```
+
+For a package, the frame contains `package` instead of `soul`; `name` is
+omitted when absent. The account's agent-bot daemon owns process creation,
+package resolution, harness startup, and joining through the existing join
+contract. Neither the client nor broker starts a harness or joins on its
+behalf. The daemon must interpret fields as data, never as a shell command.
+
+After joining, the daemon submits a separate protocol-v1 request connection
+(the existing watch is a one-way event stream):
+
+```json
+{"v":1,"op":"launch-result","auth":{"daemon":"persona","secret":"DAEMON_SECRET"},"requestId":"launch_<uuid>","agentId":"agent_<uuid>","status":"launched"}
+```
+
+Only the approved target daemon may report the result. The broker checks
+that a successful soul is joined in that account and, for an existing-soul
+request, matches the requested ID. Failure uses `status: 'failed'`, with
+`agentId` null or omitted if unavailable. The broker fsyncs `launch-result`
+and returns `{ ok, requestId, recorded: true, duplicate }`. Identical reports
+are idempotent; different terminal results return `conflict`.
+
+Requests and results survive broker restarts. A disconnect or crash after
+dispatch leaves the outcome `pending` until the daemon reports; it does not
+prove startup failed. The broker does not resend pending launches on
+reconnect or restart. Each launch call creates a new request, so callers
+must not automatically retry an uncertain launch response. Daemon execution
+and recovery belong to agent-bot; this contract is exercised with a fake
+account daemon in `tests/launch.test.mjs`.
