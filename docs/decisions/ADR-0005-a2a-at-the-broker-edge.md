@@ -1,6 +1,6 @@
 # ADR-0005: A2A at the broker edge, and tasks that link to invocations
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-09-30
 **Issue:** qwts/agent-comms#5
 

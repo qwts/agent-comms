@@ -1,6 +1,6 @@
 # ADR-0002: agent-comms is a messaging plane on the agent-bot daemon
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-09-30
 **Issue:** qwts/agent-comms#2
 
