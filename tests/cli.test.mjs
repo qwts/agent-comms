@@ -58,6 +58,7 @@ for (const args of [
   ['broker', 'approve'], ['broker', 'revoke'], ['skill', 'show'],
   ['send'], ['inbox', 'ack'], ['leave', 'extra'], ['broker', 'approve', 'one', 'two'],
   ['join', '--name'], ['join', '--name', '--harness', 'test'], ['peers', '-x'],
+  ['send', 'user/agent_x', '--body', 'hi', '--group', 'staff'], ['broker', 'run', '--body', 'x'],
 ]) {
   test(`${args.join(' ')} fails with usage before connecting`, async (t) => {
     // Missing sockets would report broker-unreachable if validation reached transport.
@@ -68,12 +69,26 @@ for (const args of [
   });
 }
 
+for (const args of [['--version'], ['join', '--version'], ['inbox', 'read', '--version']]) {
+  test(`${args.join(' ')} prints the version without validating the command`, async (t) => {
+    const { env } = fixture(t);
+    const result = await cli(args, env);
+    assert.equal(result.exit, 0, result.stderr);
+    assert.match(result.stdout, /^agent-comms \d+\.\d+\.\d+\n$/);
+  });
+}
+
 for (const transport of ['call', 'admin']) {
   test(`${transport} deadlines reject with broker-timeout and close a trickling socket`, async (t) => {
     const { paths, credential } = fixture(t);
-    let closed;
+    // Under load the client deadline can fire before the server has run its
+    // connection handler, so wait for the server side rather than assume it.
+    let closedByClient;
+    const closed = new Promise((resolve) => { closedByClient = resolve; });
     await serve(t, transport === 'call' ? paths.socket : paths.admin, (socket) => {
-      closed = once(socket, 'close');
+      // The trickle keeps writing until the client hangs up, so EPIPE is expected.
+      socket.on('error', () => {});
+      socket.on('close', closedByClient);
       socket.on('data', () => {});
       const timer = setInterval(() => socket.write(' '), 5);
       socket.on('close', () => clearInterval(timer));
@@ -83,7 +98,6 @@ for (const transport of ['call', 'admin']) {
       ? call(paths, credential, { op: 'peers' }, options)
       : admin(paths, { op: 'pairings' }, options);
     await assert.rejects(request, (error) => error instanceof CommsError && error.code === 'broker-timeout');
-    assert.ok(closed);
     await closed;
   });
 }

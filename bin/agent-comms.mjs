@@ -86,10 +86,11 @@ function parse(argv) {
     ?? COMMANDS.find((entry) => entry.name === positional[0]);
   if (positional.length && !schema) fail('usage', `unknown command ${positional[0]}; see agent-comms --help`);
   for (const flag of Object.keys(flags)) {
-    if (flag === 'help' || (flag === 'version' && !schema)) continue;
+    // --help and --version are global: they work after any command, as before.
+    if (flag === 'help' || flag === 'version') continue;
     if (!schema?.flags.includes(flag)) fail('usage', `unknown option --${flag} for ${schema?.name ?? 'agent-comms'}`);
   }
-  if (schema && !flags.help) {
+  if (schema && !flags.help && !flags.version) {
     const count = positional.length - schema.name.split(' ').length;
     if (count < schema.args.length || (!schema.variadic && count > schema.args.length)) {
       fail('usage', `${schema.name} expects ${schema.args.join(' ') || 'no positional arguments'}${schema.variadic ? '...' : ''}`);
