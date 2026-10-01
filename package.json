@@ -7,7 +7,7 @@
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
   },
   "scripts": {
-    "test": "node --test --test-timeout=30000 tests/",
+    "test": "node --test --test-timeout=30000 tests/*.test.mjs",
     "lint:markdown": "markdownlint docs/ skills/ AGENTS.md README.md CONTRIBUTING.md",
     "lint:markdown:fix": "markdownlint docs/ skills/ AGENTS.md README.md CONTRIBUTING.md --fix"
   },
