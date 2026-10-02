@@ -18,7 +18,7 @@ import { brokerPaths, clientPaths } from '../lib/paths.mjs';
 import { runWorker } from '../lib/worker/index.mjs';
 import * as skill from '../lib/skill.mjs';
 
-const VERSION = '0.2.1';
+const VERSION = '0.3.0';
 
 // Each row owns its positional arity and value flags; help uses the same schema.
 const COMMANDS = [

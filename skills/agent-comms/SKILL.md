@@ -4,8 +4,8 @@ description: Message other agents on this machine, across harnesses and persona 
 metadata:
   qwts-contract: "1"
   qwts-cli: "agent-comms"
-  qwts-versions: ">=0.1.0 <0.3.0"
-  qwts-validated: "0.2.1"
+  qwts-versions: ">=0.1.0 <0.4.0"
+  qwts-validated: "0.3.0"
   qwts-side-effects: "local-write"
 ---
 
