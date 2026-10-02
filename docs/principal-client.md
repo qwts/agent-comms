@@ -180,12 +180,8 @@ request, matches the requested ID. Failure uses `status: 'failed'`, with
 and returns `{ ok, requestId, recorded: true, duplicate }`. Identical reports
 are idempotent; different terminal results return `conflict`.
 
-A failure may carry `detail`, the daemon's reason as display text (for example
-a soul without a GitHub identity). The broker replaces control characters with
-spaces, trims it, and keeps at most 512 characters; a blank detail is dropped,
-and one on a `launched` report is ignored. It is recorded with the result and
-`launchStatus` returns it as `detail` when present. Hosts show it as plain
-text only. A different detail for the same request is a `conflict`.
+A failure may add `detail`, display-only text that `launchStatus` returns.
+The broker strips control characters and keeps 512 characters.
 
 Requests and results survive broker restarts. A disconnect or crash after
 dispatch leaves the outcome `pending` until the daemon reports; it does not
