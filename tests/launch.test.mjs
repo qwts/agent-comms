@@ -98,6 +98,42 @@ test('principal launches existing and packaged souls through one fake daemon; re
   }, options);
 });
 
+test('a failed launch carries the daemon detail, normalized, through status and restart', async () => {
+  await withBroker(async (c) => {
+    const { client, account } = await setup(c);
+    const d = await daemon(c);
+    const pkg = { account: c.owner, package: '/daemon-local/soul package', harness: 'test' };
+    const failed = await client.launch(pkg);
+    await d.next();
+    const raw = `soul has no GitHub identity\n\tsee agent-bot doctor ${'x'.repeat(600)}`;
+    await d.report({ requestId: failed.requestId, status: 'failed', detail: raw });
+    const detail = (await client.launchStatus(failed.requestId)).detail;
+    assert.equal(detail.length, 512);
+    assert.ok(detail.startsWith('soul has no GitHub identity see agent-bot doctor x'));
+    assert.equal((await d.report({ requestId: failed.requestId, status: 'failed', detail: raw })).duplicate, true);
+    await assert.rejects(d.report({ requestId: failed.requestId, status: 'failed', detail: 'other' }), { code: 'conflict' });
+    await assert.rejects(d.report({ requestId: failed.requestId, status: 'failed' }), { code: 'conflict' });
+    const bare = await client.launch(pkg);
+    await d.next();
+    await assert.rejects(d.report({ requestId: bare.requestId, status: 'failed', detail: 7 }), { code: 'bad-request' });
+    await d.report({ requestId: bare.requestId, status: 'failed', detail: ' \n ' });
+    assert.equal('detail' in (await client.launchStatus(bare.requestId)), false);
+    const launched = await client.launch(pkg);
+    await d.next();
+    const newId = `agent_${randomUUID()}`;
+    await call(c.paths, account, { op: 'join', agentId: newId });
+    await d.report({ requestId: launched.requestId, status: 'launched', agentId: newId, detail: 'ignored on success' });
+    assert.deepEqual(await client.launchStatus(launched.requestId),
+      { ok: true, requestId: launched.requestId, status: 'launched', agentId: newId });
+    await c.broker.stop();
+    const restarted = await new Broker({ paths: c.paths, mode: 'single-account' }).start();
+    try {
+      assert.equal((await client.launchStatus(failed.requestId)).detail, detail);
+      assert.equal((await client.launchStatus(launched.requestId)).status, 'launched');
+    } finally { await restarted.stop(); }
+  }, options);
+});
+
 test('launch checks principal credentials, approval, grants, receive rules and status ownership', async () => {
   await withBroker(async (c) => {
     const { client, credential, pending, account } = await setup(c, null, false);
