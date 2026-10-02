@@ -10,6 +10,7 @@ import {
   install, installOptions, jobOptions, LABEL, parseLaunchctlPrint, printPlist, renderPlist, status, systemGroupId, uninstall,
 } from '../lib/broker/launchagent.mjs';
 import { brokerPaths } from '../lib/paths.mjs';
+import { stableHomebrewPath } from '../lib/platform/service-startup.mjs';
 
 const AGENT_GROUP = 'agent-comms';
 const MISSING_GROUP = 'agent-comms-no-such-group';
@@ -220,7 +221,7 @@ test('status reports the job and the socket, and never fails on a stopped one', 
     }
     return '';
   };
-  const over = { group: AGENT_GROUP, paths, uid: UID, launchctl: asLaunchctl('running') };
+  const over = { group: AGENT_GROUP, paths, uid: UID, launchctl: asLaunchctl('running'), readPlist: () => { throw new Error('no plist'); } };
 
   // Before the install: launchctl knows no such job, so status says so rather
   // than failing.
@@ -234,6 +235,7 @@ test('status reports the job and the socket, and never fails on a stopped one', 
     socket: { path: paths.socket, present: false, mode: null, gid: null },
     pairings: { total: null, approved: null, pending: null },
     daemons: null,
+    program: null,
   });
 
   const running = await status(options(over));
@@ -250,6 +252,30 @@ test('status reports the job and the socket, and never fails on a stopped one', 
   const gone = await status(options({ ...over, launchctl: asLaunchctl('missing') }));
   assert.equal(gone.installed, false);
   assert.equal(gone.pid, null);
+});
+
+test('#74: install writes stable Homebrew opt paths, and an app bundle path as it is', () => {
+  const cellar = installOptions({ mode: 'single-account', home: brokerHome, uid: UID, paths, env, launchctl,
+    node: '/opt/homebrew/Cellar/node/26.10.0_1/bin/node',
+    entry: '/opt/homebrew/Cellar/agent-comms/0.3.1/libexec/bin/agent-comms.mjs' });
+  assert.deepEqual(cellar.args.slice(0, 2), ['/opt/homebrew/opt/node/bin/node', '/opt/homebrew/opt/agent-comms/libexec/bin/agent-comms.mjs']);
+  const bundle = installOptions({ mode: 'single-account', home: brokerHome, uid: UID, paths, env, launchctl,
+    node: '/Applications/Host.app/Contents/MacOS/node', entry: '/Applications/Host.app/Contents/Resources/components/agent-comms/bin/agent-comms.mjs' });
+  assert.deepEqual(bundle.args.slice(0, 2), ['/Applications/Host.app/Contents/MacOS/node', '/Applications/Host.app/Contents/Resources/components/agent-comms/bin/agent-comms.mjs']);
+  assert.equal(stableHomebrewPath('/usr/local/Cellar/node/22.1.0/bin/node'), '/usr/local/opt/node/bin/node');
+  assert.equal(stableHomebrewPath('/home/u/.local/bin/node'), '/home/u/.local/bin/node');
+});
+
+test('#74: status flags a unit that pins Cellar paths and names the repair', async () => {
+  const over = { group: AGENT_GROUP, paths, uid: UID, launchctl: () => '' };
+  const unit = (args) => () => JSON.stringify({ Label: LABEL, ProgramArguments: args });
+  const pinned = await status(options({ ...over, readPlist: unit(['/opt/homebrew/Cellar/node/26.10.0_1/bin/node', '/opt/homebrew/Cellar/agent-comms/0.3.1/libexec/bin/agent-comms.mjs', 'broker', 'run', '--single-account']) }));
+  assert.equal(pinned.program.cellarPinned, true);
+  assert.equal(pinned.program.repair, 'agent-comms broker install');
+  const stable = await status(options({ ...over, readPlist: unit(['/opt/homebrew/opt/node/bin/node', '/opt/homebrew/opt/agent-comms/libexec/bin/agent-comms.mjs', 'broker', 'run', '--single-account']) }));
+  assert.deepEqual([stable.program.cellarPinned, stable.program.repair], [false, null]);
+  const none = await status(options({ ...over, readPlist: () => { throw new Error('no plist'); } }));
+  assert.equal(none.program, null);
 });
 
 test('status reads the socket mode and the socket group', async () => {

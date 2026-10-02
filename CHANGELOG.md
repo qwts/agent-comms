@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- `broker install` writes stable Homebrew `opt` paths for node and agent-comms instead of versioned Cellar paths (#74), so `brew upgrade` plus `brew cleanup` no longer stops the broker. `broker status` reports the unit's `program` and flags one that still pins Cellar paths, with `agent-comms broker install` as the repair. App-bundle paths are written as they are.
+
 ## [0.3.1] - 2026-10-02
 
 ### Added
