@@ -180,6 +180,9 @@ request, matches the requested ID. Failure uses `status: 'failed'`, with
 and returns `{ ok, requestId, recorded: true, duplicate }`. Identical reports
 are idempotent; different terminal results return `conflict`.
 
+A failure may add `detail`, display-only text that `launchStatus` returns.
+The broker strips control characters and keeps 512 characters.
+
 Requests and results survive broker restarts. A disconnect or crash after
 dispatch leaves the outcome `pending` until the daemon reports; it does not
 prove startup failed. The broker does not resend pending launches on

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A failed launch carries the daemon's `detail` through `launchStatus` (#71).
+  The broker normalizes it to at most 512 characters of display text without
+  control characters, records it with the result, and treats a different
+  detail as a `conflict`.
+
 ## [0.3.0] - 2026-10-02
 
 ### Added
