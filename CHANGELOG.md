@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-10-03
+
 ### Fixed
 
 - `broker install` no longer leaves the broker down when it re-installs (#80). launchd can still be tearing the old job down when `bootout` returns, and a bootstrap then is refused with `Bootstrap failed: 5: Input/output error`; the install now waits (up to 10s) for the old job to be gone and retries the bootstrap. If the new LaunchAgent still won't load, the previous one is put back and loaded again instead of being deleted, and the error says so.
