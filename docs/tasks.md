@@ -58,7 +58,8 @@ revision and appends an immutable `task-event` message with the task ID as
 `revision`. Events go to the other participant's mailbox: the assignee
 receives offers and cancellations; the offerer receives assignee claims.
 Existing inbox read, watch and ack tooling consumes them. Read the task to
-obtain its criteria and links. A full recipient mailbox refuses the change.
+obtain its criteria and links. A full recipient mailbox refuses the change,
+and events count against the same send rate limits as messages.
 
 The broker maintains an ordered message-ID stream per task. One fsynced
 log record commits the task revision and its message together, before

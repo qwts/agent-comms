@@ -16,10 +16,12 @@ import { clientPaths } from '../lib/paths.mjs';
 import { createPrincipalClient } from '../lib/principal-client.mjs';
 import { withBroker } from './helpers/broker.mjs';
 
-function fixture(t) {
+// Each call moves the clock 3 s, so long transition walks stay under the
+// per-pair send rate; pass a fixed clock to exercise the limit itself.
+function fixture(t, { now = ((at) => () => (at += 3_000))(1_000_000) } = {}) {
   const root = mkdtempSync(path.join(os.tmpdir(), 'ac-tasks-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
-  const broker = new Broker({ paths: {}, mode: 'single-account' });
+  const broker = new Broker({ paths: {}, mode: 'single-account', now });
   const log = new EventLog(root);
   const commit = (record) => { log.append(record); apply(broker.state, record); };
   commit({ t: 'pair-request', account: 'owner', hash: sha256('secret') });
@@ -218,4 +220,12 @@ test('offer policy, account ownership, bounded pages and detached response recor
   assert.throws(() => f.offer({ acceptanceCriteria: '\u0000'.repeat(32768) }), { code: 'bad-request' });
   f.commit({ t: 'pair-revoke', account: 'owner' });
   assert.throws(() => f.tasks.show({ ...f.offerer, taskId: task.id }), { code: 'unauthenticated' });
+});
+
+test('task events spend the same per-pair send clock as messages', (t) => {
+  const f = fixture(t, { now: () => 1_000_000 });
+  for (let i = 0; i < f.broker.limits.sendsPerPairPerMinute; i += 1) f.offer();
+  const before = f.broker.state.messages.size;
+  assert.throws(() => f.offer(), { code: 'rate-limited' });
+  assert.equal(f.broker.state.messages.size, before);
 });
