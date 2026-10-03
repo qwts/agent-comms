@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.5] - 2026-10-03
+
 ### Fixed
 
 - Two hosts in one account no longer share a principal credential file (#83). `principal pair` under a non-default `AGENT_COMMS_CREDENTIAL_NAME` saves its local copy as `principal.<name>.json` instead of overwriting `principal.json`, and CLI `census`/`health` read the copy for the configured name. Before, a desktop host pairing its own principal replaced the owner's CLI principal in `principal.json`, and a host asking "am I paired?" through the CLI got the owner's answer, so it never paired. The default name keeps `principal.json`; nothing moves.
