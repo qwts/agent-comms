@@ -28,8 +28,9 @@ all souls. Pairing saves the broker UID and mode with the principal secret.
 
 On macOS the client reads the login keychain using the host's configured
 credential name and account `principal`. With `AGENT_COMMS_NO_KEYCHAIN=1`,
-or on the existing POSIX test implementation, it reads `principal.json` in
-the configured client state directory through the account-isolation seam.
+or on the existing POSIX test implementation, it reads `principal.json`
+(`principal.<name>.json` for a non-default credential name) in the client
+state directory through the account-isolation seam.
 A failed keychain read fails closed; it does not silently try another store.
 Windows remains the explicit `platform-not-implemented` seam.
 

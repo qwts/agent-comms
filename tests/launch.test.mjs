@@ -6,6 +6,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { Broker, LIMITS, sha256 } from '../lib/broker.mjs';
 import { admin, call, callPrincipal, loadCredential, loadPrincipalCredential, pairPrincipal } from '../lib/client.mjs';
+import { readHostConfig } from '../lib/host-config.mjs';
 import { clientPaths } from '../lib/paths.mjs';
 import { createPrincipalClient } from '../lib/principal-client.mjs';
 import { lineReader } from '../lib/wire.mjs';
@@ -28,7 +29,7 @@ async function setup(c, grant = null, approve = true) {
   const env = { ...c.env, AGENT_COMMS_NO_KEYCHAIN: '1' };
   const pending = await pairPrincipal(c.paths, clientPaths(env), 'Launch test', env);
   if (approve) await admin(c.paths, { op: 'principal-approve', code: pending.code, grant });
-  const credential = loadPrincipalCredential(clientPaths(env));
+  const credential = loadPrincipalCredential(clientPaths(env), readHostConfig(env));
   return { client: createPrincipalClient({ env }), credential, pending,
     account: loadCredential(clientPaths(env)) };
 }

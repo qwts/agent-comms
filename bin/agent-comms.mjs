@@ -245,7 +245,7 @@ async function run(argv, env) {
       return print(await admin(paths, { op: 'principal-revoke', principal: rest[0] }));
     }
     case 'census':
-    case 'health': return print(await callPrincipal(paths, loadPrincipalCredential(client), { op: command }));
+    case 'health': return print(await callPrincipal(paths, loadPrincipalCredential(client, HOST_CONFIG), { op: command }));
     case 'account': {
       if (sub === 'pair') {
         // Naming a broker account means the multi-account broker; with none
