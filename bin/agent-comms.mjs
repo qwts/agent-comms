@@ -18,6 +18,7 @@ import { brokerPaths, clientPaths } from '../lib/paths.mjs';
 import { taskEventPlan } from '../lib/worker/task-turn.mjs';
 import { taskPrompt } from '../lib/worker/prompt.mjs';
 import { runWorker } from '../lib/worker/index.mjs';
+import { sha256 } from '../lib/broker/shared.mjs';
 import * as skill from '../lib/skill.mjs';
 
 const VERSION = '0.3.5';
@@ -46,6 +47,11 @@ const COMMANDS = [
   { name: 'admin principals', args: [], flags: [] },
   { name: 'admin principal-approve', args: ['CODE'], flags: ['grant'] },
   { name: 'admin principal-revoke', args: ['PRINCIPAL'], flags: [] },
+  { name: 'a2a configure', args: [], flags: ['config-file'] },
+  { name: 'a2a enroll', args: ['PRINCIPAL'], flags: ['token-file', 'souls', 'operations'] },
+  { name: 'a2a revoke', args: ['TOKEN_HASH'], flags: [] },
+  { name: 'a2a list', args: [], flags: [] },
+  { name: 'a2a serve-status', args: [], flags: [] },
   { name: 'census', args: [], flags: [] },
   { name: 'health', args: [], flags: [] },
   { name: 'account pair', args: [], flags: ['broker'] },
@@ -302,6 +308,20 @@ async function run(argv, env) {
         grant: flags.grant === undefined ? null : flags.grant.split(',').map((entry) => entry.trim()).filter(Boolean),
       }));
       return print(await admin(paths, { op: 'principal-revoke', principal: rest[0] }));
+    }
+    case 'a2a': {
+      if (sub === 'configure') {
+        if (!flags['config-file']) fail('usage', 'configure needs --config-file FILE');
+        return print(await admin(paths, { op: 'a2a-configure', config: JSON.parse(readFileSync(flags['config-file'], 'utf8')) }));
+      }
+      if (sub === 'enroll') {
+        if (!flags['token-file'] || !flags.souls || !flags.operations) fail('usage', 'enroll needs --token-file, --souls and --operations');
+        const token = readFileSync(flags['token-file'], 'utf8').trim();
+        if (token.length < 32 || /\s/.test(token)) fail('usage', 'token must be at least 32 characters without whitespace');
+        return print(await admin(paths, { op: 'a2a-enroll', principal: rest[0], tokenHash: sha256(token),
+          souls: flags.souls.split(','), operations: flags.operations.split(',') }));
+      }
+      return print(await admin(paths, { op: `a2a-${sub}`, ...(sub === 'revoke' ? { tokenHash: rest[0] } : {}) }));
     }
     case 'census':
     case 'health': return print(await callPrincipal(paths, loadPrincipalCredential(client, HOST_CONFIG), { op: command }));

@@ -15,6 +15,7 @@ Task offers and assignee-reported state are available. A2A and GeniusBar come la
 
 - [Architecture decisions](docs/decisions/README.md): this repository's
   `ADR-NNNN` series.
+- [Inbound A2A](docs/a2a.md): loopback JSON-RPC, bearer enrollment, and task mapping.
 - [Tasks](docs/tasks.md): offers, revisions, transitions, and task events.
 - [Principal client API](docs/principal-client.md): embed owner census and chat.
 - [AGENTS.md](AGENTS.md): agent context for working in this repository.
