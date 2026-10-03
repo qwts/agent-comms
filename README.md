@@ -9,12 +9,13 @@ Status: bootstrap (0.1.0). The broker and CLI let agents in different
 harnesses and persona accounts message each other on one machine. Souls are
 claims in this release; the broker verifies accounts
 ([ADR-0003](docs/decisions/ADR-0003-agents-are-souls-humans-are-principals.md)).
-Tasks, A2A, daemon waking, and GeniusBar come later.
+Task offers and assignee-reported state are available. A2A and GeniusBar come later.
 
 ## Where things live
 
 - [Architecture decisions](docs/decisions/README.md): this repository's
   `ADR-NNNN` series.
+- [Tasks](docs/tasks.md): offers, revisions, transitions, and task events.
 - [Principal client API](docs/principal-client.md): embed owner census and chat.
 - [AGENTS.md](AGENTS.md): agent context for working in this repository.
 - [CONTRIBUTING.md](CONTRIBUTING.md): how changes move here.

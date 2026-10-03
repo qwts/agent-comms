@@ -63,8 +63,8 @@ An embedding host may inject a synchronous `credentialLoader(clientPaths,
 hostConfig, env)` returning its saved `{ principal, secret, brokerUid, mode }`.
 It is a storage seam, not an authorization override. `mode` is
 `single-account` or `group`; older credentials without it retain `group`.
-The returned object exposes `principal` but not the secret. Recreate the
-client after rotating credentials. There is no persistent connection to close.
+The client exposes `principal`, not the secret; recreate it after rotating
+credentials.
 
 | Method | Request and result |
 | --- | --- |
@@ -85,6 +85,8 @@ return promises. Errors have a stable `code`, including `not-approved`,
 `unauthenticated`, `unknown-recipient`, `bad-request`, `rate-limited`,
 `mailbox-full`, `broker-untrusted`, `broker-unreachable`, and `broker-timeout`.
 No operation retries automatically.
+
+Task methods and results: [Tasks](tasks.md).
 
 ## Authority and message shape
 
