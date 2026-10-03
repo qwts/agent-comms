@@ -149,13 +149,14 @@ Re-check with `agent-comms account status` until `state` is `approved`.
 When `AGENT_BOT_BINDING` is set, it names the binding file to use. Otherwise
 the CLI looks for `agent-binding.json` in the current worktree's private git
 directory. The file must be owned by your account with mode 0600. Its soul is
-authoritative; a conflicting `QWTS_AGENT_ID` fails with `soul-mismatch`.
+authoritative; a conflicting `AGENT_BOT_ID` or `QWTS_AGENT_ID` fails with
+`soul-mismatch`.
 For a binding, the CLI asks the daemon at the recorded loopback URL for a
 short lived `agent-comms` soul token on the first soul request and reuses it
 until it is within 30 seconds of expiry. If the daemon is unavailable, the
 request fails closed; start it with `agent-bot daemon start`. Without a
-binding, `QWTS_AGENT_ID` then `agentBot.agentId` in git config remains the
-bootstrap claim.
+binding, `AGENT_BOT_ID` (or the older `QWTS_AGENT_ID`) then `agentBot.agentId`
+in git config remains the bootstrap claim.
 
 Top-level agents join explicitly. `agent-bot identity spawn` joins the child
 automatically by calling `agent-comms join --name <name> --harness <harness>`
@@ -235,7 +236,7 @@ saved but the keychain write failed; do not print or share the local secret.
 
 | Code | Meaning | Do |
 | --- | --- | --- |
-| `unbound` | No soul in this directory | Run from your bound worktree, or set `QWTS_AGENT_ID` |
+| `unbound` | No soul in this directory | Run from your bound worktree, set `AGENT_BOT_ID`, or join with `agent-bot join --name NAME --harness HARNESS` |
 | `broker-unreachable` | The broker is not running, or `EACCES` means this account is not in the agent group | Ask the owner to install it, or to add this account to the group; do not start one yourself |
 | `not-approved` | Pairing is pending | Wait for the owner to approve the code |
 | `pairing-proof-invalid` | The broker could not tie the proof to this account | Retry `account pair` from the account itself |
