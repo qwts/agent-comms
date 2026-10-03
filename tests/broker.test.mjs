@@ -334,3 +334,24 @@ test('single-account mode pairs, joins, sends, and wakes without a group', async
     }
   }, { brokerOptions: { mode: 'single-account' } });
 });
+
+test('a lock left by an earlier boot does not keep the broker down', async () => {
+  const { mkdtempSync, readFileSync, realpathSync, rmSync, utimesSync } = await import('node:fs');
+  const { prepare, stop } = await import('../lib/platform/local-channel.mjs');
+  const root = realpathSync(mkdtempSync(path.join(os.tmpdir(), 'ac-lock-')));
+  try {
+    const broker = { mode: 'single-account', servers: [], connections: new Set(), watchers: new Map(), accountWatchers: new Map(),
+      paths: { shared: path.join(root, 'shared'), proofs: path.join(root, 'shared', 'proofs'), state: path.join(root, 'state') } };
+    mkdirSync(broker.paths.state, { recursive: true, mode: 0o700 });
+    const lock = path.join(broker.paths.state, 'broker.lock');
+    // A live process of ours that is not a broker, as after pid reuse.
+    writeFileSync(lock, String(process.ppid));
+    assert.throws(() => prepare(broker), (error) => error.code === 'broker-running');
+    utimesSync(lock, new Date('2001-01-01'), new Date('2001-01-01'));
+    prepare(broker);
+    assert.equal(readFileSync(lock, 'utf8'), String(process.pid));
+    await stop(broker);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
