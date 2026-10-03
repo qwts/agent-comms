@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Optional loopback A2A 1.0 JSON-RPC gateway (#89), with owner-selected
+  capabilities, hashed bearer enrollment, and authorized task operations.
+
 - Durable task offers and revision-checked assignee transitions (#87), with
   immutable terminal states, linked retries, task events in participant
   inboxes, CLI task commands, and principal-client methods.
