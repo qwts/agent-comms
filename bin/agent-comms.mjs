@@ -30,6 +30,13 @@ const COMMANDS = [
   { name: 'inbox read', args: [], flags: ['after', 'limit'] },
   { name: 'inbox watch', args: [], flags: [], booleans: ['full'] },
   { name: 'inbox ack', args: ['MESSAGE_ID'], variadic: true, flags: [] },
+  { name: 'task offer', args: ['TO'], flags: ['criteria', 'parent', 'dependencies', 'related-task'] },
+  { name: 'task accept', args: ['TASK_ID'], flags: ['revision'] },
+  { name: 'task reject', args: ['TASK_ID'], flags: ['revision'] },
+  { name: 'task update', args: ['TASK_ID', 'STATE'], flags: ['revision'] },
+  { name: 'task cancel', args: ['TASK_ID'], flags: ['revision'] },
+  { name: 'task show', args: ['TASK_ID'], flags: [] },
+  { name: 'task list', args: [], flags: ['state', 'after', 'limit'] },
   { name: 'worker run', args: [], flags: ['harness', 'workspace', 'model', 'effort', 'sandbox', 'turn-timeout', 'metrics', 'tier', 'config', 'name', 'parent', 'allow'], booleans: ['allow-full-access'] },
   { name: 'principal pair', args: [], flags: ['name'] },
   { name: 'admin principals', args: [], flags: [] },
@@ -65,7 +72,7 @@ ${COMMANDS.map(({ name, args, variadic, flags, booleans = [] }) =>
   agent-comms --version
 
 send requires --body TEXT or --body-file FILE (use - for stdin).
-inbox watch streams JSON Lines until interrupted.
+inbox watch streams JSON Lines until interrupted. --json is accepted; output is JSON by default.
 TO is <account>/<agent_id> or a bare agent_id. Souls come from a daemon binding
 when present, otherwise from the bootstrap claim. Read \`agent-comms skill\` before first use.
 `;
@@ -74,7 +81,7 @@ function parse(argv) {
   const positional = [];
   const flags = {};
   const valueFlags = new Set(COMMANDS.flatMap((command) => command.flags));
-  const booleanFlags = new Set(['help', 'version', ...COMMANDS.flatMap((command) => command.booleans ?? [])]);
+  const booleanFlags = new Set(['help', 'version', 'json', ...COMMANDS.flatMap((command) => command.booleans ?? [])]);
   let literal = false;
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -103,8 +110,8 @@ function parse(argv) {
     ?? COMMANDS.find((entry) => entry.name === positional[0]);
   if (positional.length && !schema) fail('usage', `unknown command ${positional[0]}; see agent-comms --help`);
   for (const flag of Object.keys(flags)) {
-    // --help and --version are global: they work after any command, as before.
-    if (flag === 'help' || flag === 'version') continue;
+    // Global flags work after any command; JSON is the default output.
+    if (flag === 'help' || flag === 'version' || flag === 'json') continue;
     if (!schema?.flags.includes(flag) && !schema?.booleans?.includes(flag)) fail('usage', `unknown option --${flag} for ${schema?.name ?? 'agent-comms'}`);
   }
   if (schema && !flags.help && !flags.version) {
@@ -206,6 +213,27 @@ async function run(argv, env) {
         }
       }
       return fail('usage', 'inbox needs read, watch, or ack');
+    }
+    case 'task': {
+      let request;
+      if (sub === 'offer') {
+        if (!flags.criteria?.trim()) fail('usage', 'task offer needs --criteria TEXT');
+        request = { op: 'task-offer', to: rest[0], acceptanceCriteria: flags.criteria,
+          parent: flags.parent, relatedTask: flags['related-task'],
+          dependencies: flags.dependencies === undefined ? [] : flags.dependencies.split(',') };
+      } else if (sub === 'list') {
+        request = { op: 'task-list', state: flags.state, after: integer(flags.after, 'after'), limit: integer(flags.limit, 'limit') };
+      } else if (sub === 'show') {
+        request = { op: 'task-show', taskId: rest[0] };
+      } else {
+        const revision = integer(flags.revision, 'revision');
+        if (!Number.isSafeInteger(revision) || revision < 1) fail('usage', 'task transition needs --revision INTEGER greater than zero');
+        if (sub === 'update' && !['accepted', 'working', 'input-required', 'completed', 'failed', 'rejected', 'canceled'].includes(rest[1])) {
+          fail('usage', 'unknown task state');
+        }
+        request = { op: `task-${sub}`, taskId: rest[0], revision, ...(sub === 'update' ? { state: rest[1] } : {}) };
+      }
+      return print(await asSoul(request));
     }
     case 'worker': {
       const worker = runWorker({

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Durable task offers and revision-checked assignee transitions (#87), with
+  immutable terminal states, linked retries, task events in participant
+  inboxes, CLI task commands, and principal-client methods.
+
 ## [0.3.5] - 2026-10-03
 
 ### Fixed
