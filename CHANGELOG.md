@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-10-03
+
 ### Fixed
 
 - The broker starts after an unclean shutdown. A `broker.lock` written before the current boot is stale even when its pid is alive again: macOS reuses pids across boots, so a crash, power loss or forced VM stop could leave the broker failing with `another broker holds …/broker.lock` until someone deleted the file. A second live broker is still refused by the socket probe.
