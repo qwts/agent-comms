@@ -47,6 +47,13 @@ const COMMANDS = [
   { name: 'admin principals', args: [], flags: [] },
   { name: 'admin principal-approve', args: ['CODE'], flags: ['grant'] },
   { name: 'admin principal-revoke', args: ['PRINCIPAL'], flags: [] },
+  { name: 'a2a route add', args: ['NAME'], flags: ['url', 'credential-file', 'tenant', 'souls'] },
+  { name: 'a2a route remove', args: ['NAME'], flags: [] },
+  { name: 'a2a route list', args: [], flags: [] },
+  { name: 'a2a send', args: ['ROUTE'], flags: ['text', 'context-id', 'related-task'] },
+  { name: 'a2a outbound-show', args: ['REQUEST_ID'], flags: [] },
+  { name: 'a2a outbound-list', args: [], flags: ['after', 'limit'] },
+  { name: 'a2a cancel', args: ['REQUEST_ID'], flags: [] },
   { name: 'a2a configure', args: [], flags: ['config-file'] },
   { name: 'a2a enroll', args: ['PRINCIPAL'], flags: ['token-file', 'souls', 'operations'] },
   { name: 'a2a revoke', args: ['TOKEN_HASH'], flags: [] },
@@ -116,7 +123,8 @@ function parse(argv) {
       fail('usage', `unknown option --${name}`);
     }
   }
-  const schema = COMMANDS.find((entry) => entry.name === positional.slice(0, 2).join(' '))
+  const schema = COMMANDS.find((entry) => entry.name === positional.slice(0, 3).join(' '))
+    ?? COMMANDS.find((entry) => entry.name === positional.slice(0, 2).join(' '))
     ?? COMMANDS.find((entry) => entry.name === positional[0]);
   if (positional.length && !schema) fail('usage', `unknown command ${positional[0]}; see agent-comms --help`);
   for (const flag of Object.keys(flags)) {
@@ -310,6 +318,17 @@ async function run(argv, env) {
       return print(await admin(paths, { op: 'principal-revoke', principal: rest[0] }));
     }
     case 'a2a': {
+      if (sub === 'route') {
+        const [action, name] = rest;
+        return print(await admin(paths, { op: `a2a-route-${action}`, name,
+          ...(action === 'add' ? { route: { name, url: flags.url, credentialFile: flags['credential-file'],
+            tenant: flags.tenant, allowedSouls: flags.souls?.split(',') } } : {}) }));
+      }
+      if (sub === 'send') return print(await asSoul({ op: 'a2a-send', route: rest[0], text: flags.text,
+        contextId: flags['context-id'], relatedTask: flags['related-task'] }));
+      if (sub === 'outbound-show' || sub === 'cancel') return print(await asSoul({ op: `a2a-${sub}`, id: rest[0] }));
+      if (sub === 'outbound-list') return print(await asSoul({ op: 'a2a-outbound-list',
+        after: integer(flags.after, 'after'), limit: integer(flags.limit, 'limit') }));
       if (sub === 'configure') {
         if (!flags['config-file']) fail('usage', 'configure needs --config-file FILE');
         return print(await admin(paths, { op: 'a2a-configure', config: JSON.parse(readFileSync(flags['config-file'], 'utf8')) }));

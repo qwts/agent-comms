@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (#88). Task events no longer generate result/error replies or change claims
   when a turn finishes. Downgrade is unsupported after writing the new
   `task-invocation` log record.
+- Configured outbound A2A bearer routes (#90), with soul-scoped sends, a
+  durable outbox, safe transport retries, visible uncertainty and task
+  reconciliation, namespaced remote references, and explicit cancellation.
 - Optional loopback A2A 1.0 JSON-RPC gateway (#89), with owner-selected
   capabilities, hashed bearer enrollment, and authorized task operations.
 

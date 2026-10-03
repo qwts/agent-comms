@@ -1,9 +1,10 @@
-# Inbound A2A
+# A2A gateway
 
 The broker's optional loopback gateway implements A2A 1.0.1 JSON-RPC over
 HTTP, negotiating version `1.0`. It offers work through the same task and
-mailbox operations as the CLI. Outbound calls and wider exposure are outside
-this release ([ADR-0005](decisions/ADR-0005-a2a-at-the-broker-edge.md)).
+mailbox operations as the CLI. Configured outbound routes let joined souls
+delegate to external agents; wider inbound exposure remains outside this
+release ([ADR-0005](decisions/ADR-0005-a2a-at-the-broker-edge.md)).
 
 ## Owner configuration
 
@@ -112,3 +113,72 @@ state mapping, and deny by default. Deltas: text is the only supported part
 kind; task continuation, extensions, and send configuration are visibly
 refused. Each selected soul uses its own endpoint and card. No outbound
 route, wider listener, or cross-machine routing was added.
+
+## Outbound routes and requests
+
+The owner configures named routes; only their `allowedSouls` may send.
+Routes live in owner-owned mode 0600 `a2a-routes.json` in broker state.
+Each has `name`, HTTP(S) `url`, `authScheme: "bearer"`, optional `tenant`,
+`credentialFile`, and `allowedSouls` (account/agent ID addresses). The
+credential reference is an absolute path to an owner-owned 0600 regular
+file containing a bearer token. Symlinks are refused. Tokens are read for
+calls, never stored in broker records or reported in errors. Redirects and
+URLs with credentials, query strings, or fragments are refused.
+
+```sh
+agent-comms a2a route add review --url https://agent.example/a2a \
+  --credential-file /private/owner/review.token --souls ACCOUNT/AGENT_ID
+agent-comms a2a route list
+agent-comms a2a send review --text 'Review this change'
+agent-comms a2a outbound-show REQUEST_ID
+agent-comms a2a outbound-list --limit 20
+agent-comms a2a cancel REQUEST_ID
+agent-comms a2a route remove review
+```
+
+Route changes take effect immediately. Send accepts `--context-id` and
+`--related-task`; a related local task must be visible to the caller and
+conveys context only. `a2a-send` returns `{request}` after fsync, before
+network delivery. `a2a-outbound-show` and `a2a-outbound-list` expose only the
+joined sender's requests; list accepts `after` and `limit` like task list.
+The CLI uses those operations. Cancellation explicitly queues best-effort
+`CancelTask` for a known remote task; show reports the subsequent outcome.
+Closing a CLI connection never cancels remote work.
+
+Outbox records contain stable `id` and `messageId`, sender, route, text,
+context, related task, attempts, timestamps, and delivery status:
+`pending`, `sent`, `uncertain`, `failed`, or `done`. Each attempt is logged
+before sending. Up to three connection-establishment failures retry with
+backoff and the same message ID; an ambiguous drop, timeout, or invalid
+response becomes `uncertain`, without resubmission. Confirmed RPC refusals
+and exhausted pre-connection retries become `failed`. A message response
+completes the request; only plain text response parts are supported.
+
+The reconciler checks each open request first after ten seconds, then backs
+off by doubling up to an hour. It queries known task IDs with `GetTask`.
+For unknown IDs it pages `ListTasks` using the stable context and matches
+message ID in task history or `metadata.messageId`. Context alone never
+proves delivery. Missing, ambiguous, unsupported, or unavailable results
+leave uncertainty visible. Replay resumes untouched requests and proven
+pre-connection retries; an interrupted attempt becomes uncertain. Route
+removal, changed server/tenant, or revoked permission stops remote calls.
+
+A remote reference retains server URL, tenant, route, opaque task/context
+IDs, local-view state, and original remote state. `submitted` maps to
+`offered`; `working` maps to `working`; the remaining table states and
+`auth-required` pass through. `unknown` and unfamiliar states map to
+`unknown`, preserving the original. Terminal remote states make delivery
+`done`; this never transitions a related local task.
+
+## Issue 90 closeout
+
+Solution as built: owner-configured bearer routes, soul-scoped CLI operations,
+a fsynced outbox and attempt log, bounded safe transport retries, and polling
+reconciliation. Remote references retain their server and tenant namespace.
+Patterns used: transactional outbox, idempotent logical transport retry,
+explicit uncertain outcome, and the shared state-mapping edge adapter.
+Deltas: send returns a durable pending record for background delivery;
+retry is limited to proven pre-connection failures because remote send
+idempotency is optional. Servers unable to expose message identity through
+list results leave requests uncertain. Only bearer routes and text messages
+are supported; no inbound or cross-machine routing changes were needed.
