@@ -157,6 +157,40 @@ test('principal CLI stores a private credential and applies approvals, grants an
   });
 });
 
+// #83: a Homebrew CLI and a desktop host in one account share the client state
+// directory but pair different principals under different credential names.
+test('a principal paired under another credential name leaves the default principal untouched', async () => {
+  await withBroker(async ({ root, cli, accounts }) => {
+    const local = { AGENT_COMMS_NO_KEYCHAIN: '1' };
+    const owner = await cli(['principal', 'pair', '--name', 'owner'], accounts.alice, local);
+    assert.equal(owner.exit, 0);
+    await cli(['admin', 'principal-approve', owner.json.code]);
+    const file = path.join(root, 'client', 'principal.json');
+    const before = readFileSync(file, 'utf8');
+
+    // Another host's name has no principal yet: the CLI must not answer as the
+    // default one, or a host probing "am I paired?" would never pair.
+    const other = { ...local, AGENT_COMMS_CREDENTIAL_NAME: 'org.example.desktop' };
+    const unpaired = await cli(['census'], accounts.alice, other);
+    assert.notEqual(unpaired.exit, 0);
+    assert.equal(unpaired.json.ok, false);
+
+    const desktop = await cli(['principal', 'pair', '--name', 'desktop'], accounts.alice, other);
+    assert.equal(desktop.exit, 0);
+    assert.notEqual(desktop.json.principal, owner.json.principal);
+    assert.equal(readFileSync(file, 'utf8'), before, 'the default principal file must be byte-for-byte unchanged');
+    const own = path.join(root, 'client', 'principal.org.example.desktop.json');
+    assert.equal(JSON.parse(readFileSync(own, 'utf8')).principal, desktop.json.principal);
+    assert.equal(statSync(own).mode & 0o777, 0o600);
+
+    // Each name answers as its own principal.
+    assert.equal((await cli(['census'], accounts.alice, local)).exit, 0);
+    assert.equal((await cli(['census'], accounts.alice, other)).json.error.code, 'not-approved');
+    await cli(['admin', 'principal-approve', desktop.json.code]);
+    assert.equal((await cli(['census'], accounts.alice, other)).exit, 0);
+  });
+});
+
 test('join accepts an explicit parent and never reads agent-bot identity files', async () => {
   await withBroker(async ({ root, cli, accounts }) => {
     const identities = path.join(root, 'identities');

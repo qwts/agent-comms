@@ -121,7 +121,9 @@ test('CLI install, status, principal pair, and uninstall use only host-selected 
     assert.equal(status.running, true);
     assert.equal(status.socket.path, path.join(env.AGENT_COMMS_SHARED_DIR, 'broker.sock'));
     await run(['principal', 'pair', '--name', 'Example']);
-    assert.ok(existsSync(path.join(env.AGENT_COMMS_CLIENT_STATE_DIR, 'principal.json')));
+    // #83: a non-default credential name keeps its own local copy.
+    assert.ok(existsSync(path.join(env.AGENT_COMMS_CLIENT_STATE_DIR, `principal.${custom.AGENT_COMMS_CREDENTIAL_NAME}.json`)));
+    assert.equal(existsSync(path.join(env.AGENT_COMMS_CLIENT_STATE_DIR, 'principal.json')), false);
     const removed = await run(['broker', 'uninstall']);
     assert.equal(removed.label, custom.AGENT_COMMS_SERVICE_LABEL);
     assert.equal(existsSync(installed.plist), false);

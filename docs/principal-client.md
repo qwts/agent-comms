@@ -28,8 +28,13 @@ all souls. Pairing saves the broker UID and mode with the principal secret.
 
 On macOS the client reads the login keychain using the host's configured
 credential name and account `principal`. With `AGENT_COMMS_NO_KEYCHAIN=1`,
-or on the existing POSIX test implementation, it reads `principal.json` in
-the configured client state directory through the account-isolation seam.
+or on the existing POSIX test implementation, it reads the principal's
+local copy in the configured client state directory through the
+account-isolation seam. That copy is `principal.json` for the default
+credential name and `principal.<credential name>.json` for any other, so two
+hosts in one account (a Homebrew CLI and a desktop app, say) keep separate
+principals and pairing one never overwrites the other. The CLI's `census` and
+`health` read the same per-name copy.
 A failed keychain read fails closed; it does not silently try another store.
 Windows remains the explicit `platform-not-implemented` seam.
 

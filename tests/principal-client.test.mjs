@@ -4,6 +4,7 @@ import { test } from 'node:test';
 
 import { Broker, LIMITS } from '../lib/broker.mjs';
 import { admin, call, callPrincipal, loadCredential, loadPrincipalCredential, pairPrincipal } from '../lib/client.mjs';
+import { readHostConfig } from '../lib/host-config.mjs';
 import { clientPaths } from '../lib/paths.mjs';
 import { createPrincipalClient } from '../lib/principal-client.mjs';
 import { createSecretStore } from '../lib/platform/secret-store.mjs';
@@ -16,7 +17,7 @@ async function setup(context, grant = null) {
   const env = { ...context.env, AGENT_COMMS_NO_KEYCHAIN: '1', AGENT_COMMS_CREDENTIAL_NAME: 'org.example.owner' };
   const pending = await pairPrincipal(context.paths, clientPaths(env), 'Example host', env);
   const client = createPrincipalClient({ env });
-  const credential = loadPrincipalCredential(clientPaths(env));
+  const credential = loadPrincipalCredential(clientPaths(env), readHostConfig(env));
   const account = loadCredential(clientPaths(env));
   assert.equal(credential.mode, 'single-account');
   const approve = () => admin(context.paths, { op: 'principal-approve', code: pending.code, grant });
