@@ -128,8 +128,7 @@ Patterns used: the existing protocol, durable event log and mailbox policy,
 and the local-channel, secret-store and account-isolation seams. The broker
 previously supported only principal reads, so this adds principal message
 endpoints and mailboxes, plus a small worker reply-routing adjustment. There
-are no deviations from ADR-0007 amendment 1 or new dependencies. Launch and
-host application implementation remain in their separate issues.
+are no deviations from ADR-0007 amendment 1 or new dependencies.
 
 ## Request a daemon launch
 
@@ -139,9 +138,7 @@ Exactly one is required. The broker never opens that path. Account names
 follow the pairing grammar, soul IDs are `agent_<uuid>`, package paths are
 nonblank strings of at most 4096 characters, harness names at most 64, and
 optional display names at most 128. Strings cannot contain control characters.
-Optional `comms` is a boolean: whether the soul gets agent-comms teammate
-tools. agent-bot writes it to the soul's `soul.json` before starting it
-(qwts/agent-bot-identity#381); absent leaves the soul's own setting.
+Optional boolean `comms` sets the soul's agent-comms before it starts.
 The daemon validates package contents and supported harnesses locally.
 
 The principal must be approved and the target account paired and approved.
@@ -160,16 +157,16 @@ requests return `unknown-launch`. There is no launch message in the inbox.
 An account without an open daemon watch fails with `daemon-unavailable`.
 An accepted request is fsynced as `launch-request` before forwarding to
 exactly one live account-watch connection. It is never broadcast or retried.
-The new newline-delimited watch frame is:
+The newline-delimited watch frame is:
 
 ```json
 {"event":"launch","requestId":"launch_<uuid>","principal":"principal_<uuid>","account":"persona","soul":"agent_<uuid>","harness":"codex","name":"Example"}
 ```
 
 For a package, the frame contains `package` instead of `soul`; `name` and
-`comms` are omitted when absent. The account's agent-bot daemon owns process creation,
-package resolution, harness startup, and joining through the existing join
-contract. Neither the client nor broker starts a harness or joins on its
+`comms` are omitted when absent. The account's agent-bot daemon owns process
+creation, package resolution, harness startup, and joining through the
+existing join contract. Neither the client nor broker starts a harness or joins on its
 behalf. The daemon must interpret fields as data, never as a shell command.
 
 After joining, the daemon submits a separate protocol-v1 request connection
