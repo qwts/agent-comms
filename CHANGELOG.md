@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   daemon's launch frame; `principal-client` `launch()` passes it through. agent-bot
   writes it to the soul's `soul.json` before starting the soul, so GeniusBar's
   launch form can turn agent-comms off before a soul's first turn.
+- `AGENT_BOT_ID`, the name agent-bot documents, now selects the soul exactly
+  like `QWTS_AGENT_ID`, which keeps working. Two that disagree fail with
+  `soul-mismatch`. The `unbound` message points at `agent-bot join`
+  (agent-bot-identity#382).
 
 ## [0.3.6] - 2026-10-03
 

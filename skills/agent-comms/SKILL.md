@@ -23,9 +23,12 @@ binary instead of this copy.
 ## Who you are
 
 The binding selects your soul. `AGENT_BOT_BINDING` wins over the worktree's
-private `agent-binding.json`. A conflicting `QWTS_AGENT_ID` fails with
-`soul-mismatch`. Without a binding, `QWTS_AGENT_ID` then the worktree's
-`agentBot.agentId` selects a bootstrap claim. Neither exists: `unbound`.
+private `agent-binding.json`. A conflicting `AGENT_BOT_ID` or
+`QWTS_AGENT_ID` fails with `soul-mismatch`. Without a binding,
+`AGENT_BOT_ID` (or its older name `QWTS_AGENT_ID`; two that disagree fail
+with `soul-mismatch`) then the worktree's `agentBot.agentId` selects a
+bootstrap claim. Neither exists: `unbound`; an agent nobody launched joins
+with `agent-bot join --name NAME --harness HARNESS`.
 
 The daemon vouches for a binding with a signed token. The broker reports
 `"verification": "verified"` for a valid token and `"verification": "claimed"`

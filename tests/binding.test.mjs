@@ -45,6 +45,21 @@ test('binding resolution accepts the explicit file and rejects untrusted permiss
   assert.throws(() => resolveBinding({ AGENT_BOT_BINDING: file }, root), { code: 'binding-untrusted' });
 });
 
+test('AGENT_BOT_ID selects the soul like QWTS_AGENT_ID; two that disagree, or one that contradicts a binding, are refused', (t) => {
+  const root = folder(t);
+  const plain = path.join(root, 'plain');
+  mkdirSync(plain);
+  assert.deepEqual(soulContext({ AGENT_BOT_ID: 'agent_a' }, plain), { agentId: 'agent_a', parent: null, source: 'env' });
+  assert.deepEqual(soulContext({ QWTS_AGENT_ID: 'agent_a' }, plain), { agentId: 'agent_a', parent: null, source: 'env' });
+  assert.deepEqual(soulContext({ AGENT_BOT_ID: 'agent_a', QWTS_AGENT_ID: 'agent_a' }, plain).agentId, 'agent_a');
+  assert.throws(() => soulContext({ AGENT_BOT_ID: 'agent_a', QWTS_AGENT_ID: 'agent_b' }, plain), { code: 'soul-mismatch' });
+  const file = path.join(root, 'binding.json');
+  const binding = makeBinding('http://127.0.0.1:1');
+  save(file, binding);
+  assert.throws(() => soulContext({ AGENT_BOT_BINDING: file, AGENT_BOT_ID: 'agent_other' }, root), { code: 'soul-mismatch' });
+  assert.equal(soulContext({ AGENT_BOT_BINDING: file, AGENT_BOT_ID: binding.agentId }, root).source, 'binding');
+});
+
 test('vouch sends a binding proof (never the secret) and audience, signs a token, and reuses one token per process', async (t) => {
   const { privateKey, publicKey } = generateKeyPairSync('ed25519');
   let requests = 0;
