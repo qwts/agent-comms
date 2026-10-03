@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Task invocation execution facts, task briefs and current-state worker prompts
+  (#88). Task events no longer generate result/error replies or change claims
+  when a turn finishes. Downgrade is unsupported after writing the new
+  `task-invocation` log record.
 - Optional loopback A2A 1.0 JSON-RPC gateway (#89), with owner-selected
   capabilities, hashed bearer enrollment, and authorized task operations.
 
