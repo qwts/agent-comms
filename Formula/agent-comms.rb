@@ -13,8 +13,8 @@ class AgentComms < Formula
   homepage "https://github.com/qwts/agent-comms"
   url "https://github.com/qwts/agent-comms.git",
       using: :git,
-      tag:   "v0.3.4"
-  version "0.3.4"
+      tag:   "v0.3.5"
+  version "0.3.5"
   license :cannot_represent # proprietary; see LICENSE
 
   depends_on "node"
