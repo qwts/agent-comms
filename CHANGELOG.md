@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `broker install` no longer leaves the broker down when it re-installs (#80). launchd can still be tearing the old job down when `bootout` returns, and a bootstrap then is refused with `Bootstrap failed: 5: Input/output error`; the install now waits (up to 10s) for the old job to be gone and retries the bootstrap. If the new LaunchAgent still won't load, the previous one is put back and loaded again instead of being deleted, and the error says so.
+- launchctl's own reason (for example `Could not find service`) now appears in `broker install` and `broker uninstall` errors. It was discarded before, which also made `broker uninstall` on a machine with no loaded broker fail instead of reporting `unloaded: false`.
+
 ## [0.3.3] - 2026-10-03
 
 ### Fixed
