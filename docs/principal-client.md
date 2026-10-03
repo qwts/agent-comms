@@ -133,12 +133,15 @@ host application implementation remain in their separate issues.
 
 ## Request a daemon launch
 
-`client.launch({ account, soul, harness, name? })` launches an existing soul;
+`client.launch({ account, soul, harness, name?, comms? })` launches an existing soul;
 use `package` instead of `soul` for a package path in the target account.
 Exactly one is required. The broker never opens that path. Account names
 follow the pairing grammar, soul IDs are `agent_<uuid>`, package paths are
 nonblank strings of at most 4096 characters, harness names at most 64, and
 optional display names at most 128. Strings cannot contain control characters.
+Optional `comms` is a boolean: whether the soul gets agent-comms teammate
+tools. agent-bot writes it to the soul's `soul.json` before starting it
+(qwts/agent-bot-identity#381); absent leaves the soul's own setting.
 The daemon validates package contents and supported harnesses locally.
 
 The principal must be approved and the target account paired and approved.
@@ -163,8 +166,8 @@ The new newline-delimited watch frame is:
 {"event":"launch","requestId":"launch_<uuid>","principal":"principal_<uuid>","account":"persona","soul":"agent_<uuid>","harness":"codex","name":"Example"}
 ```
 
-For a package, the frame contains `package` instead of `soul`; `name` is
-omitted when absent. The account's agent-bot daemon owns process creation,
+For a package, the frame contains `package` instead of `soul`; `name` and
+`comms` are omitted when absent. The account's agent-bot daemon owns process creation,
 package resolution, harness startup, and joining through the existing join
 contract. Neither the client nor broker starts a harness or joins on its
 behalf. The daemon must interpret fields as data, never as a shell command.
