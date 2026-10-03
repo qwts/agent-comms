@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Task invocation execution facts, task briefs and current-state worker prompts
+  (#88). Task events no longer generate result/error replies or change claims
+  when a turn finishes. Downgrade is unsupported after writing the new
+  `task-invocation` log record.
+
 - Durable task offers and revision-checked assignee transitions (#87), with
   immutable terminal states, linked retries, task events in participant
   inboxes, CLI task commands, and principal-client methods.

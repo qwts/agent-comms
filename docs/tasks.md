@@ -69,6 +69,40 @@ Hosts use the [principal client](principal-client.md):
 `offerTask({ to, acceptanceCriteria, parent?, dependencies?, relatedTask? })`,
 `acceptTask(id, revision)`, `rejectTask(id, revision)`,
 `updateTask(id, revision, state)`, `cancelTask(id, revision)`, `showTask(id)`
-and `listTasks({ state?, after?, limit? })`. Results are `{ ok, task }`,
-except list, which returns `{ ok, tasks, cursor, remaining }`. Principals
+and `listTasks({ state?, after?, limit? })`. Show returns
+`{ ok, task, invocations, events }`; transitions return `{ ok, task }`.
+List returns `{ ok, tasks, cursor, remaining }`. Principals
 act only as themselves, never as a soul named in their grant.
+
+## Execution facts and workers
+
+The assignee reports execution separately from its claim:
+
+```sh
+agent-comms task invocation TASK_ID --id invocation_UUID --phase started
+agent-comms task invocation TASK_ID --id invocation_UUID --phase ended --outcome completed
+agent-comms task brief MESSAGE_ID
+```
+
+Invocation IDs have 8–64 letters, digits or hyphens after `invocation_`.
+Ended requires `completed`, `failed`, `cancelled` or `interrupted`; started
+has no outcome and is refused on terminal tasks. Ended remains valid after
+termination. Repeating an ID and phase is idempotent; each task holds at
+most 256 invocations. Reports change no claim, revision, timestamp or event
+stream, and send no messages. Show adds `invocations` and the last five
+`events`; list still returns claims only. Principal clients expose
+`reportInvocation(taskId, invocationId, phase, outcome?)`.
+
+Brief reads a pending task-event from the caller's inbox by paging the
+existing read operation. It returns `{ turn, linked, role, taskId, prompt }`;
+acknowledged messages are unavailable, and a skipped turn has a null prompt.
+Workers decide from the current task, regardless of an event's older state.
+Assignees run on offered, accepted, working or input-required tasks and
+report start/end execution facts. Offerers review input-required, completed,
+failed or rejected claims without linking an invocation. Other events are
+acknowledged without a turn. Task events never receive replies. Finishing a
+turn never completes the task; reporting failures are logged and do not
+stop work. A stopped turn reports interrupted and leaves its event for replay.
+
+The new `task-invocation` log record makes downgrade unsupported once written;
+an older broker refuses to replay it.

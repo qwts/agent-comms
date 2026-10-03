@@ -15,6 +15,8 @@ import { admin, call, loadCredential, pair, pairPrincipal, callPrincipal, loadPr
 import { HOST_CONFIG } from '../lib/host-config.mjs';
 import { CommsError, fail } from '../lib/errors.mjs';
 import { brokerPaths, clientPaths } from '../lib/paths.mjs';
+import { taskEventPlan } from '../lib/worker/task-turn.mjs';
+import { taskPrompt } from '../lib/worker/prompt.mjs';
 import { runWorker } from '../lib/worker/index.mjs';
 import * as skill from '../lib/skill.mjs';
 
@@ -36,6 +38,8 @@ const COMMANDS = [
   { name: 'task update', args: ['TASK_ID', 'STATE'], flags: ['revision'] },
   { name: 'task cancel', args: ['TASK_ID'], flags: ['revision'] },
   { name: 'task show', args: ['TASK_ID'], flags: [] },
+  { name: 'task invocation', args: ['TASK_ID'], flags: ['id', 'phase', 'outcome'] },
+  { name: 'task brief', args: ['MESSAGE_ID'], flags: [] },
   { name: 'task list', args: [], flags: ['state', 'after', 'limit'] },
   { name: 'worker run', args: [], flags: ['harness', 'workspace', 'model', 'effort', 'sandbox', 'turn-timeout', 'metrics', 'tier', 'config', 'name', 'parent', 'allow'], booleans: ['allow-full-access'] },
   { name: 'principal pair', args: [], flags: ['name'] },
@@ -223,6 +227,33 @@ async function run(argv, env) {
           dependencies: flags.dependencies === undefined ? [] : flags.dependencies.split(',') };
       } else if (sub === 'list') {
         request = { op: 'task-list', state: flags.state, after: integer(flags.after, 'after'), limit: integer(flags.limit, 'limit') };
+      } else if (sub === 'invocation') {
+        if (!flags.id || !['started', 'ended'].includes(flags.phase)
+          || (flags.phase === 'started' ? flags.outcome !== undefined : !['completed', 'failed', 'cancelled', 'interrupted'].includes(flags.outcome))) {
+          fail('usage', 'task invocation needs --id ID --phase started|ended and --outcome for ended only');
+        }
+        request = { op: 'task-invocation', taskId: rest[0], invocationId: flags.id, phase: flags.phase, outcome: flags.outcome };
+      } else if (sub === 'brief') {
+        let message;
+        let after = 0;
+        for (;;) {
+          const page = await asSoul({ op: 'read', after, limit: 100 });
+          message = page.messages.find((item) => item.id === rest[0]);
+          if (message || !page.remaining) break;
+          after = page.cursor;
+        }
+        if (!message) fail('unknown-message', 'no pending message with that id in your mailbox');
+        if (message.kind !== 'task-event') fail('bad-request', 'task brief needs a task-event message');
+        let shown;
+        try {
+          shown = await asSoul({ op: 'task-show', taskId: message.correlation });
+        } catch (error) {
+          if (error.code !== 'unknown-task') throw error;
+        }
+        const self = await asSoul({ op: 'whoami' });
+        const plan = taskEventPlan(message, shown?.task, self);
+        return print({ ...plan, taskId: message.correlation,
+          prompt: plan.turn ? taskPrompt({ ...shown, role: plan.role, harness: 'harness', soul: self.agentId }) : null });
       } else if (sub === 'show') {
         request = { op: 'task-show', taskId: rest[0] };
       } else {

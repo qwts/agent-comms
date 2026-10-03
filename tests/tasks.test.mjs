@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -138,6 +138,15 @@ test('CLI lifecycle and principal client task operations use authenticated broke
     const offered = await cli(['task', 'offer', accounts.bob, '--criteria', 'Ship it', '--json']);
     assert.equal(offered.exit, 0);
     const task = offered.json.task;
+    const event = (await cli(['inbox', 'read'], accounts.bob)).json.messages.find((message) => message.correlation === task.id);
+    const brief = (await cli(['task', 'brief', event.id], accounts.bob)).json;
+    assert.equal(brief.turn, true);
+    assert.equal(brief.linked, true);
+    assert.match(brief.prompt, /state offered/);
+    const invocationId = `invocation_${randomUUID()}`;
+    assert.equal((await cli(['task', 'invocation', task.id, '--id', invocationId, '--phase', 'started'], accounts.bob)).json.duplicate, false);
+    assert.equal((await cli(['task', 'invocation', task.id, '--id', invocationId, '--phase', 'ended', '--outcome', 'completed'], accounts.bob)).json.duplicate, false);
+    assert.equal((await cli(['task', 'show', task.id])).json.invocations[0].outcome, 'completed');
     const accept = await cli(['task', 'accept', task.id, '--revision', '1'], accounts.bob);
     assert.equal(accept.json.task.state, 'accepted');
     assert.equal((await cli(['task', 'update', task.id, 'working', '--revision', '1'], accounts.bob)).json.error.code, 'revision-mismatch');
@@ -158,8 +167,13 @@ test('CLI lifecycle and principal client task operations use authenticated broke
     const credential = loadCredential(clientPaths(env));
     const third = (await call(paths, credential, { op: 'task-offer', agentId: accounts.bob,
       to: client.principal, acceptanceCriteria: 'Owner review' })).task;
+    assert.equal((await client.showTask(third.id)).events.length, 1);
+    const hostInvocation = `invocation_${randomUUID()}`;
+    await client.reportInvocation(third.id, hostInvocation, 'started');
     assert.equal((await client.acceptTask(third.id, 1)).task.state, 'accepted');
     assert.equal((await client.updateTask(third.id, 2, 'completed')).task.state, 'completed');
+    await client.reportInvocation(third.id, hostInvocation, 'ended', 'completed');
+    assert.equal((await client.showTask(third.id)).invocations[0].outcome, 'completed');
     const fourth = (await call(paths, credential, { op: 'task-offer', agentId: accounts.bob,
       to: client.principal, acceptanceCriteria: 'Another review' })).task;
     assert.equal((await client.rejectTask(fourth.id, 1)).task.state, 'rejected');
@@ -228,4 +242,88 @@ test('task events spend the same per-pair send clock as messages', (t) => {
   const before = f.broker.state.messages.size;
   assert.throws(() => f.offer(), { code: 'rate-limited' });
   assert.equal(f.broker.state.messages.size, before);
+});
+
+test('invocation facts are assignee-only, idempotent and independent of claims', (t) => {
+  const f = fixture(t);
+  const task = f.offer();
+  const request = { taskId: task.id, invocationId: `invocation_${randomUUID()}`, phase: 'started' };
+  assert.throws(() => f.tasks.invocation({ ...f.offerer, ...request }), { code: 'forbidden' });
+  assert.throws(() => f.tasks.invocation({ ...f.stranger, ...request }), { code: 'unknown-task' });
+  const before = f.log.replay();
+  assert.deepEqual(f.tasks.invocation({ ...f.assignee, ...request }), { duplicate: false });
+  assert.deepEqual(f.tasks.invocation({ ...f.assignee, ...request }), { duplicate: true });
+  const ended = { ...f.assignee, ...request, phase: 'ended', outcome: 'completed' };
+  assert.deepEqual(f.tasks.invocation(ended), { duplicate: false });
+  assert.deepEqual(f.tasks.invocation({ ...ended, outcome: 'failed' }), { duplicate: true });
+  const records = readFileSync(f.log.file, 'utf8').trim().split('\n').map((line) => JSON.parse(line)).filter((record) => record.t === 'task-invocation');
+  assert.equal(records.length, 2);
+  assert.deepEqual(records.map((record) => [record.taskId, record.invocationId, record.agentId, record.phase]), [
+    [task.id, request.invocationId, f.assignee.agentId, 'started'],
+    [task.id, request.invocationId, f.assignee.agentId, 'ended'],
+  ]);
+  assert.deepEqual(f.broker.state.tasks, before.tasks);
+  assert.deepEqual(f.broker.state.taskStreams, before.taskStreams);
+  assert.deepEqual(f.broker.state.messages, before.messages);
+  assert.equal(f.notices.length, 1);
+  const shown = f.tasks.show({ ...f.assignee, taskId: task.id });
+  assert.equal(shown.invocations.length, 1);
+  assert.equal(shown.invocations[0].agentId, f.assignee.agentId);
+  assert.equal(shown.invocations[0].outcome, 'completed');
+  assert.ok(shown.invocations[0].startedAt < shown.invocations[0].endedAt);
+  assert.deepEqual(shown.events, [{ revision: 1, previous: null, state: 'offered', at: f.notices[0].at }]);
+  shown.invocations[0].outcome = 'failed';
+  assert.equal(f.tasks.show({ ...f.assignee, taskId: task.id }).invocations[0].outcome, 'completed');
+  f.broker.state = f.log.replay();
+  assert.deepEqual(f.tasks.invocation(ended), { duplicate: true });
+  assert.deepEqual(f.broker.state.taskInvocations, f.log.replay().taskInvocations);
+});
+
+test('invocation validation, terminal claims and cap survive replay', (t) => {
+  const f = fixture(t);
+  let task = f.offer();
+  const report = (extra) => f.tasks.invocation({ ...f.assignee, taskId: task.id,
+    invocationId: 'invocation_12345678', phase: 'started', ...extra });
+  for (const extra of [{ invocationId: 'bad' }, { invocationId: `invocation_${'x'.repeat(65)}` },
+    { phase: 'other' }, { outcome: 'completed' }, { phase: 'ended' }, { phase: 'ended', outcome: 'canceled' }]) {
+    assert.throws(() => report(extra), { code: 'bad-request' });
+  }
+  report({});
+  task = f.move(f.move(task, 'accepted'), 'completed');
+  assert.deepEqual(report({}), { duplicate: true });
+  assert.throws(() => report({ invocationId: 'invocation_87654321' }), { code: 'invalid-transition' });
+  report({ phase: 'ended', outcome: 'completed' });
+  assert.equal(f.tasks.show({ ...f.assignee, taskId: task.id }).invocations[0].outcome, 'completed');
+  task = f.offer();
+  for (let i = 0; i < 256; i += 1) report({ invocationId: `invocation_${String(i).padStart(8, '0')}` });
+  assert.throws(() => report({ invocationId: 'invocation_overflow' }), { code: 'bad-request' });
+  report({ invocationId: 'invocation_00000000', phase: 'ended', outcome: 'interrupted' });
+  f.broker.state = f.log.replay();
+  assert.equal(f.tasks.show({ ...f.assignee, taskId: task.id }).invocations.length, 256);
+  assert.throws(() => report({ invocationId: 'invocation_overflow', phase: 'ended', outcome: 'failed' }), { code: 'bad-request' });
+});
+
+test('task show returns only the last five stream events, including acknowledged ones', (t) => {
+  const f = fixture(t);
+  let task = f.offer();
+  for (const state of ['accepted', 'working', 'input-required', 'working', 'completed']) task = f.move(task, state);
+  const messages = f.mailbox.read(f.offerer).messages;
+  f.mailbox.ack({ ...f.offerer, ids: messages.map((message) => message.id) });
+  const shown = f.tasks.show({ ...f.offerer, taskId: task.id });
+  assert.deepEqual(shown.events.map((event) => event.revision), [2, 3, 4, 5, 6]);
+  assert.deepEqual(shown.events.at(-1), { revision: 6, previous: 'working', state: 'completed', at: messages.at(-1).at });
+  assert.deepEqual(shown.invocations, []);
+  assert.deepEqual(f.tasks.list(f.offerer).tasks, [task]);
+});
+
+
+test('each terminal state refuses a new invocation start but accepts an end fact', (t) => {
+  const f = fixture(t);
+  for (const state of ['completed', 'failed', 'rejected', 'canceled']) {
+    let task = f.offer();
+    for (const next of paths[state]) task = f.move(task, next);
+    const request = { ...f.assignee, taskId: task.id, invocationId: `invocation_${randomUUID()}` };
+    assert.throws(() => f.tasks.invocation({ ...request, phase: 'started' }), { code: 'invalid-transition' });
+    assert.deepEqual(f.tasks.invocation({ ...request, phase: 'ended', outcome: 'cancelled' }), { duplicate: false });
+  }
 });
