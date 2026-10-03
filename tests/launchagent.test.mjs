@@ -26,10 +26,17 @@ const env = {
 };
 const paths = brokerPaths(env);
 const calls = [];
+// A launchd stand-in: bootstrap registers the job, bootout drops it, and print
+// fails for a job it does not know, as the real one does.
+let registered = false;
 const launchctl = (args) => {
   calls.push(args.join(' '));
+  if (args[0] === 'bootstrap') registered = true;
+  if (args[0] === 'bootout') registered = false;
+  if (args[0] === 'print' && !registered) throw new Error(`Could not find service "${LABEL}"`);
   return '';
 };
+const noSleep = () => {};
 
 // The CLI hands install its own launchctl, launchd paths, and group lookup, so
 // nothing here reaches the real launchctl or changes a real group.
@@ -41,6 +48,7 @@ const options = (over = {}) => installOptions({
   env,
   gidOf: () => 800,
   launchctl,
+  sleep: noSleep,
   ...over,
 });
 
@@ -120,7 +128,7 @@ test('install writes an absolute plist that launchd can run and then loads it', 
   assert.ok(!raw.includes('ProgramPrivileges'), 'no privilege escalation key');
   assert.ok(raw.includes(path.join(logDir, 'broker.log')));
   assert.ok(raw.includes(path.join(logDir, 'broker.err.log')));
-  assert.deepEqual(calls, [`bootout gui/${UID}/${LABEL}`, `bootstrap gui/${UID} ${plist}`]);
+  assert.deepEqual(calls, [`bootout gui/${UID}/${LABEL}`, `print gui/${UID}/${LABEL}`, `bootstrap gui/${UID} ${plist}`]);
   assert.equal(exists(logDir), true);
   assert.equal(statSync(plist).mode & 0o777, 0o644);
 });
@@ -166,8 +174,8 @@ test('markup in a path cannot become plist structure', () => {
   }
 });
 
-test('a load that fails leaves no plist behind', () => {
-  const broken = options({ load: () => { throw new Error('Load failed: 5: Input/output error'); } });
+test('a first install whose load fails leaves no plist behind', () => {
+  const broken = options({ home: path.join(root, 'first-install'), load: () => { throw new Error('Load failed: 5: Input/output error'); } });
   assert.throws(() => install(broken), (error) => {
     assert.equal(error.code, 'launchagent-load-failed');
     assert.match(error.message, /Input\/output error/);
@@ -181,12 +189,100 @@ test('a re-install boots the old job out instead of failing on it', () => {
   install(job);
   calls.length = 0;
   install(job);
-  assert.deepEqual(calls, [`bootout gui/${UID}/${LABEL}`, `bootstrap gui/${UID} ${plist}`]);
+  assert.deepEqual(calls, [`bootout gui/${UID}/${LABEL}`, `print gui/${UID}/${LABEL}`, `bootstrap gui/${UID} ${plist}`]);
   uninstall(job);
+});
+
+// #80: launchd can still be tearing the old job down when bootout returns, and
+// a bootstrap then is refused with error 5.
+test('a re-install waits for the old job to be gone before loading', () => {
+  let lingering = 3;
+  const slept = [];
+  const loads = [];
+  const job = options({
+    unload: () => {},
+    isLoaded: () => lingering-- > 0,
+    sleep: (ms) => slept.push(ms),
+    load: (file) => loads.push(file),
+  });
+  install(job);
+  assert.deepEqual(slept, [100, 100, 100]);
+  assert.deepEqual(loads, [plist]);
+  uninstall(job);
+});
+
+test('the old job lingering past the wait does not hang the install', () => {
+  let waited = 0;
+  const job = options({ unload: () => {}, isLoaded: () => true, sleep: (ms) => { waited += ms; }, settleMs: 1000, load: () => {} });
+  install(job);
+  assert.ok(waited >= 1000 && waited < 1200, `waited ${waited}ms`);
+  uninstall(job);
+});
+
+test('a bootstrap refused while the old job winds down is retried', () => {
+  let refusals = 2;
+  const loads = [];
+  const job = options({
+    unload: () => {},
+    isLoaded: () => false,
+    load: (file) => {
+      loads.push(file);
+      if (refusals-- > 0) throw new Error('Bootstrap failed: 5: Input/output error');
+    },
+  });
+  const result = install(job);
+  assert.equal(result.installed, true);
+  assert.equal(loads.length, 3);
+  assert.equal(exists(job.plist), true);
+  uninstall(job);
+});
+
+test('a re-install that cannot load restores and reloads the previous LaunchAgent', () => {
+  const before = options({ home: path.join(root, 'restore'), entry: path.join(root, 'old', 'agent-comms.mjs') });
+  install(before);
+  const previous = readFileSync(before.plist, 'utf8');
+  const loaded = [];
+  const after = options({
+    home: path.join(root, 'restore'),
+    entry: path.join(root, 'new', 'agent-comms.mjs'),
+    unload: () => {},
+    isLoaded: () => false,
+    load: (file) => {
+      const body = readFileSync(file, 'utf8');
+      if (body.includes(path.join(root, 'new'))) throw new Error('Bootstrap failed: 5: Input/output error');
+      loaded.push(body);
+    },
+  });
+  assert.throws(() => install(after), (error) => {
+    assert.equal(error.code, 'launchagent-load-failed');
+    assert.match(error.message, /Input\/output error/);
+    assert.match(error.message, /previous LaunchAgent was restored and is loaded/);
+    return true;
+  });
+  assert.equal(readFileSync(after.plist, 'utf8'), previous);
+  assert.deepEqual(loaded, [previous]);
+  uninstall(before);
+});
+
+test('a previous LaunchAgent that will not load either is still put back, and both failures are reported', () => {
+  const before = options({ home: path.join(root, 'restore-both') });
+  install(before);
+  const previous = readFileSync(before.plist, 'utf8');
+  const after = options({
+    home: path.join(root, 'restore-both'),
+    entry: path.join(root, 'newer', 'agent-comms.mjs'),
+    unload: () => {},
+    isLoaded: () => false,
+    load: () => { throw new Error('Bootstrap failed: 5: Input/output error'); },
+  });
+  assert.throws(() => install(after), /restored but would not load either/);
+  assert.equal(readFileSync(after.plist, 'utf8'), previous);
+  uninstall(before);
 });
 
 test('an unload that fails is not the answer a failed load is given', () => {
   const stuck = options({
+    home: path.join(root, 'stuck'),
     unload: () => { throw new Error('Boot-out failed: 3: No such process'); },
     load: () => { throw new Error('Load failed: 5: Input/output error'); },
   });
