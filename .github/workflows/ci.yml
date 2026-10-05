@@ -33,7 +33,7 @@ jobs:
   policy:
     name: Action Policy
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 10
     outputs:
       mode: ${{ steps.policy.outputs.mode }}
@@ -53,7 +53,7 @@ jobs:
     name: Verify merged commit evidence
     needs: policy
     if: needs.policy.outputs.run_post_merge == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 10
     outputs:
       validated: ${{ steps.evidence.outputs.validated }}
@@ -71,7 +71,7 @@ jobs:
     name: Verify preflight evidence
     needs: policy
     if: github.event_name == 'pull_request' && needs.policy.outputs.run_full == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 10
     outputs:
       validated: ${{ steps.evidence.outputs.validated }}
@@ -98,7 +98,7 @@ jobs:
       always() && needs.policy.result == 'success' &&
       ((needs.policy.outputs.run_full == 'true' && needs.preflight-evidence.outputs.validated != 'true') ||
       (needs.policy.outputs.run_post_merge == 'true' && needs.merge-evidence.outputs.validated != 'true'))
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 30
     # ENG-0313 fan-out backpressure. Pull-request installs share one repo-wide
     # lane, so a `main` push that retargets every open PR queues its complete
@@ -191,7 +191,7 @@ jobs:
     name: Post-merge smoke
     needs: [policy, merge-evidence]
     if: needs.policy.outputs.run_post_merge == 'true' && needs.merge-evidence.outputs.validated == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 12
     # This lane runs only on a default-branch push and is the trusted cache
     # writer, so it takes the per-run group: seeding evidence is never dropped
@@ -231,7 +231,7 @@ jobs:
     name: CI
     needs: [policy, merge-evidence, preflight-evidence, full, docs-gov, codeql, post-merge]
     if: always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 10
     steps:
       - name: Enforce the selected lifecycle lane
