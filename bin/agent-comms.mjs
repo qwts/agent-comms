@@ -10,6 +10,8 @@ import { readFileSync } from 'node:fs';
 import process from 'node:process';
 
 import { Broker } from '../lib/broker.mjs';
+import { validateLaunchBrief } from '../lib/broker/launch.mjs';
+import { createPrincipalClient } from '../lib/principal-client.mjs';
 import { install, installOptions, jobOptions, status, uninstall } from '../lib/broker/launchagent.mjs';
 import { admin, call, loadCredential, pair, pairPrincipal, callPrincipal, loadPrincipalCredential, resolveParent, soulContext, vouch, watch } from '../lib/client.mjs';
 import { HOST_CONFIG } from '../lib/host-config.mjs';
@@ -43,6 +45,7 @@ const COMMANDS = [
   { name: 'task brief', args: ['MESSAGE_ID'], flags: [] },
   { name: 'task list', args: [], flags: ['state', 'after', 'limit'] },
   { name: 'worker run', args: [], flags: ['harness', 'workspace', 'model', 'effort', 'sandbox', 'turn-timeout', 'metrics', 'tier', 'config', 'name', 'parent', 'allow'], booleans: ['allow-full-access'] },
+  { name: 'launch', args: [], flags: ['account', 'soul', 'package', 'harness', 'name', 'comms', 'model', 'brief'] },
   { name: 'principal pair', args: [], flags: ['name'] },
   { name: 'admin principals', args: [], flags: [] },
   { name: 'admin principal-approve', args: ['CODE'], flags: ['grant'] },
@@ -88,6 +91,8 @@ ${COMMANDS.map(({ name, args, variadic, flags, booleans = [] }) =>
   agent-comms --help
   agent-comms --version
 
+launch requires --account, exactly one --soul or --package, and --harness.
+--comms accepts on or off; --brief "" clears the recorded launch brief.
 send requires --body TEXT or --body-file FILE (use - for stdin).
 inbox watch streams JSON Lines until interrupted. --json is accepted; output is JSON by default.
 TO is <account>/<agent_id>, a bare agent_id, or the peer name unique among the
@@ -304,6 +309,20 @@ async function run(argv, env) {
         throw error;
       }
       return undefined;
+    }
+    case 'launch': {
+      if (!flags.account?.trim() || !flags.harness?.trim()
+        || (flags.soul !== undefined) === (flags.package !== undefined)
+        || !(flags.soul ?? flags.package)?.trim()) {
+        fail('usage', 'launch requires --account, exactly one --soul or --package, and --harness');
+      }
+      if (flags.comms !== undefined && !['on', 'off'].includes(flags.comms)) fail('usage', '--comms must be on or off');
+      if (flags.brief !== undefined) validateLaunchBrief(flags.brief);
+      return print(await createPrincipalClient({ env }).launch({
+        account: flags.account, soul: flags.soul, package: flags.package, harness: flags.harness,
+        name: flags.name, model: flags.model, brief: flags.brief,
+        ...(flags.comms === undefined ? {} : { comms: flags.comms === 'on' }),
+      }));
     }
     case 'principal': {
       const result = await pairPrincipal(paths, client, flags.name, env, HOST_CONFIG);

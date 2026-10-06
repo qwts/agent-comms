@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Launch requests and `agent-comms launch --brief TEXT` accept an optional brief
+  of 1–4000 trimmed characters, forwarded unchanged to the daemon; an empty
+  string clears the saved brief (qwts/GeniusBar#120).
+
 ## [0.3.9] - 2026-10-06
 
 ### Fixed

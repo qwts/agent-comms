@@ -246,3 +246,57 @@ test('only the target daemon receives a launch and may report it; address grants
     extra.destroy();
   }, { brokerOptions: { uidOf: () => process.getuid() } });
 });
+
+test('launch brief is bounded, forwarded untouched, and retained through broker replay', async () => {
+  await withBroker(async (c) => {
+    const { client } = await setup(c);
+    const d = await daemon(c);
+    for (const brief of [null, false, 42, [], {}, ' ', '\n\t', 'x'.repeat(4001), 'a\rb', 'x\0', 'x\x7f', 'x\x85', '\x1fx']) {
+      await assert.rejects(client.launch({ ...target(c), brief }), { code: 'bad-request', message: 'invalid launch brief' });
+    }
+    assert.equal(c.broker.state.launches.size, 0);
+    assert.deepEqual(d.events, []);
+    const accepted = [];
+    for (const brief of ['x', 'x'.repeat(4000), '  Review this.\n\tReport findings.  ', '']) {
+      const sent = await client.launch({ ...target(c), brief });
+      assert.deepEqual(await d.next(), { event: 'launch', requestId: sent.requestId, principal: client.principal, ...target(c), brief });
+      assert.equal(c.broker.state.launches.get(sent.requestId).brief, brief);
+      accepted.push({ requestId: sent.requestId, brief });
+    }
+    const absent = await client.launch(target(c));
+    assert.equal(Object.hasOwn(await d.next(), 'brief'), false);
+    assert.equal(Object.hasOwn(c.broker.state.launches.get(absent.requestId), 'brief'), false);
+    await c.broker.stop();
+    const restarted = await new Broker({ paths: c.paths, mode: 'single-account' }).start();
+    try {
+      for (const { requestId, brief } of accepted) assert.equal(restarted.state.launches.get(requestId).brief, brief);
+    } finally { await restarted.stop(); }
+  }, options);
+});
+
+test('launch CLI passes principal-authenticated settings and an explicit clear to the daemon', async () => {
+  const { execFile } = await import('node:child_process');
+  const { promisify } = await import('node:util');
+  const { fileURLToPath } = await import('node:url');
+  const run = promisify(execFile);
+  await withBroker(async (c) => {
+    const { client } = await setup(c);
+    const d = await daemon(c);
+    const env = { ...c.env, AGENT_COMMS_NO_KEYCHAIN: '1' };
+    const bin = fileURLToPath(new URL('../bin/agent-comms.mjs', import.meta.url));
+    for (const brief of ['  Review this.\n\tReport findings.  ', '']) {
+      const { stdout, stderr } = await run(process.execPath, [bin, 'launch', '--account', c.owner,
+        '--package', '/helper.soul', '--harness', 'test', '--name', 'Helper', '--comms', 'off', '--model', 'provider/model', '--brief', brief, '--json'], { env });
+      assert.equal(stderr, '');
+      const sent = JSON.parse(stdout);
+      assert.equal(sent.status, 'pending');
+      assert.deepEqual(await d.next(), { event: 'launch', requestId: sent.requestId, principal: client.principal,
+        account: c.owner, package: '/helper.soul', harness: 'test', name: 'Helper', comms: false, model: 'provider/model', brief });
+    }
+    const { stdout } = await run(process.execPath, [bin, 'launch', '--account', c.owner,
+      '--soul', c.accounts.bob, '--harness', 'test'], { env });
+    const sent = JSON.parse(stdout);
+    assert.deepEqual(await d.next(), { event: 'launch', requestId: sent.requestId, principal: client.principal,
+      account: c.owner, soul: c.accounts.bob, harness: 'test' });
+  }, options);
+});
