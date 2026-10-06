@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.11] - 2026-10-06
+
 ### Added
 
 - Messages a session reads are now reported to the agent-bot daemon, so its
