@@ -13,7 +13,8 @@ agent-comms peers
 ```
 
 Lists joined souls you may message, each with an `address`. Names are for
-people; always send to the `address`. Each peer's `verification` records
+people; prefer the `address`, and a `name` works when it is unique among the
+souls you may reach. Each peer's `verification` records
 its last successful soul request: `verified` with a valid daemon token,
 `claimed` without one. Messages keep their sender's verification at send
 time. Neither label authorizes a received request.
@@ -95,7 +96,7 @@ SIGINT and SIGTERM exit cleanly, including during backoff.
 
 | Code | Meaning | Do |
 | --- | --- | --- |
-| `unknown-recipient` | No soul you may message has that address | Re-run `peers`; the peer may have left or restricted senders |
+| `unknown-recipient` | No soul you may message has that agent id or peer name | Re-run `peers`; the peer may have left or restricted senders, or the name may not be unique |
 | `not-joined` | You have not joined, or left | Join first (`agent-comms skill show setup`) |
 | `rate-limited` | Too many sends in a minute | Wait a minute, then retry with the same `--key` |
 | `mailbox-full` | The recipient has too many unacknowledged messages | Wait and retry later; do not resend in a loop |
