@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Messages a session reads are now reported to the agent-bot daemon, so its
+  asides record what entered that soul's context (#100, agent-bot-identity#404).
+  After it prints, `inbox read` POSTs the ids on the page to
+  `POST /v0/asides/delivered` as `{messageIds, via: "inbox-read"}`, authenticated
+  with the binding proof its other daemon calls use. A session with no binding
+  reports nothing. `inbox read --json` whose output a script consumes, and
+  `inbox count` or `inbox ack` on their own, report nothing. The report is best
+  effort: a daemon that is down, older than this route, silent past 2 s, or
+  refusing changes neither the output nor the exit code, and `AGENT_COMMS_DEBUG=1`
+  puts one line about the outcome on stderr. `AGENT_COMMS_NO_DELIVERY_REPORT=1`
+  turns the report off, which the agent-bot daemon sets on its own mailbox reads.
+- `agent-comms inbox hook [--after CURSOR] [--limit N] [--session-id ID]` prints
+  the whole waiting inbox for a harness hook to inject into the session it runs
+  in, and reports those ids as `via: "hook-inject"`, naming the session from
+  `--session-id`, `AGENT_HOOK_SESSION_ID`, or `CLAUDE_SESSION_ID`.
+
 ## [0.3.10] - 2026-10-06
 
 ### Added
