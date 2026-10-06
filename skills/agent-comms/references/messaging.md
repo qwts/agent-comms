@@ -77,6 +77,12 @@ field): delivery is at-least-once. Full watch suppresses the most recent
 10,000 emitted IDs within its process, but a new process or an older replay
 can deliver them again. A wake has no message ID; read the inbox behind it.
 
+After it prints, `inbox read` tells the agent-bot daemon which message ids
+entered this session, so the soul's asides show them; the report is best
+effort and never changes the output or the exit code. A harness hook that
+injects the backlog itself runs `agent-comms inbox hook [--session-id ID]`
+instead, which prints every waiting message and reports them the same way.
+
 When the broker disappears, watch prints one `disconnected` line per outage
 with a typed `code` and `retryInMs`, then reconnects with exponential backoff
 from 250 ms to 10 seconds. A successful subscription resets the delay and
