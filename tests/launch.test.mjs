@@ -80,6 +80,11 @@ test('principal launches existing and packaged souls through one fake daemon; re
     const quiet = await client.launch({ ...pkg, comms: false });
     assert.deepEqual(await d.next(), { event: 'launch', requestId: quiet.requestId, principal: client.principal, ...pkg, comms: false });
     assert.equal(c.broker.state.launches.get(quiet.requestId).comms, false);
+    // A chosen model rides along to the daemon and the durable request (qwts/agent-bot-identity#464).
+    const chosen = await client.launch({ ...pkg, model: 'provider/model-1' });
+    assert.deepEqual(await d.next(), { event: 'launch', requestId: chosen.requestId, principal: client.principal, ...pkg, model: 'provider/model-1' });
+    assert.equal(c.broker.state.launches.get(chosen.requestId).model, 'provider/model-1');
+    await d.report({ requestId: chosen.requestId, status: 'failed' });
     await d.report({ requestId: quiet.requestId, status: 'failed' });
     const failed = await client.launch(pkg);
     await d.next();
@@ -87,8 +92,8 @@ test('principal launches existing and packaged souls through one fake daemon; re
     const pending = await client.launch(pkg);
     await d.next();
     const audit = readFileSync(c.broker.log.file, 'utf8').trim().split('\n').map(JSON.parse);
-    assert.equal(audit.filter((r) => r.t === 'launch-request').length, 5);
-    assert.equal(audit.filter((r) => r.t === 'launch-result').length, 4);
+    assert.equal(audit.filter((r) => r.t === 'launch-request').length, 6);
+    assert.equal(audit.filter((r) => r.t === 'launch-result').length, 5);
     assert.equal(audit.find((r) => r.t === 'launch-request').principal, client.principal);
     assert.ok(!JSON.stringify(audit).includes(d.auth.secret));
     await c.broker.stop();
@@ -181,7 +186,8 @@ test('launch validates all fields and daemon results; a disconnected daemon is u
     for (const change of [{ account: '' }, { account: 3 }, { soul: undefined }, { soul: 'bad' },
       { package: '/also' }, { soul: undefined, package: '' }, { soul: undefined, package: 'a\0b' },
       { soul: undefined, package: 'x'.repeat(4097) }, { harness: '' }, { harness: 1 },
-      { harness: 'x'.repeat(65) }, { name: '' }, { name: 'x'.repeat(129) }, { comms: 'off' }, { comms: null }]) {
+      { harness: 'x'.repeat(65) }, { name: '' }, { name: 'x'.repeat(129) }, { comms: 'off' }, { comms: null },
+      { model: '' }, { model: 3 }, { model: 'x'.repeat(121) }, { model: 'a\nb' }]) {
       await assert.rejects(client.launch({ ...valid, ...change }), { code: 'bad-request' });
     }
     assert.equal(c.broker.state.launches.size, 0);

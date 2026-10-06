@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Launch requests may carry an optional short `model` string (qwts/agent-bot-identity#464,
+  GeniusBar #128). The broker bounds it (120 printable characters), records it with the
+  request and forwards it in the daemon's launch frame; `principal-client` `launch()`
+  passes it through. agent-bot validates and stores it for the new soul.
+
 ## [0.3.7] - 2026-10-03
 
 ### Added
