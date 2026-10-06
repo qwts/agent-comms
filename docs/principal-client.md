@@ -114,38 +114,43 @@ protocol authentication or sender fields. The broker enforces these limits
 even when a caller bypasses the library. Message content grants no additional
 authority to a worker.
 
-## Issue 64 closeout
-
-Implemented requirements: the documented module provides census, send and
-inbox; recipient receive rules and principal grants are enforced in the
-existing mailbox handlers; client authority is only its principal credential;
-`tests/principal-client.test.mjs` exercises pairing through acknowledgment
-against a real one-account broker. Tests also cover restricted grants,
-revocation, impersonation, mailbox isolation, idempotency, persistence,
-validation, limits, and platform credential loading.
-
-Patterns used: the existing protocol, durable event log and mailbox policy,
-and the local-channel, secret-store and account-isolation seams. The broker
-previously supported only principal reads, so this adds principal message
-endpoints and mailboxes, plus a small worker reply-routing adjustment. There
-are no deviations from ADR-0007 amendment 1 or new dependencies.
-
 ## Request a daemon launch
 
-`client.launch({ account, soul, harness, name?, comms? })` launches an existing soul;
-use `package` instead of `soul` for a package path in the target account.
+`client.launch({ account, soul, harness, name?, comms?, model?, brief? })` launches
+an existing soul; use `package` instead of `soul` for a package path in the target account.
 Exactly one is required. The broker never opens that path. Account names
 follow the pairing grammar, soul IDs are `agent_<uuid>`, package paths are
 nonblank strings of at most 4096 characters, harness names at most 64, and
 optional display names at most 128. Strings cannot contain control characters.
 Optional boolean `comms` sets the soul's agent-comms before it starts.
+Optional `model` selects a model (at most 120 printable characters).
+Optional `brief` supplies the launch instructions: after trimming it must be
+1–4000 characters, with no control characters except newline and tab. The
+explicit empty string clears a saved brief; whitespace-only strings are invalid.
+Invalid values fail with `bad-request` and `invalid launch brief`. The broker
+records and forwards the original string unchanged; the daemon trims it,
+records it in the soul's population row, and places it after the identity text
+under `Your brief from the person who launched you:`. Omitting `brief` on a
+relaunch preserves the saved value, reported by `agent-bot soul show --json`.
 The daemon validates package contents and supported harnesses locally.
 
-The principal must be approved and the target account paired and approved.
-Existing souls require the principal's account, soul, or address grant and
-receive allowlist permission; they may have left the hub. Packages require
-an account grant or the unrestricted default grant. Soul-only grants cannot
-create new souls. Launches share the principal send rate limit.
+The CLI uses the saved principal credential and the same launch contract:
+
+```bash
+agent-comms launch --account persona --package /path/to/helper.soul \
+  --harness codex --name Helper --comms on --model provider/model \
+  --brief 'Review the code and report findings.'
+agent-comms launch --account persona --soul agent_UUID --harness codex --brief ''
+```
+
+Use a real Agent ID in place of `agent_UUID`. `--name`, `--comms on|off`,
+`--model`, and `--brief` are optional. Output is JSON, including without `--json`;
+a successful request reports `pending`, before the daemon starts the soul.
+
+Approved principals may launch into approved paired accounts. Existing souls
+require account, soul, or address grants and receive allowlist permission;
+packages require an account or unrestricted grant. Launches share the
+principal send rate limit.
 
 The result is `{ ok, requestId, status: 'pending', agentId: null }`.
 Poll `client.launchStatus(requestId)` (wire op `launch-status`) for the same
@@ -163,11 +168,10 @@ The newline-delimited watch frame is:
 {"event":"launch","requestId":"launch_<uuid>","principal":"principal_<uuid>","account":"persona","soul":"agent_<uuid>","harness":"codex","name":"Example"}
 ```
 
-For a package, the frame contains `package` instead of `soul`; `name` and
-`comms` are omitted when absent. The account's agent-bot daemon owns process
-creation, package resolution, harness startup, and joining through the
-existing join contract. Neither the client nor broker starts a harness or joins on its
-behalf. The daemon must interpret fields as data, never as a shell command.
+Package frames contain `package` instead of `soul`. Optional `name`, `comms`,
+`model`, and `brief` are omitted when absent. Agent-bot owns package resolution,
+process creation, harness startup and joining. All fields are data, never shell
+commands.
 
 After joining, the daemon submits a separate protocol-v1 request connection
 (the existing watch is a one-way event stream):
@@ -186,10 +190,8 @@ are idempotent; different terminal results return `conflict`.
 A failure may add `detail`, display-only text that `launchStatus` returns.
 The broker strips control characters and keeps 512 characters.
 
-Requests and results survive broker restarts. A disconnect or crash after
-dispatch leaves the outcome `pending` until the daemon reports; it does not
-prove startup failed. The broker does not resend pending launches on
-reconnect or restart. Each launch call creates a new request, so callers
-must not automatically retry an uncertain launch response. Daemon execution
-and recovery belong to agent-bot; this contract is exercised with a fake
-account daemon in `tests/launch.test.mjs`.
+Requests and results survive restarts. A disconnect leaves the outcome
+`pending` until the daemon reports. Never automatically retry an uncertain
+launch: every call creates a new request. The broker never replays launches;
+agent-bot owns execution and recovery. `tests/launch.test.mjs` exercises the
+contract with a fake daemon.

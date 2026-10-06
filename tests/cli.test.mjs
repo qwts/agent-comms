@@ -76,6 +76,10 @@ for (const args of [
   ['task', 'invocation', 'task_x', '--id', 'invocation_12345678', '--phase', 'ended'],
   ['task', 'invocation', 'task_x', '--id', 'invocation_12345678', '--phase', 'started', '--outcome', 'completed'],
   ['task', 'brief'],
+  ['launch'], ['launch', '--account', 'owner', '--harness', 'test'],
+  ['launch', '--account', 'owner', '--harness', 'test', '--soul', 'soul', '--package', '/soul'],
+  ['launch', '--account', 'owner', '--harness', 'test', '--package', '/soul', '--comms', 'maybe'],
+  ['launch', '--brief'], ['launch', 'extra'],
   ['send'], ['inbox', 'ack'], ['leave', 'extra'], ['broker', 'approve', 'one', 'two'],
   ['join', '--name'], ['join', '--name', '--harness', 'test'], ['peers', '-x'],
   ['send', 'user/agent_x', '--body', 'hi', '--group', 'staff'], ['broker', 'run', '--body', 'x'],
@@ -94,6 +98,7 @@ test('help lists LaunchAgent commands without invoking them', async (t) => {
   const result = await cli(['--help'], env);
   assert.equal(result.exit, 0, result.stderr);
   assert.match(result.stdout, /agent-comms broker install \[--group VALUE\] \[--single-account\]/);
+  assert.match(result.stdout, /agent-comms launch .*\[--brief VALUE\]/);
   assert.match(result.stdout, /agent-comms broker uninstall\n/);
   assert.match(result.stdout, /agent-comms broker status \[--group VALUE\]/);
 });
@@ -202,5 +207,14 @@ for (const code of ['not-joined', 'not-approved', 'unauthenticated', 'soul-taken
     assert.equal(result.exit, code === 'usage' ? 2 : 1);
     assert.equal(JSON.parse(result.stdout).error.code, code);
     assert.equal(connections, 1);
+  });
+}
+
+for (const brief of [' ', 'x'.repeat(4001), 'bad\rbrief', 'bad\x85brief']) {
+  test(`invalid launch brief is rejected before loading credentials or connecting (${brief.length} chars)`, async (t) => {
+    const { env } = fixture(t);
+    const result = await cli(['launch', '--account', 'owner', '--package', '/soul', '--harness', 'test', '--brief', brief], env);
+    assert.equal(result.exit, 1);
+    assert.deepEqual(JSON.parse(result.stdout).error, { code: 'bad-request', message: 'invalid launch brief' });
   });
 }
