@@ -142,43 +142,31 @@ repositories carry identically.
 **Issue:** qwts/agent-comms#100
 
 The daemon records an aside for every message that enters a soul's context
-(qwts/agent-bot-identity#404). It sees the relay prompt, the thread it
-reshows, and a soul's own sends. It cannot see a soul reading its own mail:
-that read goes from the CLI to the broker, and the daemon is not on that path.
-This amendment closes the gap from the client side.
+(qwts/agent-bot-identity#404), but a soul reading its own mail goes from the
+CLI to the broker, off the daemon's path. The client closes that gap.
 
-1. **A session that prints messages tells the daemon which ones.** After it
-   prints, `inbox read` and `inbox hook` POST
-   `{"messageIds", "via", "harnessSessionId"?}` to
-   `POST /v0/asides/delivered`, where `via` is one of the two values
-   agent-bot reserves for them: `inbox-read` or `hook-inject`.
-2. **The report carries the binding's proof.** It authenticates exactly as
-   `POST /v0/vouch` does under Amendment 1: a one-time proof, never the
-   secret.
+1. **A session that prints messages tells the daemon which ones.** After
+   printing, `inbox read` and `inbox hook` POST `{"messageIds", "via",
+   "harnessSessionId"?}` to `POST /v0/asides/delivered`; `via` is
+   `inbox-read` or `hook-inject`.
+2. **The report carries the binding's proof**, exactly as `POST /v0/vouch`
+   does under Amendment 1. Only a bound session reports.
 3. **Only what a session read counts.** `inbox count` and `inbox ack` report
-   nothing, a page reports only the ids on it, and `inbox read --json` whose
-   output a script consumes reports nothing; a terminal behind it, a plain
-   read, or the hook counts. `inbox hook` prints the whole waiting backlog for
-   a harness session to inject and names that session from `--session-id`,
-   `AGENT_HOOK_SESSION_ID`, or `CLAUDE_SESSION_ID` when it has one.
-4. **The report is best effort.** A daemon that is down, older than this
-   route, silent past 2 s, or refusing changes neither the bytes the command
-   printed nor the code it exits with. `AGENT_COMMS_DEBUG=1` puts one line
-   about the outcome on stderr.
-5. **The daemon's own reads never report.** agent-bot reads a soul's mailbox
-   through this CLI too (its relay, and the delivered route itself); it sets
-   `AGENT_COMMS_NO_DELIVERY_REPORT=1` on those, so a report never recurses.
-6. **Only a bound session reports.** With no binding there is no credential to
-   prove the soul with, so an unbound session's read leaves no aside rather
-   than an unattributable one.
+   nothing; a page reports its own ids; `inbox read --json` piped to a script
+   reports nothing, a terminal or plain read does. `inbox hook` prints the
+   waiting backlog for a harness session and names it from `--session-id`,
+   `AGENT_HOOK_SESSION_ID` or `CLAUDE_SESSION_ID`.
+4. **The report is best effort.** A daemon that is down, older than the
+   route, silent past 2 s, or refusing changes neither the output nor the exit
+   code. `AGENT_COMMS_DEBUG=1` puts one line on stderr.
+5. **The daemon's own reads never report.** agent-bot sets
+   `AGENT_COMMS_NO_DELIVERY_REPORT=1` on its relay and delivered-route reads,
+   so a report never recurses.
 
-**Added consequences:**
-
-- A live session's inbound messages appear in GeniusBar like a cold wake's do.
-- A report the daemon never receives leaves the blindness this amendment
-  removes. Nothing is worse than before, because no read ever depended on it.
-- A daemon that does not know the route answers 404, and the read carries on;
-  a soul running an older agent-comms reports nothing, as it did before.
+**Added consequences:** a live session's inbound messages appear in GeniusBar
+like a cold wake's; a report the daemon never receives leaves only the old
+blindness, since no read depends on it; an older daemon answers 404 and an
+older agent-comms reports nothing, as before.
 
 ## Consequences
 
