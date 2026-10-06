@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.9] - 2026-10-06
+
 ### Fixed
 
 - `task offer TO` resolves its assignee the way `send TO` does (#102). A
