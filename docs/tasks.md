@@ -7,13 +7,18 @@ is the assignee's claim; reads, acknowledgments and execution do not change it.
 ## CLI and transitions
 
 ```sh
-agent-comms task offer ACCOUNT/AGENT_ID --criteria 'Pass the checks'
+agent-comms task offer TO --criteria 'Pass the checks'
 agent-comms task accept TASK_ID --revision 1
 agent-comms task update TASK_ID working --revision 2
 agent-comms task update TASK_ID completed --revision 3
 agent-comms task show TASK_ID
 agent-comms task list --state completed
 ```
+
+`TO` takes `<account>/<agent_id>`, a bare `agent_id`, or the peer name that is
+unique among the souls you may offer to: the same forms `send` accepts, and
+the same resolver. An unknown or ambiguous name, or a soul you may not offer
+to, returns `unknown-recipient`.
 
 The CLI emits JSON by default and accepts `--json`. Offer also accepts
 `--parent TASK_ID`, `--dependencies ID,ID` and `--related-task TASK_ID`.

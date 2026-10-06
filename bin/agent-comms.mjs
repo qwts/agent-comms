@@ -90,7 +90,8 @@ ${COMMANDS.map(({ name, args, variadic, flags, booleans = [] }) =>
 
 send requires --body TEXT or --body-file FILE (use - for stdin).
 inbox watch streams JSON Lines until interrupted. --json is accepted; output is JSON by default.
-TO is <account>/<agent_id> or a bare agent_id. Souls come from a daemon binding
+TO is <account>/<agent_id>, a bare agent_id, or the peer name unique among the
+souls you may address. Souls come from a daemon binding
 when present, otherwise from the bootstrap claim. Read \`agent-comms skill\` before first use.
 `;
 

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `task offer TO` resolves its assignee the way `send TO` does (#102). A
+  recipient may be an `<account>/<agent_id>` address, a bare `agent_id`, or the
+  peer name unique among the souls the caller may address; both commands share
+  one resolver in the broker. Before, a name failed with `unknown-recipient`
+  while the agent id worked. A name two souls share still resolves to nobody,
+  and the `unknown-recipient` message names both accepted forms.
+
 ## [0.3.8] - 2026-10-06
 
 ### Added

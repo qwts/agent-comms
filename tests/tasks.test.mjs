@@ -138,6 +138,10 @@ test('CLI lifecycle and principal client task operations use authenticated broke
     const offered = await cli(['task', 'offer', accounts.bob, '--criteria', 'Ship it', '--json']);
     assert.equal(offered.exit, 0);
     const task = offered.json.task;
+    // bob joined under that name, and send resolves it the same way.
+    const byName = await cli(['task', 'offer', 'bob', '--criteria', 'By name', '--json']);
+    assert.equal(byName.json.task.assignee.agentId, accounts.bob);
+    assert.equal((await cli(['task', 'offer', 'nobody', '--criteria', 'Nobody'])).json.error.code, 'unknown-recipient');
     const event = (await cli(['inbox', 'read'], accounts.bob)).json.messages.find((message) => message.correlation === task.id);
     const brief = (await cli(['task', 'brief', event.id], accounts.bob)).json;
     assert.equal(brief.turn, true);
@@ -210,6 +214,22 @@ test('principal task roles, grants, revocation and impersonation use mailbox aut
   assert.deepEqual(f.tasks.list(host).tasks, []);
   f.commit({ t: 'principal-revoke', principal });
   assert.throws(() => f.tasks.list(host), { code: 'unauthenticated' });
+});
+
+test('an offer names its assignee by peer name, agent id or address, and refuses the rest', (t) => {
+  const f = fixture(t);
+  f.commit({ t: 'join', account: 'owner', agentId: f.assignee.agentId, name: 'codex-r8' });
+  f.commit({ t: 'join', account: 'owner', agentId: f.offerer.agentId, name: 'claude' });
+  f.commit({ t: 'join', account: 'owner', agentId: f.stranger.agentId, name: 'roaming' });
+  const byName = f.offer({ to: 'codex-r8' });
+  assert.deepEqual(byName.assignee, { account: 'owner', agentId: f.assignee.agentId });
+  assert.deepEqual(f.offer({ to: f.assignee.agentId }).assignee, byName.assignee);
+  assert.deepEqual(f.offer({ to: `owner/${f.assignee.agentId}` }).assignee, byName.assignee);
+  assert.throws(() => f.offer({ to: 'nobody' }), { code: 'unknown-recipient' });
+  assert.throws(() => f.offer({ to: 'owner/nobody' }), { code: 'unknown-recipient' });
+  // A name two souls share names nobody, as an unknown address names nobody.
+  f.commit({ t: 'join', account: 'owner', agentId: f.stranger.agentId, name: 'codex-r8' });
+  assert.throws(() => f.offer({ to: 'codex-r8' }), { code: 'unknown-recipient' });
 });
 
 test('offer policy, account ownership, bounded pages and detached response records', (t) => {
