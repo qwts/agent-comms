@@ -9,11 +9,12 @@ import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import process from 'node:process';
 
-import { Broker } from '../lib/broker.mjs';
+import { Broker, LIMITS } from '../lib/broker.mjs';
 import { validateLaunchBrief } from '../lib/broker/launch.mjs';
 import { createPrincipalClient } from '../lib/principal-client.mjs';
 import { install, installOptions, jobOptions, status, uninstall } from '../lib/broker/launchagent.mjs';
 import { admin, call, loadCredential, pair, pairPrincipal, callPrincipal, loadPrincipalCredential, resolveParent, soulContext, vouch, watch } from '../lib/client.mjs';
+import { reportDelivered, shouldReportDelivered } from '../lib/asides-report.mjs';
 import { HOST_CONFIG } from '../lib/host-config.mjs';
 import { CommsError, fail } from '../lib/errors.mjs';
 import { brokerPaths, clientPaths } from '../lib/paths.mjs';
@@ -35,6 +36,7 @@ const COMMANDS = [
   { name: 'inbox read', args: [], flags: ['after', 'limit'] },
   { name: 'inbox watch', args: [], flags: [], booleans: ['full'] },
   { name: 'inbox ack', args: ['MESSAGE_ID'], variadic: true, flags: [] },
+  { name: 'inbox hook', args: [], flags: ['after', 'limit', 'session-id'] },
   { name: 'task offer', args: ['TO'], flags: ['criteria', 'parent', 'dependencies', 'related-task'] },
   { name: 'task accept', args: ['TASK_ID'], flags: ['revision'] },
   { name: 'task reject', args: ['TASK_ID'], flags: ['revision'] },
@@ -95,6 +97,11 @@ launch requires --account, exactly one --soul or --package, and --harness.
 --comms accepts on or off; --brief "" clears the recorded launch brief.
 send requires --body TEXT or --body-file FILE (use - for stdin).
 inbox watch streams JSON Lines until interrupted. --json is accepted; output is JSON by default.
+inbox hook prints the whole waiting inbox for a harness hook to inject into this
+session; --session-id names the harness session and defaults to AGENT_HOOK_SESSION_ID.
+inbox read and inbox hook tell the daemon which ids they handed the session, so
+an aside records them; that is best effort and never changes this output.
+AGENT_COMMS_DEBUG=1 puts one line about the report on stderr.
 TO is <account>/<agent_id>, a bare agent_id, or the peer name unique among the
 souls you may address. Souls come from a daemon binding
 when present, otherwise from the bootstrap claim. Read \`agent-comms skill\` before first use.
@@ -179,11 +186,35 @@ async function run(argv, env) {
   if (flags.version) return process.stdout.write(`agent-comms ${VERSION}\n`);
   if (flags.help || !command) return process.stdout.write(HELP);
 
+  // One resolution per process: the report below needs the same binding the
+  // call was made under, and re-reading a file mid-command could refuse a
+  // command that already printed its answer.
+  let resolved;
+  const soulOf = () => (resolved ??= soulContext(env));
+
   const asSoul = async (request) => {
-    const context = soulContext(env);
+    const context = soulOf();
     const soulToken = await vouch(context);
     const payload = request.op === 'join' && request.parent == null ? { ...request, parent: context.parent } : request;
     return call(paths, loadCredential(client), { ...payload, agentId: context.agentId, ...(soulToken ? { soulToken } : {}) });
+  };
+
+  // Messages printed here entered a session, so the daemon is told which ids
+  // they were, and records them as asides (qwts/agent-comms#100). Print first
+  // and report second: the session's messages are this command's output, and
+  // the report is a courtesy that may fail however it likes. Nothing below
+  // throws, so a daemon that is down, old, slow, or refusing changes neither
+  // the bytes on stdout nor the exit code.
+  const deliver = async (via, page, { harnessSessionId = null } = {}) => {
+    print(page);
+    if (!shouldReportDelivered({ via, json: Boolean(flags.json), tty: Boolean(process.stdout.isTTY), env })) return;
+    const outcome = await reportDelivered(soulOf(), {
+      via, harnessSessionId, messageIds: page.messages.map((message) => message.id),
+    });
+    if (outcome && env.AGENT_COMMS_DEBUG) {
+      const said = outcome.ok ? `${outcome.reported} ${via} aside(s) recorded` : `no ${via} aside reported (${outcome.reason})`;
+      process.stderr.write(`agent-comms: ${said}\n`);
+    }
   };
 
   switch (command) {
@@ -213,7 +244,31 @@ async function run(argv, env) {
     }
     case 'inbox': {
       if (sub === 'read') {
-        return print(await asSoul({ op: 'read', after: integer(flags.after, 'after'), limit: integer(flags.limit, 'limit') }));
+        const page = await asSoul({ op: 'read', after: integer(flags.after, 'after'), limit: integer(flags.limit, 'limit') });
+        return deliver('inbox-read', page);
+      }
+      if (sub === 'hook') {
+        // A harness hook injects whatever is waiting, so this reads the whole
+        // backlog rather than one page, and names the session it injects into.
+        const cap = integer(flags.limit, 'limit') ?? LIMITS.unackedPerMailbox;
+        if (cap < 1 || cap > LIMITS.unackedPerMailbox) fail('usage', `inbox hook needs --limit between 1 and ${LIMITS.unackedPerMailbox}`);
+        const context = soulOf();
+        const sessionId = flags['session-id'] ?? env.AGENT_HOOK_SESSION_ID ?? env.CLAUDE_SESSION_ID ?? null;
+        const messages = [];
+        let after = integer(flags.after, 'after');
+        let remaining = 0;
+        do {
+          const page = await asSoul({ op: 'read', after, limit: Math.min(LIMITS.readPage, cap - messages.length) });
+          messages.push(...page.messages);
+          after = page.cursor;
+          remaining = page.remaining;
+          // An empty page moves no cursor, so asking again would spin.
+          if (!page.messages.length) break;
+        } while (remaining > 0 && messages.length < cap);
+        return deliver('hook-inject', {
+          soul: context.agentId, messages, cursor: after, remaining,
+          ...(sessionId ? { harnessSessionId: sessionId } : {}),
+        }, { harnessSessionId: sessionId });
       }
       if (sub === 'ack') {
         if (!rest.length) fail('usage', 'inbox ack needs at least one message id');
@@ -236,7 +291,7 @@ async function run(argv, env) {
           process.off('SIGTERM', cancel);
         }
       }
-      return fail('usage', 'inbox needs read, watch, or ack');
+      return fail('usage', 'inbox needs read, watch, ack, or hook');
     }
     case 'task': {
       let request;

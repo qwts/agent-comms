@@ -37,14 +37,22 @@ async function fixture(run) {
     const daemon = http.createServer((req, res) => {
       requests += 1;
       assert.equal(req.method, 'POST');
-      assert.equal(req.url, '/v0/vouch');
+      // A bound session reports what it read (#100), so the delivered route
+      // lands here too; both must arrive with a proof and never the secret.
+      assert.ok(['/v0/vouch', '/v0/asides/delivered'].includes(req.url), req.url);
       assert.equal(req.headers['x-agent-binding'], undefined);
       const proof = parseBindingProof(req.headers[PROOF_HEADER]);
-      assert.ok(proof && checkBindingProof(proof, bindingKey(secret), { method: 'POST', path: '/v0/vouch', authority: `127.0.0.1:${daemon.address().port}` }));
+      assert.ok(proof && checkBindingProof(proof, bindingKey(secret), { method: 'POST', path: req.url, authority: `127.0.0.1:${daemon.address().port}` }));
       assert.equal(req.headers.authorization, undefined);
       let body = '';
       req.on('data', (chunk) => { body += chunk; });
       req.on('end', () => {
+        if (req.url === '/v0/asides/delivered') {
+          assert.equal(JSON.parse(body).via, 'inbox-read');
+          res.writeHead(mode === 'refused' ? 403 : 200, { 'content-type': 'application/json' });
+          res.end('{}');
+          return;
+        }
         assert.deepEqual(JSON.parse(body), { aud: 'agent-comms' });
         if (mode === 'refused') {
           res.writeHead(403);

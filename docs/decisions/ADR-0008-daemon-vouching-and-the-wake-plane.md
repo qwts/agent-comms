@@ -137,6 +137,37 @@ older clients. agent-comms 0.2.1 and agent-bot-identity's clients send only
 proofs. The client half lives in a dependency-free module that both
 repositories carry identically.
 
+## Amendment 2: delivered asides (2026-10-06)
+
+**Issue:** qwts/agent-comms#100
+
+The daemon records an aside for every message that enters a soul's context
+(qwts/agent-bot-identity#404), but a soul reading its own mail goes from the
+CLI to the broker, off the daemon's path. The client closes that gap.
+
+1. **A session that prints messages tells the daemon which ones.** After
+   printing, `inbox read` and `inbox hook` POST `{"messageIds", "via",
+   "harnessSessionId"?}` to `POST /v0/asides/delivered`; `via` is
+   `inbox-read` or `hook-inject`.
+2. **The report carries the binding's proof**, exactly as `POST /v0/vouch`
+   does under Amendment 1. Only a bound session reports.
+3. **Only what a session read counts.** `inbox count` and `inbox ack` report
+   nothing; a page reports its own ids; `inbox read --json` piped to a script
+   reports nothing, a terminal or plain read does. `inbox hook` prints the
+   waiting backlog for a harness session and names it from `--session-id`,
+   `AGENT_HOOK_SESSION_ID` or `CLAUDE_SESSION_ID`.
+4. **The report is best effort.** A daemon that is down, older than the
+   route, silent past 2 s, or refusing changes neither the output nor the exit
+   code. `AGENT_COMMS_DEBUG=1` puts one line on stderr.
+5. **The daemon's own reads never report.** agent-bot sets
+   `AGENT_COMMS_NO_DELIVERY_REPORT=1` on its relay and delivered-route reads,
+   so a report never recurses.
+
+**Added consequences:** a live session's inbound messages appear in GeniusBar
+like a cold wake's; a report the daemon never receives leaves only the old
+blindness, since no read depends on it; an older daemon answers 404 and an
+older agent-comms reports nothing, as before.
+
 ## Consequences
 
 - A soul becomes `verified` without the broker reading any daemon state, and
