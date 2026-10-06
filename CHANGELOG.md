@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.10] - 2026-10-06
+
 ### Added
 
 - Launch requests and `agent-comms launch --brief TEXT` accept an optional brief
