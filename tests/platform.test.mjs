@@ -14,9 +14,11 @@ import * as startup from '../lib/broker/launchagent.mjs';
 const seams = { 'local-channel': createLocalChannel, 'secret-store': createSecretStore,
   'service-startup': createServiceStartup, 'account-isolation': createAccountIsolation };
 
-// GeniusBar ADR-0046: the secret store and service startup have a Windows
-// branch (tests/platform-win32.test.mjs); the other two seams still refuse.
-const implemented = new Set(['secret-store', 'service-startup']);
+// GeniusBar ADR-0046: every seam has a Windows branch, exercised with fake
+// runners in tests/platform-win32.test.mjs (secret store, service startup)
+// and tests/platform-win32-channel.test.mjs (account isolation, local
+// channel). The port check below keeps every macOS operation name on win32.
+const implemented = new Set(['secret-store', 'service-startup', 'account-isolation', 'local-channel']);
 
 for (const [name, create] of Object.entries(seams)) {
   test(`${name}: Windows has the same port${implemented.has(name) ? '' : ' and every operation refuses before side effects'}`, () => {

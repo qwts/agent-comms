@@ -1,11 +1,55 @@
 # Windows
 
-What agent-comms does on `win32`, per the first Windows slice of GeniusBar
+What agent-comms does on `win32`, per GeniusBar
 [ADR-0046](https://github.com/qwts/GeniusBar/blob/main/docs/decisions/ADR-0046-windows-pipe-transport-dpapi-store-and-logon-tasks.md)
 (qwts/GeniusBar#46). [ADR-0059](decisions/ADR-0059-host-apps-embed-agent-comms.md)
-puts every platform behaviour behind four seams; two have a Windows branch.
+puts every platform behaviour behind four seams; each has a Windows branch,
+and only one-account mode: `persona-accounts` (groups, `--group`) is
+`platform-not-implemented` on `win32` in every seam.
 
 ## Implemented
+
+- **Account isolation.** The identity is the account's SID, read once per
+  process from `whoami /user /fo csv`, in place of a uid: it is what a
+  pairing record pins as `brokerUid`, and an account name resolves to its
+  SID through .NET's `NTAccount`. Custody is ownership read through
+  `Get-Acl` in `powershell.exe -NoProfile -NonInteractive -Command -`, the
+  script on stdin and the answer parsed against a fixed grammar (owner SID,
+  directory or file, reparse point or not): a state directory, the client
+  directory, the credential, a binding file and the event log must be real
+  and owned by the expected SID. There is no ancestor walk, because the
+  profile root (`%LOCALAPPDATA%`) is the boundary, and no modes: the
+  profile's own access list is the custody. Credentials and pairing proofs
+  are the plain files the macOS branch writes, in the same shape.
+- **Local channel.** The broker listens on the named pipe
+  `\\.\pipe\<serviceLabel>.<SID>` (the admin channel on
+  `\\.\pipe\<serviceLabel>.admin.<SID>`), which Node's `net` serves and
+  connects to as it does a socket path. Pipe names are one namespace for the
+  machine, so the name proves nothing; the broker proves itself on every
+  connection instead. The first frame is the client's
+  `{ v: 1, hello: <32-byte hex nonce> }`; the broker answers
+  `{ v: 1, proof: <base64 Ed25519 signature> }` over
+  `agent-comms broker handshake v1\n<pipe name>\n<nonce>\n`, and only
+  then does the client send its request, so a credential never reaches a
+  pipe whose server failed to prove itself. A signature that does not
+  verify, or a credential with no pinned key, is `broker-untrusted`; a
+  first frame that is not a hello is refused as `bad-request`. The broker's
+  keypair lives in its state directory: `identity.json` holds the public
+  key (SPKI, base64) for clients to pin, and `identity.key` the PKCS#8
+  private key, its access list reduced to the account alone through
+  `icacls /inheritance:r` the moment it is written. The pair is issued once;
+  half an identity, or a mismatched pair, stops the broker rather than
+  rotating the key. Pairing pins the key from that file, never from the
+  wire: `account pair` records `brokerKey` beside `brokerUid`, and
+  `principal pair` copies both. Custody before a connection is the pin
+  itself: a SID, this account's, in one-account mode, with a broker identity
+  to verify against; the directories were checked by the broker at start
+  and by the client when its credential was saved. There is no socket file,
+  so `socketStat` answers null, nothing is unlinked at start (a live pipe
+  still refuses a second broker), and the owner-mode calls are no-ops; a
+  group mode is `platform-not-implemented`. The macOS branch keeps its
+  ownership checks and gains no handshake; after the handshake the wire is
+  the same on both platforms.
 
 - **Secret store.** The principal is `principal.<credentialName>.dpapi` in
   the client state directory, DPAPI-protected in the `CurrentUser` scope
@@ -33,12 +77,16 @@ puts every platform behaviour behind four seams; two have a Windows branch.
   branches on the platform. Only `--single-account` is supported; `--group`
   is `platform-not-implemented`.
 
+## Tests
+
+Nothing in the suite runs `whoami.exe`, `powershell.exe`, `icacls.exe` or
+`schtasks.exe`, and no named pipe is opened: every call goes through an
+injected runner with a fake, so `tests/platform-win32.test.mjs` (secret
+store, service startup) and `tests/platform-win32-channel.test.mjs` (account
+isolation, local channel) run on every platform. The handshake is exercised
+with real Ed25519 keys over in-memory streams and a loopback TCP pair.
+
 ## Not yet
 
-Still `platform-not-implemented` on `win32`: the local channel (the per-account
-named pipe and the broker's signed handshake, ADR-0046 decision 2) and account
-isolation (the SID and `Get-Acl` custody checks, decision 1). Until the local
-channel lands, the broker and the principal client cannot connect on Windows;
-the two seams above are exercised by the CLI and by
-`tests/platform-win32.test.mjs`, which runs on every platform with fake
-`powershell.exe` and `schtasks.exe` runners.
+A Windows machine has not run the broker end to end; the seams are complete
+and tested with fakes, and the first real run is the next step.

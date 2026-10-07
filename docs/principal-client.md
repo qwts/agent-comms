@@ -60,7 +60,8 @@ if (page.messages.length) await client.ack(page.messages.map((message) => messag
 `createPrincipalClient({ env, timeoutMs, credentialLoader })` defaults to
 `process.env`, a 10-second request deadline, and the platform secret store.
 An embedding host may inject a synchronous `credentialLoader(clientPaths,
-hostConfig, env)` returning its saved `{ principal, secret, brokerUid, mode }`.
+hostConfig, env)` returning its saved `{ principal, secret, brokerUid, mode }`,
+plus `brokerKey` where the local channel pins one ([Windows](windows.md)).
 It is a storage seam, not an authorization override. `mode` is
 `single-account` or `group`; older credentials without it retain `group`.
 The client exposes `principal`, not the secret; recreate it after rotating
