@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `launch` accepts an optional `role` (qwts/agent-bot-identity#535): a short
+  label for the new soul, 1–60 characters after trimming with no control
+  characters, forwarded to the daemon unchanged, which writes it into the
+  spawned soul's manifest. Invalid values fail with `invalid launch role`.
+
 ## [0.3.12] - 2026-10-06
 
 ### Added

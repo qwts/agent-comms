@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs';
 import process from 'node:process';
 
 import { Broker, LIMITS } from '../lib/broker.mjs';
-import { validateLaunchBrief } from '../lib/broker/launch.mjs';
+import { validateLaunchBrief, validateLaunchRole } from '../lib/broker/launch.mjs';
 import { createPrincipalClient } from '../lib/principal-client.mjs';
 import { install, installOptions, jobOptions, status, uninstall } from '../lib/broker/launchagent.mjs';
 import { admin, call, loadCredential, pair, pairPrincipal, callPrincipal, loadPrincipalCredential, resolveParent, soulContext, vouch, watch } from '../lib/client.mjs';
@@ -47,7 +47,7 @@ const COMMANDS = [
   { name: 'task brief', args: ['MESSAGE_ID'], flags: [] },
   { name: 'task list', args: [], flags: ['state', 'after', 'limit'] },
   { name: 'worker run', args: [], flags: ['harness', 'workspace', 'model', 'effort', 'sandbox', 'turn-timeout', 'metrics', 'tier', 'config', 'name', 'parent', 'allow'], booleans: ['allow-full-access'] },
-  { name: 'launch', args: [], flags: ['account', 'soul', 'package', 'harness', 'name', 'comms', 'model', 'brief'] },
+  { name: 'launch', args: [], flags: ['account', 'soul', 'package', 'harness', 'name', 'comms', 'model', 'brief', 'role'] },
   { name: 'principal pair', args: [], flags: ['name'] },
   { name: 'admin principals', args: [], flags: [] },
   { name: 'admin principal-approve', args: ['CODE'], flags: ['grant'] },
@@ -94,7 +94,7 @@ ${COMMANDS.map(({ name, args, variadic, flags, booleans = [] }) =>
   agent-comms --version
 
 launch requires --account, exactly one --soul or --package, and --harness.
---comms accepts on or off; --brief "" clears the recorded launch brief.
+--comms accepts on or off; --brief "" clears the recorded launch brief; --role is a short label for a new soul.
 send requires --body TEXT or --body-file FILE (use - for stdin).
 inbox watch streams JSON Lines until interrupted. --json is accepted; output is JSON by default.
 inbox hook prints the whole waiting inbox for a harness hook to inject into this
@@ -373,9 +373,10 @@ async function run(argv, env) {
       }
       if (flags.comms !== undefined && !['on', 'off'].includes(flags.comms)) fail('usage', '--comms must be on or off');
       if (flags.brief !== undefined) validateLaunchBrief(flags.brief);
+      if (flags.role !== undefined) validateLaunchRole(flags.role);
       return print(await createPrincipalClient({ env }).launch({
         account: flags.account, soul: flags.soul, package: flags.package, harness: flags.harness,
-        name: flags.name, model: flags.model, brief: flags.brief,
+        name: flags.name, model: flags.model, brief: flags.brief, role: flags.role,
         ...(flags.comms === undefined ? {} : { comms: flags.comms === 'on' }),
       }));
     }

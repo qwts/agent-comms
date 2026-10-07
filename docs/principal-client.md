@@ -116,7 +116,7 @@ authority to a worker.
 
 ## Request a daemon launch
 
-`client.launch({ account, soul, harness, name?, comms?, model?, brief? })` launches
+`client.launch({ account, soul, harness, name?, comms?, model?, brief?, role? })` launches
 an existing soul; use `package` instead of `soul` for a package path in the target account.
 Exactly one is required. The broker never opens that path. Account names
 follow the pairing grammar, soul IDs are `agent_<uuid>`, package paths are
@@ -132,6 +132,9 @@ records and forwards the original string unchanged; the daemon trims it,
 records it in the soul's population row, and places it after the identity text
 under `Your brief from the person who launched you:`. Omitting `brief` on a
 relaunch preserves the saved value, reported by `agent-bot soul show --json`.
+Optional `role` is a short label for a new soul (1–60 characters after
+trimming, no control characters; `invalid launch role` otherwise), forwarded
+unchanged; the daemon writes it into the spawned soul's manifest.
 The daemon validates package contents and supported harnesses locally.
 
 The CLI uses the saved principal credential and the same launch contract:

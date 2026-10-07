@@ -274,6 +274,31 @@ test('launch brief is bounded, forwarded untouched, and retained through broker 
   }, options);
 });
 
+test('launch role is bounded, forwarded untouched, and retained through broker replay (agent-bot-identity#535)', async () => {
+  await withBroker(async (c) => {
+    const { client } = await setup(c, [c.owner]);
+    const d = await daemon(c);
+    for (const role of [null, false, 42, [], {}, '', ' ', '\n\t', 'x'.repeat(61), 'a\nb', 'x\0', 'x\x7f', 'x\x85', '\x1fx']) {
+      await assert.rejects(client.launch({ ...target(c), role }), { code: 'bad-request', message: 'invalid launch role' });
+    }
+    assert.deepEqual(d.events, []);
+    const accepted = [];
+    for (const role of ['x', 'x'.repeat(60), '  Researcher  ']) {
+      const sent = await client.launch({ ...target(c), role });
+      assert.deepEqual(await d.next(), { event: 'launch', requestId: sent.requestId, principal: client.principal, ...target(c), role });
+      assert.equal(c.broker.state.launches.get(sent.requestId).role, role);
+      accepted.push({ requestId: sent.requestId, role });
+    }
+    const absent = await client.launch(target(c));
+    assert.equal(Object.hasOwn(await d.next(), 'role'), false);
+    await c.broker.stop();
+    const restarted = await new Broker({ paths: c.paths, mode: 'single-account' }).start();
+    try {
+      for (const { requestId, role } of accepted) assert.equal(restarted.state.launches.get(requestId).role, role);
+    } finally { await restarted.stop(); }
+  }, options);
+});
+
 test('launch CLI passes principal-authenticated settings and an explicit clear to the daemon', async () => {
   const { execFile } = await import('node:child_process');
   const { promisify } = await import('node:util');
