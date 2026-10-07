@@ -300,3 +300,34 @@ test('launch CLI passes principal-authenticated settings and an explicit clear t
       account: c.owner, soul: c.accounts.bob, harness: 'test' });
   }, options);
 });
+
+test('a daemon reports launch progress that status shows, forward only, kept on the result and through restart (agent-bot-identity#536)', async () => {
+  await withBroker(async (c) => {
+    const { client, account } = await setup(c);
+    const d = await daemon(c);
+    await call(c.paths, account, { op: 'leave', agentId: c.accounts.bob });
+    const sent = await client.launch(target(c));
+    await d.next();
+    const progress = (fields) => rpc(c.paths, { op: 'launch-progress', auth: d.auth, ...fields });
+    assert.deepEqual(await progress({ requestId: sent.requestId, stage: 'account' }), { ok: true, requestId: sent.requestId, stage: 'account', recorded: true });
+    assert.deepEqual(await client.launchStatus(sent.requestId), { ok: true, requestId: sent.requestId, status: 'pending', agentId: null, stage: 'account' });
+    // A repeat or an earlier stage changes nothing; a bad stage, an unknown request and a principal are refused.
+    assert.deepEqual(await progress({ requestId: sent.requestId, stage: 'account' }), { ok: true, requestId: sent.requestId, stage: 'account', recorded: false });
+    assert.equal((await progress({ requestId: sent.requestId, stage: 'checking' })).recorded, false);
+    await assert.rejects(progress({ requestId: sent.requestId, stage: 'done' }), { code: 'bad-request' });
+    await assert.rejects(progress({ requestId: `launch_${randomUUID()}`, stage: 'account' }), { code: 'unknown-launch' });
+    await assert.rejects(rpc(c.paths, { op: 'launch-progress', auth: {}, requestId: sent.requestId, stage: 'account' }), { code: 'unauthenticated' });
+    assert.equal((await progress({ requestId: sent.requestId, stage: 'joining' })).recorded, true);
+    await call(c.paths, account, { op: 'join', agentId: c.accounts.bob });
+    await d.report({ requestId: sent.requestId, status: 'launched', agentId: c.accounts.bob });
+    await assert.rejects(progress({ requestId: sent.requestId, stage: 'session' }), { code: 'conflict' });
+    const done = { ok: true, requestId: sent.requestId, status: 'launched', agentId: c.accounts.bob, stage: 'joining' };
+    assert.deepEqual(await client.launchStatus(sent.requestId), done);
+    const audit = readFileSync(c.broker.log.file, 'utf8').trim().split('\n').map(JSON.parse);
+    assert.deepEqual(audit.filter((r) => r.t === 'launch-progress').map((r) => r.stage), ['account', 'joining']);
+    await c.broker.stop();
+    const restarted = await new Broker({ paths: c.paths, mode: 'single-account' }).start();
+    try { assert.deepEqual(await client.launchStatus(sent.requestId), done); }
+    finally { await restarted.stop(); }
+  }, options);
+});

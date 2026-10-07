@@ -190,6 +190,18 @@ are idempotent; different terminal results return `conflict`.
 A failure may add `detail`, display-only text that `launchStatus` returns.
 The broker strips control characters and keeps 512 characters.
 
+While pending, the daemon may report progress (qwts/agent-bot-identity#536):
+
+```json
+{"v":1,"op":"launch-progress","auth":{"daemon":"persona","secret":"DAEMON_SECRET"},"requestId":"launch_<uuid>","stage":"account"}
+```
+
+`stage` is `checking`, `account`, `joining`, `harness` or `session`, in that
+order. The broker fsyncs `launch-progress` and returns `{ ok, requestId,
+stage, recorded }`; a repeat or earlier stage is `recorded: false`, a report
+after the result is `conflict`. `launchStatus` carries the latest `stage`,
+kept on the terminal result; it is absent when the daemon reports none.
+
 Requests and results survive restarts. A disconnect leaves the outcome
 `pending` until the daemon reports. Never automatically retry an uncertain
 launch: every call creates a new request. The broker never replays launches;
