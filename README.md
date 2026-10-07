@@ -18,6 +18,7 @@ Task offers and assignee-reported state are available. A2A and GeniusBar come la
 - [Inbound A2A](docs/a2a.md): loopback JSON-RPC, bearer enrollment, and task mapping.
 - [Tasks](docs/tasks.md): offers, revisions, transitions, and task events.
 - [Principal client API](docs/principal-client.md): embed owner census and chat.
+- [Windows](docs/windows.md): which platform seams exist on `win32`, and how.
 - [AGENTS.md](AGENTS.md): agent context for working in this repository.
 - [CONTRIBUTING.md](CONTRIBUTING.md): how changes move here.
 
