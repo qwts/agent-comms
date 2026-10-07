@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `launch-result` accepts `sandbox: { resolution, account }` and `launch-status` returns it, so a client can show which account a soul runs as (agent-bot-identity #376).
+
 ## [0.3.13] - 2026-10-07
 
 ### Added

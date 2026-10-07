@@ -192,6 +192,10 @@ are idempotent; different terminal results return `conflict`.
 
 A failure may add `detail`, display-only text that `launchStatus` returns.
 The broker strips control characters and keeps 512 characters.
+Either result may add `sandbox: { resolution, account }` (`sandboxed` or
+`unrestricted`, and the macOS account the soul runs as, from agent-bot's
+sandbox resolution); `launchStatus` returns it as reported, so a client can
+show "Runs as …". A daemon that does not know the field sends nothing.
 
 While pending, the daemon may report progress (qwts/agent-bot-identity#536):
 
