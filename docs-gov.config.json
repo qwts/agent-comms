@@ -5,7 +5,9 @@
     "CONTRIBUTING.md",
     "AGENTS.md"
   ],
-  "indexes": ["README.md"],
+  "indexes": [
+    "README.md"
+  ],
   "tokenBudgets": {
     "perDoc": 2600,
     "bankSlack": 0.25,
@@ -14,6 +16,11 @@
         "path": "docs/decisions/ADR-0008-daemon-vouching-and-the-wake-plane.md",
         "budget": 2900,
         "reason": "carries Amendment 1 (proofs) and Amendment 2 (delivered asides, #100); splitting would separate the proof contract from the route that reuses it"
+      },
+      {
+        "path": "docs/principal-client.md",
+        "budget": 2900,
+        "reason": "the daemon launch contract (request, watch frame, result, progress, #111) stays in one place; splitting it would separate the frame from the result and progress reports it expects"
       }
     ],
     "contextSets": []
@@ -54,7 +61,9 @@
     "links": true,
     "orphans": true,
     "stalePaths": {
-      "roots": ["docs"]
+      "roots": [
+        "docs"
+      ]
     }
   }
 }

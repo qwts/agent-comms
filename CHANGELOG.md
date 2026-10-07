@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `launch-progress` daemon op (qwts/agent-bot-identity#536): while a launch is
+  pending the daemon may report a `stage` (`checking`, `account`, `joining`,
+  `harness`, `session`); `launch-status` returns the latest one, kept on the
+  terminal result. Forward-only, idempotent, `conflict` after the result.
+
 ## [0.3.11] - 2026-10-06
 
 ### Added
