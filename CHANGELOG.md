@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Windows branches for two ADR-0059 seams, per GeniusBar ADR-0046 (qwts/GeniusBar#46): the secret store keeps the principal as a DPAPI-protected `principal.<credentialName>.dpapi` file in the `CurrentUser` scope, and service startup registers the broker as a per-user logon scheduled task from XML through `schtasks`, with the same operation names as the macOS branch. The local channel and account isolation stay `platform-not-implemented` on `win32`. See [Windows](docs/windows.md).
+- Windows branches for two ADR-0059 seams, per GeniusBar ADR-0046 (qwts/GeniusBar#46): the secret store keeps the principal as a DPAPI-protected `principal.<credentialName>.dpapi` file in the `CurrentUser` scope, and service startup registers the broker as a per-user logon scheduled task from XML through `schtasks`, with the same operation names as the macOS branch. See [Windows](docs/windows.md).
+- Windows branches for the other two seams (ADR-0046 decisions 1 and 2): account isolation identifies the account by its SID (`whoami /user`) and checks custody by owner through `Get-Acl`, one-account mode only; the local channel is the per-account named pipe `\\.\pipe\<serviceLabel>.<SID>`, on which the broker proves itself on every connection with an Ed25519 signature over the client's nonce and the pipe name, checked against the key pairing pinned from the broker's `identity.json`. Pairing records now carry `brokerKey` beside `brokerUid` where the channel pins one; a broker that fails to prove itself is `broker-untrusted`. New error code `account-unresolved` (the current SID could not be read).
 
 ## [0.3.14] - 2026-10-07
 
