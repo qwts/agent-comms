@@ -24,7 +24,7 @@ import { runWorker } from '../lib/worker/index.mjs';
 import { sha256 } from '../lib/broker/shared.mjs';
 import * as skill from '../lib/skill.mjs';
 
-const VERSION = '0.3.12';
+const VERSION = '0.3.13';
 
 // Each row owns its positional arity and value flags; help uses the same schema.
 const COMMANDS = [
