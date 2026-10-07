@@ -32,7 +32,7 @@ or on the existing POSIX test implementation, it reads `principal.json`
 (`principal.<name>.json` for a non-default credential name) in the client
 state directory through the account-isolation seam.
 A failed keychain read fails closed; it does not silently try another store.
-Windows remains the explicit `platform-not-implemented` seam.
+On Windows two of the four seams exist; see [Windows](windows.md).
 
 ## Use the library
 

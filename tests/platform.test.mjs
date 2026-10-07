@@ -14,10 +14,18 @@ import * as startup from '../lib/broker/launchagent.mjs';
 const seams = { 'local-channel': createLocalChannel, 'secret-store': createSecretStore,
   'service-startup': createServiceStartup, 'account-isolation': createAccountIsolation };
 
+// GeniusBar ADR-0046: the secret store and service startup have a Windows
+// branch (tests/platform-win32.test.mjs); the other two seams still refuse.
+const implemented = new Set(['secret-store', 'service-startup']);
+
 for (const [name, create] of Object.entries(seams)) {
-  test(`${name}: Windows has the same port and every operation refuses before side effects`, () => {
+  test(`${name}: Windows has the same port${implemented.has(name) ? '' : ' and every operation refuses before side effects'}`, () => {
     const mac = create('darwin');
     const windows = create('win32');
+    if (implemented.has(name)) {
+      for (const key of Object.keys(mac)) assert.equal(typeof windows[key], 'function', `${name} on win32 lacks ${key}`);
+      return;
+    }
     assert.deepEqual(Object.keys(windows), Object.keys(mac));
     for (const operation of Object.values(windows)) {
       assert.throws(() => operation(), {
