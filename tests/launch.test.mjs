@@ -108,6 +108,42 @@ test('principal launches existing and packaged souls through one fake daemon; re
   }, options);
 });
 
+test('a launch result may say where the soul runs, and status returns it through a restart', async () => {
+  await withBroker(async (c) => {
+    const { client, account } = await setup(c);
+    const d = await daemon(c);
+    const pkg = { account: c.owner, package: '/daemon-local/soul package', harness: 'test' };
+    const failed = await client.launch(pkg);
+    await d.next();
+    const sandbox = { resolution: 'sandboxed', account: 'geniusbar-agent' };
+    await d.report({ requestId: failed.requestId, status: 'failed', detail: 'sandbox-not-ready: account missing', sandbox: { ...sandbox, extra: 'dropped' } });
+    assert.deepEqual((await client.launchStatus(failed.requestId)).sandbox, sandbox);
+    assert.equal((await d.report({ requestId: failed.requestId, status: 'failed', detail: 'sandbox-not-ready: account missing', sandbox })).duplicate, true);
+    await assert.rejects(d.report({ requestId: failed.requestId, status: 'failed', detail: 'sandbox-not-ready: account missing', sandbox: { ...sandbox, account: 'other' } }), { code: 'conflict' });
+    await assert.rejects(d.report({ requestId: failed.requestId, status: 'failed', detail: 'sandbox-not-ready: account missing' }), { code: 'conflict' });
+    for (const bad of [{ resolution: 'maybe', account: 'a' }, { resolution: 'sandboxed' }, { resolution: 'sandboxed', account: 'bad name' }, 'sandboxed', []]) {
+      const sent = await client.launch(pkg);
+      await d.next();
+      await assert.rejects(d.report({ requestId: sent.requestId, status: 'failed', sandbox: bad }), { code: 'bad-request' });
+    }
+    const plain = await client.launch(pkg);
+    await d.next();
+    await d.report({ requestId: plain.requestId, status: 'failed', sandbox: null });
+    assert.equal('sandbox' in (await client.launchStatus(plain.requestId)), false);
+    const launched = await client.launch(pkg);
+    await d.next();
+    const newId = `agent_${randomUUID()}`;
+    await call(c.paths, account, { op: 'join', agentId: newId });
+    await d.report({ requestId: launched.requestId, status: 'launched', agentId: newId, sandbox: { resolution: 'unrestricted', account: c.owner } });
+    await c.broker.stop();
+    const restarted = await new Broker({ paths: c.paths, mode: 'single-account' }).start();
+    try {
+      assert.deepEqual((await client.launchStatus(failed.requestId)).sandbox, sandbox);
+      assert.deepEqual((await client.launchStatus(launched.requestId)).sandbox, { resolution: 'unrestricted', account: c.owner });
+    } finally { await restarted.stop(); }
+  }, options);
+});
+
 test('a failed launch carries the daemon detail, normalized, through status and restart', async () => {
   await withBroker(async (c) => {
     const { client, account } = await setup(c);
