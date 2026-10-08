@@ -1,10 +1,14 @@
 # ADR-0059: Host apps embed agent-comms through a contract and platform seams
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-01
 **Issue:** qwts/agent-comms#59
 **Review:** [#126](https://github.com/qwts/agent-comms/issues/126),
-2026-10-08; pending owner acceptance.
+2026-10-08.
+**Accepted:** 2026-10-07 (America/Chicago), owner acceptance in the review
+conversation for [PR #128](https://github.com/qwts/agent-comms/pull/128), covering
+commit `665866fbc1bbb53715be99f72e539cc7437c6a9c`. Implementation gaps remain
+separately tracked.
 
 ## Context
 
