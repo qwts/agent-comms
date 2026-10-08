@@ -335,6 +335,38 @@ test('launch role is bounded, forwarded untouched, and retained through broker r
   }, options);
 });
 
+test('launch parent is null or an agent id, forwarded untouched, and retained through broker replay (GeniusBar#261)', async () => {
+  await withBroker(async (c) => {
+    const { client } = await setup(c, [c.owner]);
+    const d = await daemon(c);
+    for (const parent of [false, 42, [], {}, '', ' ', 'none', 'self', 'agent_', 'agent_not-a-uuid', `${c.accounts.alice} `, 'x\0']) {
+      await assert.rejects(client.launch({ ...target(c), parent }), { code: 'bad-request', message: 'invalid launch parent' });
+    }
+    assert.deepEqual(d.events, []);
+    const accepted = [];
+    // The broker does not check that the parent exists or is active: the daemon
+    // owns that against its census. A package launch may name a parent too.
+    for (const request of [{ ...target(c), parent: null }, { ...target(c), parent: c.accounts.alice },
+      { account: c.owner, package: '/helper.soul', harness: 'test', parent: c.accounts.alice }, { ...target(c), parent: `agent_${randomUUID()}` }]) {
+      const sent = await client.launch(request);
+      assert.deepEqual(await d.next(), { event: 'launch', requestId: sent.requestId, principal: client.principal, ...request });
+      assert.equal(c.broker.state.launches.get(sent.requestId).parent, request.parent);
+      accepted.push({ requestId: sent.requestId, parent: request.parent });
+    }
+    const absent = await client.launch({ ...target(c), parent: undefined });
+    assert.equal(Object.hasOwn(await d.next(), 'parent'), false);
+    assert.equal(Object.hasOwn(c.broker.state.launches.get(absent.requestId), 'parent'), false);
+    await c.broker.stop();
+    const restarted = await new Broker({ paths: c.paths, mode: 'single-account' }).start();
+    try {
+      for (const { requestId, parent } of accepted) {
+        assert.equal(Object.hasOwn(restarted.state.launches.get(requestId), 'parent'), true);
+        assert.equal(restarted.state.launches.get(requestId).parent, parent);
+      }
+    } finally { await restarted.stop(); }
+  }, options);
+});
+
 test('launch CLI passes principal-authenticated settings and an explicit clear to the daemon', async () => {
   const { execFile } = await import('node:child_process');
   const { promisify } = await import('node:util');
@@ -359,6 +391,14 @@ test('launch CLI passes principal-authenticated settings and an explicit clear t
     const sent = JSON.parse(stdout);
     assert.deepEqual(await d.next(), { event: 'launch', requestId: sent.requestId, principal: client.principal,
       account: c.owner, soul: c.accounts.bob, harness: 'test' });
+    for (const [flag, parent] of [['none', null], [c.accounts.alice, c.accounts.alice]]) {
+      const { stdout } = await run(process.execPath, [bin, 'launch', '--account', c.owner,
+        '--soul', c.accounts.bob, '--harness', 'test', '--parent', flag], { env });
+      assert.deepEqual(await d.next(), { event: 'launch', requestId: JSON.parse(stdout).requestId, principal: client.principal,
+        account: c.owner, soul: c.accounts.bob, harness: 'test', parent });
+    }
+    await assert.rejects(run(process.execPath, [bin, 'launch', '--account', c.owner, '--soul', c.accounts.bob, '--harness', 'test', '--parent', 'self'], { env }),
+      ({ stderr }) => /invalid launch parent/.test(stderr));
   }, options);
 });
 
