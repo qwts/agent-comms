@@ -3,7 +3,7 @@
 Host apps use `lib/principal-client.mjs` to read the census and chat as the
 owner over the existing broker protocol. The client opens one connection per
 request, checks broker custody through the local-channel seam, and presents
-only the saved principal credential. It adds no transport or dependencies.
+only the saved principal credential.
 
 ## Pair once, then connect
 
@@ -32,7 +32,8 @@ or on the existing POSIX test implementation, it reads `principal.json`
 (`principal.<name>.json` for a non-default credential name) in the client
 state directory through the account-isolation seam.
 A failed keychain read fails closed; it does not silently try another store.
-On Windows two of the four seams exist; see [Windows](windows.md).
+All four [Windows seams](windows.md) exist; principal-client integration remains
+[#127](https://github.com/qwts/agent-comms/issues/127).
 
 ## Use the library
 
@@ -60,9 +61,9 @@ if (page.messages.length) await client.ack(page.messages.map((message) => messag
 `createPrincipalClient({ env, timeoutMs, credentialLoader })` defaults to
 `process.env`, a 10-second request deadline, and the platform secret store.
 An embedding host may inject a synchronous `credentialLoader(clientPaths,
-hostConfig, env)` returning its saved `{ principal, secret, brokerUid, mode }`,
-plus `brokerKey` where the local channel pins one ([Windows](windows.md)).
-It is a storage seam, not an authorization override. `mode` is
+hostConfig, env)` returning its saved `{ principal, secret, brokerUid, mode }`.
+Windows SIDs fail numeric `brokerUid` validation and `brokerKey` is discarded
+(#127). This storage seam does not override authorization. `mode` is
 `single-account` or `group`; older credentials without it retain `group`.
 The client exposes `principal`, not the secret; recreate it after rotating
 credentials.
