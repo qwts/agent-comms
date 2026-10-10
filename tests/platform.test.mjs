@@ -3,6 +3,7 @@ import { readFileSync, readdirSync, mkdtempSync, rmSync, lstatSync } from 'node:
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import { createLocalChannel } from '../lib/platform/local-channel.mjs';
 import { createSecretStore } from '../lib/platform/secret-store.mjs';
@@ -106,5 +107,5 @@ test('compatibility exports retain the channel modes and LaunchAgent bytes', () 
   const options = { label: 'example', args: ['/node', '/cli', 'broker', 'run'], logDir: '/logs' };
   assert.equal(service.renderPlist(options), startup.renderPlist(options));
   assert.equal(service.installOptions({ mode: 'single-account', uid: 501 }).args[1],
-    new URL('../bin/agent-comms.mjs', import.meta.url).pathname);
+    fileURLToPath(new URL('../bin/agent-comms.mjs', import.meta.url)));
 });
