@@ -8,9 +8,13 @@ not in this repository.
 
 ## What this repository is
 
-agent-comms: harness-independent agent communication for the qwts fleet,
-built on the agent-bot identity daemon. It is onboarding and holds design
-records only. Map: [README.md](README.md).
+agent-comms is released harness-independent communications software for the
+qwts fleet, built on the agent-bot identity daemon. The current release is
+v0.3.15 and includes messaging, task workflows, optional A2A, and a principal
+host API. The [README](README.md) maps these features and links their
+contracts. Windows platform branches are released, but end-to-end Windows and
+selected GeniusBar bundle support are not established; see [Windows](docs/windows.md)
+and [#127](https://github.com/qwts/agent-comms/issues/127).
 
 <!-- governed:shared-agent-discovery:start -->
 
