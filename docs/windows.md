@@ -23,10 +23,17 @@ and only one-account mode: `persona-accounts` (groups, `--group`) is
   are the plain files the macOS branch writes, in the same shape.
 - **Local channel.** The broker listens on the named pipe
   `\\.\pipe\<serviceLabel>.<SID>` (the admin channel on
-  `\\.\pipe\<serviceLabel>.admin.<SID>`), which Node's `net` serves and
-  connects to as it does a socket path. Pipe names are one namespace for the
-  machine, so the name proves nothing; the broker proves itself on every
-  connection instead. The first frame is the client's
+  `\\.\pipe\<serviceLabel>.admin.<SID>`), which Node's `net` serves as it
+  does a socket path. The client uses .NET's
+  `NamedPipeClientStream` with `TokenImpersonationLevel.Identification` before
+  it writes the hello. A pipe server can inspect the connecting account but
+  cannot impersonate it at the broader `Impersonation` or `Delegation` level.
+  This OS token ceiling is separate from the Ed25519 proof, which still
+  authenticates the application peer and gates requests.
+  If this connector cannot start or open the pipe, it fails closed and never
+  falls back to Node's unrestricted pipe open. Pipe names are one namespace
+  for the machine, so the name proves nothing; the broker proves itself on
+  every connection instead. The first frame is the client's
   `{ v: 1, hello: <32-byte hex nonce> }`; the broker answers
   `{ v: 1, proof: <base64 Ed25519 signature> }` over
   `agent-comms broker handshake v1\n<pipe name>\n<nonce>\n`, and only
@@ -79,14 +86,18 @@ and only one-account mode: `persona-accounts` (groups, `--group`) is
 
 ## Tests
 
-Nothing in the suite runs `whoami.exe`, `powershell.exe`, `icacls.exe` or
-`schtasks.exe`, and no named pipe is opened: every call goes through an
-injected runner with a fake, so `tests/platform-win32.test.mjs` (secret
-store, service startup) and `tests/platform-win32-channel.test.mjs` (account
-isolation, local channel) run on every platform. The handshake is exercised
-with real Ed25519 keys over in-memory streams and a loopback TCP pair.
+The cross-platform Windows fixtures inject account and connection seams, so
+`tests/platform-win32.test.mjs` (secret store, service startup) and
+`tests/platform-win32-channel.test.mjs` (account isolation, local channel)
+run without Windows. The handshake uses real Ed25519 keys over in-memory
+streams and a loopback TCP pair. A separate Windows CI probe opens a real
+named pipe through the production client connector; its server reads the hello,
+calls `ImpersonateNamedPipeClient`, and requires the observed level to be
+`Identification`. It also checks that an invalid broker proof withholds queued
+request bytes. The probe does not claim a packaged broker or daemon acceptance.
 
 ## Not yet
 
-A Windows machine has not run the broker end to end; the seams are complete
-and tested with fakes, and the first real run is the next step.
+A Windows machine has not run the broker end to end. The native pipe probe
+checks this OS impersonation boundary only; it does not replace the broader
+Windows live acceptance tracked by [#127](https://github.com/qwts/agent-comms/issues/127).
