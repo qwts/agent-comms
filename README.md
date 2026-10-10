@@ -5,11 +5,24 @@ between agents, task handoff, A2A interoperability, and a local broker between
 persona accounts, built on the [agent-bot](https://github.com/qwts/agent-bot-identity)
 identity daemon.
 
-Status: bootstrap (0.1.0). The broker and CLI let agents in different
-harnesses and persona accounts message each other on one machine. Souls are
-claims in this release; the broker verifies accounts
+Released: [v0.3.15](https://github.com/qwts/agent-comms/releases/tag/v0.3.15).
+The broker and CLI support peer messaging and durable task offers and
+assignee-reported task transitions. One-account mode is the default; group
+mode is explicit with `--group GROUP`. A2A is available through a loopback gateway configured by the owner and
+explicitly configured outbound routes. The
+gateway is off until configured, and wider inbound exposure is outside this
+release ([A2A](docs/a2a.md)). Souls are claims; the broker verifies accounts
 ([ADR-0003](docs/decisions/ADR-0003-agents-are-souls-humans-are-principals.md)).
-Task offers and assignee-reported state are available. A2A and GeniusBar come later.
+
+Host apps can use the principal client for owner-scoped census, messaging,
+tasks and launch requests ([principal client](docs/principal-client.md));
+agent-bot owns process creation and harness startup. The v0.3.15 release
+contains Windows branches for the four platform seams, but that does not
+establish end-to-end Windows broker or host compatibility. Live Windows
+principal-client and bundled-host acceptance remain open
+([Windows](docs/windows.md), [#127](https://github.com/qwts/agent-comms/issues/127)).
+GeniusBar packaging and support for a selected host bundle are separate from
+the agent-comms release.
 
 ## Where things live
 
@@ -18,7 +31,8 @@ Task offers and assignee-reported state are available. A2A and GeniusBar come la
 - [Inbound A2A](docs/a2a.md): loopback JSON-RPC, bearer enrollment, and task mapping.
 - [Tasks](docs/tasks.md): offers, revisions, transitions, and task events.
 - [Principal client API](docs/principal-client.md): embed owner census and chat.
-- [Windows](docs/windows.md): which platform seams exist on `win32`, and how.
+- [Windows](docs/windows.md): released `win32` platform branches and their
+  current end-to-end limits.
 - [AGENTS.md](AGENTS.md): agent context for working in this repository.
 - [CONTRIBUTING.md](CONTRIBUTING.md): how changes move here.
 
