@@ -6,6 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import { Broker } from '../lib/broker.mjs';
 import { brokerPaths } from '../lib/paths.mjs';
@@ -28,7 +29,7 @@ const waitFor = async (description, predicate, timeoutMs = 3000) => {
 const newSoul = () => `agent_${randomUUID()}`;
 
 const watch = (env, soul) => {
-  const child = spawn(process.execPath, [new URL('../bin/agent-comms.mjs', import.meta.url).pathname, 'inbox', 'watch', '--full'], {
+  const child = spawn(process.execPath, [fileURLToPath(new URL('../bin/agent-comms.mjs', import.meta.url)), 'inbox', 'watch', '--full'], {
     env: { ...env, QWTS_AGENT_ID: soul },
   });
   const events = [];
@@ -238,7 +239,7 @@ test('an unbound caller fails with unbound', async () => withBroker(async ({ env
   const unbound = { ...env };
   delete unbound.QWTS_AGENT_ID;
   const { execFile } = await import('node:child_process');
-  const result = await new Promise((resolve) => execFile(process.execPath, [new URL('../bin/agent-comms.mjs', import.meta.url).pathname, 'peers'], { env: unbound, cwd: root }, (error, stdout) => resolve({ exit: error?.code ?? 0, json: JSON.parse(stdout) })));
+  const result = await new Promise((resolve) => execFile(process.execPath, [fileURLToPath(new URL('../bin/agent-comms.mjs', import.meta.url)), 'peers'], { env: unbound, cwd: root }, (error, stdout) => resolve({ exit: error?.code ?? 0, json: JSON.parse(stdout) })));
   assert.notEqual(result.exit, 0);
   assert.equal(result.json.error.code, 'unbound');
 }));
@@ -324,7 +325,7 @@ test('single-account mode pairs, joins, sends, and wakes without a group', async
     const watcher = watch(env, recipient);
     await watcher.wait('ready event', (event) => event.event === 'ready');
     try {
-      const { stdout } = await runCli(process.execPath, [new URL('../bin/agent-comms.mjs', import.meta.url).pathname,
+      const { stdout } = await runCli(process.execPath, [fileURLToPath(new URL('../bin/agent-comms.mjs', import.meta.url)),
         'send', recipient, '--body', 'wake me'], { env: { ...env, QWTS_AGENT_ID: sender } });
       const sent = JSON.parse(stdout);
       assert.equal(sent.wake, 'warm');

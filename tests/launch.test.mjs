@@ -152,18 +152,25 @@ test('a failed launch carries the daemon detail, normalized, through status and 
     const failed = await client.launch(pkg);
     await d.next();
     const raw = `soul has no GitHub identity\n\tsee agent-bot doctor ${'x'.repeat(600)}`;
-    await d.report({ requestId: failed.requestId, status: 'failed', detail: raw });
+    await d.report({ requestId: failed.requestId, status: 'failed', detail: raw, code: 'runtime-checksum-mismatch' });
     const detail = (await client.launchStatus(failed.requestId)).detail;
     assert.equal(detail.length, 512);
     assert.ok(detail.startsWith('soul has no GitHub identity see agent-bot doctor x'));
-    assert.equal((await d.report({ requestId: failed.requestId, status: 'failed', detail: raw })).duplicate, true);
+    assert.equal((await client.launchStatus(failed.requestId)).code, 'runtime-checksum-mismatch');
+    assert.equal((await d.report({ requestId: failed.requestId, status: 'failed', detail: raw, code: 'runtime-checksum-mismatch' })).duplicate, true);
     await assert.rejects(d.report({ requestId: failed.requestId, status: 'failed', detail: 'other' }), { code: 'conflict' });
+    await assert.rejects(d.report({ requestId: failed.requestId, status: 'failed', detail: raw, code: 'runtime-install-failed' }), { code: 'conflict' });
     await assert.rejects(d.report({ requestId: failed.requestId, status: 'failed' }), { code: 'conflict' });
     const bare = await client.launch(pkg);
     await d.next();
     await assert.rejects(d.report({ requestId: bare.requestId, status: 'failed', detail: 7 }), { code: 'bad-request' });
     await d.report({ requestId: bare.requestId, status: 'failed', detail: ' \n ' });
     assert.equal('detail' in (await client.launchStatus(bare.requestId)), false);
+    for (const code of [42, '', 'Runtime-failed', 'a'.repeat(65), 'bad_code']) {
+      const invalid = await client.launch(pkg);
+      await d.next();
+      await assert.rejects(d.report({ requestId: invalid.requestId, status: 'failed', code }), { code: 'bad-request' });
+    }
     const launched = await client.launch(pkg);
     await d.next();
     const newId = `agent_${randomUUID()}`;
@@ -175,6 +182,7 @@ test('a failed launch carries the daemon detail, normalized, through status and 
     const restarted = await new Broker({ paths: c.paths, mode: 'single-account' }).start();
     try {
       assert.equal((await client.launchStatus(failed.requestId)).detail, detail);
+      assert.equal((await client.launchStatus(failed.requestId)).code, 'runtime-checksum-mismatch');
       assert.equal((await client.launchStatus(launched.requestId)).status, 'launched');
     } finally { await restarted.stop(); }
   }, options);
@@ -430,5 +438,26 @@ test('a daemon reports launch progress that status shows, forward only, kept on 
     const restarted = await new Broker({ paths: c.paths, mode: 'single-account' }).start();
     try { assert.deepEqual(await client.launchStatus(sent.requestId), done); }
     finally { await restarted.stop(); }
+  }, options);
+});
+
+test('launch progress accepts the daemon stages in order while allowing optional stages to be skipped', async () => {
+  await withBroker(async (c) => {
+    const { client } = await setup(c);
+    const d = await daemon(c);
+    const pkg = { account: c.owner, package: '/daemon-local/soul package', harness: 'test' };
+    const sent = await client.launch(pkg);
+    await d.next();
+    const progress = (requestId, stage) => rpc(c.paths, { op: 'launch-progress', auth: d.auth, requestId, stage });
+    for (const stage of ['checking', 'account', 'runtimes', 'tool-home', 'provider', 'sign-in', 'joining', 'harness', 'session']) {
+      assert.equal((await progress(sent.requestId, stage)).recorded, true, stage);
+    }
+    assert.equal((await client.launchStatus(sent.requestId)).stage, 'session');
+    const skipped = await client.launch(pkg);
+    await d.next();
+    await progress(skipped.requestId, 'account');
+    assert.equal((await progress(skipped.requestId, 'joining')).recorded, true);
+    assert.equal((await progress(skipped.requestId, 'runtimes')).recorded, false, 'an earlier optional stage cannot move progress backwards');
+    d.socket.destroy();
   }, options);
 });
