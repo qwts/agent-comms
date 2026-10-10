@@ -120,28 +120,26 @@ authority to a worker.
 
 `client.launch({ account, soul, harness, name?, comms?, model?, brief?, role?, parent? })` launches
 an existing soul; `package` instead of `soul` names a package path in the
-target account (exactly one; the broker never opens it). Account names
-follow the pairing grammar, soul IDs are `agent_<uuid>`, package paths are
-nonblank strings of at most 4096 characters, harness names at most 64, and
-optional display names at most 128. Strings cannot contain control characters.
+target account (exactly one; the broker never opens it). Account names use the
+pairing grammar, soul IDs are `agent_<uuid>`, package paths are nonblank and
+at most 4096 characters, harness names at most 64 and display names at most
+128. Strings cannot contain controls.
 Boolean `comms` sets the soul's agent-comms before it starts.
 Optional `model` selects a model (at most 120 printable characters).
-Optional `brief` supplies the launch instructions: 1–4000 characters after
-trimming, no control characters except newline and tab; the empty string
-clears a saved brief, whitespace-only is invalid (`invalid launch brief`). The
-broker forwards it unchanged; the daemon trims it, records it in the soul's
-population row and places it after the identity text under `Your brief from
-the person who launched you:`. Omitting `brief` on a relaunch keeps the saved
-value (`agent-bot soul show --json`).
-Optional `role` is a short label for a new soul (1–60 characters after
-trimming, no control characters; `invalid launch role` otherwise), written
-into the spawned soul's manifest.
+Optional `brief` supplies launch instructions: 1–4000 characters after
+trimming, no controls except newline/tab; empty clears a saved brief, and
+whitespace-only is invalid (`invalid launch brief`). The broker forwards it
+unchanged; the daemon trims it, records it in the soul's population row and
+places it after identity text under `Your brief from the person who launched
+you:`. Omit it on relaunch to keep the saved value (`agent-bot soul show
+--json`).
+Optional `role` labels a new soul (1–60 trimmed characters, no controls;
+`invalid launch role` otherwise) and is written into its manifest.
 Optional `parent` (qwts/GeniusBar#261) is `null` for an independent soul or
-an `agent_<uuid>` naming its companion parent; anything else is
-`invalid launch parent`. The broker forwards it unchecked; the daemon validates
-it against its census and reports a refusal as `failed`. Older brokers drop it
-and daemons without the `launch-parent` capability ignore it, so hosts gate on
-that capability.
+an `agent_<uuid>` companion parent; otherwise it is `invalid launch parent`.
+The broker forwards it unchecked; the daemon validates against its census and
+reports refusal as `failed`. Older brokers drop it; daemons without the
+`launch-parent` capability ignore it, so hosts gate on that capability.
 
 The CLI uses the saved principal credential and the same launch contract:
 
@@ -153,33 +151,31 @@ agent-comms launch --account persona --soul agent_UUID --harness codex --brief '
 ```
 
 `--name`, `--comms on|off`, `--model`, `--brief`, `--role` and
-`--parent none|AGENT_ID` are optional. Output is JSON and reports `pending`.
+`--parent none|AGENT_ID` are optional. Output is JSON with status `pending`.
 
-Approved principals launch into approved paired accounts. Existing souls
-require account, soul, or address grants and receive allowlist permission;
-packages require an account or unrestricted grant. Launches share the
-principal send rate limit.
+Approved principals launch into approved paired accounts: existing souls require
+account, soul, or address grants and receive allowlist permission; packages
+require account or unrestricted grants. Launches share the principal send rate
+limit.
 
-The result is `{ ok, requestId, status: 'pending', agentId: null }`.
-Poll `client.launchStatus(requestId)` (wire op `launch-status`) for the same
-shape with terminal status `launched` or `failed`; a failure may have a null
-agentId. Status access requires
-the original principal and current target authorization. Unknown or hidden
-requests return `unknown-launch`. There is no launch message in the inbox.
-
-An account without an open daemon watch fails with `daemon-unavailable`.
-An accepted request is fsynced as `launch-request`, then forwarded to exactly
-one live account-watch connection, never broadcast or retried.
+Launch returns `{ ok, requestId, status: 'pending', agentId: null }`.
+Poll `client.launchStatus(requestId)` (wire op `launch-status`) for terminal
+status `launched` or `failed`; a failure may have a null `agentId`. Status
+requires the original principal and current target authorization; hidden or
+unknown requests return `unknown-launch`. There is no launch inbox message. An
+account without an open daemon watch returns `daemon-unavailable`. The broker
+fsyncs each request before forwarding it to one live account watch; it never
+retries or replays launches.
 The newline-delimited watch frame is:
 
 ```json
 {"event":"launch","requestId":"launch_<uuid>","principal":"principal_<uuid>","account":"persona","soul":"agent_<uuid>","harness":"codex","name":"Example"}
 ```
 
-Package frames contain `package` instead of `soul`. Optional `name`, `comms`,
-`model`, `brief`, `role` and `parent` are omitted when absent (`parent` is
-`null` or the parent's agent id). Agent-bot owns package resolution, process
-creation, harness startup and joining; all fields are data, never shell commands.
+Package frames use `package` instead of `soul`. Optional `name`, `comms`,
+`model`, `brief`, `role` and `parent` fields are omitted when absent (`parent`
+is null or an agent ID). Agent-bot resolves packages, creates processes,
+starts harnesses and joins; fields are data, never shell commands.
 
 After joining, the daemon submits a separate protocol-v1 request connection:
 
@@ -194,12 +190,13 @@ request, matches the requested ID. Failure uses `status: 'failed'`, with
 and returns `{ ok, requestId, recorded: true, duplicate }`. Identical reports
 are idempotent; different terminal results return `conflict`.
 
-A failure may add `detail`, display-only text that `launchStatus` returns.
-The broker strips control characters and keeps 512 characters.
-Either result may add `sandbox: { resolution, account }` (`sandboxed` or
-`unrestricted`, and the macOS account the soul runs as, from agent-bot's
-sandbox resolution); `launchStatus` returns it as reported, so a client can
-show "Runs as …". A daemon that does not know the field sends nothing.
+Failure `detail` is display-only; the broker strips control characters and
+keeps 512 characters. Optional failure `code` matches `^[a-z][a-z0-9-]{0,63}$`
+and is preserved by status for callers to branch on.
+Either result may add `sandbox: { resolution, account }`, where `resolution`
+is `sandboxed` or `unrestricted`, and `account` names the macOS account the
+soul runs as from agent-bot's sandbox resolution. Status returns it for
+display; daemons may omit it.
 
 While pending, the daemon may report progress (qwts/agent-bot-identity#536):
 
@@ -207,13 +204,14 @@ While pending, the daemon may report progress (qwts/agent-bot-identity#536):
 {"v":1,"op":"launch-progress","auth":{"daemon":"persona","secret":"DAEMON_SECRET"},"requestId":"launch_<uuid>","stage":"account"}
 ```
 
-`stage` is `checking`, `account`, `joining`, `harness` or `session`, in that
-order. The broker fsyncs `launch-progress` and returns `{ ok, requestId,
+`stage` follows `checking`, `account`, `runtimes`, `tool-home`, `provider`,
+`sign-in`, `joining`, `harness`, `session`, in that order. The `runtimes`,
+`tool-home`, `provider` and `sign-in` stages are conditional. The broker fsyncs
+`launch-progress` and returns `{ ok, requestId,
 stage, recorded }`; a repeat or earlier stage is `recorded: false`, a report
 after the result is `conflict`. `launchStatus` carries the latest `stage`,
 kept on the terminal result; it is absent when the daemon reports none.
 
-Requests and results survive restarts; a disconnect leaves the outcome
-`pending` until the daemon reports. Never automatically retry an uncertain
-launch: every call creates a new request. The broker never replays launches;
-agent-bot owns execution and recovery.
+Requests and results survive restarts; a disconnect leaves `pending` until
+the daemon reports. Never automatically retry an uncertain launch: each call
+creates a new request. Agent-bot owns execution and recovery.
