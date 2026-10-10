@@ -50,6 +50,11 @@ test('Windows pipe connector waits for the child connection marker and forwards 
   child.stderr.write('ECTED\n');
   assert.equal(connected, true);
   assert.equal(observed.file, 'powershell.exe');
+  const command = observed.args.at(-1);
+  const encodedWorker = /FromBase64String\('([^']+)'\)/.exec(command)?.[1];
+  assert.ok(encodedWorker, 'the fixed PowerShell command should carry the relay source');
+  const workerSource = Buffer.from(encodedWorker, 'base64').toString('utf16le');
+  assert.match(workerSource, /PipeDirection\.InOut, PipeOptions\.Asynchronous,\s*TokenImpersonationLevel\.Identification/);
   assert.deepEqual(observed.options.env, { Path: 'system-path', keep: 'yes', AGENT_COMMS_PIPE_NAME: 'agent-comms.test.S-1-5-21-123' });
   assert.deepEqual(callerEnv, { Path: 'system-path', PSModulePath: 'incompatible', keep: 'yes' });
 
