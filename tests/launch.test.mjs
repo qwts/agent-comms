@@ -166,16 +166,26 @@ test('a failed launch carries the daemon detail, normalized, through status and 
     await assert.rejects(d.report({ requestId: bare.requestId, status: 'failed', detail: 7 }), { code: 'bad-request' });
     await d.report({ requestId: bare.requestId, status: 'failed', detail: ' \n ' });
     assert.equal('detail' in (await client.launchStatus(bare.requestId)), false);
-    for (const code of [42, '', 'Runtime-failed', 'a'.repeat(65), 'bad_code']) {
+    for (const code of [42, '', 'Runtime-failed', 'a'.repeat(65), 'bad_code', '1bad', '-bad']) {
       const invalid = await client.launch(pkg);
       await d.next();
-      await assert.rejects(d.report({ requestId: invalid.requestId, status: 'failed', code }), { code: 'bad-request' });
+      await assert.rejects(d.report({ requestId: invalid.requestId, status: 'failed', code }), {
+        code: 'bad-request',
+        message: 'launch-result code must start with a lowercase letter and contain only lowercase letters, digits or hyphens (1-64 characters)',
+      });
     }
     const launched = await client.launch(pkg);
     await d.next();
     const newId = `agent_${randomUUID()}`;
     await call(c.paths, account, { op: 'join', agentId: newId });
-    await d.report({ requestId: launched.requestId, status: 'launched', agentId: newId, detail: 'ignored on success' });
+    for (const code of ['harness-signed-out', 42, '']) {
+      await assert.rejects(d.report({ requestId: launched.requestId, status: 'launched', agentId: newId, code }), {
+        code: 'bad-request', message: 'launch-result code is only allowed with failed status',
+      });
+      assert.equal((await client.launchStatus(launched.requestId)).status, 'pending');
+    }
+    await d.report({ requestId: launched.requestId, status: 'launched', agentId: newId, detail: 'ignored on success', code: null });
+    assert.equal((await d.report({ requestId: launched.requestId, status: 'launched', agentId: newId })).duplicate, true);
     assert.deepEqual(await client.launchStatus(launched.requestId),
       { ok: true, requestId: launched.requestId, status: 'launched', agentId: newId });
     await c.broker.stop();

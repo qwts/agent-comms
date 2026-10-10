@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Reject a non-null failure `code` on a successful `launch-result` instead of silently dropping it, and explain the exact stable-code character rules (follow-up to #130).
+
 ## [0.3.15] - 2026-10-08
 
 ### Added
