@@ -1,9 +1,7 @@
 # Principal client API
 
-Host apps use `lib/principal-client.mjs` to read the census and chat as the
-owner over the existing broker protocol. The client opens one connection per
-request, checks broker custody through the local-channel seam, and presents
-only the saved principal credential.
+The principal client gives host apps owner-scoped census and messaging over
+custody-checked broker requests using the saved principal credential.
 
 ## Pair once, then connect
 
@@ -32,7 +30,8 @@ or on the existing POSIX test implementation, it reads `principal.json`
 (`principal.<name>.json` for a non-default credential name) in the client
 state directory through the account-isolation seam.
 A failed keychain read fails closed; it does not silently try another store.
-All four [Windows seams](windows.md) exist; principal-client integration remains
+All four [Windows adapter branches](windows.md) are implemented, but live
+broker, service, and bundled-host acceptance remains open in
 [#127](https://github.com/qwts/agent-comms/issues/127).
 
 ## Use the library
@@ -62,8 +61,13 @@ if (page.messages.length) await client.ack(page.messages.map((message) => messag
 `process.env`, a 10-second request deadline, and the platform secret store.
 An embedding host may inject a synchronous `credentialLoader(clientPaths,
 hostConfig, env)` returning its saved `{ principal, secret, brokerUid, mode }`.
-Windows SIDs fail numeric `brokerUid` validation and `brokerKey` is discarded
-(#127). This storage seam does not override authorization. `mode` is
+Since [#131](https://github.com/qwts/agent-comms/pull/131), the client accepts
+a Windows broker SID only with a valid Ed25519 `brokerKey` and forwards both
+pins. This library fix has synthetic coverage; live DPAPI credential loading,
+custody/pipe verification, scheduled-task lifecycle, and GeniusBar
+bundle/restart acceptance remain open in
+[#127](https://github.com/qwts/agent-comms/issues/127).
+This storage seam does not override authorization. `mode` is
 `single-account` or `group`; older credentials without it retain `group`.
 The client exposes `principal`, not the secret; recreate it after rotating
 credentials.
@@ -75,12 +79,11 @@ credentials.
 | `inbox({ after = 0, limit = 20 })` | Returns `{ ok, messages, cursor, remaining }` from this principal's unacknowledged mailbox. |
 | `ack(ids)` | Returns `{ ok, acknowledged, alreadyAcknowledged }` for this principal's messages only. |
 
-Use the prior page's `cursor` as `after` to page forward. Reading does not
-acknowledge. `limit` is at most 100 and pages also have a byte limit. Retain
-the same send `key` when retrying an uncertain outcome; keys are scoped to
-the principal. Changed content with a used key yields `conflict`. Optional
-send fields retain the broker defaults: kind `message`, refs `[]`, and null
-correlation and replyTo. A replyTo must name a message this caller received.
+Use the previous `cursor` as `after`. Reads do not acknowledge. `limit` is at
+most 100 and pages have a byte limit. Reuse the same principal-scoped send
+`key` after an uncertain outcome; changed content conflicts. Optional send
+defaults are kind `message`, refs `[]`, and null correlation/replyTo. A
+replyTo must name a message this caller received.
 
 Construction and custody checks may throw synchronously; requests otherwise
 return promises. Errors have a stable `code`, including `not-approved`,
@@ -92,22 +95,19 @@ Task methods and results: [Tasks](tasks.md).
 
 ## Authority and message shape
 
-A principal is never a soul. Principal message endpoints are
-`{ principal: 'principal_<uuid>' }`; soul endpoints retain
-`{ account, agentId }` and a soul sender's verification. Souls reply using
-the principal ID as `to`; the existing worker does this automatically.
-Principals have durable inboxes without appearing as census rows or joining
-an account daemon's wake stream. Delivery to a principal reports `waiting`;
-the app polls its inbox. Principal-to-principal messaging is not supported.
+Principals are not souls: their endpoint is `{ principal: 'principal_<uuid>' }`;
+souls use `{ account, agentId }` and retain sender verification. Souls reply
+to the principal ID; the worker does this automatically. Principals have
+durable inboxes but are not census rows or daemon wake-stream members;
+delivery reports `waiting`, so apps poll. Principal-to-principal messaging
+is unsupported.
 
-The broker authenticates and checks approval on every request. Revocation
-also blocks retries and inbox access. The principal grant bounds census,
-sends to souls, and souls allowed to send into the principal inbox. A soul
-must still be joined and its account approved to receive new messages.
-Its normal receive allowlist applies: null accepts the principal, an empty
-list denies it, and a restricted list must contain the exact principal ID.
-An account entry does not confer that account's authority on a principal.
-Previously accepted sends keep their idempotent result if a recipient leaves
+Every request is authenticated and requires current approval; revocation also
+blocks retries and inbox access. Grants bound census, sends, and which souls
+may send to the principal inbox. A recipient soul must be joined, its account
+approved, and its allowlist must include the exact principal ID (null accepts;
+an empty list denies). An account grant does not confer that account's
+authority. Accepted sends retain their idempotent result if a recipient leaves
 or narrows its allowlist.
 
 The API cannot join, act as a soul, read another mailbox, approve pairings,

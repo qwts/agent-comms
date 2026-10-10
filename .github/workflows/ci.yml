@@ -91,6 +91,25 @@ jobs:
           fi
           echo "validated=$validated" >> "$GITHUB_OUTPUT"
 
+  windows-pipe-security:
+    name: Windows pipe security
+    needs: policy
+    if: >-
+      always() && needs.policy.result == 'success' &&
+      (needs.policy.outputs.run_full == 'true' || needs.policy.outputs.run_post_merge == 'true')
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+      - name: Verify named-pipe client impersonation ceiling
+        run: node --test tests/platform-win32-pipe-native.test.mjs
+
   full:
     name: Complete suite
     needs: [policy, merge-evidence, preflight-evidence]
@@ -229,7 +248,7 @@ jobs:
 
   gate:
     name: CI
-    needs: [policy, merge-evidence, preflight-evidence, full, docs-gov, codeql, post-merge]
+    needs: [policy, merge-evidence, preflight-evidence, windows-pipe-security, full, docs-gov, codeql, post-merge]
     if: always() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 10
@@ -243,6 +262,7 @@ jobs:
           CODEQL: ${{ needs.codeql.result }}
           PREFLIGHT: ${{ needs.preflight-evidence.result }}
           PREFLIGHT_VALIDATED: ${{ needs.preflight-evidence.outputs.validated }}
+          WINDOWS_PIPE_SECURITY: ${{ needs.windows-pipe-security.result }}
           MERGE_VALIDATED: ${{ needs.merge-evidence.outputs.validated }}
           POST_MERGE: ${{ needs.post-merge.result }}
           PRIVATE: ${{ github.event.repository.private }}
@@ -254,6 +274,7 @@ jobs:
             test "$CODEQL" = skipped
             CODEQL=success
           fi
+          test "$WINDOWS_PIPE_SECURITY" = success
           case "$MODE" in
             full)
               if [ "$PREFLIGHT_VALIDATED" = true ]; then
