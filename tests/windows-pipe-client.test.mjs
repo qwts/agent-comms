@@ -89,3 +89,21 @@ test('Windows pipe bridge drains final bytes, propagates EOF, and closes its chi
   assert.equal(child.killCount, 1);
   assert.ok(child.stdin.destroyed && child.stdout.destroyed && child.stderr.destroyed);
 });
+
+test('Windows pipe startup diagnostics classify unexpected output without exposing it', async () => {
+  for (const [text, stage] of [
+    ['#< CLIXML\r\n<Objs>private secret</Objs>', 'host-clixml'],
+    ['private secret path\n', 'host-stderr'],
+    ['REFUSED\n', 'pipe-refused'],
+  ]) {
+    const child = fakeChild();
+    const raw = connectWindowsPipe(PIPE, { spawnProcess: () => child });
+    const failed = once(raw, 'error');
+    child.stderr.end(text);
+    const [error] = await failed;
+    assert.equal(error.windowsPipeStage, stage);
+    assert.equal(error.message, 'named pipe connection failed');
+    assert.equal(Object.keys(error).includes('windowsPipeStage'), false);
+    assert.doesNotMatch(JSON.stringify(error), /private|secret|path/i);
+  }
+});

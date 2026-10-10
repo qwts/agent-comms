@@ -81,8 +81,17 @@ function within(promise, label, timeoutMs = 15_000) {
   ]).finally(() => clearTimeout(timer));
 }
 
-async function nextLine(output, label) {
-  const result = await within(output.next(), label);
+async function nextLine(output, label, request = null) {
+  const pending = output.next();
+  const result = await within(request === null ? pending : Promise.race([
+    pending,
+    request.then(() => { throw new Error(`${label}: request completed before marker`); }, (error) => {
+      const code = error?.code === 'ECONNREFUSED' ? 'ECONNREFUSED' : 'connection-error';
+      const stages = new Set(['host-clixml', 'host-stderr', 'pipe-refused', 'process-error', 'premature-close', 'startup-timeout']);
+      const stage = stages.has(error?.windowsPipeStage) ? `/${error.windowsPipeStage}` : '';
+      throw new Error(`${label}: ${code}${stage}`);
+    }),
+  ]), label);
   assert.equal(result.done, false, `${label}: fixture closed early`);
   return result.value;
 }
@@ -139,7 +148,7 @@ test('native Windows client limits server impersonation before broker proof and 
   const acceptedReply = within(exchange(accepted, { op: 'ping' }), 'native request/reply');
   acceptedEof.catch(() => {});
   acceptedReply.catch(() => {});
-  const hello1 = await nextLine(output, 'first client hello');
+  const hello1 = await nextLine(output, 'first client hello', acceptedReply);
   assert.match(hello1, /^OBSERVED1:Identification:/);
   const firstHello = JSON.parse(Buffer.from(hello1.slice('OBSERVED1:Identification:'.length), 'base64').toString('utf8'));
   assert.equal(firstHello.v, PROTOCOL_VERSION);
@@ -155,7 +164,7 @@ test('native Windows client limits server impersonation before broker proof and 
   const refused = within(once(rejected, 'error'), 'invalid broker proof refusal');
   refused.catch(() => {});
   rejected.write(Buffer.from('{"v":1,"op":"ping","auth":{"secret":"must-not-arrive"}}\n'));
-  const hello2 = await nextLine(output, 'second client hello');
+  const hello2 = await nextLine(output, 'second client hello', refused.then(([error]) => Promise.reject(error)));
   assert.match(hello2, /^OBSERVED2:Identification:/);
   const secondHello = JSON.parse(Buffer.from(hello2.slice('OBSERVED2:Identification:'.length), 'base64').toString('utf8'));
   assert.equal(secondHello.v, PROTOCOL_VERSION);
