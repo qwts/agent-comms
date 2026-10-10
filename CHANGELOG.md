@@ -7,12 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.16] - 2026-10-10
+
+### Added
+- `launch-progress` accepts the conditional stages `runtimes`, `tool-home`, `provider` and `sign-in`, between `account` and `joining`, and `launch-result` takes an optional failure `code` (lowercase, at most 64 characters) that is kept across restarts, returned by `launch-status` and compared on duplicate results (#129, #130).
+
 ### Security
 - On Windows, the default pipe connector uses a .NET client with an
   `Identification` impersonation ceiling before broker proof, with no
   unrestricted fallback (#133).
 
 ### Fixed
+- The principal client keeps a Windows credential's broker SID and Ed25519 key pin instead of rejecting it for not having a numeric UID, so a Windows host can reach the authenticated named pipe (#127, #131).
 - Reject a non-null failure `code` on a successful `launch-result` instead of silently dropping it, and explain the exact stable-code character rules (follow-up to #130).
 
 ## [0.3.15] - 2026-10-08
