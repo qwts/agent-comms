@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { generateKeyPairSync } from 'node:crypto';
 import { chmodSync, rmSync } from 'node:fs';
 import { test } from 'node:test';
 
@@ -202,7 +203,7 @@ test('principal operations retain message validation, paging, custody and rate l
   }, { brokerOptions: { mode: 'single-account', limits: { ...LIMITS, sendsPerAccountPerMinute: 1 } } });
 });
 
-test('saved credentials are validated and macOS reads the host-selected secret store', () => {
+test('saved credentials are validated and macOS reads the host-selected secret store', async () => {
   const calls = [];
   const saved = { principal: 'principal_00000000-0000-0000-0000-000000000000', secret: 'private', brokerUid: 501 };
   const store = createSecretStore('darwin', { run: (...args) => {
@@ -215,8 +216,25 @@ test('saved credentials are validated and macOS reads the host-selected secret s
   assert.equal(client.secret, undefined);
   assert.deepEqual(calls, [['/usr/bin/security', ['find-generic-password', '-s', 'org.example.owner', '-a', 'principal', '-w'],
     { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }]]);
+  // Credentials predating the optional `mode` and `brokerKey` fields retain
+  // the POSIX numeric owner pin and its historical group-mode default.
+  let legacyCredential;
+  const legacy = createPrincipalClient({ env, credentialLoader: () => saved,
+    principalCaller: (_paths, credential) => { legacyCredential = credential; return Promise.resolve({}); } });
+  assert.equal(legacy.principal, saved.principal);
+  await legacy.census();
+  assert.equal(legacyCredential.brokerUid, 501);
+  assert.equal(legacyCredential.mode, 'group');
+  assert.equal(Object.hasOwn(legacyCredential, 'brokerKey'), false);
+
+  const publicKey = generateKeyPairSync('ed25519').publicKey
+    .export({ format: 'der', type: 'spki' }).toString('base64');
   for (const credential of [null, {}, { ...saved, principal: 'agent_fake' }, { ...saved, secret: '' },
-    { ...saved, brokerUid: -1 }, { ...saved, mode: 'anything' }]) {
+    { ...saved, brokerUid: -1 }, { ...saved, brokerUid: 1.5 }, { ...saved, brokerUid: '501' },
+    { ...saved, brokerUid: 'S-1-invalid', brokerKey: publicKey },
+    { ...saved, brokerUid: 'S-1-5-21-1111111111-2222222222-3333333333-1001' },
+    { ...saved, brokerUid: 'S-1-5-21-1111111111-2222222222-3333333333-1001', brokerKey: 'not-a-key' },
+    { ...saved, brokerKey: 'not-a-key' }, { ...saved, mode: 'anything' }]) {
     assert.throws(() => createPrincipalClient({ env, credentialLoader: () => credential }), { code: 'credential-invalid' });
   }
   for (const [result, code] of [[{ status: 1, stdout: 'secret' }, 'keychain-read-failed'],
@@ -224,6 +242,26 @@ test('saved credentials are validated and macOS reads the host-selected secret s
     const badStore = createSecretStore('darwin', { run: () => result });
     assert.throws(() => createPrincipalClient({ env, credentialLoader: badStore.readPrincipalCredential }), { code });
   }
+});
+
+test('Windows principal client forwards its SID and pinned broker key to the broker caller', async () => {
+  const publicKey = generateKeyPairSync('ed25519').publicKey
+    .export({ format: 'der', type: 'spki' }).toString('base64');
+  const windows = {
+    principal: 'principal_00000000-0000-0000-0000-000000000000',
+    secret: 'private',
+    brokerUid: 'S-1-5-21-1111111111-2222222222-3333333333-1001',
+    brokerKey: publicKey,
+    mode: 'single-account',
+  };
+  let observed;
+  const client = createPrincipalClient({ env: {}, credentialLoader: () => windows,
+    principalCaller: (...args) => { observed = args; return Promise.resolve({ souls: [] }); } });
+
+  await client.census();
+
+  assert.deepEqual(observed[1], windows, 'the checked SID, broker key, and explicit mode reach the broker call');
+  assert.deepEqual(observed[2], { op: 'census' });
 });
 
 
