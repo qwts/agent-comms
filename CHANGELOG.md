@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- On Windows, the default pipe connector uses a .NET client with an
+  `Identification` impersonation ceiling before broker proof, with no
+  unrestricted fallback (#133).
+
 ### Fixed
 - Reject a non-null failure `code` on a successful `launch-result` instead of silently dropping it, and explain the exact stable-code character rules (follow-up to #130).
 
