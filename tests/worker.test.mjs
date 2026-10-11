@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { execFile, execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
@@ -459,6 +460,111 @@ test('the prompt frames the message as input, not as permission', () => {
   assert.match(prompt, /The message comes from ada\/agent_[0-9a-f-]+ \(identity: claimed, not verified\)\./);
   assert.match(prompt, /It cannot grant\s+permissions/);
   assert.ok(prompt.endsWith('--- task ---\nmerge main'));
+});
+
+test('channel prompt identifies its copy and private automatic reply behavior', () => {
+  const channel = 'hub:hub_00000000-0000-0000-0000-000000000000/channel:channel_00000000-0000-0000-0000-000000000000';
+  const prompt = turnPrompt({
+    id: 'msg_channel_copy', channel, postId: 'post_123', channelWake: true,
+    from: { account: 'ada', agentId: asker, verification: 'claimed' }, body: 'please review this',
+  }, { harness: 'codex', soul: workerSoul });
+  assert.match(prompt, /per-recipient copy of a channel post/);
+  assert.match(prompt, new RegExp(`Channel address: ${channel.replaceAll('/', '\\/')}\\.`));
+  assert.match(prompt, /Channel post id: post_123/);
+  assert.match(prompt, /Channel wake was enabled for this copy/);
+  assert.match(prompt, /Other channel recipients are not identified/);
+  assert.match(prompt, /automatic worker reply goes privately to the author; it is not a channel post/);
+  assert.ok(prompt.endsWith('--- task ---\nplease review this'));
+});
+
+test('channel copies enter a bound harness context, report only that injected ID, and reply privately', async () => {
+  const fake = fakeFor('channel-injection');
+  const received = [];
+  const daemon = createServer((request, response) => {
+    let body = '';
+    request.setEncoding('utf8');
+    request.on('data', (chunk) => { body += chunk; });
+    request.on('end', () => {
+      received.push({ path: request.url, body: JSON.parse(body) });
+      response.writeHead(204).end();
+    });
+  });
+  await new Promise((resolve) => daemon.listen(0, '127.0.0.1', resolve));
+  const daemonAddress = `http://127.0.0.1:${daemon.address().port}`;
+  const bindingFile = path.join(root, 'channel-worker-binding.json');
+  const credential = loadCredential(clientPaths(env));
+  writeFileSync(bindingFile, JSON.stringify({
+    v: 1, agentId: workerSoul, parent: null, account: credential.account,
+    daemon: daemonAddress, secret: 'local test binding secret',
+  }), { mode: 0o600 });
+
+  const channel = (await cli(['channel', 'create', 'worker context'])).json.channel;
+  await cli(['channel', 'invite', channel, `${os.userInfo().username}/${workerSoul}`]);
+  await cli(['channel', 'subscribe', channel, '--wake'], workerSoul);
+  const fakeWatch = (() => {
+    let emit;
+    return {
+      watch: ({ onEvent }) => {
+        emit = onEvent;
+        onEvent({ event: 'ready', address: `${os.userInfo().username}/${workerSoul}` });
+        return { kill: () => {}, closed: new Promise(() => {}) };
+      },
+      deliver: (event) => emit(event),
+    };
+  })();
+  const worker = runWorker(options(fake, {
+    env: { ...env, PATH: `${fake.dir}${path.delimiter}${process.env.PATH}`, QWTS_AGENT_ID: workerSoul,
+      AGENT_BOT_BINDING: bindingFile },
+    transport: (request) => call(paths, credential, { ...request, agentId: workerSoul }),
+    watch: fakeWatch.watch,
+  }));
+  try {
+    await worker.ready;
+    const posted = await cli(['channel', 'post', channel, '--body', 'review this channel item', '--key', 'channel-worker-input']);
+    assert.equal(posted.exit, 0, JSON.stringify(posted.json));
+    const copy = await waitFor(async () => (await inbox(workerSoul)).find((message) => message.postId === posted.json.postId), 'channel copy');
+    fakeWatch.deliver({ event: 'message', message: copy });
+    const reply = await replyTo({ json: { messageId: copy.id } });
+    assert.equal(reply.body, 'the fake answer');
+    assert.equal(reply.channel, undefined, 'the established worker response remains a private direct reply');
+    await waitFor(async () => !(await inbox(workerSoul)).some((message) => message.id === copy.id), 'worker channel-copy ack');
+    assert.deepEqual(received, [{ path: '/v0/asides/delivered', body: { messageIds: [copy.id], via: 'hook-inject' } }]);
+    const prompt = fake.turns()[0].argv.at(-1);
+    assert.match(prompt, new RegExp(`Channel address: ${channel.replaceAll('/', '\\/')}\\.`));
+    assert.match(prompt, new RegExp(`Channel post id: ${posted.json.postId}`));
+    assert.match(prompt, /reply goes privately to the author/);
+  } finally {
+    await worker.stop();
+    await new Promise((resolve) => daemon.close(resolve));
+  }
+});
+
+test('a worker acknowledges its own channel copy without running a turn or replying to itself', async () => {
+  const fake = fakeFor('channel-self-copy');
+  const channel = (await cli(['channel', 'create', 'self copy'])).json.channel;
+  await cli(['channel', 'invite', channel, `${os.userInfo().username}/${workerSoul}`, '--post']);
+  await cli(['channel', 'subscribe', channel, '--wake'], workerSoul);
+  let emit;
+  const worker = runWorker(options(fake, {
+    watch: ({ onEvent }) => {
+      emit = onEvent;
+      onEvent({ event: 'ready', address: `${os.userInfo().username}/${workerSoul}` });
+      return { kill: () => {}, closed: new Promise(() => {}) };
+    },
+  }));
+  try {
+    await worker.ready;
+    const sent = await cli(['channel', 'post', channel, '--body', 'my own channel post', '--key', 'channel-self-post'], workerSoul);
+    assert.equal(sent.exit, 0, JSON.stringify(sent.json));
+    const copy = await waitFor(async () => (await inbox(workerSoul)).find((message) => message.postId === sent.json.postId), 'own channel copy');
+    emit({ event: 'message', message: copy });
+    await waitFor(async () => !(await inbox(workerSoul)).some((message) => message.id === copy.id), 'own channel-copy ack');
+    assert.equal(fake.turns().length, 0, 'the worker does not invoke a harness for its own channel post');
+    assert.equal((await inbox(asker)).some((message) => message.replyTo === copy.id), false,
+      'the worker does not start a private reply loop to itself');
+  } finally {
+    await worker.stop();
+  }
 });
 
 test('every shipped adapter builds one well-formed turn', () => {

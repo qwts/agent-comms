@@ -1,0 +1,44 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { withBroker } from './helpers/broker.mjs';
+
+test('different harnesses use one channel CLI contract and acknowledge their own durable copies', () => withBroker(async ({ cli, accounts, owner }) => {
+  const run = async (args, soul = accounts.alice) => {
+    const result = await cli(args, soul);
+    assert.equal(result.exit, 0, JSON.stringify(result.json));
+    return result.json;
+  };
+  await run(['join', '--name', 'channel-codex', '--harness', 'codex']);
+  await run(['join', '--name', 'channel-claude', '--harness', 'claude'], accounts.bob);
+  const { channel } = await run(['channel', 'create', 'CLI acceptance']);
+  await run(['channel', 'invite', channel, `${owner}/${accounts.bob}`, '--post']);
+  const pending = await run(['channel', 'invitations', '--limit', '1'], accounts.bob);
+  assert.equal(pending.invitations[0].channel, channel);
+  await run(['channel', 'subscribe', channel], accounts.bob);
+  const census = await run(['channel', 'census', channel, '--after', '0', '--limit', '1'], accounts.bob);
+  assert.equal(census.channel, channel);
+  assert.equal(census.members.length, 1);
+  assert.equal(census.members[0].agentId, accounts.bob);
+  assert.equal((await run(['channel', 'census'], accounts.bob)).channels[0].channel, channel);
+  const posted = await run(['channel', 'post', channel, '--body', 'from a different harness', '--key', 'cli-channel-key']);
+  const retry = await run(['channel', 'post', channel, '--body', 'from a different harness', '--key', 'cli-channel-key']);
+  assert.equal(retry.postId, posted.postId);
+  assert.equal(retry.duplicate, true);
+  await run(['send', `${owner}/${accounts.bob}`, '--body', 'direct message', '--key', 'cli-direct-key']);
+  const read = await run(['inbox', 'read', '--channel', channel], accounts.bob);
+  assert.equal(read.messages.length, 1);
+  assert.equal(read.messages[0].channel, channel);
+  assert.equal(read.messages[0].body, 'from a different harness');
+  assert.equal(read.messages[0].channelWake, false);
+  await run(['inbox', 'ack', read.messages[0].id], accounts.bob);
+  assert.deepEqual((await run(['inbox', 'read', '--channel', channel], accounts.bob)).messages, []);
+  const direct = await run(['inbox', 'read'], accounts.bob);
+  assert.equal(direct.messages.length, 1);
+  assert.equal(direct.messages[0].body, 'direct message');
+  await run(['channel', 'wake', channel, 'on'], accounts.bob);
+  await run(['channel', 'permission', channel, `${owner}/${accounts.bob}`, 'off']);
+  const denied = await cli(['channel', 'post', channel, '--body', 'permission revoked', '--key', 'denied'], accounts.bob);
+  assert.notEqual(denied.exit, 0);
+  assert.equal(denied.json.error.code, 'unknown-channel');
+  await run(['channel', 'unsubscribe', channel], accounts.bob);
+}));

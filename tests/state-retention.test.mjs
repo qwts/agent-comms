@@ -97,7 +97,7 @@ test('checkpoint corruption, unsupported formats and attempted rewind fail visib
     fs.writeFileSync(f.log.file, `${JSON.stringify(record)}\n`);
     assert.throws(() => new EventLog(f.root).replay(), pattern);
   };
-  mutate((record) => { record.version = 2; }, /unsupported checkpoint/);
+  mutate((record) => { record.version = 3; }, /unsupported checkpoint/);
   mutate((record) => { record.snapshot.seq = 0; }, /checksum/, false);
   mutate((record) => { record.snapshot.mailboxMeta[0][1].highWater = 0; }, /mailbox position/);
   mutate((record) => { record.snapshot.mailboxMeta[0][1].totalLoss = 1; }, /loss notice/);

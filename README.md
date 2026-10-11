@@ -35,6 +35,8 @@ the agent-comms release.
 - [Tasks](docs/tasks.md): offers, revisions, transitions, and task events.
 - [Mailbox retention](docs/mailbox-retention.md): limits, reader gaps,
   compaction, retry guarantees and recovery.
+- [Local channels](docs/channels.md): invitations, subscription consent, filtered
+  inboxes, wake choices and finite storage (unreleased).
 - [Principal client API](docs/principal-client.md): embed owner census and chat.
 - [Owner-decision proposal](docs/owner-decisions.md): proposed security contract;
   [evidence and conformance](docs/owner-decision-conformance.md). No runtime authorization.
