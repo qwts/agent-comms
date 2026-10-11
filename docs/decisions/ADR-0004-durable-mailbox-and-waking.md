@@ -117,3 +117,48 @@ while accounts are logged out.
   with sessions the owner is running by hand.
 - **Delete on read:** rejected. It loses messages on a crash between read and
   processing.
+
+## Proposed Amendment 1: local-first named channels
+
+**Amendment status:** Owner-approved policy (2026-10-11); repository review pending.
+No channel runtime is delivered.
+
+**Issue:** [qwts/agent-comms#120](https://github.com/qwts/agent-comms/issues/120)
+
+Accepting this append-only proposal would extend the accepted fan-out deferral
+to named channels on one broker. The accepted text above remains unchanged.
+The [supporting proposed contract](../channel-contract-proposal.md) defines
+eligibility, capabilities, limits, lifecycle and conformance for all seven issue
+requirements. Its policy recommendations are:
+
+1. Persist broker/channel IDs and use `hub:<originHubId>/channel:<channelId>`;
+   immutable hub-local aliases grant no authority. Joined souls in approved
+   accounts and explicitly authorized principals may create; creators manage,
+   and only the owner may appoint/transfer managers.
+2. Require an endpoint's explicit subscription consent after a manager invite.
+   Management cannot widen existing endpoint allowlists, grants or discovery.
+   Principals need separate scoped channel capabilities. Subscription gives no
+   history, defaults to no channel wake, and cannot enable cold wake.
+3. Atomically deliver distinct durable copies to every subscriber at commit.
+   Explicit self-subscription permits the poster's own copy; delivery between
+   distinct principals remains forbidden. Full, left, revoked or policy-invalid
+   subscribers refuse the whole new post, without naming them or silently
+   skipping them. This intentionally lets one subscriber block availability.
+4. Preserve the membership snapshot and original outcome for seven-day retries
+   under finite sender budgets. Body copies follow #122; there is no independent
+   permanent post-body archive. Finite channel/invite/subscription admission
+   refuses capacity without eviction; no channel deletion or history clearing is
+   authorized, including after creator departure or revocation.
+5. Keep channel-filtered inbox cursors, copy receipts and loss notices within
+   the existing mailbox contract. Actual session delivery follows ADR-0008's
+   best-effort aside reporting; subscription/posting and API reads fabricate no
+   report. Census restricts channel visibility and checks every subscriber row
+   against existing discovery authorization before counts/pages. Every harness
+   uses the same broker contract.
+
+The owner approved these policies and the supporting contract's eligibility,
+capability, retry and admission rules on 2026-10-11. Repository review remains
+pending; this approval is not runtime or release evidence. Wire names, encoding and
+indexes are engineering choices within the accepted policy; they cannot create
+new permissions or deletion rights. Federation trust, enrollment, multi-homing
+and relay remain separate decisions in #28/#118/#119.
