@@ -1,6 +1,6 @@
 # Owner decisions: evidence and proposed conformance
 
-This is the evidence and implementation checklist for proposed
+This is the evidence and implementation checklist for accepted
 [ADR-0077](decisions/ADR-0077-owner-decisions-through-the-broker.md) and its
 [wire contract](owner-decisions.md). It records gaps, not completed tests or
 authorization to change runtime. Keep
@@ -17,9 +17,10 @@ This delivers partial requirement 4, not relay, receipts, atomic application
 or native custody. Comms still writes the plain principal before platform
 storage. No rollout is claimed.
 
-ADR-0077 remains Proposed; its additional presence, operation-grant and cutover
-choices remain unapproved. All four original requirements remain in scope.
-This refresh authorizes no runtime or migration.
+The owner accepted all three ADR-0077 groups at `d4ee294`
+([receipt](https://github.com/qwts/agent-comms/issues/77#issuecomment-6115201195)).
+All four requirements remain in scope. Joint protocol/native review and
+conformance remain prerequisites; no runtime enabling or migration is authorized.
 
 ## Historical reviewed source snapshots — 2026-10-11 refresh
 
@@ -29,8 +30,8 @@ This refresh authorizes no runtime or migration.
 Paths/lines in the historical table below use these snapshots. Current
 release evidence supersedes its health-only and missing target-query claims.
 Host source, native custody and compatible bundled releases were not revalidated.
-Owner policy review and joint agent-bot/native-host review remain prerequisites;
-this evidence refresh changes no acceptance status or runtime authorization.
+Joint agent-bot/native-host review remains pending; these snapshots establish
+no runtime authorization.
 
 ## Historical requirement evidence
 
@@ -91,8 +92,8 @@ are reusable patterns, not passes for the proposed protocol.
 
 ## Review and implementation slices
 
-1. Owner reviews ADR-0077's three decision groups. Agent-bot and the native
-   host review their contracts; organization deployment deltas use ENG records.
+1. Owner policy is accepted; agent-bot/native-host contract review remains
+   pending. Organization deployment deltas use ENG records.
 2. Fix cross-language fixtures and pure verifiers; keep capability disabled.
 3. Implement broker policy/relay/journal, then daemon verification/application
    against those fixtures. Each PR states covered operations and remaining gaps.

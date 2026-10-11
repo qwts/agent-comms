@@ -21,6 +21,9 @@ auth, sender and operation overrides are omitted. This is a transport seam,
 not an app-only custody or presence implementation. Native storage, trusted
 IPC, pairing/cutover and live negative-access evidence remain host work under
 [#77](https://github.com/qwts/agent-comms/issues/77). No owner-decision or admin
-operation is added; the proposed owner policy remains unaccepted.
+operation is added. Owner policy is accepted in
+[ADR-0077](decisions/ADR-0077-owner-decisions-through-the-broker.md); joint
+protocol/native review and conformance evidence remain prerequisites before
+enabling that capability.
 
 See the [principal API](principal-client.md) for method, payload and result contracts.

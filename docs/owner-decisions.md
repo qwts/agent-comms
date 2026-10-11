@@ -1,6 +1,6 @@
 # Owner decisions: proposed broker contract
 
-**Proposal only:** this describes the candidate protocol for
+**Proposed protocol** for accepted
 [ADR-0077](decisions/ADR-0077-owner-decisions-through-the-broker.md), not a
 released API. The issue remains [#77](https://github.com/qwts/agent-comms/issues/77).
 Agent-comms owns broker authorization/receipts; agent-bot owns mutation and
