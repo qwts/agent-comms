@@ -5,7 +5,6 @@
 released API. The issue remains [#77](https://github.com/qwts/agent-comms/issues/77).
 Agent-comms owns broker authorization/receipts; agent-bot owns mutation and
 presence semantics; the native host owns credential custody and prompting.
-Every field and fixture needs joint review before implementation.
 
 ## Prepare and confirm
 
@@ -69,12 +68,26 @@ added by preparation.
 
 The immutable action payload is
 `{ v, requestId, principal, account, soul, operation, parameters }` with `v: 1`.
-Define its canonical UTF-8 JSON recursively: object keys in ascending ASCII
-order; arrays preserve order; strings use JSON escaping; booleans and null
-use their JSON literals. Only bounded strings, objects, arrays, booleans,
-null and safe integers are permitted. Reject duplicate keys, noncanonical
-encodings and unknown fields; hash these exact bytes with SHA-256.
-Cross-language fixtures must fix non-ASCII and escaping behavior.
+Action and decoded `d1` receipt payloads use canonical UTF-8 JSON, without
+BOM or whitespace outside strings:
+
+- Object keys must be the ASCII field names allowed by the applicable schema,
+  sorted recursively by unsigned ASCII bytes. Reject duplicate, unknown and
+  non-ASCII keys. Arrays preserve order;
+  booleans and null use their JSON literals.
+- Numbers are integers in `[-9007199254740991, 9007199254740991]`, written in
+  decimal with an optional minus followed by digits. Zero is `0`; reject
+  negative zero, leading zeros, plus signs, decimal points and exponent forms.
+- Strings contain Unicode scalar values; reject invalid UTF-8 and unpaired
+  surrogates. Escape quotation mark and backslash as `\"` and `\\`, and
+  U+0008/0009/000A/000C/000D as `\b`/`\t`/`\n`/`\f`/`\r`. Escape other
+  U+0000–001F values as lowercase `\u00xx`. Emit all other characters as
+  their UTF-8 bytes, including `/` and non-ASCII characters. Do not normalize
+  Unicode or allow alternative escapes for those characters.
+
+Only bounded strings, objects, arrays, booleans, null and these integers are
+permitted. Reject bytes differing from this canonical encoding; hash the
+canonical action bytes with SHA-256.
 
 The presence action is the one-line text
 `Owner decision <operation> for <account>/<soul>: <summary>; request <requestId>; payload sha256:<digest>`.
@@ -95,18 +108,30 @@ payload: { v: 1, aud: "agent-comms-owner-decision", brokerKey,
 
 Receipt signature covers the ASCII payload segment exactly as sent. Reject
 missing/unknown fields, noncanonical unpadded base64url, invalid key IDs,
-wrong audience/version and oversize tokens. `brokerKey` and `presenceKey`
-identify enrolled public keys by SHA-256 of DER SPKI bytes; neither supplies
-a new trusted key. `presenceDigest` hashes the complete ASCII `p1` token.
+wrong audience/version and oversize tokens. Base64url uses the URL-safe
+alphabet without `=` padding; decoding and re-encoding must reproduce the
+original segment, including zero unused trailing bits. The
+32-byte nonce is 43 characters and the 64-byte Ed25519 signature is 86.
+
+`payloadDigest`, `presenceDigest`, `brokerKey`, `presenceKey` and `<digest>`
+in the action text are exactly 64 lowercase hexadecimal characters: no
+`sha256:` prefix inside a field, uppercase, padding or alternate encoding.
+`payloadDigest` and the action's `<digest>` hash the canonical action payload;
+`presenceDigest` hashes the complete ASCII `p1` token. `brokerKey` and
+`presenceKey` identify enrolled public keys by SHA-256 of DER SPKI bytes;
+neither supplies a new trusted key. keyd's `actionDigest` remains lowercase
+SHA-256 hex of the action text.
 The daemon receives canonical action bytes and that token alongside the
 receipt and independently verifies both digest bindings and native presence.
 
-Receipt `iat`/`exp` are whole Unix seconds, with
-`0 < exp - iat <= 60`. Receipt expiry is no later than preparation or presence
-expiry; issue only while each is unexpired. Reject receipts when `iat` is
-over 30 seconds ahead, or local time is at or after `exp` (`now >= exp`); no extra expiry
-grace. This receipt policy does not change keyd's 60-second issuer lifetime,
-120-second verifier bound or 30-second presence skew. A clock problem asks
+Receipt `iat`/`exp` are nonnegative integers within the range above, in Unix
+seconds; `now = floor(unixTimeMilliseconds / 1000)`. Accept only when
+`0 < exp - iat <= 60`, `iat <= now + 30` and `now < exp`: the future-time
+equality passes; expiry equality refuses. Receipt expiry cannot exceed
+preparation or presence expiry; issue only while `now < preparation.exp` and
+`now < presence.exp`. No extra receipt expiry grace applies. This leaves
+keyd's 60-second issuer lifetime, 120-second verifier bound and 30-second
+presence skew unchanged. A clock problem asks
 for a fresh ceremony rather than silently extending a receipt.
 
 ## State, retries and trust changes
