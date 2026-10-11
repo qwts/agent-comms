@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Add a principal-only target-grant query for agent-bot revision and cold-wake checks. Resolve registered soul accounts at the broker; pre-join targets require unrestricted or exact soul-ID grants. This narrows existing owner checks without adding signed decision receipts or changing credential custody (#77).
+
 ## [0.4.1] - 2026-10-11
 
 ### Fixed

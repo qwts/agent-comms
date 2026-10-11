@@ -88,7 +88,7 @@ return promises. Errors have a stable `code`, including `not-approved`,
 `mailbox-full`, `broker-untrusted`, `broker-unreachable`, and `broker-timeout`.
 No operation retries automatically.
 
-Task methods and results: [Tasks](tasks.md).
+Related: [tasks](tasks.md), [target checks](principal-target-check.md).
 
 [Channel methods](channels.md#principal-library-methods) require
 separate capabilities alongside existing approval and messaging grants. No
