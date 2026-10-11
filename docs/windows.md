@@ -96,16 +96,23 @@ calls `ImpersonateNamedPipeClient`, and requires the observed level to be
 `Identification`. It also checks that an invalid broker proof withholds queued
 request bytes. The probe does not claim a packaged broker or daemon acceptance.
 
-## Not yet
+## Live acceptance and remaining limits
 
-A Windows machine has not run the broker end to end. The native pipe probe
-checks this OS impersonation boundary only; it does not replace the broader
-Windows live acceptance tracked by [#127](https://github.com/qwts/agent-comms/issues/127).
-
+A signed-in, non-elevated Windows 11 desktop passed
+[11 engine cases](https://github.com/qwts/agent-comms/issues/127#issuecomment-6111342700),
+including native broker CLI, DPAPI-loaded principal-client and task lifecycle.
+A separate [five-case supervisor run](https://github.com/qwts/agent-comms/issues/127#issuecomment-6112051915)
+passed actual daemon startup, wake reporting and broker/task restart with stable
+credentials. That run used the production installer and daemon API with an
+explicit disposable home and empty config; it did not test CLI default-home
+installation. These results do not establish a packaged host, updater,
+window/logon lifecycle or every harness. Current candidate gates and the tested
+release tuple remain separate; [#127](https://github.com/qwts/agent-comms/issues/127)
+tracks complete embedding acceptance.
 
 ## Disposable acceptance
 
-The [Windows engine acceptance harness](windows-acceptance.md) runs actual
-CLI/library, DPAPI and scheduled-task operations with the selected host
-Node/component tuple on disposable CI. Read its recorded results and limits;
-providing a harness does not establish a passed live run or Windows host support.
+The [Windows acceptance evidence](windows-acceptance.md) records exact candidate
+pins, report hashes and limits alongside the runnable CLI/library, DPAPI and
+scheduled-task harness. Hosted diagnostics and signed-in desktop results are
+distinct evidence; neither establishes complete Windows host support alone.
