@@ -110,6 +110,15 @@ async function ready() {
       const info = JSON.parse(task.stdout);
       diagnostic.task = { state: safeCode(info.state), lastTaskResult: Number(info.lastTaskResult), lastRunTime: info.lastRunTime };
     } catch { diagnostic.taskQueryExit = task.exit; }
+    try {
+      const { createAccountIsolation } = await import('../lib/platform/account-isolation.mjs');
+      const native = createAccountIsolation();
+      const directories = { root, shared: env.AGENT_COMMS_SHARED_DIR, proofs: path.join(env.AGENT_COMMS_SHARED_DIR, 'pairing'),
+        state: env.AGENT_COMMS_BROKER_STATE_DIR, client: env.AGENT_COMMS_CLIENT_STATE_DIR };
+      const inspected = native.inspect(Object.values(directories), 'acceptance-custody-inspection');
+      diagnostic.custody = { currentSid: native.currentUid(), directories: Object.fromEntries(
+        Object.keys(directories).map((name, index) => [name, inspected[index]])) };
+    } catch (inspectionError) { diagnostic.custodyInspectionCode = safeCode(inspectionError.code); }
     diagnostic.logs = [];
     for (const name of ['broker.log', 'broker.err.log']) {
       let bytes;
@@ -119,6 +128,11 @@ async function ready() {
         errorNames: [...new Set(text.match(/\b[A-Z][A-Za-z]{1,40}Error\b/g) ?? [])],
         systemCodes: [...new Set(text.match(/\b(?:ENOENT|EACCES|EPERM|EADDRINUSE|ECONNREFUSED|EINVAL|MODULE_NOT_FOUND|ERR_MODULE_NOT_FOUND)\b/g) ?? [])],
         errorCodes: [...new Set([...text.matchAll(/"code"\s*:\s*"([a-zA-Z0-9_-]{1,80})"/g)].map(match => match[1]))],
+        custodyFailure: /is owned by .*not the broker account/.test(text) ? 'owner-mismatch'
+          : /Get-Acl did not answer/.test(text) ? 'inspection-no-answer'
+            : /Get-Acl answered something unexpected/.test(text) ? 'inspection-unexpected-answer'
+              : /does not exist or cannot be inspected/.test(text) ? 'missing-or-uninspectable'
+                : /is not a real directory/.test(text) ? 'not-real-directory' : null,
         shellFailure: /not recognized as an internal or external command/i.test(text) ? 'command-not-recognized'
           : /system cannot find the (?:path|file) specified/i.test(text) ? 'path-or-file-not-found'
             : /access is denied/i.test(text) ? 'access-denied'
