@@ -70,3 +70,22 @@ test('native replacement preserves written bytes and leaves one authoritative pa
     assert.equal(fs.readFileSync(oldFile, 'utf8'), 'new Ω\ntail\n');
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
+
+test('Windows replacement rebuilds classic PowerShell modules without changing caller environment', () => {
+  const key = 'PSModulePath';
+  const original = process.env[key];
+  process.env[key] = 'C:\\PowerShell7\\Modules';
+  try {
+    durableReplace('C:\\state\\new.tmp', 'C:\\state\\events.jsonl', {
+      platform: 'win32', run: (_command, _args, options) => {
+        assert.ok(!Object.keys(options.env).some((name) => name.toLowerCase() === 'psmodulepath'));
+        assert.equal(options.env.PATH, process.env.PATH);
+        return { status: 0, stdout: 'replaced' };
+      },
+    });
+    assert.equal(process.env[key], 'C:\\PowerShell7\\Modules');
+  } finally {
+    if (original === undefined) delete process.env[key];
+    else process.env[key] = original;
+  }
+});
