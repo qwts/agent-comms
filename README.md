@@ -36,6 +36,8 @@ the agent-comms release.
 - [Mailbox retention](docs/mailbox-retention.md): limits, reader gaps,
   compaction, retry guarantees and recovery.
 - [Principal client API](docs/principal-client.md): embed owner census and chat.
+- [Owner-decision proposal](docs/owner-decisions.md): proposed security contract;
+  [evidence and conformance](docs/owner-decision-conformance.md). No runtime authorization.
 - [Windows](docs/windows.md): released `win32` platform branches and their
   current end-to-end limits.
 - [AGENTS.md](AGENTS.md): agent context for working in this repository.
