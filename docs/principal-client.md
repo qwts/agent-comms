@@ -1,6 +1,6 @@
 # Principal client API
 
-Host apps use saved principal credentials for custody-checked census and messaging.
+Host apps use saved credentials or a [host-owned transport](principal-transport.md).
 
 ## Pair once, then connect
 

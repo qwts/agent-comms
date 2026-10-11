@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- A principal client factory for host-owned request transports, reusing typed ordinary operations without loading credentials into the factory. Native custody and owner-decision acceptance remain separate (#77).
+
 ## [0.4.3] - 2026-10-11
 
 ### Fixed
