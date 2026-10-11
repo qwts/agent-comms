@@ -1,11 +1,10 @@
 # Mailbox retention, reader gaps and recovery
 
-The broker implements [#122](https://github.com/qwts/agent-comms/issues/122)
-under accepted [ADR-0004](decisions/ADR-0004-durable-mailbox-and-waking.md).
-The [owner approved](https://github.com/qwts/agent-comms/issues/122#issuecomment-6106764617)
-30-day body expiry including unread messages, capacity refusal and a seven-day
-durable deduplication window. Broker acceptance is distinct from recipient
-acknowledgement.
+[#122](https://github.com/qwts/agent-comms/issues/122) follows
+[ADR-0004](decisions/ADR-0004-durable-mailbox-and-waking.md).
+[Owner policy](https://github.com/qwts/agent-comms/issues/122#issuecomment-6106764617):
+30-day expiry including unread bodies, capacity refusal and seven-day durable
+dedupe. Broker acceptance is distinct from recipient acknowledgement.
 
 ## Limits and controls
 
@@ -123,9 +122,10 @@ retention remain separate; this change authorizes no cleanup of those records.
 | Separate checkpoint/tail/manifest | Adds atomic generation selection and missing/mismatched-file recovery |
 | Segmented log | Reclaims wholly obsolete segments, but permanent identity/task records pin mixed segments; still needs checkpoints |
 
-Version-1 checkpoints preserve every live collection, receipts, deadlines,
-sequence high-water marks and loss evidence, with checksum and structural
-validation. Maintenance records carry policy/time, keeping replay deterministic.
+Checkpoints preserve live collections, receipts, deadlines, sequence positions
+and loss evidence, with checksum and structural validation. Channel-aware version
+2 readers migrate strict version 1; older readers refuse version 2. Maintenance
+records carry policy/time for deterministic replay.
 Committed time never moves backwards; effective time is the greater of the
 clock and persisted time. Expiry is inclusive at `now >= expiresAt`.
 
@@ -145,29 +145,31 @@ and fsynced. Invalid history is left untouched. Ambiguous append/replacement
 poisons the writer: `storage-failed` requires restart/recovery before further
 writes. No-op requests neither scan nor fsync the whole state.
 
-Old brokers reject new maintenance/checkpoint types before appending;
-downgrade after new writes is unsupported. Coordinate host reader/recovery
+Never open upgraded state with an old binary. Released v0.3.16 refuses intact
+new checkpoints unchanged but truncates an uncommitted torn suffix before
+refusal; unconditional downgrade non-mutation is false. The opt-in
+[pinned-reader harness](../tools/acceptance/README.md) proves migration, original
+retry/channel outcomes and this limitation on disposable state. Coordinate
+host reader/recovery
 policy with [GeniusBar's compatibility matrix](https://github.com/true-line/geniusbar/blob/main/docs/compatibility-matrix.md)
 and [proposed ADR-0282](https://github.com/true-line/geniusbar/blob/main/docs/decisions/ADR-0282-component-compatibility-and-recovery.md).
-The closed investigation did not accept its outstanding owner choices.
+Outstanding host policy choices remain unaccepted.
 
 ## Operations and evidence
 
-Compaction needs space for active log plus a complete live checkpoint until
-replacement. Disk-full, short writes and fsync failures never become successful
-acceptance. Read broker diagnostics, correct storage, then restart with a
-compatible reader. Failed replacement leaves a recoverable old/new authoritative
-generation, not a guessed combination.
+Compaction needs space for the active log plus a live checkpoint. Disk-full,
+short writes and fsync failures refuse acceptance. Correct storage and restart
+with a compatible reader. Failed replacement preserves a recoverable old/new
+authoritative generation.
 
-Before upgrading, stop writes and back up the authoritative state directory
-with private permissions. After shutdown, `events.jsonl` is the recovery
-source. Restore a consistent generation with a compatible broker and check
-startup/reads. Old backups lose newer accepted data; they are not lossless
-downgrade recovery. Temporary files are not backups. Backup cleanup remains
-an owner operation outside live mailbox limits.
+Before upgrading, stop writes and privately back up the authoritative state
+directory. Restore consistent `events.jsonl` with a compatible broker and verify
+startup/reads. Old backups lose newer accepted data; restoration is not lossless
+downgrade. Temporary files are not backups; cleanup remains an owner operation
+outside live mailbox limits.
 
 [Recovery/resource fixtures](../tests/state-retention.test.mjs) cover recovery,
 bounded cycles, deadlines and capacity. [Acceptance fixtures](../tests/retention-acceptance.test.mjs)
 exercise protocol boundaries and namespaces. Native Windows replacement runs
 in CI; macOS fixtures prove neither Windows host acceptance nor hardware
-power-loss behavior. Heavy performance/end-to-end lanes run in CI.
+power-loss behavior.
