@@ -118,18 +118,20 @@ while accounts are logged out.
 - **Delete on read:** rejected. It loses messages on a crash between read and
   processing.
 
-## Proposed Amendment 1: local-first named channels
+## Amendment 1: local-first named channels
 
-**Amendment status:** Owner-approved policy (2026-10-11); repository review pending.
-No channel runtime is delivered.
+**Amendment status:** Owner-approved policy (2026-10-11), reviewed in
+[PR #143](https://github.com/qwts/agent-comms/pull/143), implemented in
+[PR #145](https://github.com/qwts/agent-comms/pull/145) and released in
+[v0.4.0](https://github.com/qwts/agent-comms/releases/tag/v0.4.0).
 
 **Issue:** [qwts/agent-comms#120](https://github.com/qwts/agent-comms/issues/120)
 
-Accepting this append-only proposal would extend the accepted fan-out deferral
-to named channels on one broker. The accepted text above remains unchanged.
-The [supporting proposed contract](../channel-contract-proposal.md) defines
+This append-only amendment extends the fan-out deferral to named channels on
+one broker. The accepted text above remains unchanged.
+The [supporting contract](../channel-contract-proposal.md) defines
 eligibility, capabilities, limits, lifecycle and conformance for all seven issue
-requirements. Its policy recommendations are:
+requirements. Its approved policies are:
 
 1. Persist broker/channel IDs and use `hub:<originHubId>/channel:<channelId>`;
    immutable hub-local aliases grant no authority. Joined souls in approved
@@ -156,9 +158,8 @@ requirements. Its policy recommendations are:
    against existing discovery authorization before counts/pages. Every harness
    uses the same broker contract.
 
-The owner approved these policies and the supporting contract's eligibility,
-capability, retry and admission rules on 2026-10-11. Repository review remains
-pending; this approval is not runtime or release evidence. Wire names, encoding and
-indexes are engineering choices within the accepted policy; they cannot create
-new permissions or deletion rights. Federation trust, enrollment, multi-homing
-and relay remain separate decisions in #28/#118/#119.
+The [delivered contract](../channels.md) links the CLI/principal operations and
+storage behavior. Owner approval is distinct from the implementation and release
+evidence above. Wire names, encoding and indexes cannot create new permissions or
+deletion rights. Federation trust, enrollment, multi-homing and relay remain
+separate decisions in #28/#118/#119.
