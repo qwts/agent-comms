@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Isolate classic PowerShell child processes from inherited PowerShell 7 module paths so native Windows custody inspection, DPAPI and named-pipe helpers load the correct modules (#127, #140).
+
 ### Security
 - CI sends a pull request from a fork, and every merge queue run, to GitHub-hosted runners even when a runner variable names a self-hosted runner, so outside code never runs on a self-hosted machine; `CONTRIBUTING.md` states the policy (qwts/agent-bot-identity#752).
 

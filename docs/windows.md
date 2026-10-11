@@ -101,3 +101,11 @@ request bytes. The probe does not claim a packaged broker or daemon acceptance.
 A Windows machine has not run the broker end to end. The native pipe probe
 checks this OS impersonation boundary only; it does not replace the broader
 Windows live acceptance tracked by [#127](https://github.com/qwts/agent-comms/issues/127).
+
+
+## Disposable acceptance
+
+The [Windows engine acceptance harness](windows-acceptance.md) runs actual
+CLI/library, DPAPI and scheduled-task operations with the selected host
+Node/component tuple on disposable CI. Read its recorded results and limits;
+providing a harness does not establish a passed live run or Windows host support.
