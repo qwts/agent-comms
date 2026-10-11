@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-11
+
 ### Upgrade notes
 - Stop the broker and take a consistent backup before upgrading. Retention expires message bodies after 30 days, including unread messages; readers receive explicit loss notices.
 - New checkpoints cannot be opened by older binaries. Do not downgrade against upgraded state; rollback requires restoring the pre-upgrade backup and loses subsequent activity. The released 0.3.16 reader can truncate an uncommitted torn suffix before refusing a newer checkpoint (#146).
