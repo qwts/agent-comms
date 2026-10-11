@@ -137,12 +137,8 @@ and [transactional durable storage](https://developers.cloudflare.com/durable-ob
 These are candidate capabilities, not application guarantees. Deployment needs
 measured persistence, failure, storage/cost and key-custody evidence first.
 
-Implement independently reviewable enrollment/namespace validators, then durable
-outbox/dedupe/receipt state machines, then relay/client reconnect transport, then
-CLI hub management and filtered census. Required evidence includes spoofed souls,
-wrong relay/key epochs, grants and revocation; concurrent hubs without leaks;
-crash at every handoff; lost receipts on day nine and immediately before expiry;
-restart after body removal; exact expiry/skew/clock rollback; protected capacity
-refusal; signed loss versus uncertainty; task revisions and local wake consent.
-Finally run two-machine acceptance and verify #28's production sequencing gate.
-Keep all three issues open until their complete requirements have runtime evidence.
+The [proposed acceptance plan](federation-acceptance-plan.md) maps existing code
+seams, migration checks, handoff failures and shared #118/#119 ownership. Its
+implementation sequence starts only after ADR acceptance and crypto review.
+Two-machine acceptance and #28's production sequencing gate remain required;
+keep all three issues open until their complete requirements have runtime evidence.
