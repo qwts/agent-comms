@@ -156,13 +156,17 @@ function fakeSchtasks({ status = 'Ready', fail = null } = {}) {
     }
     return '';
   };
+  run.stop = () => {
+    try { run(['/End', '/TN', LABEL]); }
+    catch (error) { if (!/cannot find the file specified/i.test(error.message)) throw error; }
+  };
   return { calls, run, isRegistered: () => registered };
 }
 
 const service = createServiceStartup('win32');
 const taskScript = value => Buffer.from(/-EncodedCommand ([A-Za-z0-9+/=]+)/.exec(value)[1], 'base64').toString('utf16le');
 const options = (over = {}) => service.installOptions({
-  home, env, host, node: '/bundle/node.exe', entry: '/bundle/bin/agent-comms.mjs', paths: { socket: '/pipe/broker' }, ...over,
+  home, env, host, node: '/bundle/node.exe', entry: '/bundle/bin/agent-comms.mjs', paths: { socket: '/pipe/broker' }, stop: over.schtasks?.stop ?? (() => {}), ...over,
 });
 
 test('win32 renders a logon task that restarts the broker and appends its output to the log files', () => {
@@ -279,19 +283,19 @@ test('win32 uninstall ends and deletes the task and removes its XML; a task neve
   const schtasks = fakeSchtasks();
   service.install(options({ schtasks: schtasks.run, makeDir: () => {} }));
   schtasks.calls.length = 0;
-  const removed = service.uninstall(service.jobOptions({ home, env, host, schtasks: schtasks.run }));
+  const removed = service.uninstall(service.jobOptions({ home, env, host, schtasks: schtasks.run, stop: schtasks.run.stop }));
   assert.deepEqual(removed, { installed: false, label: LABEL, plist: taskFile, unloaded: true });
   assert.deepEqual(schtasks.calls, [`/End /TN ${LABEL}`, `/Delete /TN ${LABEL} /F`]);
   assert.ok(!existsSync(taskFile));
   assert.equal(schtasks.isRegistered(), false);
 
-  const again = service.uninstall(service.jobOptions({ home, env, host, schtasks: schtasks.run }));
+  const again = service.uninstall(service.jobOptions({ home, env, host, schtasks: schtasks.run, stop: schtasks.run.stop }));
   assert.equal(again.unloaded, false);
 
   // A delete refused for another reason is the owner's to see.
   const denied = fakeSchtasks({ fail: '/Delete' });
   denied.run(['/Create']);
-  assert.throws(() => service.uninstall(service.jobOptions({ home, env, host, schtasks: denied.run })), {
+  assert.throws(() => service.uninstall(service.jobOptions({ home, env, host, schtasks: denied.run, stop: denied.run.stop })), {
     code: 'launchagent-unload-failed', message: /schtasks would not delete org\.example\.broker: .*Access is denied/s,
   });
 });
