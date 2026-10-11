@@ -117,6 +117,8 @@ jobs:
         run: node --test tests/platform-win32-pipe-native.test.mjs
       - name: Verify native durable checkpoint replacement
         run: node --test tests/durable-file.test.mjs
+      - name: Verify native custody and DPAPI through inherited PowerShell 7 environment
+        run: node --test tests/platform-win32-custody-native.test.mjs
       # #127: test the engines with the host's checksum-verified Node tuple.
       # This is a disposable native-engine run, not a Windows host package.
       - name: Fetch released agent-bot fixture
@@ -147,12 +149,12 @@ jobs:
           Expand-Archive $archive -DestinationPath $directory
           "AGENT_COMMS_ACCEPTANCE_NODE=$directory\node-v$version-win-x64\node.exe" >> $env:GITHUB_ENV
           "AGENT_COMMS_NODE_ARCHIVE_SHA256=$actual" >> $env:GITHUB_ENV
-      - name: Exercise real broker task, DPAPI, SID custody and released daemon provider
+      - name: Exercise engines in a disposable standard-user profile
         shell: pwsh
         env:
           AGENT_COMMS_DISPOSABLE_WINDOWS: '1'
         run: |
-          & $env:AGENT_COMMS_ACCEPTANCE_NODE scripts/windows-acceptance.mjs --bot .windows-fixtures/agent-bot --released-comms .windows-fixtures/agent-comms --components tests/fixtures/windows-host-components.json --report .windows-results/acceptance.json
+          ./scripts/windows-acceptance-user.ps1 -Report .windows-results/acceptance.json
           exit $LASTEXITCODE
       - name: Publish exact native-engine acceptance matrix
         if: always()

@@ -18,6 +18,15 @@ and checks out the released engines by full commit. It runs both the
 candidate and the released broker with that absolute Node executable;
 no host-installed Node drives the acceptance operations.
 
+The production Windows adapters normalize only their classic PowerShell
+child environments, removing inherited `PSModulePath` without changing other
+settings or the caller. This repairs the ordinary `pwsh` → Node →
+`powershell.exe` CLI path; it is not a harness-only workaround. A native
+regression starts Node with actual PowerShell 7 modules and requires real
+Get-Acl inspection, wrong-owner refusal and a CurrentUser DPAPI round trip.
+Microsoft documents this inherited-module-path behavior and the child-only
+remedy in [about_PSModulePath](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_psmodulepath#starting-windows-powershell-from-powershell-7).
+
 Only use a disposable Windows account. The harness registers uniquely named
 scheduled tasks and writes to a temporary directory under the actual user's
 `LOCALAPPDATA`, retaining inherited profile custody. It tracks registration
@@ -25,14 +34,34 @@ attempts before running them, ends/deletes only its own task names in
 `finally`, verifies task absence and removes its temporary files. Do not
 redirect another user's profile or run it against an existing installation.
 
-With the fixture checkouts and checksum-verified sidecar prepared as in
+GitHub's built-in Administrator token created new shared directories owned
+by `S-1-5-32-544` (Administrators), which the broker correctly refused against
+the account SID. The CI-only `windows-acceptance-user.ps1` bootstrap creates a
+unique Users-only local account and profile, stages read-only inputs for that
+SID, and runs child-owned checkouts with the same verified Node binary. Its
+random password remains in memory. No global Git trust, ownership takeover or
+task logon-mode change is used. Both the harness and administrator bootstrap
+remove only their unique tasks, processes, profile, account and input stage.
+
+`Start-Process -Credential -LoadUserProfile -UseNewEnvironment` starts the
+profile process and keeps it alive through the harness. Profile loading alone
+does not prove Task Scheduler eligibility: the production `InteractiveToken`
+and `LeastPrivilege` broker task must actually start and answer. Failure stays
+a required failed environment/engine gate; there is no Password or S4U fallback.
+
+For the CI bootstrap, with checkouts and the verified sidecar prepared as in
 `.github/workflows/ci.yml`, run from PowerShell:
 
 ```powershell
 $env:AGENT_COMMS_DISPOSABLE_WINDOWS = '1'
 # Use the path and archive hash produced by the workflow's verified download.
-& $env:AGENT_COMMS_ACCEPTANCE_NODE scripts/windows-acceptance.mjs --bot .windows-fixtures/agent-bot --released-comms .windows-fixtures/agent-comms --components tests/fixtures/windows-host-components.json --report .windows-results/acceptance.json
+./scripts/windows-acceptance-user.ps1 -Report .windows-results/acceptance.json
 ```
+
+The bootstrap refuses execution outside a disposable GitHub Actions runner.
+For another disposable Windows account, run the Node harness directly with
+`--bot`, `--released-comms`, `--components` and `--report` paths, as its workflow
+invocation specifies. No bootstrap should create accounts on an owner's machine.
 
 | Case | Actual operations and evidence boundary |
 | --- | --- |

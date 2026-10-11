@@ -7,6 +7,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
+import { windowsPowershellEnvironment } from '../lib/platform/windows-environment.mjs';
 
 const exec = promisify(execFile);
 const repository = fileURLToPath(new URL('../', import.meta.url));
@@ -60,7 +61,8 @@ let failed = false;
 function hash(bytes) { return createHash('sha256').update(bytes).digest('hex'); }
 async function command(file, args, childEnv = env, timeout = 30_000) {
   try {
-    const out = await exec(file, args, { env: childEnv, timeout, windowsHide: true, maxBuffer: 1024 * 1024 });
+    const out = await exec(file, args, { env: file === 'powershell.exe' ? windowsPowershellEnvironment(childEnv) : childEnv,
+      timeout, windowsHide: true, maxBuffer: 1024 * 1024 });
     return { exit: 0, stdout: out.stdout, stderr: out.stderr };
   } catch (error) {
     return { exit: typeof error.code === 'number' ? error.code : -1, stdout: error.stdout ?? '', stderr: error.stderr ?? '' };

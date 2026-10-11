@@ -1,0 +1,50 @@
+# Launched only by windows-acceptance-user.ps1 in its disposable CI account.
+$ErrorActionPreference = 'Stop'
+$inputs = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'inputs.json') -Raw | ConvertFrom-Json
+$report = Join-Path $PSScriptRoot 'results/bootstrap.json'
+$gate = 'validate-profile-token'
+$result = @{status='failed';interactiveTaskGate='not-reached'}
+$exitCode = 1
+try {
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    if ($identity.User.Value -ne $inputs.sid) { throw 'Unexpected CI account SID' }
+    if (([Security.Principal.WindowsPrincipal]$identity).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw 'Acceptance must use a standard-user token' }
+    if ($identity.Owner.Value -ne $identity.User.Value) { throw 'Test token default owner must be the user SID' }
+    $profile = [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)
+    $local = [Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData)
+    if (-not $profile -or -not $local -or $env:USERPROFILE -ne $profile -or $env:LOCALAPPDATA -ne $local) { throw 'Target-user environment/profile mismatch' }
+    if ($env:USERNAME -ne $identity.Name.Split('\')[-1]) { throw 'Target-user name mismatch' }
+    if (-not (Test-Path -LiteralPath ('Registry::HKEY_USERS\' + $inputs.sid))) { throw 'Target user profile hive is not loaded' }
+    $result.accountSid = $identity.User.Value
+    $result.tokenOwnerSid = $identity.Owner.Value
+    $result.administrator = $false
+    $result.profileLoaded = $true
+    $result.sessionId = [Diagnostics.Process]::GetCurrentProcess().SessionId
+    $env:PATH = (Split-Path -Parent $inputs.git) + ';' + $env:PATH
+    $working = Join-Path $local ('agent-comms-ci-' + $inputs.runId)
+    New-Item -ItemType Directory -Path $working | Out-Null
+    $gate = 'clone-child-owned-inputs'
+    foreach ($name in @('candidate','bot','released')) {
+        $source = Join-Path $PSScriptRoot ($name + '-source')
+        & $inputs.git -c "safe.directory=$source" clone --local --no-hardlinks $source (Join-Path $working $name) | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw 'Child-owned fixture clone failed' }
+    }
+    # Pass only the public verified tuple metadata into the clean environment.
+    $env:AGENT_COMMS_DISPOSABLE_WINDOWS = '1'
+    $env:AGENT_COMMS_NODE_ARCHIVE_SHA256 = $inputs.nodeArchiveSha256
+    $candidate = Join-Path $working 'candidate'
+    Set-Location -LiteralPath $candidate
+    $gate = 'production-interactive-task-and-engine'
+    & (Join-Path $PSScriptRoot 'node/node.exe') scripts/windows-acceptance.mjs --bot (Join-Path $working 'bot') --released-comms (Join-Path $working 'released') --components tests/fixtures/windows-host-components.json --report (Join-Path $PSScriptRoot 'results/acceptance.json')
+    $exitCode = $LASTEXITCODE
+    $engine = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'results/acceptance.json') -Raw | ConvertFrom-Json
+    $initialTask = $engine.cases | Where-Object name -eq 'real scheduled-task broker install and custom profile namespace'
+    $result.interactiveTaskGate = if ($initialTask.status -eq 'passed') { 'passed-production-task' } else { 'failed-environment-or-engine' }
+    if ($exitCode -eq 0) { $result.status = 'passed' }
+} catch {
+    $result.failure = @{gate=$gate;errorType=$_.Exception.GetType().Name}
+    $exitCode = 1
+} finally {
+    $result | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $report -Encoding utf8
+}
+exit $exitCode
