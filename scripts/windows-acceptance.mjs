@@ -167,7 +167,9 @@ async function installTask(bin = candidateBin) {
   const { json } = await cli(['broker', 'install', '--single-account'], { bin });
   assert.equal(json.installed, true);
   await ready();
-  const xml = readFileSync(json.plist).subarray(2).toString('utf16le');
+  // The unit writer emits UTF-16LE. A BOM is optional for decoding; removing
+  // two bytes unconditionally would corrupt a BOM-less document's first '<'.
+  const xml = readFileSync(json.plist).toString('utf16le').replace(/^\uFEFF/, '');
   assert.ok(xml.includes(bin.replaceAll('&', '&amp;')), 'registered unit must select the tested engine');
   assert.ok(xml.includes(process.execPath.replaceAll('&', '&amp;')), 'unit must use the sidecar Node');
   return { task: label, unit: path.basename(json.plist) };

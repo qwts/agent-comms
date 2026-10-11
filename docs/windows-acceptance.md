@@ -63,6 +63,20 @@ For another disposable Windows account, run the Node harness directly with
 `--bot`, `--released-comms`, `--components` and `--report` paths, as its workflow
 invocation specifies. No bootstrap should create accounts on an owner's machine.
 
+The latest native result, [run 38125543589](https://github.com/qwts/agent-comms/actions/runs/38125543589),
+passed the named-pipe transport, native Get-Acl ownership checks, CurrentUser
+DPAPI round trip, and the standard user's profile-root ownership check. Broker
+startup still failed: the profile root belonged to the standard SID, but the
+production `InteractiveToken` task never ran (`Ready`, result `0x41303`, with
+the scheduler's never-run last-run sentinel). No shared, proofs, state or client
+broker directories and no startup logs were created; the CLI reported
+`broker-unreachable` and the harness recorded `broker-not-ready`. Teardown found the namespaced tasks absent and removed the
+disposable account without errors. This remains a failed required engine gate.
+
+The owner confirms an existing Windows VM is available but has not identified
+an access path for its signed-in desktop. No signed-in desktop run has
+been performed.
+
 | Case | Actual operations and evidence boundary |
 | --- | --- |
 | Broker startup/lifecycle | CLI install, real scheduled-task execution, status through the answering broker, restart, uninstall and task absence; custom label and paths with spaces. Logon trigger execution and a non-admin token are not established. |
