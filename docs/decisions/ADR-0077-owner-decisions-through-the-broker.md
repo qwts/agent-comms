@@ -14,11 +14,15 @@ product contracts and conformance evidence are prerequisites to enabling it.
 
 [ADR-0006 decision 8](ADR-0006-machine-broker-between-persona-accounts.md)
 requires the human principal credential to remain in the signed host's
-keychain item. The current client also writes a plain copy. The daemon's
-principal owner check authenticates `health`, without binding an action or
-checking the target grant. Existing launch relay and target grants supply
-useful patterns but do not establish this security contract. The
-[conformance proposal](../owner-decision-conformance.md) pins that evidence.
+keychain item. The current client also writes a plain copy. At the original review, the daemon's principal owner check authenticated
+`health` without a target-grant check. Released comms 0.4.2 and agent-bot
+0.10.64 now check current broker account/soul grants for immutable targets
+of covered revision and cold-wake mutations. This query does not bind an
+authorized effect, relay a decision or issue a signed receipt. Other owner
+gates retain their existing behavior. Existing launch relay and target grants
+supply useful patterns but do not establish this security contract. The
+[conformance proposal](../owner-decision-conformance.md) distinguishes current
+release evidence from the historical baseline.
 
 [ADR-0059](ADR-0059-host-apps-embed-agent-comms.md) preserves these requirements
 and distinguishes host embedding from owner proof. The agent-bot-owned

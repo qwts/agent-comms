@@ -7,17 +7,32 @@ authorization to change runtime. Keep
 [#77](https://github.com/qwts/agent-comms/issues/77) open until all four
 requirements have release evidence and a lifecycle closeout.
 
-## Reviewed source snapshots — 2026-10-11 refresh
+## Current published implementation — 2026-10-11
+
+[Comms 0.4.2](https://github.com/qwts/agent-comms/tree/v0.4.2)
+(`1222ccd83ce1b8ffe3ad77cea679eb9be6398110`) and
+[agent-bot 0.10.64](https://github.com/qwts/agent-bot-identity/tree/v0.10.64)
+publish the [target-grant query and covered consumer](principal-target-check.md).
+This delivers partial requirement 4, not relay, receipts, atomic application
+or native custody. Comms still writes the plain principal before platform
+storage. No rollout is claimed.
+
+ADR-0077 remains Proposed; its additional presence, operation-grant and cutover
+choices remain unapproved. All four original requirements remain in scope.
+This refresh authorizes no runtime or migration.
+
+## Historical reviewed source snapshots — 2026-10-11 refresh
 
 - [Comms a8761ac](https://github.com/qwts/agent-comms/tree/a8761ac3fca90acbefa0f1c756e1e5486a598685), after v0.4.0 and Windows lifecycle #148.
 - [Agent-bot 1b58a01](https://github.com/qwts/agent-bot-identity/tree/1b58a0191f0fd48593b6817cd452c8f092db71e6), refreshed from live main; source evidence, not a bundled release claim.
 
-Paths/lines below use these snapshots. Revalidate before implementation.
+Paths/lines in the historical table below use these snapshots. Current
+release evidence supersedes its health-only and missing target-query claims.
 Host source, native custody and compatible bundled releases were not revalidated.
 Owner policy review and joint agent-bot/native-host review remain prerequisites;
 this evidence refresh changes no acceptance status or runtime authorization.
 
-## Requirement to current evidence
+## Historical requirement evidence
 
 | #77 requirement | Current behavior and test evidence | Missing evidence |
 | --- | --- | --- |
