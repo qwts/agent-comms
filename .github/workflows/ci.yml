@@ -115,6 +115,8 @@ jobs:
           package-manager-cache: false
       - name: Verify named-pipe client impersonation ceiling
         run: node --test tests/platform-win32-pipe-native.test.mjs
+      - name: Verify native durable checkpoint replacement
+        run: node --test tests/durable-file.test.mjs
 
   full:
     name: Complete suite

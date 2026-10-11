@@ -14,6 +14,9 @@ import * as startup from '../lib/broker/launchagent.mjs';
 
 const seams = { 'local-channel': createLocalChannel, 'secret-store': createSecretStore,
   'service-startup': createServiceStartup, 'account-isolation': createAccountIsolation };
+// Durable replacement has one function port; its POSIX and Windows branches
+// and native replacement are exercised in durable-file.test.mjs.
+const platformSources = [...Object.keys(seams), 'durable-file'];
 
 // GeniusBar ADR-0046: every seam has a Windows branch, exercised with fake
 // runners in tests/platform-win32.test.mjs (secret store, service startup)
@@ -44,7 +47,7 @@ test('non-seam production source contains no process.platform reference', () => 
   for (const dir of ['lib', 'bin']) {
     for (const file of readdirSync(new URL(dir, root), { recursive: true })) {
       if (!file.endsWith('.mjs')) continue;
-      if (dir === 'lib' && Object.keys(seams).some((name) => file === path.join('platform', `${name}.mjs`))) continue;
+      if (dir === 'lib' && platformSources.some((name) => file === path.join('platform', `${name}.mjs`))) continue;
       const source = readFileSync(new URL(`${dir}/${file}`, root), 'utf8');
       if (/process\s*\.\s*platform\b/.test(source)) hits.push(`${dir}/${file}`);
     }

@@ -33,6 +33,8 @@ the agent-comms release.
   `ADR-NNNN` series.
 - [Inbound A2A](docs/a2a.md): loopback JSON-RPC, bearer enrollment, and task mapping.
 - [Tasks](docs/tasks.md): offers, revisions, transitions, and task events.
+- [Mailbox retention](docs/mailbox-retention.md): limits, reader gaps,
+  compaction, retry guarantees and recovery.
 - [Principal client API](docs/principal-client.md): embed owner census and chat.
 - [Windows](docs/windows.md): released `win32` platform branches and their
   current end-to-end limits.
