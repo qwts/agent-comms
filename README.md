@@ -5,7 +5,7 @@ between agents, task handoff, A2A interoperability, and a local broker between
 persona accounts, built on the [agent-bot](https://github.com/qwts/agent-bot-identity)
 identity daemon.
 
-Released: [v0.4.3](https://github.com/qwts/agent-comms/releases/tag/v0.4.3).
+Released: [v0.4.4](https://github.com/qwts/agent-comms/releases/tag/v0.4.4).
 The broker and CLI support peer messaging and durable task offers and
 assignee-reported task transitions. One-account mode is the default; group
 mode is explicit with `--group GROUP`. A2A is available through a loopback gateway configured by the owner and
