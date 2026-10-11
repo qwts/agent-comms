@@ -93,7 +93,43 @@ async function record(name, run) {
   }
 }
 async function ready() {
-  await until(async () => (await cli(['broker', 'pairings'], { ok: false })).exit === 0, 'real broker');
+  let lastReply;
+  try {
+    await until(async () => {
+      lastReply = await cli(['broker', 'pairings'], { ok: false });
+      return lastReply.exit === 0;
+    }, 'real broker');
+  } catch (error) {
+    // Keep diagnostics useful without copying arbitrary CLI output or logs,
+    // which may contain credentials after a later restart in this harness.
+    const safeCode = value => typeof value === 'string' && /^[a-zA-Z0-9_-]{1,80}$/.test(value) ? value : null;
+    const diagnostic = { cliExit: lastReply?.exit ?? null, cliCode: safeCode(lastReply?.json?.error?.code) };
+    const task = await command('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
+      '$ErrorActionPreference="Stop"; $task=Get-ScheduledTask -TaskName $env:AGENT_COMMS_SERVICE_LABEL; $info=Get-ScheduledTaskInfo -InputObject $task; @{state=$task.State.ToString();lastTaskResult=$info.LastTaskResult;lastRunTime=$info.LastRunTime.ToString("o")} | ConvertTo-Json -Compress']);
+    try {
+      const info = JSON.parse(task.stdout);
+      diagnostic.task = { state: safeCode(info.state), lastTaskResult: Number(info.lastTaskResult), lastRunTime: info.lastRunTime };
+    } catch { diagnostic.taskQueryExit = task.exit; }
+    diagnostic.logs = [];
+    for (const name of ['broker.log', 'broker.err.log']) {
+      let bytes;
+      try { bytes = readFileSync(path.join(env.AGENT_COMMS_LOG_DIR, name)); } catch { continue; }
+      const text = bytes.toString('utf8');
+      diagnostic.logs.push({ name, bytes: bytes.length, sha256: hash(bytes),
+        errorNames: [...new Set(text.match(/\b[A-Z][A-Za-z]{1,40}Error\b/g) ?? [])],
+        systemCodes: [...new Set(text.match(/\b(?:ENOENT|EACCES|EPERM|EADDRINUSE|ECONNREFUSED|EINVAL|MODULE_NOT_FOUND|ERR_MODULE_NOT_FOUND)\b/g) ?? [])],
+        errorCodes: [...new Set([...text.matchAll(/"code"\s*:\s*"([a-zA-Z0-9_-]{1,80})"/g)].map(match => match[1]))],
+        shellFailure: /not recognized as an internal or external command/i.test(text) ? 'command-not-recognized'
+          : /system cannot find the (?:path|file) specified/i.test(text) ? 'path-or-file-not-found'
+            : /access is denied/i.test(text) ? 'access-denied'
+              : /syntax of the command is incorrect/i.test(text) ? 'command-syntax' : null,
+      });
+    }
+    result.readinessFailures ??= [];
+    result.readinessFailures.push(diagnostic);
+    error.code = 'broker-not-ready';
+    throw error;
+  }
 }
 async function stopTask(bin = candidateBin) {
   await cli(['broker', 'uninstall'], { bin });

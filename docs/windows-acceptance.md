@@ -58,6 +58,10 @@ the missing broker settings in
 [GeniusBar #46's evidence](https://github.com/true-line/geniusbar/issues/46#issuecomment-6104555216),
 distinct from agent-bot #865's delivered keyd signer settings fix.
 
+Startup timeouts retain the last CLI error code, native task state/result and
+filtered startup-log classifications and hashes. Arbitrary command output and
+log text are excluded so a later restart failure cannot expose credentials.
+
 GeniusBar's Windows package, host namespace/service reconciliation, accepted
 Windows product/migration contract, signed distribution and actual window
 lifecycle remain host work. Native engine results can advance #127 without
