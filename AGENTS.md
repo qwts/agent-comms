@@ -10,11 +10,12 @@ not in this repository.
 
 agent-comms is released harness-independent communications software for the
 qwts fleet, built on the agent-bot identity daemon. The current release is
-v0.3.15 and includes messaging, task workflows, optional A2A, and a principal
+v0.4.3 and includes messaging, task workflows, optional A2A, and a principal
 host API. The [README](README.md) maps these features and links their
-contracts. Windows platform branches are released, but end-to-end Windows and
-selected GeniusBar bundle support are not established; see [Windows](docs/windows.md)
-and [#127](https://github.com/qwts/agent-comms/issues/127).
+contracts. Native Windows engine and selected installed GeniusBar candidate
+evidence is recorded in [Windows](docs/windows.md) and
+[#127](https://github.com/qwts/agent-comms/issues/127), with explicit readiness
+and refresh qualifications. This is not a blanket host-release support claim.
 
 <!-- governed:shared-agent-discovery:start -->
 

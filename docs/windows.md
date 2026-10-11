@@ -105,10 +105,35 @@ A separate [five-case supervisor run](https://github.com/qwts/agent-comms/issues
 passed actual daemon startup, wake reporting and broker/task restart with stable
 credentials. That run used the production installer and daemon API with an
 explicit disposable home and empty config; it did not test CLI default-home
-installation. These results do not establish a packaged host, updater,
-window/logon lifecycle or every harness. Current candidate gates and the tested
-release tuple remain separate; [#127](https://github.com/qwts/agent-comms/issues/127)
-tracks complete embedding acceptance.
+installation. These earlier engine results remain scoped to their recorded candidates.
+
+[Installed host evidence](https://github.com/qwts/agent-comms/issues/127#issuecomment-6114773732)
+now records GeniusBar `26e7d8e077c14e1365509e22f4d50cbeabdffb93` with bundled
+Node 24.21.0, released comms 0.4.3 and bot 0.10.64: actual GUI message/reply,
+API exchange while the window was closed, visible reopened history and
+independently healthy services with six unchanged credential/identity files.
+The actual default-location R5 inventory passed seven expected locations,
+ACL metadata and six marker CRUD/cleanup checks. Recorded ACEs are not proof
+of other-account effective access or app-only custody.
+
+First setup timed out at the 15-second broker-readiness check, then verified
+broker availability and one retry reached the dashboard. Reopen refreshed
+services and replaced PIDs, causing a strict same-PID snapshot to fail;
+independent health, credential and history checks passed. These failures remain
+recorded rather than relabeled passing checks.
+
+[Host PR #369](https://github.com/true-line/geniusbar/pull/369) merged as
+`43d40597ada19bbcab35708db5b29907d0f8ad97`, including the
+[host evidence matrix](https://github.com/true-line/geniusbar/blob/43d40597ada19bbcab35708db5b29907d0f8ad97/docs/windows-services.md).
+Its four-case adapter run used exact host `e415af1219453c587a9d6fa8bbee459474695f82`;
+the installed 26e7 source adds the later CRLF guide-parser correction.
+
+This is qualified selected-candidate evidence, not a published supported host
+release or a claim that every harness, logon trigger or signed updater was
+exercised. Those host-product limits do not add new #127 acceptance gates.
+[#127](https://github.com/qwts/agent-comms/issues/127) retains the original
+requirements and evidence reconciliation; #77 separately owns strengthened
+principal custody and signed owner decisions.
 
 ## Disposable acceptance
 

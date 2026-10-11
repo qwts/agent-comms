@@ -5,7 +5,7 @@ between agents, task handoff, A2A interoperability, and a local broker between
 persona accounts, built on the [agent-bot](https://github.com/qwts/agent-bot-identity)
 identity daemon.
 
-Released: [v0.3.15](https://github.com/qwts/agent-comms/releases/tag/v0.3.15).
+Released: [v0.4.3](https://github.com/qwts/agent-comms/releases/tag/v0.4.3).
 The broker and CLI support peer messaging and durable task offers and
 assignee-reported task transitions. One-account mode is the default; group
 mode is explicit with `--group GROUP`. A2A is available through a loopback gateway configured by the owner and
@@ -16,13 +16,14 @@ release ([A2A](docs/a2a.md)). Souls are claims; the broker verifies accounts
 
 Host apps can use the principal client for owner-scoped census, messaging,
 tasks and launch requests ([principal client](docs/principal-client.md));
-agent-bot owns process creation and harness startup. The v0.3.15 release
-contains Windows branches for the four platform seams, but that does not
-establish end-to-end Windows broker or host compatibility. Live Windows
-principal-client and bundled-host acceptance remain open
+agent-bot owns process creation and harness startup. Native Windows engine,
+principal-client and scheduled lifecycle acceptance passed. Selected installed
+GeniusBar candidate evidence now includes GUI exchange, closed-window API
+availability, healthy reopened services and the default-location access matrix,
+with documented setup-readiness and PID-refresh qualifications
 ([Windows](docs/windows.md), [#127](https://github.com/qwts/agent-comms/issues/127)).
-GeniusBar packaging and support for a selected host bundle are separate from
-the agent-comms release.
+GeniusBar packaging and a published supported host release remain separate
+from this agent-comms release; these receipts are not blanket Windows support.
 
 ## Where things live
 
@@ -36,7 +37,7 @@ the agent-comms release.
 - [Mailbox retention](docs/mailbox-retention.md): limits, reader gaps,
   compaction, retry guarantees and recovery.
 - [Local channels](docs/channels.md): invitations, subscription consent, filtered
-  inboxes, wake choices and finite storage (unreleased).
+  inboxes, wake choices and finite storage.
 - [Principal client API](docs/principal-client.md): embed owner census and chat.
 - [Owner-decision proposal](docs/owner-decisions.md): proposed security contract;
   [evidence and conformance](docs/owner-decision-conformance.md). No runtime authorization.
