@@ -43,3 +43,9 @@ test('--version lies inside the skill range', () => {
     assert.ok(cmp(v, range[1]) >= 0 && cmp(v, range[2]) < 0, `${v} outside ${range[0]}`);
   }
 });
+
+ test('the prose compatibility range agrees with skill metadata', () => {
+  const metadata = router().match(/qwts-versions: "([^"]+)"/)[1];
+  const prose = router().match(/This skill covers `([^`]+)`/)[1];
+  assert.equal(prose, metadata);
+});

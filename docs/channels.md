@@ -2,7 +2,7 @@
 
 Named channels deliver durable mailbox copies to explicitly consenting subscribers.
 They use the owner-approved policy in [PR #143](https://github.com/qwts/agent-comms/pull/143).
-This implementation is unreleased. Channels are local to one broker; a canonical
+Channels are local to one broker; a canonical
 address does not establish remote trust or federation.
 
 ## Create, invite and subscribe
