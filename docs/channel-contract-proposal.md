@@ -1,17 +1,19 @@
-# Named channels: proposed contract
+# Named channels: approved contract
 
-**Status:** Owner-approved policy (2026-10-11), pending repository review, for
-[ADR-0004 Amendment 1](decisions/ADR-0004-durable-mailbox-and-waking.md#proposed-amendment-1-local-first-named-channels),
+**Status:** Owner-approved policy (2026-10-11), reviewed in
+[PR #143](https://github.com/qwts/agent-comms/pull/143), for
+[ADR-0004 Amendment 1](decisions/ADR-0004-durable-mailbox-and-waking.md#amendment-1-local-first-named-channels),
 [issue #120](https://github.com/qwts/agent-comms/issues/120).
-The owner approved both access and delivery/lifecycle policies in the
-orchestration session. No channel implementation is claimed. This details all seven
-requirements: soul/principal operations, durable subscriber copies and filters,
-subscription waking, authorization, census, stable future addresses and every
-harness. Remote transport remains in #28/#118/#119. Mailbox retention depends on
+The owner's [access and delivery/lifecycle approval](https://github.com/qwts/agent-comms/issues/120#issuecomment-6107132841)
+authorizes this policy.
+[PR #145](https://github.com/qwts/agent-comms/pull/145) implements this contract in
+[v0.4.0](https://github.com/qwts/agent-comms/releases/tag/v0.4.0); see the
+[delivered operations](channels.md). Remote transport remains in #28/#118/#119.
+Mailbox retention depends on
 [#122 / PR #141](https://github.com/qwts/agent-comms/pull/141), not a permanent
 channel history store.
 
-## Proposed policy
+## Approved policy
 
 1. **Identity and eligibility.** Persist an opaque broker `originHubId` and
    generated `channelId`; address channels as
@@ -99,7 +101,7 @@ channel history store.
    errors for inaccessible channels. Owner-local administration retains its
    existing authority. Unsubscribed nonmanagers lose channel discovery but retain
    access to their already delivered copies.
-8. **Finite metadata admission, no implicit deletion.** Proposed defaults are
+8. **Finite metadata admission, no implicit deletion.** Defaults are
    1,024 lifetime channel records per broker, 64 per creator namespace (paired
    account for souls, principal ID otherwise), 100 combined pending-invite/
    subscriber slots per channel and 16 MiB serialized channel metadata per broker.
@@ -120,16 +122,15 @@ invite consent/capabilities and self-copy exception; no history; wake default;
 filtered discovery; seven-day retries; capacity refusal without eviction; and atomic
 fan-out. A slow, full, left or newly unauthorized subscriber can stop the whole
 channel until capacity clears or membership changes. This availability cost is
-intentional in the proposed all-or-none contract. Admission/availability refusal
+intentional. Admission/availability refusal
 leaks aggregate pressure; repeated probes may infer it. No hidden-membership
 non-inference guarantee is claimed. Permanent channel metadata
 consumes finite slots until a separately approved lifecycle policy exists.
 
-Wire names, encodings, indexes, checkpoint schema and exact byte-accounting
-implementation and tuning these finite resource defaults are engineering
-decisions within this policy, with versioned validation and tests. They cannot widen grants, add eviction or change retry
-semantics. Repository review remains pending. Owner approval is not runtime evidence
-or approval of cross-hub enrollment, multi-homing or relay.
+Wire names, encodings, indexes, checkpoint schema, byte accounting and resource
+tuning are engineering choices under versioned validation and tests. They cannot
+widen grants, add eviction or change retry
+semantics. Approval does not authorize cross-hub enrollment, multi-homing or relay.
 
 ## Conformance boundary
 
@@ -140,3 +141,8 @@ reuse; count/byte/metadata refusal without eviction; no independent body archive
 late subscription and unsubscribe behavior; filtered paging with independent
 copy/gap ack; correct delivered-aside reporting; opt-in/coalesced wakes; hidden
 roster rows excluded before counts/pages; and identical behavior across harnesses.
+
+[Broker acceptance](../tests/channel-acceptance.test.mjs) exercises consent, authority,
+atomicity and retries. [Pinned-reader acceptance](../tools/acceptance/README.md)
+records migration/recovery and the unsupported-downgrade limitation; neither
+establishes remote transport or packaged-host support.
