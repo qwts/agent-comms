@@ -33,11 +33,21 @@ const COMMANDS = [
   { name: 'whoami', args: [], flags: [] },
   { name: 'peers', args: [], flags: [] },
   { name: 'send', args: ['TO'], flags: ['body', 'body-file', 'kind', 'key', 'reply-to', 'correlation'] },
-  { name: 'inbox read', args: [], flags: ['after', 'limit'] },
-  { name: 'inbox watch', args: [], flags: [], booleans: ['full'] },
+  { name: 'channel create', args: ['NAME'], flags: [] },
+  { name: 'channel invite', args: ['CHANNEL', 'TO'], flags: [], booleans: ['post'] },
+  { name: 'channel invitations', args: [], flags: ['after', 'limit'] },
+  { name: 'channel census', args: ['[CHANNEL]'], minArgs: 0, flags: ['after', 'limit'] },
+  { name: 'channel remove', args: ['CHANNEL', 'TO'], flags: [] },
+  { name: 'channel permission', args: ['CHANNEL', 'TO', 'ON_OR_OFF'], flags: [] },
+  { name: 'channel subscribe', args: ['CHANNEL'], flags: [], booleans: ['wake'] },
+  { name: 'channel unsubscribe', args: ['CHANNEL'], flags: [] },
+  { name: 'channel wake', args: ['CHANNEL', 'ON_OR_OFF'], flags: [] },
+  { name: 'channel post', args: ['CHANNEL'], flags: ['body', 'body-file', 'kind', 'key', 'reply-to', 'correlation'] },
+  { name: 'inbox read', args: [], flags: ['after', 'limit', 'channel'] },
+  { name: 'inbox watch', args: [], flags: ['channel'], booleans: ['full'] },
   { name: 'inbox ack', args: ['MESSAGE_ID'], variadic: true, flags: [] },
   { name: 'inbox gap-ack', args: ['THROUGH'], flags: [] },
-  { name: 'inbox hook', args: [], flags: ['after', 'limit', 'session-id'] },
+  { name: 'inbox hook', args: [], flags: ['after', 'limit', 'session-id', 'channel'] },
   { name: 'task offer', args: ['TO'], flags: ['criteria', 'parent', 'dependencies', 'related-task'] },
   { name: 'task accept', args: ['TASK_ID'], flags: ['revision'] },
   { name: 'task reject', args: ['TASK_ID'], flags: ['revision'] },
@@ -53,6 +63,8 @@ const COMMANDS = [
   { name: 'admin principals', args: [], flags: [] },
   { name: 'admin principal-approve', args: ['CODE'], flags: ['grant'] },
   { name: 'admin principal-revoke', args: ['PRINCIPAL'], flags: [] },
+  { name: 'admin channel-grant', args: ['PRINCIPAL'], flags: ['capabilities-file'] },
+  { name: 'admin channel-manager', args: ['CHANNEL', 'TO'], flags: [] },
   { name: 'a2a route add', args: ['NAME'], flags: ['url', 'credential-file', 'tenant', 'souls'] },
   { name: 'a2a route remove', args: ['NAME'], flags: [] },
   { name: 'a2a route list', args: [], flags: [] },
@@ -149,7 +161,7 @@ function parse(argv) {
   }
   if (schema && !flags.help && !flags.version) {
     const count = positional.length - schema.name.split(' ').length;
-    if (count < schema.args.length || (!schema.variadic && count > schema.args.length)) {
+    if (count < (schema.minArgs ?? schema.args.length) || (!schema.variadic && count > schema.args.length)) {
       fail('usage', `${schema.name} expects ${schema.args.join(' ') || 'no positional arguments'}${schema.variadic ? '...' : ''}`);
     }
   }
@@ -244,9 +256,29 @@ async function run(argv, env) {
         correlation: flags.correlation ?? null,
       }));
     }
+    case 'channel': {
+      const channel = rest[0];
+      const onOff = (value) => {
+        if (!['on', 'off'].includes(value)) fail('usage', 'channel setting must be on or off');
+        return value === 'on';
+      };
+      if (sub === 'create') return print(await asSoul({ op: 'channel-create', name: rest[0] }));
+      if (sub === 'invitations') return print(await asSoul({ op: 'channel-invitations', after: flags.after, limit: integer(flags.limit, 'limit') }));
+      if (sub === 'census') return print(await asSoul({ op: 'channel-census', channel, after: integer(flags.after, 'after'), limit: integer(flags.limit, 'limit') }));
+      if (sub === 'post') return print(await asSoul({ op: 'channel-post', channel,
+        body: readBody(flags), kind: flags.kind ?? 'message', key: flags.key ?? randomUUID(),
+        replyTo: flags['reply-to'] ?? null, correlation: flags.correlation ?? null }));
+      if (sub === 'invite') return print(await asSoul({ op: 'channel-invite', channel, to: rest[1], canPost: Boolean(flags.post) }));
+      if (sub === 'remove') return print(await asSoul({ op: 'channel-remove', channel, to: rest[1] }));
+      if (sub === 'permission') return print(await asSoul({ op: 'channel-permission', channel, to: rest[1], canPost: onOff(rest[2]) }));
+      if (sub === 'subscribe') return print(await asSoul({ op: 'channel-subscribe', channel, wake: Boolean(flags.wake) }));
+      if (sub === 'unsubscribe') return print(await asSoul({ op: 'channel-unsubscribe', channel }));
+      if (sub === 'wake') return print(await asSoul({ op: 'channel-wake', channel, wake: onOff(rest[1]) }));
+      return fail('usage', 'unknown channel operation');
+    }
     case 'inbox': {
       if (sub === 'read') {
-        const page = await asSoul({ op: 'read', after: integer(flags.after, 'after'), limit: integer(flags.limit, 'limit') });
+        const page = await asSoul({ op: 'read', after: integer(flags.after, 'after'), limit: integer(flags.limit, 'limit'), channel: flags.channel });
         return deliver('inbox-read', page);
       }
       if (sub === 'hook') {
@@ -261,12 +293,13 @@ async function run(argv, env) {
         let remaining = 0;
         let gap;
         do {
-          const page = await asSoul({ op: 'read', after, limit: Math.min(LIMITS.readPage, cap - messages.length) });
+          const page = await asSoul({ op: 'read', after, limit: Math.min(LIMITS.readPage, cap - messages.length), channel: flags.channel });
           messages.push(...page.messages);
           if (page.gap) gap = page.gap;
           after = page.cursor;
           remaining = page.remaining;
-          // An empty page moves no cursor, so asking again would spin.
+          // An empty filtered page may advance over nonmatches, but has no
+          // matching backlog left; stop instead of requesting it again.
           if (!page.messages.length) break;
         } while (remaining > 0 && messages.length < cap);
         return deliver('hook-inject', {
@@ -289,7 +322,7 @@ async function run(argv, env) {
         try {
           const context = soulContext(env);
           const soulToken = await vouch(context);
-          return await watch(paths, credential, { op: 'watch', agentId: context.agentId, ...(soulToken ? { soulToken } : {}), mode: flags.full ? 'full' : 'wake' }, (event) => {
+          return await watch(paths, credential, { op: 'watch', agentId: context.agentId, ...(soulToken ? { soulToken } : {}), mode: flags.full ? 'full' : 'wake', channel: flags.channel }, (event) => {
             process.stdout.write(`${JSON.stringify(event)}\n`);
           }, { signal: controller.signal });
         } finally {
@@ -399,6 +432,12 @@ async function run(argv, env) {
       return print({ ok: true, ...result });
     }
     case 'admin': {
+      if (sub === 'channel-grant') {
+        if (!flags['capabilities-file']) fail('usage', 'channel-grant needs --capabilities-file');
+        return print(await admin(paths, { op: 'channel-grant', principal: rest[0],
+          capabilities: JSON.parse(readFileSync(flags['capabilities-file'], 'utf8')) }));
+      }
+      if (sub === 'channel-manager') return print(await admin(paths, { op: 'channel-manager', channel: rest[0], to: rest[1] }));
       if (sub === 'principals') return print(await admin(paths, { op: 'principals' }));
       if (sub === 'principal-approve') return print(await admin(paths, {
         op: 'principal-approve', code: rest[0],

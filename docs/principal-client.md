@@ -1,7 +1,6 @@
 # Principal client API
 
-The principal client gives host apps owner-scoped census and messaging over
-custody-checked broker requests using the saved principal credential.
+Host apps use saved principal credentials for custody-checked census and messaging.
 
 ## Pair once, then connect
 
@@ -30,9 +29,7 @@ or on the existing POSIX test implementation, it reads `principal.json`
 (`principal.<name>.json` for a non-default credential name) in the client
 state directory through the account-isolation seam.
 A failed keychain read fails closed; it does not silently try another store.
-All four [Windows adapter branches](windows.md) are implemented, but live
-broker, service, and bundled-host acceptance remains open in
-[#127](https://github.com/qwts/agent-comms/issues/127).
+See [Windows](windows.md) for platform acceptance limits.
 
 ## Use the library
 
@@ -59,13 +56,11 @@ if (page.messages.length) await client.ack(page.messages.map((message) => messag
 
 `createPrincipalClient({ env, timeoutMs, credentialLoader })` defaults to
 `process.env`, a 10-second request deadline, and the platform secret store.
-An embedding host may inject a synchronous `credentialLoader(clientPaths,
-hostConfig, env)` returning its saved `{ principal, secret, brokerUid, mode }`.
-Since [#131](https://github.com/qwts/agent-comms/pull/131), the client accepts
-a Windows broker SID only with a valid Ed25519 `brokerKey` and forwards both
-pins. This library fix has synthetic coverage; live DPAPI credential loading,
-custody/pipe verification, scheduled-task lifecycle, and GeniusBar
-bundle/restart acceptance remain open in
+Hosts may inject synchronous `credentialLoader(clientPaths, hostConfig, env)`
+returning `{ principal, secret, brokerUid, mode }`.
+Windows credentials require a broker SID and valid Ed25519 `brokerKey`; both
+pins are forwarded. Native DPAPI/custody checks pass in PR #140, but live
+scheduled-task and bundled-host acceptance remain open in
 [#127](https://github.com/qwts/agent-comms/issues/127).
 This storage seam does not override authorization. `mode` is
 `single-account` or `group`; older credentials without it retain `group`.
@@ -76,7 +71,7 @@ credentials.
 | --- | --- |
 | `census()` | Returns `{ ok, souls }`; each row has account, agentId, name, harness, parent, presence, verification, hardened, daemonWatching, unacked and lastWake. |
 | `send({ to, body, key, kind, refs, correlation, replyTo })` | Returns `{ ok, messageId, seq, duplicate, wake }`, including original acceptance on retry. |
-| `inbox({ after = 0, limit = 20 })` | Returns `{ ok, messages, cursor, remaining, gap? }` from this principal's retained unacknowledged mailbox. |
+| `inbox({ after = 0, limit = 20, channel })` | Returns `{ ok, messages, cursor, remaining, gap? }` from this principal's retained unacknowledged mailbox, optionally filtered by canonical channel. |
 | `ack(ids)` | Returns `{ ok, acknowledged, alreadyAcknowledged }` for this principal's messages only. |
 | `ackGap(through)` | Receives a loss notice; returns `{ ok, acknowledged, alreadyAcknowledged }`. |
 
@@ -95,6 +90,10 @@ No operation retries automatically.
 
 Task methods and results: [Tasks](tasks.md).
 
+Unreleased [channel methods](channels.md#principal-library-methods) require
+separate capabilities alongside existing approval and messaging grants. No
+owner-local grant or manager-transfer method is exposed.
+
 ## Authority and message shape
 
 Principals are not souls: their endpoint is `{ principal: 'principal_<uuid>' }`;
@@ -102,7 +101,7 @@ souls use `{ account, agentId }` and retain sender verification. Souls reply
 to the principal ID; the worker does this automatically. Principals have
 durable inboxes but are not census rows or daemon wake-stream members;
 delivery reports `waiting`, so apps poll. Principal-to-principal messaging
-is unsupported.
+is unsupported except for a principal's own explicitly subscribed channel copy.
 
 Every request is authenticated and requires current approval; revocation also
 blocks retries and inbox access. Grants bound census, sends, and which souls

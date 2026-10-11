@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI sends a pull request from a fork, and every merge queue run, to GitHub-hosted runners even when a runner variable names a self-hosted runner, so outside code never runs on a self-hosted machine; `CONTRIBUTING.md` states the policy (qwts/agent-bot-identity#752).
 
 ### Added
+- Local named channels with explicit invitations and subscriptions, atomic mailbox fan-out, seven-day snapshot retries, filtered inbox/watch/census, per-subscriber wake choices and separate principal capabilities. Version-2 checkpoints preserve channel identity and outcomes; older binaries cannot read the new format (#120).
 - Bounded mailbox retention with owner-approved 30-day expiry including unread messages, 10,000-message/64-MiB limits, seven-day durable deduplication and explicit reader/watch loss notices. `inbox gap-ack`, principal `ackGap`, and bounded `cursor-expired` metadata make loss receipt and recovery explicit (#122).
 - Versioned crash-safe checkpoints, independent task summaries, bounded expired-ID evidence, poisoned-writer refusal after uncertain storage failures, and `broker run --limits-file` controls. New state records make downgrade unsupported; back up consistently before upgrading (#122).
 

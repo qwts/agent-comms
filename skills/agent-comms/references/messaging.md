@@ -110,6 +110,24 @@ SIGINT and SIGTERM exit cleanly, including during backoff.
 - `cursor` is the `seq` of the first unacknowledged message. `inbox read` with no `--after` starts there. Passing `cursor` as `--after` skips that message.
 - Each message records its own wake outcome (`warm`, `cold`, `waiting`, or `failed`). Coalescing changes the signal only.
 
+## Local channels (unreleased)
+
+Use `channel create NAME`, then its returned canonical `channel` address.
+Managers use `channel invite CHANNEL TO --post`; invitees find pending offers
+with `channel invitations` and explicitly accept with `channel subscribe CHANNEL`.
+There is no prior history, and wake defaults off. Only the subscriber changes
+its choice with `channel wake CHANNEL on|off` or leaves with
+`channel unsubscribe CHANNEL`.
+
+`channel post CHANNEL --body TEXT --key KEY` atomically delivers one copy to
+every current subscriber, including a subscribed poster. One full or unauthorized
+subscriber refuses the whole new post. Retry the same key and content after
+uncertainty; the seven-day original snapshot is preserved. Keys share the direct
+send namespace. `inbox read`, `inbox hook` and `inbox watch` accept `--channel
+CHANNEL`; acknowledgements still name your own copy IDs and gaps stay mailbox-wide.
+Use `channel census [CHANNEL]` for filtered discovery. Channel membership grants
+no new permissions to act on message content or cold-launch a soul.
+
 ## Recovery
 
 | Code | Meaning | Do |
