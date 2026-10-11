@@ -13,6 +13,8 @@ $repository = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $Report = [IO.Path]::GetFullPath($Report)
 $runId = [Guid]::NewGuid().ToString('N')
 $userName = 'comms' + $runId.Substring(0, 12)
+# New-LocalUser limits Description to 48 characters; keep the full run marker.
+$description = 'comms-ci ' + $runId
 $stage = Join-Path $env:ProgramData ('agent-comms-ci-' + $runId)
 $sid = $null
 $creationAttempted = $false
@@ -32,7 +34,7 @@ try {
     if (Get-LocalUser -Name $userName -ErrorAction SilentlyContinue) { throw 'Test account name collision' }
     $password = ConvertTo-SecureString ('Aa1!' + [Convert]::ToBase64String([Security.Cryptography.RandomNumberGenerator]::GetBytes(36))) -AsPlainText -Force
     $creationAttempted = $true
-    $user = New-LocalUser -Name $userName -Password $password -UserMayNotChangePassword -Description ('Disposable agent-comms CI ' + $runId)
+    $user = New-LocalUser -Name $userName -Password $password -UserMayNotChangePassword -Description $description
     $sid = $user.SID.Value
     $credential = [PSCredential]::new(($env:COMPUTERNAME + '\' + $userName), $password)
     $users = Get-LocalGroup -SID 'S-1-5-32-545'
@@ -88,7 +90,7 @@ try {
     # Creation may have succeeded just before a PowerShell failure returned.
     if (-not $sid -and $creationAttempted) {
         $partial = Get-LocalUser -Name $userName -ErrorAction SilentlyContinue
-        if ($partial -and $partial.Description -eq ('Disposable agent-comms CI ' + $runId)) { $sid = $partial.SID.Value }
+        if ($partial -and $partial.Description -eq $description) { $sid = $partial.SID.Value }
     }
     if ($sid) {
         try {
