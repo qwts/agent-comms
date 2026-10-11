@@ -133,8 +133,7 @@ the separate candidate supervisor pass advances that boundary without turning
 this old-component negative probe into full daemon acceptance. Bot #865's
 delivered keyd signer settings fix is distinct.
 
-Startup timeout reports retain CLI error codes, task state/result and filtered
-log classifications/hashes, excluding arbitrary output that could expose credentials.
+Startup reports retain safe error codes, task results and log hashes.
 
 GeniusBar's Windows package, host namespace/service reconciliation, accepted
 Windows product/migration contract, signed distribution and actual window
@@ -142,3 +141,5 @@ lifecycle remain host work. Native engine results can advance #127 without
 establishing those guarantees or closing #46/#127. The result matrix records
 the exact component commits, Node archive/executable hashes, tested SID and
 unproven cases; it emits no credentials.
+
+Historical-state continuity uses the separate [native upgrade harness](windows-upgrade-acceptance.md).
