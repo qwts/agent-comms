@@ -1,0 +1,26 @@
+{
+  "fixtureSource": {
+    "repository": "true-line/geniusbar",
+    "commit": "4997eae75a3672846194987ff2f9f0fe36157be0",
+    "path": "components.json",
+    "purpose": "Test-only subset of the host's selected tuple; not a product release registry or Windows package claim"
+  },
+  "node": {
+    "version": "24.21.0",
+    "sha256": {
+      "win-x64": "158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541"
+    }
+  },
+  "components": {
+    "agent-comms": {
+      "repo": "qwts/agent-comms",
+      "tag": "v0.3.16",
+      "ref": "98a0abb1d507563655fad435bdd26b047bbc9586"
+    },
+    "agent-bot": {
+      "repo": "qwts/agent-bot-identity",
+      "tag": "v0.10.62",
+      "ref": "19d7dfaa72cbbb259a988c55c65ac75c3425f3d0"
+    }
+  }
+}
