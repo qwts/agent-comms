@@ -92,15 +92,22 @@ for Windows issue closeout; hosted deterministic CI cannot substitute for it.
 | Principal and credential store | Real account/principal pairing, native CurrentUser DPAPI persistence, default principal library over the real named pipe, corrupted-store refusal and wrong broker-key refusal. The disposable plain copy is removed solely to prove the read comes from DPAPI; production pairing still writes it (#77). |
 | Custody and unsupported mode | Real SID/owner queries on each configured directory; wrong-owner expectation and non-directory refusal; group install refuses before registration. This is not proof that every same-owner location is private or that same-account processes are isolated. |
 | Released daemon provider | Normal `pairDaemonComms` creates/loads its Windows vouch key with native ACL checks, signs a soul token, establishes an actual watch, receives a wake and reconnects after broker task restart. No injected public key or credential provider. This tests the daemon communications library, not a supervised full daemon or harness launch. |
-| Existing state | Candidate/released/candidate broker restarts retain tested identity, account/principal credentials, mailbox and acknowledgement state; both brokers refuse an unknown future log record without changing those log bytes. New persisted formats require their own known downgrade-refusal evidence. |
+| Existing state | Candidate startup writes a version 2 retention checkpoint. The historical v0.3.16 reader must refuse that checkpoint without changing intact log bytes or credentials; candidate recovery retains tested identity, mailbox and acknowledgement state. Candidate also refuses an unknown future log record unchanged. The historical engine runs in the foreground; its task launcher is not installed. |
 | Supervisor dependency | Execute the released supervisor environment/task renderer, then real pairing under those pinned settings. Match the precise missing-shared-directory refusal; unexpected behavior requires retriage. Full daemon task restart remains blocked by that observed defect. |
 
-The current compatibility case creates log-only state. When integrating
-[#122](https://github.com/qwts/agent-comms/issues/122), extend it to create an
-actual retention checkpoint and require the older broker to refuse without
-changing state, then verify candidate recovery. Do not require a successful
-downgrade across a newly incompatible format or infer checkpoint evidence from
-the generic future-record probe.
+The compatibility case requires an actual version 2 checkpoint, exact
+historical-reader refusal, unchanged intact state bytes and candidate recovery.
+It does not claim safe downgrade, unchanged torn suffixes, or a repaired
+historical task launcher.
+
+The candidate task enters an unnamed Windows job before launching the broker.
+Closing its non-inheritable job handle terminates only that task's descendant
+tree, including when Task Scheduler forcibly ends the wrapper. Existing tasks
+created by older releases do not gain this lifetime protection retroactively.
+Cleanup records failures and retains the JSON case report even when Windows
+refuses to remove a directory with open handles. A retained runtime directory
+may contain disposable credentials; it is identified by path, never copied
+into the report.
 
 Required engine case failures make the manually dispatched diagnostic fail. The supervisor's known negative
 probe passes only when it reproduces the specific omission, and records the
