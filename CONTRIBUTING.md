@@ -17,3 +17,10 @@ and engineering decisions apply here by default
 - **Security:** see the org
   [security policy](https://github.com/qwts/.github/blob/main/SECURITY.md);
   report vulnerabilities privately, never in a public issue.
+- **CI for outside pull requests:** a pull request from a fork runs only on
+  GitHub-hosted runners and receives no secrets. Every merge queue run also
+  takes a GitHub-hosted runner, which keeps queued changes off the
+  maintainers' machines. Self-hosted runners take only pushes, manual runs
+  started by a maintainer, and pull requests whose branch lives in this
+  repository. Workflows from outside contributors wait for a maintainer's
+  approval once the owner turns on that repository setting.
