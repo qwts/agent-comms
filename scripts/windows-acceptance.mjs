@@ -1,6 +1,7 @@
 // Real Windows engine acceptance for #127. Run only in a disposable runner.
 // No platform, process, credential-store, transport or OS runner is injected.
 import assert from 'node:assert/strict';
+import { cleanupWindowsAcceptance, writeWindowsAcceptanceReport } from './windows-acceptance-cleanup.mjs';
 import { execFile } from 'node:child_process';
 import { createHash, generateKeyPairSync, randomUUID } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -81,7 +82,8 @@ async function until(check, description, timeout = 30_000) {
     if (await check()) return;
     await new Promise(resolve => setTimeout(resolve, 250));
   }
-  throw new Error(`${description} did not become ready`);
+  throw Object.assign(new Error(`${description} did not become ready`), {
+    code: `${description.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 65)}-timeout` });
 }
 async function record(name, run) {
   try {
@@ -89,7 +91,9 @@ async function record(name, run) {
     result.cases.push({ name, status: 'passed', ...evidence });
     process.stdout.write(`PASS ${name}\n`);
   } catch (error) {
-    result.cases.push({ name, status: 'failed', code: error.code ?? error.name });
+    error.code ??= `case-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 65)}`;
+    result.failureStage = name;
+    result.cases.push({ name, status: 'failed', code: error.code });
     process.stderr.write(`FAIL ${name}: ${error.code ?? error.name}\n`);
     throw error;
   }
@@ -161,6 +165,7 @@ async function ready() {
 }
 async function stopTask(bin = candidateBin) {
   await cli(['broker', 'uninstall'], { bin });
+  await until(async () => (await cli(['broker', 'pairings'], { ok: false })).exit !== 0, 'stopped broker endpoint');
 }
 async function installTask(bin = candidateBin) {
   // The unique label is already tracked for cleanup if registration fails.
@@ -170,8 +175,10 @@ async function installTask(bin = candidateBin) {
   // The unit writer emits UTF-16LE. A BOM is optional for decoding; removing
   // two bytes unconditionally would corrupt a BOM-less document's first '<'.
   const xml = readFileSync(json.plist).toString('utf16le').replace(/^\uFEFF/, '');
-  assert.ok(xml.includes(bin.replaceAll('&', '&amp;')), 'registered unit must select the tested engine');
-  assert.ok(xml.includes(process.execPath.replaceAll('&', '&amp;')), 'unit must use the sidecar Node');
+  const encoded = /-EncodedCommand ([A-Za-z0-9+/=]+)/.exec(xml);
+  const launch = encoded ? Buffer.from(encoded[1], 'base64').toString('utf16le') : xml;
+  assert.ok(launch.includes(bin.replaceAll("'", "''")), 'registered unit must select the tested engine');
+  assert.ok(launch.includes(process.execPath.replaceAll("'", "''")), 'unit must use the sidecar Node');
   return { task: label, unit: path.basename(json.plist) };
 }
 
@@ -280,16 +287,27 @@ try {
     assert.ok(inbox.messages.some(message => message.id === originalMessage.messageId));
     await client.call(paths, account, { op: 'ack', agentId: soul, soulToken: freshToken(), ids: [originalMessage.messageId] });
   });
-  await record('released comms and candidate reopen the same native state', async () => {
+  await record('released reader refuses retention checkpoint without changing state and candidate recovers', async () => {
     await stopTask();
-    await installTask(releasedBin);
+    const logFile = path.join(paths.state, 'events.jsonl');
+    const logBytes = readFileSync(logFile);
+    const checkpoint = JSON.parse(logBytes.toString('utf8').split('\n')[0]);
+    assert.equal(checkpoint.t, 'checkpoint');
+    assert.equal(checkpoint.version, 2);
+    // Run the historical engine in the foreground: its old task launcher has
+    // no job custody and must not be installed by this lifecycle regression.
+    const refused = await cli(['broker', 'run', '--single-account'], { bin: releasedBin, ok: false });
+    assert.notEqual(refused.exit, 0);
+    assert.ok(`${refused.stdout}${refused.stderr}`.includes('unknown log record type checkpoint'));
+    assert.deepEqual(readFileSync(logFile), logBytes);
+    assert.deepEqual(durableFiles().map(file => hash(readFileSync(file))), durableHashes);
+    await installTask();
     assert.deepEqual(durableFiles().map(file => hash(readFileSync(file))), durableHashes);
     assert.equal((await principal.census()).souls.find(row => row.agentId === soul).verification, 'verified');
     assert.ok(!(await client.call(paths, account, { op: 'read', agentId: soul, soulToken: freshToken() })).messages.some(message => message.id === originalMessage.messageId));
-    await stopTask(releasedBin);
-    await installTask();
-    assert.deepEqual(durableFiles().map(file => hash(readFileSync(file))), durableHashes);
-    return { writer: result.candidate, releasedReader: result['agent-comms'].commit, candidateReopened: true };
+    return { writer: result.candidate, releasedReader: result['agent-comms'].commit,
+      checkpointVersion: checkpoint.version, downgrade: 'refused-unchanged', candidateReopened: true,
+      historicalTaskLifecycleTested: false };
   });
   await record('group install refuses before registering another task', async () => {
     const otherLabel = `${label}.group`;
@@ -299,7 +317,7 @@ try {
     assert.equal(refused.json?.error?.code, 'platform-not-implemented');
     assert.notEqual((await command('schtasks.exe', ['/Query', '/TN', otherLabel])).exit, 0);
   });
-  await record('candidate and released broker refuse an unknown future record without changing log bytes', async () => {
+  await record('candidate refuses future record and released reader refuses checkpoint without changing log bytes', async () => {
     const futureState = path.join(root, 'future state');
     mkdirSync(futureState);
     const futureLog = path.join(futureState, 'events.jsonl');
@@ -311,7 +329,8 @@ try {
     for (const bin of [candidateBin, releasedBin]) {
       const refused = await cli(['broker', 'run', '--single-account'], { bin, childEnv: futureEnv, ok: false });
       assert.notEqual(refused.exit, 0);
-      assert.ok(`${refused.stdout}${refused.stderr}`.includes('unknown log record type acceptance-future-record'));
+      const refusedRecord = bin === candidateBin ? 'acceptance-future-record' : 'checkpoint';
+      assert.ok(`${refused.stdout}${refused.stderr}`.includes(`unknown log record type ${refusedRecord}`));
       assert.deepEqual(readFileSync(futureLog), bytes);
     }
   });
@@ -349,24 +368,11 @@ try {
   failed = true;
   result.failure = { code: error.code ?? error.name };
 } finally {
-  supervisor?.stop();
-  for (const task of taskLabels) {
-    // Every possible registration attempt is namespaced and tracked before
-    // invoking the CLI, including a group-mode regression that registered.
-    await command('schtasks.exe', ['/End', '/TN', task]);
-    await command('schtasks.exe', ['/Delete', '/TN', task, '/F']);
-    const remaining = await command('schtasks.exe', ['/Query', '/TN', task]);
-    if (remaining.exit === 0 || remaining.exit === -1) {
-      failed = true;
-      result.cleanup = 'failed-task-absence-unverified';
-    }
-    rmSync(path.join(local, task), { recursive: true, force: true });
-  }
-  result.cleanup ??= 'namespaced-tasks-absent';
-  rmSync(root, { recursive: true, force: true });
+  const cleaned = await cleanupWindowsAcceptance({ result, root, local, taskLabels, command,
+    stopSupervisor: () => supervisor?.stop() });
+  failed ||= !cleaned;
   result.requiredEngineChecks = failed ? 'failed' : 'passed';
   result.completeEmbeddingAcceptance = false;
-  mkdirSync(path.dirname(options.report), { recursive: true });
-  writeFileSync(options.report, `${JSON.stringify(result, null, 2)}\n`);
+  writeWindowsAcceptanceReport(options.report, result);
   process.exitCode = failed ? 1 : 0;
 }

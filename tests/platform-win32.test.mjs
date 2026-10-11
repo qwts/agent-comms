@@ -160,6 +160,7 @@ function fakeSchtasks({ status = 'Ready', fail = null } = {}) {
 }
 
 const service = createServiceStartup('win32');
+const taskScript = value => Buffer.from(/-EncodedCommand ([A-Za-z0-9+/=]+)/.exec(value)[1], 'base64').toString('utf16le');
 const options = (over = {}) => service.installOptions({
   home, env, host, node: '/bundle/node.exe', entry: '/bundle/bin/agent-comms.mjs', paths: { socket: '/pipe/broker' }, ...over,
 });
@@ -180,16 +181,20 @@ test('win32 renders a logon task that restarts the broker and appends its output
     '<RestartOnFailure>\n      <Interval>PT1M</Interval>\n      <Count>999</Count>\n    </RestartOnFailure>',
     '<ExecutionTimeLimit>PT0S</ExecutionTimeLimit>', '<StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>',
     '<DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>', '<StartWhenAvailable>true</StartWhenAvailable>']) expect(setting);
-  expect('<Command>%SystemRoot%\\System32\\cmd.exe</Command>');
+  expect('<Command>%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe</Command>');
   const escapedLog = escapeXml(logDir);
-  expect(`<Arguments>/S /C "set "AGENT_COMMS_CLIENT_STATE_DIR=/x/client" &amp;&amp; set "AGENT_COMMS_LOG_DIR=${escapedLog}" &amp;&amp; "/x/node.exe" "/x/agent-comms.mjs" "broker" "run" "--single-account" 1&gt;&gt;"${escapedLog}${path.sep}broker.log" 2&gt;&gt;"${escapedLog}${path.sep}broker.err.log""</Arguments>`);
+  const script = taskScript(xml);
+  assert.ok(script.includes('set "AGENT_COMMS_CLIENT_STATE_DIR=/x/client" && '));
+  assert.ok(script.includes(`set "AGENT_COMMS_LOG_DIR=${logDir}"`));
+  assert.ok(script.includes('"/x/node.exe" "/x/agent-comms.mjs" "broker" "run" "--single-account"'));
+  assert.ok(script.includes(`1>>"${logDir}${path.sep}broker.log" 2>>"${logDir}${path.sep}broker.err.log"`));
   expect(`<WorkingDirectory>${escapedLog}</WorkingDirectory>`);
   // Markup in a label or path is text, never structure.
   assert.ok(!xml.includes('<c</URI>'));
   assert.ok(!xml.includes('& <more>'));
   // A stock install pins no environment.
   const stock = service.renderTask({ label: LABEL, args: ['/x/node.exe', '/x/cli.mjs', 'broker', 'run', '--single-account'], logDir, userId: 'DESK\\owner' });
-  assert.ok(stock.includes('<Arguments>/S /C ""/x/node.exe" "/x/cli.mjs"'));
+  assert.ok(taskScript(stock).includes('/S /C ""/x/node.exe" "/x/cli.mjs"'));
   assert.ok(!stock.includes('set "'));
   // The same document under the macOS name, so a caller never branches.
   assert.equal(service.renderPlist, service.renderTask);
@@ -229,11 +234,11 @@ test('win32 install writes the task XML under LOCALAPPDATA, registers it with sc
   assert.ok(xml.startsWith('<?xml version="1.0" encoding="UTF-16"?>'));
   assert.ok(xml.includes(`<URI>\\${LABEL}</URI>`));
   assert.ok(xml.includes('<UserId>DESK\\owner</UserId>'));
-  assert.ok(xml.includes(`<Arguments>/S /C "set "AGENT_COMMS_BROKER_STATE_DIR=`), 'a non-default host configuration is pinned on the command line');
+  assert.ok(taskScript(xml).includes(`/S /C "set "AGENT_COMMS_BROKER_STATE_DIR=`), 'a non-default host configuration is pinned on the command line');
   // Read back the way status does.
   const unit = JSON.parse(service.printTask(taskFile));
-  assert.equal(unit.Command, '%SystemRoot%\\System32\\cmd.exe');
-  assert.ok(unit.Arguments.startsWith('/S /C "set "AGENT_COMMS_BROKER_STATE_DIR='));
+  assert.equal(unit.Command, '%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe');
+  assert.ok(taskScript(unit.Arguments).includes('/S /C "set "AGENT_COMMS_BROKER_STATE_DIR='));
   assert.equal(unit.WorkingDirectory, host.logDir);
   // The environment goes into the XML once, so a path with markup is read back as written.
   assert.ok(!unit.Arguments.includes('&amp;'));
@@ -326,8 +331,8 @@ test('win32 status parses the schtasks query and never fails on a stopped or mis
   assert.equal(running.pid, null);
   assert.deepEqual(running.pairings, { total: 2, approved: 1, pending: 1, accounts: [{ account: 'owner', hardened: false }, { account: 'guest', hardened: false }] });
   assert.deepEqual(running.daemons, [{ account: 'owner', watching: true }]);
-  assert.equal(running.program.args[0], '%SystemRoot%\\System32\\cmd.exe');
-  assert.ok(running.program.args[1].includes('"/bundle/node.exe" "/bundle/bin/agent-comms.mjs" "broker" "run" "--single-account"'));
+  assert.equal(running.program.args[0], '%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe');
+  assert.ok(taskScript(running.program.args[1]).includes('"/bundle/node.exe" "/bundle/bin/agent-comms.mjs" "broker" "run" "--single-account"'));
   assert.deepEqual([running.program.cellarPinned, running.program.repair], [false, null]);
 
   const stopped = await service.status({ ...base, schtasks: fakeSchtasks({ status: 'Ready' }).run });
