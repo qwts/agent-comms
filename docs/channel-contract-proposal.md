@@ -1,9 +1,10 @@
 # Named channels: proposed contract
 
-**Status:** Proposed supporting contract for
+**Status:** Owner-approved policy (2026-10-11), pending repository review, for
 [ADR-0004 Amendment 1](decisions/ADR-0004-durable-mailbox-and-waking.md#proposed-amendment-1-local-first-named-channels),
 [issue #120](https://github.com/qwts/agent-comms/issues/120).
-No channel implementation or owner acceptance is claimed. This details all seven
+The owner approved both access and delivery/lifecycle policies in the
+orchestration session. No channel implementation is claimed. This details all seven
 requirements: soul/principal operations, durable subscriber copies and filters,
 subscription waking, authorization, census, stable future addresses and every
 harness. Remote transport remains in #28/#118/#119. Mailbox retention depends on
@@ -114,7 +115,7 @@ channel history store.
 
 ## Approval and consequences
 
-The owner must accept the address/alias rule; creator and manager eligibility;
+The approved policy covers the address/alias rule; creator and manager eligibility;
 invite consent/capabilities and self-copy exception; no history; wake default;
 filtered discovery; seven-day retries; capacity refusal without eviction; and atomic
 fan-out. A slow, full, left or newly unauthorized subscriber can stop the whole
@@ -127,7 +128,7 @@ consumes finite slots until a separately approved lifecycle policy exists.
 Wire names, encodings, indexes, checkpoint schema and exact byte-accounting
 implementation and tuning these finite resource defaults are engineering
 decisions within this policy, with versioned validation and tests. They cannot widen grants, add eviction or change retry
-semantics. This supporting proposal is not accepted policy, runtime evidence
+semantics. Repository review remains pending. Owner approval is not runtime evidence
 or approval of cross-hub enrollment, multi-homing or relay.
 
 ## Conformance boundary

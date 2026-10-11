@@ -120,7 +120,8 @@ while accounts are logged out.
 
 ## Proposed Amendment 1: local-first named channels
 
-**Amendment status:** Proposed — owner approval required; no channel runtime is delivered.
+**Amendment status:** Owner-approved policy (2026-10-11); repository review pending.
+No channel runtime is delivered.
 
 **Issue:** [qwts/agent-comms#120](https://github.com/qwts/agent-comms/issues/120)
 
@@ -155,9 +156,9 @@ requirements. Its policy recommendations are:
    against existing discovery authorization before counts/pages. Every harness
    uses the same broker contract.
 
-Owner acceptance must cover these policies and the supporting contract's exact
-eligibility, capability, retry and admission policies. They remain proposals,
-not accepted amendments or runtime/release evidence. Wire names, encoding and
+The owner approved these policies and the supporting contract's eligibility,
+capability, retry and admission rules on 2026-10-11. Repository review remains
+pending; this approval is not runtime or release evidence. Wire names, encoding and
 indexes are engineering choices within the accepted policy; they cannot create
 new permissions or deletion rights. Federation trust, enrollment, multi-homing
 and relay remain separate decisions in #28/#118/#119.
