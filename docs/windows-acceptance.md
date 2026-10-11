@@ -3,7 +3,7 @@
 [The runnable harness](../scripts/windows-acceptance.mjs) extends the native CI
 probe with actual engine operations. It uses Windows APIs and production
 adapters, not injected runners or a platform override. This change provides
-the harness; live results must be read from the Windows CI job's
+the harness; live results must be read from the separately dispatched Windows diagnostic's
 `windows-engine-acceptance` JSON artifact before claiming a passed case.
 
 The test-only
@@ -13,7 +13,7 @@ GeniusBar `components.json` at commit
 v0.3.16 (`98a0abb1d507563655fad435bdd26b047bbc9586`) and agent-bot
 v0.10.62 (`19d7dfaa72cbbb259a988c55c65ac75c3425f3d0`). This is a fixture
 derived from the host's metadata, not another shipping release registry.
-The job downloads the selected Node zip, verifies its archive SHA-256,
+The diagnostic downloads the selected Node zip, verifies its archive SHA-256,
 and checks out the released engines by full commit. It runs both the
 candidate and the released broker with that absolute Node executable;
 no host-installed Node drives the acceptance operations.
@@ -47,10 +47,18 @@ remove only their unique tasks, processes, profile, account and input stage.
 profile process and keeps it alive through the harness. Profile loading alone
 does not prove Task Scheduler eligibility: the production `InteractiveToken`
 and `LeastPrivilege` broker task must actually start and answer. Failure stays
-a required failed environment/engine gate; there is no Password or S4U fallback.
+a failed environment/engine acceptance case; there is no Password or S4U fallback.
+
+The required `Windows pipe security` CI job checks native named-pipe security,
+custody and DPAPI. It does not claim engine or desktop acceptance. The manual
+[Windows desktop diagnostics](../.github/workflows/windows-engine-diagnostic.yml)
+retains the hosted bootstrap and fails when any required engine case fails; its
+result is independent of the merge gate. Dispatch it explicitly to collect new
+hosted evidence. Moving this diagnostic does not resolve its observed failure
+or establish Windows support.
 
 For the CI bootstrap, with checkouts and the verified sidecar prepared as in
-`.github/workflows/ci.yml`, run from PowerShell:
+that diagnostic workflow, run from PowerShell:
 
 ```powershell
 $env:AGENT_COMMS_DISPOSABLE_WINDOWS = '1'
@@ -71,11 +79,12 @@ production `InteractiveToken` task never ran (`Ready`, result `0x41303`, with
 the scheduler's never-run last-run sentinel). No shared, proofs, state or client
 broker directories and no startup logs were created; the CLI reported
 `broker-unreachable` and the harness recorded `broker-not-ready`. Teardown found the namespaced tasks absent and removed the
-disposable account without errors. This remains a failed required engine gate.
+disposable account without errors. This remains failed engine acceptance, outstanding independently of the merge gate.
 
 The owner confirms an existing Windows VM is available but has not identified
 an access path for its signed-in desktop. No signed-in desktop run has
-been performed.
+been performed. A successful signed-in desktop acceptance run remains required
+for Windows issue closeout; hosted deterministic CI cannot substitute for it.
 
 | Case | Actual operations and evidence boundary |
 | --- | --- |
@@ -93,7 +102,7 @@ changing state, then verify candidate recovery. Do not require a successful
 downgrade across a newly incompatible format or infer checkpoint evidence from
 the generic future-record probe.
 
-Required engine case failures make CI fail. The supervisor's known negative
+Required engine case failures make the manually dispatched diagnostic fail. The supervisor's known negative
 probe passes only when it reproduces the specific omission, and records the
 dependent acceptance row as `blocked-observed`, never supported. The report
 always keeps `completeEmbeddingAcceptance: false`. This upstream defect is
