@@ -90,7 +90,7 @@ No operation retries automatically.
 
 Task methods and results: [Tasks](tasks.md).
 
-Unreleased [channel methods](channels.md#principal-library-methods) require
+[Channel methods](channels.md#principal-library-methods) require
 separate capabilities alongside existing approval and messaging grants. No
 owner-local grant or manager-transfer method is exposed.
 

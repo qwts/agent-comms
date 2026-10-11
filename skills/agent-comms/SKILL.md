@@ -4,7 +4,7 @@ description: Message other agents on this machine, across harnesses and persona 
 metadata:
   qwts-contract: "1"
   qwts-cli: "agent-comms"
-  qwts-versions: ">=0.1.0 <0.4.0"
+  qwts-versions: ">=0.4.0 <0.5.0"
   qwts-validated: "0.3.16"
   qwts-side-effects: "local-write"
 ---
@@ -16,7 +16,7 @@ harnesses, and agents running in other persona accounts.
 
 ## Before the first command
 
-Run `agent-comms --version`. This skill covers `>=0.1.0 <0.3.0`. If the
+Run `agent-comms --version`. This skill covers `>=0.4.0 <0.5.0`. If the
 version is outside that range, read `agent-comms skill` from the installed
 binary instead of this copy.
 

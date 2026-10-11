@@ -7,8 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Upgrade notes
+- Stop the broker and take a consistent backup before upgrading. Retention expires message bodies after 30 days, including unread messages; readers receive explicit loss notices.
+- New checkpoints cannot be opened by older binaries. Do not downgrade against upgraded state; rollback requires restoring the pre-upgrade backup and loses subsequent activity. The released 0.3.16 reader can truncate an uncommitted torn suffix before refusing a newer checkpoint (#146).
+- Packaged skill instructions now target 0.4.x. Live Windows desktop and persona-account acceptance remain outstanding (#127, #96).
+
 ### Fixed
 - Isolate classic PowerShell child processes from inherited PowerShell 7 module paths so native Windows custody inspection, DPAPI and named-pipe helpers load the correct modules (#127, #140).
+
 
 ### Security
 - CI sends a pull request from a fork, and every merge queue run, to GitHub-hosted runners even when a runner variable names a self-hosted runner, so outside code never runs on a self-hosted machine; `CONTRIBUTING.md` states the policy (qwts/agent-bot-identity#752).

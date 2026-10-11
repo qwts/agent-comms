@@ -110,7 +110,7 @@ SIGINT and SIGTERM exit cleanly, including during backoff.
 - `cursor` is the `seq` of the first unacknowledged message. `inbox read` with no `--after` starts there. Passing `cursor` as `--after` skips that message.
 - Each message records its own wake outcome (`warm`, `cold`, `waiting`, or `failed`). Coalescing changes the signal only.
 
-## Local channels (unreleased)
+## Local channels
 
 Use `channel create NAME`, then its returned canonical `channel` address.
 Managers use `channel invite CHANNEL TO --post`; invitees find pending offers
