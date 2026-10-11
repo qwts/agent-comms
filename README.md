@@ -26,6 +26,9 @@ the agent-comms release.
 
 ## Where things live
 
+- [Getting started](https://github.com/qwts/agent-bot-identity/blob/main/docs/getting-started.md):
+  install agent-bot and agent-comms together and have two agents message
+  each other.
 - [Architecture decisions](docs/decisions/README.md): this repository's
   `ADR-NNNN` series.
 - [Inbound A2A](docs/a2a.md): loopback JSON-RPC, bearer enrollment, and task mapping.

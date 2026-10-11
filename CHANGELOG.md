@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- The README links the agent-bot [getting started guide](https://github.com/qwts/agent-bot-identity/blob/main/docs/getting-started.md), which sets up agent-bot and agent-comms together (qwts/agent-bot-identity#752).
+
 ## [0.3.16] - 2026-10-10
 
 ### Added
