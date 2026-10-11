@@ -1,14 +1,19 @@
 # ADR-0077: Grant-scoped owner decisions through the broker
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-11
 **Issue:** qwts/agent-comms#77
+**Accepted:** 2026-10-11, all three owner review groups;
+[decision receipt](https://github.com/qwts/agent-comms/issues/77#issuecomment-6115201195)
+for reviewed revision
+[`d4ee294`](https://github.com/qwts/agent-comms/tree/d4ee2940f1309327d11d6c64886bda6da7f99600).
 
-This proposal preserves the four requirements of
+This decision preserves the four requirements of
 [#77](https://github.com/qwts/agent-comms/issues/77): authenticated relay,
 signed receipts, restricted native credential custody and target-scoped
-authorization. It authorizes no runtime or migration. Acceptance, companion
-product contracts and conformance evidence are prerequisites to enabling it.
+authorization. Policy acceptance does not authorize runtime enabling or
+migration. Joint agent-bot/native-host protocol review, companion product
+contracts and conformance evidence remain prerequisites to enabling it.
 
 ## Context
 
@@ -32,7 +37,7 @@ and accepted
 remain authoritative for presence and owner statements. Their current
 implementation limitations are not waived here.
 
-## Proposed decision
+## Decision
 
 ### 1. Native custody and explicit platform limits
 
@@ -135,7 +140,8 @@ integrity and trusted-display prerequisites are actually met.
 
 ## Owner review groups
 
-Acceptance must record the reviewed revision and these choices explicitly:
+The owner explicitly accepted all three groups at the revision cited above.
+The reviewed choices and recommendations were:
 
 1. **Custody and availability:** approve native data-protection custody,
    fresh presence, isolated broker and initial macOS-only support. Recommended:
@@ -147,7 +153,7 @@ Acceptance must record the reviewed revision and these choices explicitly:
    receipt/presence keys, durable single consumption and online revocation.
    Recommended: accept explicit interruption and indeterminate reconciliation.
 
-Merging this proposal is not acceptance or completion of #77. Product protocol
-changes need agent-bot and native-host review; deployment policy spanning the
-organization needs its own ENG record under the
-[decision index](README.md). Accepted records are not rewritten by this draft.
+This policy acceptance does not complete #77 or establish any of its four
+requirements as implemented. Product protocol changes still need agent-bot
+and native-host review; deployment policy spanning the organization needs
+its own ENG record under the [decision index](README.md).
