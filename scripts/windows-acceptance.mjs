@@ -119,6 +119,16 @@ async function ready() {
       diagnostic.custody = { currentSid: native.currentUid(), directories: Object.fromEntries(
         Object.keys(directories).map((name, index) => [name, inspected[index]])) };
     } catch (inspectionError) { diagnostic.custodyInspectionCode = safeCode(inspectionError.code); }
+    const ownerQuery = await command('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command',
+      '$paths=@{root=$env:AGENT_COMMS_ACCEPTANCE_ROOT;shared=$env:AGENT_COMMS_SHARED_DIR;state=$env:AGENT_COMMS_BROKER_STATE_DIR;client=$env:AGENT_COMMS_CLIENT_STATE_DIR}; $results=@{}; foreach($name in $paths.Keys) { try { $item=Get-Item -LiteralPath $paths[$name] -Force -ErrorAction Stop; $acl=Get-Acl -LiteralPath $paths[$name] -ErrorAction Stop; $results[$name]=@{owner=$acl.GetOwner([System.Security.Principal.SecurityIdentifier]).Value;directory=[bool]$item.PSIsContainer;reparse=[bool]($item.Attributes -band [System.IO.FileAttributes]::ReparsePoint)} } catch { $results[$name]=@{errorType=$_.Exception.GetType().Name} } }; $results | ConvertTo-Json -Compress'],
+    { ...env, AGENT_COMMS_ACCEPTANCE_ROOT: root });
+    try {
+      const queried = JSON.parse(ownerQuery.stdout);
+      diagnostic.independentCustody = Object.fromEntries(Object.entries(queried).map(([name, entry]) => [name,
+        entry.owner && /^S-1-\d+(?:-\d+)+$/.test(entry.owner)
+          ? { owner: entry.owner, directory: entry.directory === true, reparse: entry.reparse === true }
+          : { errorType: safeCode(entry.errorType) }]));
+    } catch { diagnostic.independentCustodyQueryExit = ownerQuery.exit; }
     diagnostic.logs = [];
     for (const name of ['broker.log', 'broker.err.log']) {
       let bytes;
@@ -128,6 +138,8 @@ async function ready() {
         errorNames: [...new Set(text.match(/\b[A-Z][A-Za-z]{1,40}Error\b/g) ?? [])],
         systemCodes: [...new Set(text.match(/\b(?:ENOENT|EACCES|EPERM|EADDRINUSE|ECONNREFUSED|EINVAL|MODULE_NOT_FOUND|ERR_MODULE_NOT_FOUND)\b/g) ?? [])],
         errorCodes: [...new Set([...text.matchAll(/"code"\s*:\s*"([a-zA-Z0-9_-]{1,80})"/g)].map(match => match[1]))],
+        ownerMismatches: [...text.matchAll(/is owned by (S-1-\d+(?:-\d+)+), not the broker account (S-1-\d+(?:-\d+)+)/g)]
+          .map(match => ({ actual: match[1], expected: match[2] })),
         custodyFailure: /is owned by .*not the broker account/.test(text) ? 'owner-mismatch'
           : /Get-Acl did not answer/.test(text) ? 'inspection-no-answer'
             : /Get-Acl answered something unexpected/.test(text) ? 'inspection-unexpected-answer'
