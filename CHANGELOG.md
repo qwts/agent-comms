@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- CI sends a pull request from a fork to GitHub-hosted runners even when a runner variable names a self-hosted runner, so outside code never runs on a self-hosted machine; `CONTRIBUTING.md` states the policy (qwts/agent-bot-identity#752).
+
 ### Changed
 - The README links the agent-bot [getting started guide](https://github.com/qwts/agent-bot-identity/blob/main/docs/getting-started.md), which sets up agent-bot and agent-comms together (qwts/agent-bot-identity#752).
 
