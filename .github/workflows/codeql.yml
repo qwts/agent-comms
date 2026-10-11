@@ -13,11 +13,12 @@ permissions:
   security-events: write
 
 # Runner variables may name a self-hosted runner. A pull request from a fork
-# always gets the GitHub-hosted label instead (qwts/agent-bot-identity#752).
+# and a merge_group run always get the GitHub-hosted label instead
+# (qwts/agent-bot-identity#752).
 jobs:
   analyze:
     name: Analyze (${{ matrix.language }})
-    runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.CODEQL_RUNNER || 'ubuntu-latest' }}
+    runs-on: ${{ (github.event_name == 'merge_group' || github.event.pull_request.head.repo.fork) && 'ubuntu-latest' || vars.CODEQL_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
