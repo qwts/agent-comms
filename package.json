@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "node --test --test-timeout=30000 tests/*.test.mjs",
+    "test:format-compatibility": "node tools/acceptance/state-format.mjs",
     "lint:markdown": "markdownlint docs/ skills/ AGENTS.md README.md CONTRIBUTING.md",
     "lint:markdown:fix": "markdownlint docs/ skills/ AGENTS.md README.md CONTRIBUTING.md --fix"
   },

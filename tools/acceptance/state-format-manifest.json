@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "scope": "Disposable POSIX state-format compatibility, not full host or Windows acceptance",
+  "sources": {
+    "released": "98a0abb1d507563655fad435bdd26b047bbc9586",
+    "v1": "5d46dc7ea03ecfe8b3ec5963909b1d8b4a3f8c13",
+    "v2": "cc9073db95db680cb4be2b5a42f845ec492fc79e"
+  },
+  "formats": {
+    "released": "v0.3.16 event log; checkpoints unsupported",
+    "v1": "PR141 checkpoint version 1 plus committed event tail",
+    "v2": "PR145 checkpoint version 2 plus channel records and durable post outcomes"
+  },
+  "generatedFixtures": [
+    "released.jsonl",
+    "v1-checkpoint-tail.jsonl",
+    "v2-checkpoint-channel-tail.jsonl",
+    "v2-checkpoint.jsonl"
+  ],
+  "requiredAssertions": [
+    "Actual released send and acknowledgment migrate through actual v1 and v2 brokers",
+    "Compatible restart returns original direct retry outcome and channel post outcome",
+    "Channel copies retain separate IDs and independent acknowledgment state",
+    "Released reader refuses intact v1/v2 without changing any log byte",
+    "v1 reader refuses v2 intact or torn without changing any log byte",
+    "Released reader with newer committed prefix and torn suffix removes only the uncommitted suffix before refusal",
+    "Compatible reader recovers every committed message and outcome after that released-reader refusal",
+    "Incompatible actual broker startup releases custody for compatible restart"
+  ],
+  "knownLimitation": "Never open upgraded state with an old binary. The released reader truncates a torn suffix before discovering an unsupported checkpoint; unconditional downgrade non-mutation is false. A future host migration guard must prevent unsupported old-binary startup before it opens authoritative state."
+}
