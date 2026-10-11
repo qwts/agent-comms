@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - CI sends a pull request from a fork, and every merge queue run, to GitHub-hosted runners even when a runner variable names a self-hosted runner, so outside code never runs on a self-hosted machine; `CONTRIBUTING.md` states the policy (qwts/agent-bot-identity#752).
 
+### Added
+- Bounded mailbox retention with owner-approved 30-day expiry including unread messages, 10,000-message/64-MiB limits, seven-day durable deduplication and explicit reader/watch loss notices. `inbox gap-ack`, principal `ackGap`, and bounded `cursor-expired` metadata make loss receipt and recovery explicit (#122).
+- Versioned crash-safe checkpoints, independent task summaries, bounded expired-ID evidence, poisoned-writer refusal after uncertain storage failures, and `broker run --limits-file` controls. New state records make downgrade unsupported; back up consistently before upgrading (#122).
+
 ### Changed
 - The README links the agent-bot [getting started guide](https://github.com/qwts/agent-bot-identity/blob/main/docs/getting-started.md), which sets up agent-bot and agent-comms together (qwts/agent-bot-identity#752).
 - CI pins qwts-agent-ci at d9f8cf9, whose `Action Policy` admits a pull request from a fork when it runs on a GitHub-hosted runner in this public repository, so an outside contributor's pull request can pass CI once a maintainer approves its run (qwts/agent-bot-identity#752).

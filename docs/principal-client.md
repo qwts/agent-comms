@@ -75,15 +75,17 @@ credentials.
 | Method | Request and result |
 | --- | --- |
 | `census()` | Returns `{ ok, souls }`; each row has account, agentId, name, harness, parent, presence, verification, hardened, daemonWatching, unacked and lastWake. |
-| `send({ to, body, key, kind, refs, correlation, replyTo })` | Returns `{ ok, messageId, seq, duplicate, wake }`; duplicate responses omit seq. |
-| `inbox({ after = 0, limit = 20 })` | Returns `{ ok, messages, cursor, remaining }` from this principal's unacknowledged mailbox. |
+| `send({ to, body, key, kind, refs, correlation, replyTo })` | Returns `{ ok, messageId, seq, duplicate, wake }`, including original acceptance on retry. |
+| `inbox({ after = 0, limit = 20 })` | Returns `{ ok, messages, cursor, remaining, gap? }` from this principal's retained unacknowledged mailbox. |
 | `ack(ids)` | Returns `{ ok, acknowledged, alreadyAcknowledged }` for this principal's messages only. |
+| `ackGap(through)` | Receives a loss notice; returns `{ ok, acknowledged, alreadyAcknowledged }`. |
 
 Use the previous `cursor` as `after`. Reads do not acknowledge. `limit` is at
 most 100 and pages have a byte limit. Reuse the same principal-scoped send
 `key` after an uncertain outcome; changed content conflicts. Optional send
 defaults are kind `message`, refs `[]`, and null correlation/replyTo. A
 replyTo must name a message this caller received.
+See [mailbox retention](mailbox-retention.md) for expiry and recovery.
 
 Construction and custody checks may throw synchronously; requests otherwise
 return promises. Errors have a stable `code`, including `not-approved`,

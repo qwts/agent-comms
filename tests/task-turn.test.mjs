@@ -58,7 +58,7 @@ test('task prompts include criteria, links, events and exact current commands', 
   assert.match(review, /No task transitions/);
 });
 
-async function workerFixture(t, { state = 'offered', role = 'assignee', exit = 0, reportingFails = false, hang = false, unknown = false, throws = false } = {}) {
+async function workerFixture(t, { state = 'offered', role = 'assignee', exit = 0, reportingFails = false, hang = false, unknown = false, throws = false, inboxGap = null } = {}) {
   const root = mkdtempSync(path.join(os.tmpdir(), 'ac-task-turn-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const workspace = path.join(root, 'workspace');
@@ -83,6 +83,7 @@ async function workerFixture(t, { state = 'offered', role = 'assignee', exit = 0
     log: (...args) => logs.push(args),
     transport: async (request) => {
       requests.push(request);
+      if (request.op === 'read' && inboxGap) return { messages: [], remaining: 0, gap: inboxGap };
       if (request.op === 'task-show') {
         if (unknown) throw Object.assign(new Error('hidden'), { code: 'unknown-task' });
         return { task: current, invocations: [], events };
@@ -99,6 +100,17 @@ async function workerFixture(t, { state = 'offered', role = 'assignee', exit = 0
   await worker.ready;
   return { worker, requests, prompts, current, logs, emit };
 }
+
+test('worker surfaces watch and read loss notices without acknowledging loss or spending a turn', async (t) => {
+  const gap = { through: 2, count: 2, firstSeq: 1, lastSeq: 4 };
+  const f = await workerFixture(t, { inboxGap: gap });
+  f.emit({ event: 'gap', gap, earliestAvailableSeq: null, resumeAfter: 4 });
+  f.emit({ event: 'wake', count: 1, cursor: 4 });
+  await waitFor(() => f.logs.filter(([event]) => event === 'mailbox loss').length === 2);
+  assert.equal(f.prompts.length, 0);
+  assert.equal(f.requests.some((request) => ['ack', 'gap-ack', 'task-invocation'].includes(request.op)), false);
+  assert.ok(f.logs.some((parts) => parts.includes('unread messages expired; sequence range')));
+});
 
 async function waitFor(check) {
   const deadline = Date.now() + 5000;

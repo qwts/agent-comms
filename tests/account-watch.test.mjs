@@ -306,7 +306,9 @@ test('wake-report records outcomes on the named messages and in lastWake', async
 
   const duplicate = await send('one', reportSoul, key);
   assert.equal(duplicate.duplicate, true);
-  assert.equal(duplicate.wake, 'cold');
+  // The protected retry returns its original durable acceptance outcome;
+  // reads and census above expose the later recorded wake separately.
+  assert.equal(duplicate.wake, first.wake);
 
   const third = await send('three', reportSoul);
   const failed = await request(paths.socket, {

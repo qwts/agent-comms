@@ -16,7 +16,7 @@ import { install, installOptions, jobOptions, status, uninstall } from '../lib/b
 import { admin, call, loadCredential, pair, pairPrincipal, callPrincipal, loadPrincipalCredential, resolveParent, soulContext, vouch, watch } from '../lib/client.mjs';
 import { reportDelivered, shouldReportDelivered } from '../lib/asides-report.mjs';
 import { HOST_CONFIG } from '../lib/host-config.mjs';
-import { CommsError, fail } from '../lib/errors.mjs';
+import { CommsError, fail, publicError } from '../lib/errors.mjs';
 import { brokerPaths, clientPaths } from '../lib/paths.mjs';
 import { taskEventPlan } from '../lib/worker/task-turn.mjs';
 import { taskPrompt } from '../lib/worker/prompt.mjs';
@@ -36,6 +36,7 @@ const COMMANDS = [
   { name: 'inbox read', args: [], flags: ['after', 'limit'] },
   { name: 'inbox watch', args: [], flags: [], booleans: ['full'] },
   { name: 'inbox ack', args: ['MESSAGE_ID'], variadic: true, flags: [] },
+  { name: 'inbox gap-ack', args: ['THROUGH'], flags: [] },
   { name: 'inbox hook', args: [], flags: ['after', 'limit', 'session-id'] },
   { name: 'task offer', args: ['TO'], flags: ['criteria', 'parent', 'dependencies', 'related-task'] },
   { name: 'task accept', args: ['TASK_ID'], flags: ['revision'] },
@@ -72,7 +73,7 @@ const COMMANDS = [
   { name: 'account revoke', args: ['ACCOUNT'], flags: ['kind'] },
   { name: 'account harden', args: ['ACCOUNT'], flags: [], booleans: ['off'] },
   { name: 'account status', args: [], flags: [] },
-  { name: 'broker run', args: [], flags: ['group'], booleans: ['single-account'] },
+  { name: 'broker run', args: [], flags: ['group', 'limits-file'], booleans: ['single-account'] },
   { name: 'broker install', args: [], flags: ['group'], booleans: ['single-account'] },
   { name: 'broker uninstall', args: [], flags: [] },
   { name: 'broker status', args: [], flags: ['group'] },
@@ -258,9 +259,11 @@ async function run(argv, env) {
         const messages = [];
         let after = integer(flags.after, 'after');
         let remaining = 0;
+        let gap;
         do {
           const page = await asSoul({ op: 'read', after, limit: Math.min(LIMITS.readPage, cap - messages.length) });
           messages.push(...page.messages);
+          if (page.gap) gap = page.gap;
           after = page.cursor;
           remaining = page.remaining;
           // An empty page moves no cursor, so asking again would spin.
@@ -268,6 +271,7 @@ async function run(argv, env) {
         } while (remaining > 0 && messages.length < cap);
         return deliver('hook-inject', {
           soul: context.agentId, messages, cursor: after, remaining,
+          ...(gap ? { gap } : {}),
           ...(sessionId ? { harnessSessionId: sessionId } : {}),
         }, { harnessSessionId: sessionId });
       }
@@ -275,6 +279,7 @@ async function run(argv, env) {
         if (!rest.length) fail('usage', 'inbox ack needs at least one message id');
         return print(await asSoul({ op: 'ack', ids: rest }));
       }
+      if (sub === 'gap-ack') return print(await asSoul({ op: 'gap-ack', through: integer(rest[0], 'through') }));
       if (sub === 'watch') {
         const credential = loadCredential(client);
         const controller = new AbortController();
@@ -292,7 +297,7 @@ async function run(argv, env) {
           process.off('SIGTERM', cancel);
         }
       }
-      return fail('usage', 'inbox needs read, watch, ack, or hook');
+      return fail('usage', 'inbox needs read, watch, ack, gap-ack, or hook');
     }
     case 'task': {
       let request;
@@ -311,14 +316,19 @@ async function run(argv, env) {
         request = { op: 'task-invocation', taskId: rest[0], invocationId: flags.id, phase: flags.phase, outcome: flags.outcome };
       } else if (sub === 'brief') {
         let message;
+        let gap;
         let after = 0;
         for (;;) {
           const page = await asSoul({ op: 'read', after, limit: 100 });
+          if (page.gap) gap = page.gap;
           message = page.messages.find((item) => item.id === rest[0]);
           if (message || !page.remaining) break;
           after = page.cursor;
         }
-        if (!message) fail('unknown-message', 'no pending message with that id in your mailbox');
+        if (!message) {
+          await asSoul({ op: 'message-status', id: rest[0] });
+          fail('unknown-message', 'no pending message with that id in your mailbox');
+        }
         if (message.kind !== 'task-event') fail('bad-request', 'task brief needs a task-event message');
         let shown;
         try {
@@ -328,7 +338,7 @@ async function run(argv, env) {
         }
         const self = await asSoul({ op: 'whoami' });
         const plan = taskEventPlan(message, shown?.task, self);
-        return print({ ...plan, taskId: message.correlation,
+        return print({ ...plan, taskId: message.correlation, ...(gap ? { gap } : {}),
           prompt: plan.turn ? taskPrompt({ ...shown, role: plan.role, harness: 'harness', soul: self.agentId }) : null });
       } else if (sub === 'show') {
         request = { op: 'task-show', taskId: rest[0] };
@@ -450,7 +460,12 @@ async function run(argv, env) {
       }));
       if (sub === 'run') {
         const mode = flags['single-account'] ? 'single-account' : (flags.group ? 'group' : 'single-account');
-        const broker = await new Broker({ paths, mode, gid: flags.group === undefined ? null : groupId(flags.group) }).start();
+        let limits;
+        if (flags['limits-file'] !== undefined) {
+          try { limits = JSON.parse(readFileSync(flags['limits-file'], 'utf8')); }
+          catch { fail('usage', 'limits-file must be readable broker limits JSON'); }
+        }
+        const broker = await new Broker({ paths, mode, limits, gid: flags.group === undefined ? null : groupId(flags.group) }).start();
         process.stderr.write(`agent-comms broker listening on ${paths.socket}\n`);
         const shutdown = () => broker.stop().then(() => process.exit(0));
         process.on('SIGINT', shutdown);
@@ -476,7 +491,7 @@ async function run(argv, env) {
 
 run(process.argv.slice(2), process.env).catch((error) => {
   const code = error instanceof CommsError ? error.code : 'internal';
-  const failure = { ok: false, error: { code, message: error.message } };
+  const failure = { ok: false, error: publicError(error) };
   if (jsonLines) process.stdout.write(`${JSON.stringify(failure)}\n`);
   else print(failure);
   process.stderr.write(`agent-comms: ${error.message}\n`);

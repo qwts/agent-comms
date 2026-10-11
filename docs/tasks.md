@@ -111,3 +111,9 @@ stop work. A stopped turn reports interrupted and leaves its event for replay.
 
 The new `task-invocation` log record makes downgrade unsupported once written;
 an older broker refuses to replay it.
+
+Task event bodies share [mailbox retention](mailbox-retention.md), including
+30-day unread expiry and count/byte capacity. Claims and invocation facts
+remain retained separately; the last five event summaries survive body expiry.
+`task brief` returns `message-expired` for an expired own event while bounded
+ID evidence remains, then `unknown-message` after that evidence is removed.
