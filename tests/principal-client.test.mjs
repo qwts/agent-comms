@@ -7,12 +7,75 @@ import { Broker, LIMITS } from '../lib/broker.mjs';
 import { admin, call, callPrincipal, loadCredential, loadPrincipalCredential, pairPrincipal } from '../lib/client.mjs';
 import { readHostConfig } from '../lib/host-config.mjs';
 import { clientPaths } from '../lib/paths.mjs';
-import { createPrincipalClient } from '../lib/principal-client.mjs';
+import { createPrincipalClient, createPrincipalClientFromTransport } from '../lib/principal-client.mjs';
 import { createSecretStore } from '../lib/platform/secret-store.mjs';
 import { turnPrompt } from '../lib/worker/prompt.mjs';
 import { withBroker } from './helpers/broker.mjs';
 
 const singleAccount = { brokerOptions: { mode: 'single-account' } };
+
+test('host transport receives only typed operation payloads and preserves results and failures', async () => {
+  const principal = 'principal_00000000-0000-0000-0000-000000000000';
+  const calls = [];
+  const result = { ok: true, messageId: 'message' };
+  const client = createPrincipalClientFromTransport({ principal, request: async (...args) => {
+    calls.push(args);
+    return result;
+  },
+  // These legacy factory hooks must never be consulted by this factory.
+  credentialLoader() { assert.fail('transport factory loaded a credential'); },
+  principalCaller() { assert.fail('transport factory used the credential caller'); },
+  env: { AGENT_COMMS_CREDENTIAL_NAME: 'invalid/name' } });
+  assert.equal(Object.isFrozen(client), true);
+  assert.equal(client.principal, principal);
+  assert.equal(client.secret, undefined);
+  assert.equal(client.request, undefined);
+  assert.equal(client.ownerDecision, undefined);
+  assert.equal(client.approve, undefined);
+  const hostile = { op: 'principal-approve', auth: { principal, secret: 'do-not-forward' },
+    sender: 'other', agentId: 'other', secret: 'do-not-forward' };
+  assert.equal(await client.send({ ...hostile, to: 'target', body: 'hello', key: 'once' }), result);
+  await client.inbox({ ...hostile, after: 7, limit: 2, channel: 'channel' });
+  await client.launch({ ...hostile, account: 'persona', soul: 'target', harness: 'test', parent: null });
+  await client.postChannel({ ...hostile, channel: 'channel', body: 'hello', key: 'post' });
+  await client.offerTask({ ...hostile, to: 'target', acceptanceCriteria: ['done'] });
+  assert.deepEqual(calls.map(([payload]) => payload.op), ['send', 'read', 'launch', 'channel-post', 'task-offer']);
+  for (const args of calls) {
+    assert.equal(args.length, 1, 'no credential or auth options accompany the payload');
+    for (const key of ['auth', 'secret', 'sender', 'agentId']) assert.equal(Object.hasOwn(args[0], key), false);
+  }
+  assert.equal(calls[2][0].parent, null, 'explicit independent launch parent is preserved');
+  const failure = Object.assign(new Error('native backend unavailable'), { code: 'broker-untrusted' });
+  const failed = createPrincipalClientFromTransport({ principal, request: async () => { throw failure; } });
+  await assert.rejects(failed.census(), (error) => error === failure);
+  const synchronous = createPrincipalClientFromTransport({ principal, request: () => { throw failure; } });
+  assert.throws(() => synchronous.census(), (error) => error === failure);
+  for (const options of [{}, { principal }, { principal, request: {} },
+    { principal: 'agent_fake', request: () => {} }, { principal: { toString: () => principal }, request: () => {} }]) {
+    assert.throws(() => createPrincipalClientFromTransport(options), { code: 'bad-request' });
+  }
+});
+
+test('host transport retains real broker approval, grants and revocation enforcement', async () => {
+  await withBroker(async (context) => {
+    const { paths, accounts } = context;
+    const { credential, approve } = await setup(context, [accounts.bob]);
+    // Test backend only: real native custody remains separate acceptance work.
+    const client = createPrincipalClientFromTransport({ principal: credential.principal,
+      request: (payload) => callPrincipal(paths, credential, payload) });
+    await assert.rejects(client.census(), { code: 'not-approved' });
+    await approve();
+    assert.deepEqual((await client.census()).souls.map((soul) => soul.agentId), [accounts.bob]);
+    await assert.rejects(client.send({ to: accounts.alice, body: 'hidden', key: 'hidden' }), { code: 'unknown-recipient' });
+    const payload = { to: accounts.bob, body: 'allowed', key: 'allowed', auth: {}, sender: accounts.alice };
+    const sent = await client.send(payload);
+    assert.equal(sent.duplicate, false);
+    await admin(paths, { op: 'principal-revoke', principal: credential.principal });
+    for (const operation of [() => client.census(), () => client.inbox(), () => client.send(payload)]) {
+      await assert.rejects(operation(), { code: 'unauthenticated' });
+    }
+  }, singleAccount);
+});
 
 async function setup(context, grant = null) {
   const env = { ...context.env, AGENT_COMMS_NO_KEYCHAIN: '1', AGENT_COMMS_CREDENTIAL_NAME: 'org.example.owner' };
