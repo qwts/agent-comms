@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-10-11
+
+### Fixed
+- Run the Windows scheduled-task broker in a kill-on-close Job Object so stopping its launcher also stops descendants; fail closed if job setup fails. Acceptance waits for endpoint shutdown and preserves reports after cleanup errors (#148).
+
+### Validation
+- Signed-in, non-elevated Windows 11 desktop acceptance passed all 11 required engine cases on the #148 candidate, including scheduled-task restart and uninstall, DPAPI pairing, custody, native watch/wake, and checkpoint refusal/recovery. The independent native process-tree test also passed. Complete host embedding acceptance remains outstanding (#127); the observed supervisor namespace propagation regression is tracked separately in qwts/agent-bot-identity#934.
+
 ## [0.4.0] - 2026-10-11
 
 ### Upgrade notes
