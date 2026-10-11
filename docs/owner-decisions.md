@@ -5,6 +5,7 @@
 released API. The issue remains [#77](https://github.com/qwts/agent-comms/issues/77).
 Agent-comms owns broker authorization/receipts; agent-bot owns mutation and
 presence semantics; the native host owns credential custody and prompting.
+Every field and fixture needs joint review before implementation.
 
 ## Prepare and confirm
 
@@ -95,7 +96,7 @@ The presence action is the one-line text
 from validated typed parameters; both verifiers reconstruct the exact text.
 It must fit the native trusted prompt
 in full, capped at 500 UTF-8 bytes. If it does not fit, refuse preparation;
-never truncate. keyd's existing `actionDigest` hashes those text bytes. The
+never truncate. The
 nonce and action therefore bind the human ceremony to one immutable request.
 
 ```text
