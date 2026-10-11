@@ -7,24 +7,24 @@ authorization to change runtime. Keep
 [#77](https://github.com/qwts/agent-comms/issues/77) open until all four
 requirements have release evidence and a lifecycle closeout.
 
-## Reviewed source snapshots
+## Reviewed source snapshots — 2026-10-11 refresh
 
-- [Comms e105e52](https://github.com/qwts/agent-comms/tree/e105e52021b350b08e742a0b172d7e66e7892cc6), released version field `0.3.16`.
-- [Agent-bot 64b1c17](https://github.com/qwts/agent-bot-identity/tree/64b1c170ed25f4943e01a9f20334c065fd92d661).
-- [GeniusBar 4997eae](https://github.com/qwts/GeniusBar/tree/4997eae75a3672846194987ff2f9f0fe36157be0).
+- [Comms a8761ac](https://github.com/qwts/agent-comms/tree/a8761ac3fca90acbefa0f1c756e1e5486a598685), after v0.4.0 and Windows lifecycle #148.
+- [Agent-bot 1b58a01](https://github.com/qwts/agent-bot-identity/tree/1b58a0191f0fd48593b6817cd452c8f092db71e6), refreshed from live main; source evidence, not a bundled release claim.
 
-References below use paths/line numbers in these snapshots. Revalidate before
-implementation; the user's checked-out source may be older. Source inspection
-does not establish live macOS custody or a compatible bundled release.
+Paths/lines below use these snapshots. Revalidate before implementation.
+Host source, native custody and compatible bundled releases were not revalidated.
+Owner policy review and joint agent-bot/native-host review remain prerequisites;
+this evidence refresh changes no acceptance status or runtime authorization.
 
 ## Requirement to current evidence
 
 | #77 requirement | Current behavior and test evidence | Missing evidence |
 | --- | --- | --- |
-| 1. Principal owner-decision relay | Comms `lib/broker.mjs:103-149` and `lib/principal-client.mjs:37-59` expose launch but no owner-decision. `lib/broker/launch.mjs:123-134` records then delivers to an authenticated watch. `tests/launch.test.mjs:274` checks daemon targeting. Bot `comms-client.mjs:834` consumes launch events. | Decision preparation, principal-only confirmation, target-owned staging, result/status and host entry point. |
-| 2. Signed receipt verified before application | Bot `owner-principal.mjs:13-29` authenticates `health`, without action/target arguments. `owner-gate.mjs:193-195` rejects soul markers then invokes that verifier. `tests/owner-gate.test.mjs:83-86` and `tests/soul-revision-daemon.test.mjs:90` expect the health call. | Receipt issuer/key lifecycle, request-bound presence, daemon verifier, durable replay handling, revocation and no mutation on refusal. |
-| 3. Host-only principal custody on macOS | Comms `lib/client.mjs:149-150` writes the plain copy before platform storage. `lib/platform/secret-store.mjs:16-40` uses unrestricted `security` creation/read; `tests/platform.test.mjs:61-79` asserts that command and partial-save error. GeniusBar `bridge/bridge.mjs:1-8,105-107` holds the credential in Node. | Signed native access-group custody, non-exporting requests, native presence-key protection, negative access tests and revoked legacy secrets. |
-| 4. Grant-scoped owner decisions | Comms `lib/broker/shared.mjs:27-29` covers account/soul/address targets; `lib/broker/launch.mjs:90-99` intersects target grants and receive rules. `tests/launch.test.mjs:201` checks launch credentials/grants. | Explicit operation grants; no inherited owner power; account/soul resolution for unjoined targets; rechecks on issuance and release. |
+| 1. Principal owner-decision relay | [Broker dispatch](https://github.com/qwts/agent-comms/blob/a8761ac3fca90acbefa0f1c756e1e5486a598685/lib/broker.mjs#L162) has no decision routes; `lib/principal-client.mjs:37-71` has no decision API. `lib/broker/launch.mjs:123-134` and `tests/launch.test.mjs:274` supply an authenticated relay pattern. Bot `comms-client.mjs:815-826` handles launch, not decisions. | Decision preparation, principal-only confirmation, target-owned staging, result/status and host entry point. |
+| 2. Signed receipt verified before application | Bot [principal verifier](https://github.com/qwts/agent-bot-identity/blob/1b58a0191f0fd48593b6817cd452c8f092db71e6/owner-principal.mjs#L13) authenticates `health` without action/target. `owner-gate.mjs:191-193` rejects soul markers before invoking it; `tests/owner-gate.test.mjs:83-86` expects health. Comms `lib/state.mjs:15-40` has no decision journal or receipt trust. | Receipt issuer/key lifecycle, request-bound presence, daemon verifier, durable replay handling, revocation and no mutation on refusal. |
+| 3. Host-only principal custody on macOS | [Pairing](https://github.com/qwts/agent-comms/blob/a8761ac3fca90acbefa0f1c756e1e5486a598685/lib/client.mjs#L140) creates the secret in Node and writes plain state before platform storage. `lib/platform/secret-store.mjs:17-42` uses unrestricted `security` creation/export; `tests/platform.test.mjs:58-83` preserves it. `lib/principal-client.mjs:23-34` copies the secret into JavaScript. | Signed native access-group custody, non-exporting requests, native presence-key protection, negative access tests and revoked legacy secrets. |
+| 4. Grant-scoped owner decisions | [Principal approval](https://github.com/qwts/agent-comms/blob/a8761ac3fca90acbefa0f1c756e1e5486a598685/lib/broker/pairing.mjs#L282) stores ordinary target grants only. `lib/broker/shared.mjs:39-42` matches accounts/souls/addresses; launch `:90-99` also applies receive rules. `tests/launch.test.mjs:201` covers existing authorization. | Explicit operation grants; no inherited owner power; account/soul resolution for unjoined targets; rechecks on issuance and release. |
 
 The bot's health path refuses a same-UID broker and single-account mode
 (`owner-principal.mjs:24-25`; `tests/owner-gate.test.mjs:130`). Do not remove
@@ -39,13 +39,17 @@ ID/identifier and owner-verified trust loosening. ADR-0077 does not reopen
 these choices. Durable broker/daemon request consumption is a different
 invariant from keyd's in-memory grant nonce cache.
 
-Bot `owner-action.mjs:27-38` keeps signed challenges default-off. Its
-[owner-statement contract](https://github.com/qwts/agent-bot-identity/blob/64b1c170ed25f4943e01a9f20334c065fd92d661/docs/owner-statements.md)
-reports that a valid signature under unprotected
-pins is `owner-pins-unprotected`, not owner approval. Its
-`owner-presence.mjs:160-176,184-202` documents residual same-account bootstrap
-authority; a legacy helper installation is not proof of the strengthened
-native custody proposed here. Product changes need agent-bot/native review.
+Bot [pin attestation](https://github.com/qwts/agent-bot-identity/blob/1b58a0191f0fd48593b6817cd452c8f092db71e6/owner-action.mjs#L35)
+now asks keyd to vouch for the exact pin set per request and rechecks after
+signing. Signed challenges can run with vouched pins; absent attestation keeps
+the existing presence/dialog path. The older default-off description is historical.
+Its challenge ledger (`owner-action.mjs:164-216`) and
+[generation floor](https://github.com/qwts/agent-bot-identity/blob/1b58a0191f0fd48593b6817cd452c8f092db71e6/owner-presence.mjs#L414)
+are in memory, not durable decision consumption. The
+[native store](https://github.com/qwts/agent-bot-identity/blob/1b58a0191f0fd48593b6817cd452c8f092db71e6/keyd/src/store.rs#L323)
+uses legacy login-keychain ACLs and documents deletion/planting limits; it
+distinguishes the proposed data-protection/access-group boundary. These
+improvements neither supply `d1` receipts nor complete #77 custody.
 
 Comms [#127](https://github.com/qwts/agent-comms/issues/127) owns Windows and
 bundle integration evidence. Passing its channel tests does not prove this
