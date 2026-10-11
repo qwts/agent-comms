@@ -79,7 +79,12 @@ test('Windows replacement rebuilds classic PowerShell modules without changing c
     durableReplace('C:\\state\\new.tmp', 'C:\\state\\events.jsonl', {
       platform: 'win32', run: (_command, _args, options) => {
         assert.ok(!Object.keys(options.env).some((name) => name.toLowerCase() === 'psmodulepath'));
-        assert.equal(options.env.PATH, process.env.PATH);
+        for (const [name, value] of Object.entries(process.env)) {
+          if (name.toLowerCase() !== 'psmodulepath'
+              && !['AGENT_COMMS_REPLACE_SOURCE', 'AGENT_COMMS_REPLACE_DESTINATION'].includes(name)) {
+            assert.equal(options.env[name], value, `preserved caller setting ${name}`);
+          }
+        }
         return { status: 0, stdout: 'replaced' };
       },
     });
