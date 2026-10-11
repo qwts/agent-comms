@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - The README links the agent-bot [getting started guide](https://github.com/qwts/agent-bot-identity/blob/main/docs/getting-started.md), which sets up agent-bot and agent-comms together (qwts/agent-bot-identity#752).
+- CI pins qwts-agent-ci at d9f8cf9, whose `Action Policy` admits a pull request from a fork when it runs on a GitHub-hosted runner in this public repository, so an outside contributor's pull request can pass CI once a maintainer approves its run (qwts/agent-bot-identity#752).
 
 ## [0.3.16] - 2026-10-10
 
