@@ -1,0 +1,10 @@
+{
+  "repository": "https://github.com/qwts/agent-bot-identity",
+  "commit": "c5f8399c8832dea323c156fd71270ea4786182df",
+  "publicEntry": "identity-presence.mjs",
+  "files": {
+    "identity-presence.mjs": "7b1b900904ed14e24af25ef8a02e0d3aa901699d3c97023654b5e072bacae932",
+    "identity/presence-verifier.mjs": "adf8fe2c44307fe0de00ee1a0ddf9a1aa7b814854a0a6366494ea612683149da",
+    "LICENSE": "cde9cba2f4ccd83175be5a90152c0f101a4e380fac9238558bb07097de6fb9e6"
+  }
+}
