@@ -24,13 +24,15 @@ test('local SQLite DO atomicity, capacity, persisted outcomes and indexed paging
   const lock = JSON.parse(await readFile(new URL('./package-lock.json',import.meta.url),'utf8'));
   const installed = JSON.parse(await readFile(new URL('./node_modules/miniflare/package.json',import.meta.url),'utf8'));
   assert.equal(installed.version,'4.20260730.0');
+  const undici=JSON.parse(await readFile(new URL('./node_modules/undici/package.json',import.meta.url),'utf8'));
+  assert.equal(undici.version,'7.29.1');
   const sourceHashes = {};
   for (const name of ['probe-worker.mjs','probe.test.mjs','package-lock.json']) {
     sourceHashes[name]=createHash('sha256').update(await readFile(new URL(name,import.meta.url))).digest('hex');
   }
   const report = { scope: 'local-synthetic-only', node:process.version, miniflare:installed.version,
     miniflareIntegrity:lock.packages['node_modules/miniflare'].integrity,
-    workerd:lock.packages['node_modules/workerd'].version, sourceHashes, cases: [], productionGuarantees: false };
+    workerd:lock.packages['node_modules/workerd'].version, undici:undici.version, sourceHashes, cases: [], productionGuarantees: false };
   const call = async (name,input) => {
     const ns = await runtime.getDurableObjectNamespace('PROBE');
     const response = await ns.get(ns.idFromName(name)).fetch('https://local.invalid/probe',{

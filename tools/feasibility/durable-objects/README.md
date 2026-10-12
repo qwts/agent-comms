@@ -5,6 +5,11 @@ This separate private dev package pins Miniflare 4.20260730.0 and workerd
 1.20260730.1 through its lockfile. It changes no root runtime dependency and is
 excluded from the published component's `files` list. No deployment configuration,
 remote binding, provider account, credential or production federation schema exists.
+A dev-only npm override pins Undici 7.29.1 for its
+[upstream security fixes](https://github.com/nodejs/undici/releases/tag/v7.29.1),
+while preserving the exact Miniflare 4/workerd pins. Updating a transitive HTTP
+client changes the graph/lock hash; reports record the actual Undici version and
+the probe must be rerun. No Miniflare 5 prerelease upgrade is implied.
 
 ## Run
 
