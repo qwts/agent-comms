@@ -76,6 +76,9 @@ are reusable patterns, not passes for the proposed protocol.
 1. Owner policy is accepted; agent-bot/native-host contract review remains
    pending. Organization deployment deltas use ENG records.
 2. Jointly review the [exact wire schemas and adapter boundaries](owner-decision-wire.md) and [shared fixture specification](owner-decision-fixtures.md), then implement pure verifiers against those bytes; keep capability disabled.
+   The [bounded source review](owner-decision-source-review.md) identifies the
+   remaining staging, effect-evidence and capacity seams; its transport options
+   are review inputs, not additional accepted policy.
 3. Implement broker policy/relay/journal, then daemon verification/application
    against those fixtures. Each PR states covered operations and remaining gaps.
 4. Implement the raw-p1 native adapter, protected custody/presence, immutable staging and explicit cutover with live negative

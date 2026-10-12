@@ -87,9 +87,24 @@ for (const { id, acceptedAt, preparedAt, exp, now, stageExp, expected } of vecto
     && exp === deadline && now < deadline;
   assert.equal(accepts, expected, id);
 }
+// Concrete primitive examples exercise only their documented grammar equations.
+// They do not perform authorization, resolve IDs or validate a secret snapshot.
+for (const { id, field, value, expected } of vectors.primitiveCases) {
+  let accepts = false;
+  if (field === 'soul') accepts = /^agent_[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(value);
+  if (field === 'principal') accepts = /^principal_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value);
+  if (field === 'requestId') accepts = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(value);
+  if (field === 'host' && /^[\x00-\x7f]+$/.test(value) && value.length <= 253 && value === value.toLowerCase()) {
+    try {
+      const url = new URL(`https://${value}/`);
+      accepts = url.host === value && url.pathname === '/' && !url.search && !url.hash && !url.username && !url.password;
+    } catch { /* Invalid host grammar refuses. */ }
+  }
+  assert.equal(accepts, expected, id);
+}
 for (const vector of vectors.negativeActionBytes) {
   assert.equal(vector.expected, 'refuse');
   assert.equal(Buffer.from(vector.bytesBase64url, 'base64url').toString('base64url'), vector.bytesBase64url);
 }
-process.stdout.write(`Static proposal fixture consistency passed: ${vectors.positive.length} signed examples, ${vectors.displayBoundaries.length} display boundaries, ${vectors.serialization.length} serialization byte examples, ${vectors.receiptClockCases.length + vectors.nativePresenceClockCases.length + vectors.preparationClockCases.length} clock examples.\n`);
+process.stdout.write(`Static proposal fixture consistency passed: ${vectors.positive.length} signed examples, ${vectors.displayBoundaries.length} display boundaries, ${vectors.serialization.length} serialization byte examples, ${vectors.primitiveCases.length} primitive grammar examples, ${vectors.receiptClockCases.length + vectors.nativePresenceClockCases.length + vectors.preparationClockCases.length} clock examples.\n`);
 process.stdout.write(`${vectors.negativeActionBytes.length} malformed-byte expectations are specified but not executed against a production codec. Runtime/native conformance remains unimplemented.\n`);

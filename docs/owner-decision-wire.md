@@ -26,15 +26,15 @@ apply before allocating or decoding a body; nesting is at most 8 levels.
 | --- | --- |
 | `requestId`, `proposalId`, `stagingId`, `watchId` | Lowercase UUID version 4 with RFC variant: `xxxxxxxx-xxxx-4xxx-[89ab]xxx-xxxxxxxxxxxx`. Random IDs must be generated with a cryptographic RNG. |
 | `account` | Existing canonical paired account short name, matching `[A-Za-z_][A-Za-z0-9_.-]{0,63}`; compare exact spelling, never case-fold or resolve an alias. |
-| `soul` | `agent_` followed by a lowercase UUID in the existing agent-ID format; the authenticated target daemon resolves this exact ID, including unjoined souls. |
-| `principal` | Existing `principal_` plus lowercase UUID. Taken from authentication, never trusted from a caller-supplied action. |
+| `soul` | Existing bot ID grammar: `agent_[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}` (whole string). Versions 1–8 are allowed; the authenticated target daemon resolves this exact ID, including unjoined souls. |
+| `principal` | Existing bot ID grammar: `principal_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}` (whole string), without a version/variant restriction. Taken from authentication, never trusted from a caller-supplied action. |
 | Revision | `sha256:` followed by 64 lowercase hexadecimal characters. |
 | Digest / key ID | Exactly 64 lowercase hexadecimal characters, without a prefix. |
 | `nonce` | Exactly 32 random bytes encoded as 43 canonical unpadded base64url characters. |
 | Time | Nonnegative safe integer Unix seconds; floor milliseconds before comparing. |
 | `daemonEpoch` | Broker-assigned positive safe integer, durably increased for every daemon approval/replacement/revocation in this account; never reused or reset by recovery. |
 | `reason` | Nonblank string, at most 500 UTF-8 bytes, with no Unicode control scalar (U+0000–001F, U+007F–009F). Preserve bytes; do not trim or normalize. Preparation may refuse a shorter reason if the complete action does not fit. |
-| `host` | Lowercase ASCII HTTPS destination hostname and optional nondefault decimal port from the validated webhook snapshot; at most 253 bytes; no URL path, query, fragment, credentials or secret. |
+| `host` | Canonical WHATWG HTTPS URL `.host`, including bracketed IPv6 and optional nondefault decimal port, from the validated webhook snapshot; nonempty lowercase ASCII, at most 253 bytes. Roundtrip `new URL("https://" + host + "/")` must preserve `.host` exactly and have only `/` as its path, with no query, fragment or credentials. Default ports, noncanonical spellings and other URL components refuse. This grammar check grants no staging or destination authority. |
 
 `parameters` has one of the exact shapes below. The `operation` selects the
 schema; a field valid for another operation still refuses.
@@ -70,9 +70,10 @@ and webhook inputs use separate schemas. Never accept caller file paths,
 symlinks, shell strings, a JavaScript secret loader or arbitrary auth callbacks.
 Each descriptor expires 180 seconds after successful creation and binds one
 request ID when preparation first consumes it. It cannot be rebound or reused
-by another principal/target/operation. Preparation expiry is the earlier of
-`preparedAt + 180` and stage expiry. Refuse exhausted staging quotas before
-accepting input; limits are 64 MiB per package, 32 KiB per webhook snapshot,
+by another principal/target/operation. Preparation expiry is exactly the minimum
+of `preparedAt + 180`, the original broker `acceptedAt + 180` and stage expiry;
+staging never extends the original broker acceptance cap. Refuse exhausted
+staging quotas before accepting input; limits are 64 MiB per package, 32 KiB per webhook snapshot,
 4 live stages per principal/target and 256 MiB total per daemon. Expired,
 cancelled and settled secret snapshots are removed; uncertain snapshots remain
 private until owner-local reconciliation. Stream/upload framing and real

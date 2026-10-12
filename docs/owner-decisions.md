@@ -21,7 +21,7 @@ implementation; no runtime, migration or capability advertisement is authorized.
    canonical payload digest, random 32-byte base64url nonce and expiry.
    It returns the challenge through a daemon-authenticated prepared response.
    The broker durably records it before exposing it to the principal. A
-   preparation lasts 180 seconds; it can be cancelled without mutation.
+   preparation lasts up to 180 seconds; cancellation causes no mutation.
 3. The native host independently validates the operation and rebuilds the
    action text from the challenge and parameters. It shows the complete
    bounded summary and requests a `p1` presence assertion with that nonce.
