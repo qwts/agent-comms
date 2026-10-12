@@ -11,17 +11,19 @@ const b = 'principal_22222222-2222-4222-8222-222222222222';
 const unknown = 'principal_33333333-3333-4333-8333-333333333333';
 const pending = (principal, code = 'SAME12') => ({ t: 'principal-request', principal, account: principal === a ? 'owner' : 'other', hash: createHash('sha256').update('synthetic-secret').digest('hex'), code, at: 1 });
 function fixture() {
-  const state = emptyState(), records = [];
+  const state = emptyState(), records = [], diagnostics = [];
   apply(state, pending(a)); apply(state, pending(b));
   const commit = r => { records.push(r); apply(state, r); };
-  return { state, records, commit, approve: request => createPairing({ state, now: () => 2 }, commit, {}).handleAdmin({ op: Object.hasOwn(request, 'expectedPrincipal') ? 'principal-approve-exact' : 'principal-approve', code: 'SAME12', ...request }) };
+  return { state, records, diagnostics, commit, approve: request => createPairing({ state, now: () => 2, reportDiagnostic: (...args) => diagnostics.push(args) }, commit, {}).handleAdmin({ op: Object.hasOwn(request, 'expectedPrincipal') ? 'principal-approve-exact' : 'principal-approve', code: 'SAME12', ...request }) };
 }
 test('code collisions refuse legacy approval but exact identity selects only its pending principal', () => {
   const f = fixture(), before = structuredClone(f.state);
   assert.throws(() => f.approve({}), { code: 'ambiguous-code', message: 'more than one pending principal has that code' });
   assert.equal(f.records.length, 0); assert.deepEqual(f.state, before);
+  assert.deepEqual(f.diagnostics, []);
   assert.deepEqual(f.approve({ expectedPrincipal: b, grant: ['other'] }), { principal: b, account: 'other', state: 'approved', grant: ['other'] });
   assert.equal(f.state.principals.get(a).state, 'pending');
+  assert.deepEqual(f.diagnostics.map(([event]) => event), ['pair-principal-approved']);
   assert.equal(f.records.length, 1); assert.equal(f.records[0].principal, b);
   assert.deepEqual(f.approve({}), { principal: a, account: 'owner', state: 'approved', grant: null });
 });

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { sign } from 'node:crypto';
+import { performance } from 'node:perf_hooks';
 import { fixture } from './helpers/owner-coordinator.mjs';
 import { bytes, f } from './helpers/owner-decision-lifecycle.mjs';
 import { SyntheticOwnerReceiptCapability as Capability } from '../lib/broker/owner-receipt-fixture.mjs';
@@ -105,11 +106,45 @@ test('restart and token signature aliases cannot obtain another signing handle o
 test('native failure timeout and unconfirmed terminal keep private candidates and spent IDs', darwin, async t => {
   for (const options of [{ fail: true }, { terminalConfirmed: false }, { safeClose: false }, { fail: true, terminalReject: true }, { signingTimeoutMilliseconds: 20 }]) {
     const x = setup(t, options), request = x.confirmRequest(), pending = x.core.confirm(request), rejected = refuse(pending);
-    await x.entered.promise;
-    if (!options.signingTimeoutMilliseconds) x.gate.resolve();
-    await rejected;
-    assert.equal(events(x).length, 0); assert.equal(x.journal.read(x.action.requestId).slots.has('receipt'), false);
-    await refuse(x.core.confirm(request)); assert.equal(x.calls(), 1); x.gate.resolve();
+    try {
+      // The short deadline may correctly refuse before any native invocation.
+      // Awaiting entry unconditionally strands the test when that happens.
+      const boundary = options.signingTimeoutMilliseconds
+        ? await Promise.race([x.entered.promise.then(() => 'entered'), rejected.then(() => 'refused')])
+        : (await x.entered.promise, 'entered');
+      const expectedCalls = boundary === 'entered' ? 1 : 0;
+      assert.equal(x.calls(), expectedCalls);
+      if (!options.signingTimeoutMilliseconds) x.gate.resolve();
+      await rejected;
+      const row = x.journal.read(x.action.requestId);
+      assert.equal(events(x).length, 0); assert.equal(row.slots.has('receipt'), false);
+      assert.equal(row.slots.has('authorization'), false);
+      assert.equal(row.slots.get('presence').toString(), request.presence);
+      await refuse(x.core.confirm(request)); assert.equal(x.calls(), expectedCalls);
+    } finally { x.gate.resolve(); }
+  }
+});
+
+test('deadline before signer entry spends presence without invoking or retrying signer', darwin, async t => {
+  const x = setup(t, { signingTimeoutMilliseconds: 20 }), request = x.confirmRequest();
+  const descriptor = Object.getOwnPropertyDescriptor(performance, 'now');
+  let reads = 0;
+  // First read establishes the deadline; the next check is exactly expired.
+  // This process-local test clock changes no production deadline or seam.
+  Object.defineProperty(performance, 'now', { configurable: true, value: () => reads++ === 0 ? 0 : 20 });
+  try {
+    await refuse(x.core.confirm(request));
+    assert.ok(reads >= 2);
+    assert.equal(x.calls(), 0);
+    const row = x.journal.read(x.action.requestId);
+    assert.equal(row.slots.get('presence').toString(), request.presence);
+    assert.equal(row.slots.has('receipt'), false); assert.equal(row.slots.has('authorization'), false);
+    assert.equal(events(x).length, 0);
+    await refuse(x.core.confirm(request)); assert.equal(x.calls(), 0);
+  } finally {
+    if (descriptor) Object.defineProperty(performance, 'now', descriptor);
+    else delete performance.now;
+    x.gate.resolve();
   }
 });
 
