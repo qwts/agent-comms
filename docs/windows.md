@@ -58,6 +58,15 @@ and only one-account mode: `persona-accounts` (groups, `--group`) is
   ownership checks and gains no handshake; after the handshake the wire is
   the same on both platforms.
 
+  A stale-pipe probe permits startup after an ordinary connector refusal. An
+  observed live connection irreversibly refuses a second broker as
+  `broker-running` before disposal can throw or emit a later error. A close
+  before either result refuses as `broker-probe-failed`; it does not establish
+  that the pipe is absent. Result listeners are removed after settlement while
+  one stream-local error listener handles late disposal errors. Constructor
+  regressions cover these boundaries; this source repair does not establish
+  the cause of earlier hosted diagnostics or Windows numeric capacity.
+
 - **Secret store.** The principal is `principal.<credentialName>.dpapi` in
   the client state directory, DPAPI-protected in the `CurrentUser` scope
   through `powershell.exe -NoProfile -NonInteractive -Command -`, with the

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Windows stale broker probes refuse an unexplained close instead of waiting indefinitely. An observed live connection stays `broker-running` even if disposal throws or emits a later error; late stream errors remain handled. This repairs constructor-level settlement defects without claiming the cause of earlier hosted capacity diagnostics (#164).
+
 ## [0.5.2] - 2026-10-12
 
 ### Fixed
