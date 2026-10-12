@@ -7,11 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-12
+
+### Upgrade notes
+- Stop the broker and take a consistent backup before upgrading from 0.4.x. This engine reads checkpoint formats 1 and 2 and writes format 3; older engines refuse the new format. New owner-grant records also make downgrade against upgraded state unsupported. Rollback requires restoring the pre-upgrade backup and loses subsequent activity.
+- Owner-decision routes remain disabled. Packaged codecs, proofs and journal prerequisites do not enable owner mutations, native presence, physical journal reservation or host credential custody (#77).
+
 ### Added
-- Explicit private-admin owner-operation grants, separate from target grants, with empty legacy defaults and durable replay (#77). Owner-decision routes remain disabled.
+- Optional untrusted principal-launch `traceparent` propagation from the SDK through the broker to the live account-watch launch event. Exact lowercase version-00 values with nonzero IDs propagate; invalid values are omitted with a bounded local counter. Trace data is excluded from durable state, return/wake paths and diagnostic context. Host transport allowlist and daemon adoption remain separate; this is not installed end-to-end tracing (#164, #202).
+- Dependency-free bounded local broker/client diagnostics for internal, storage, maintenance and transport failures, using fixed fields and an isolated stderr helper. Queue, event bytes, rate and drop accounting are finite; diagnostic failure or backpressure cannot alter real delivery. No remote reporting or exporter is enabled (#164).
+- Explicit private-admin account/soul-scoped `ownerGrants`, separate from ordinary target grants, with empty legacy defaults and durable replay. The deprecated global `ownerOperations` list is nonauthorizing (#77, #200).
 
 ### Changed
 - Retain daemon generation counters through revocation and re-pairing as an owner-decision prerequisite (#77). Checkpoint format 3 reads formats 1 and 2, but older engines refuse the new format; owner operations remain disabled.
+- Revalidate the packaged messaging/setup/worker skill for 0.5.x against the current CLI and API, with explicit broker upgrade and rollback instructions.
+
+### Validation
+- Retained macOS total-runtime healthy, failed and unread diagnostic comparisons passed their scoped budgets using pinned complete runtime archives. CPU was recorded but ungated; earlier failed/confounded measurements remain retained. These results do not establish native Windows numeric capacity or host acceptance (#164).
 
 ## [0.4.4] - 2026-10-11
 
