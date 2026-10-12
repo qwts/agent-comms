@@ -123,3 +123,6 @@ the [tool instructions](../tools/acceptance/README.md) to extract the exact Git
 objects, retain complete archives as external run artifacts and verify their
 hashes. Further timed runs require a separately coordinated quiet interval;
 each result must be retained without replacing earlier failures.
+
+See separate [mailbox reporting observations](diagnostic-mailbox-overhead.md)
+for later producer pins, a retained failed pair and changed-source helper-loss results.

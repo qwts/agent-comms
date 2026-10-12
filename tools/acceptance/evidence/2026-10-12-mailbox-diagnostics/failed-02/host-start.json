@@ -1,0 +1,19 @@
+{
+  "pin": "f0eafb4faffa757b46310c25792dd126ea611f76",
+  "tree": "902aee03358f482f382c2b830822b4cbde5f71fe",
+  "archiveSha256": "f89a7ab7d0af897893fefc728910e75263ec17cedf69d0a62e3b05b0eebac5d6",
+  "files": {
+    "tools/acceptance/diagnostic-mailbox-overhead.mjs": "c0caf7dae5358c6ef20cf761347cc4a48c1807d9987d0d01fd4442b3343bfe65",
+    "tools/acceptance/diagnostic-mailbox-pairs.mjs": "37290b1872c809df0104e9f4551884de5ad35f3822ec0ae27a0e4c095c3473bb",
+    "tests/diagnostic-mailbox-pairs.test.mjs": "174d4f1855d884c8f9b4bf387460bf2ac371b266303ba30ada076618c867bd35"
+  },
+  "runnerDelta": "Only both hardcoded source pins changed from f5195ee0 to f0eafb4f; pair module and tests byte-identical",
+  "observedAt": "2026-10-12T20:42:23.197976+00:00",
+  "loadAverage": [
+    2.52197265625,
+    2.8857421875,
+    3.82568359375
+  ],
+  "logicalCpuCount": 18,
+  "externalActivityControlled": false
+}

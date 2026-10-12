@@ -1,0 +1,570 @@
+{
+  "v": 1,
+  "stage": "startup-normal-and-fault-cleanup-preflight",
+  "timedWorkloadRun": false,
+  "node": "v26.11.1",
+  "runnerSha256": "83c2abf13eb5cde8eee7351e9de9cb0bda018b629a4574fc55e1748d5ec1968d",
+  "pairModuleSha256": "37290b1872c809df0104e9f4551884de5ad35f3822ec0ae27a0e4c095c3473bb",
+  "archives": {
+    "old": {
+      "pin": "f5195ee0894b8b2c8d3f9f5946948b20f82a5b12",
+      "tree": "6132b0d7eed3ff6c16e4440b025b8b6889940560",
+      "archiveSha256": "cece6a1d97361a2178c5ffda7e9e653aa0e470e00a5f59f73b4f10c9ab4a1b06"
+    },
+    "new": {
+      "pin": "f5195ee0894b8b2c8d3f9f5946948b20f82a5b12",
+      "tree": "6132b0d7eed3ff6c16e4440b025b8b6889940560",
+      "archiveSha256": "cece6a1d97361a2178c5ffda7e9e653aa0e470e00a5f59f73b4f10c9ab4a1b06"
+    }
+  },
+  "runs": [
+    {
+      "revision": "old",
+      "mode": "healthy",
+      "checkpointCompleted": 6,
+      "checkpointReceipts": 1,
+      "partialCheckpointFile": "partial-01-old-healthy.ndjson",
+      "deployment": "one embedded Broker/client process; default callbacks; old=process-start off,new=enabled",
+      "preflight": true,
+      "importMs": 16.38825,
+      "brokerStartMs": 84.560625,
+      "warmupMs": 102.49987499999997,
+      "actualLocalFailureWarmup": 1,
+      "watchOutcomes": {
+        "churnReady": 1,
+        "persistentReady": 1,
+        "reconnectReady": 1,
+        "refusal": 1
+      },
+      "workloadPreflight": {
+        "timedWorkloadRun": false,
+        "completed": 6,
+        "outcomes": {
+          "read": 1,
+          "send": 1,
+          "deliveredRead": 1,
+          "ack": 1,
+          "census": 1,
+          "refusal": 1,
+          "localFailure": 1
+        },
+        "checkpointExpected": true,
+        "perOperationCounts": {
+          "send": 1,
+          "deliveredRead": 1,
+          "ack": 1,
+          "census": 1,
+          "emptyRead": 1,
+          "refusal": 1
+        }
+      },
+      "shutdownMs": 12.612250000000131,
+      "stdioClosureConfirmed": true,
+      "stderrDisposition": "consumed through child close",
+      "shutdownDiagnosticObserved": false,
+      "ownedTerminalConfirmed": true,
+      "helperWasPresent": false,
+      "helperExitConfirmed": null,
+      "diagnosticBytes": 0,
+      "diagnosticLines": 0,
+      "observedEvents": {
+        "broker.started": 0,
+        "broker.stopped": 0,
+        "transport.ready": 0,
+        "transport.reconnected": 0,
+        "pairing.account-pending": 0,
+        "pairing.account-approved": 0,
+        "pairing.principal-pending": 0,
+        "pairing.principal-approved": 0,
+        "membership.joined": 0,
+        "mailbox.admitted": 0,
+        "mailbox.read": 0,
+        "mailbox.acked": 0
+      },
+      "destination": "healthy",
+      "failedHelperApplicable": false,
+      "peakMainRssKiB": 63392,
+      "peakHelperRssKiB": 0,
+      "peakTotalRssKiB": 63392,
+      "mainCpuSeconds": 0.13,
+      "helperCpuSeconds": 0,
+      "tail": [
+        {
+          "mainRssKiB": 63072,
+          "helperRssKiB": 0,
+          "mainCpuSeconds": 0.12,
+          "helperCpuSeconds": 0
+        },
+        {
+          "mainRssKiB": 63392,
+          "helperRssKiB": 0,
+          "mainCpuSeconds": 0.13,
+          "helperCpuSeconds": 0
+        }
+      ]
+    },
+    {
+      "revision": "old",
+      "mode": "healthy",
+      "preflight": true,
+      "startupFault": true,
+      "timedWorkloadRun": false,
+      "stdioClosureConfirmed": true,
+      "stderrDisposition": "consumed through child close",
+      "importMs": 17.688417000000005,
+      "brokerStartMs": 67.711667,
+      "warmupMs": 101.185292,
+      "fixtureFailure": {
+        "stage": "fixture-startup-fault",
+        "check": "startup-injected-fault"
+      },
+      "ownedTerminalConfirmed": true,
+      "helperWasPresent": false,
+      "helperExitConfirmed": null
+    },
+    {
+      "revision": "old",
+      "mode": "failed",
+      "checkpointCompleted": 6,
+      "checkpointReceipts": 1,
+      "partialCheckpointFile": "partial-03-old-failed.ndjson",
+      "deployment": "one embedded Broker/client process; default callbacks; old=process-start off,new=enabled",
+      "preflight": true,
+      "importMs": 18.037459,
+      "brokerStartMs": 59.86279199999999,
+      "warmupMs": 102.39287499999998,
+      "actualLocalFailureWarmup": 1,
+      "watchOutcomes": {
+        "churnReady": 1,
+        "persistentReady": 1,
+        "reconnectReady": 1,
+        "refusal": 1
+      },
+      "workloadPreflight": {
+        "timedWorkloadRun": false,
+        "completed": 6,
+        "outcomes": {
+          "read": 1,
+          "send": 1,
+          "deliveredRead": 1,
+          "ack": 1,
+          "census": 1,
+          "refusal": 1,
+          "localFailure": 1
+        },
+        "checkpointExpected": true,
+        "perOperationCounts": {
+          "send": 1,
+          "deliveredRead": 1,
+          "ack": 1,
+          "census": 1,
+          "emptyRead": 1,
+          "refusal": 1
+        }
+      },
+      "shutdownMs": 7.472083000000566,
+      "stdioClosureConfirmed": true,
+      "stderrDisposition": "consumed through child close",
+      "shutdownDiagnosticObserved": false,
+      "ownedTerminalConfirmed": true,
+      "helperWasPresent": false,
+      "helperExitConfirmed": null,
+      "diagnosticBytes": 0,
+      "diagnosticLines": 0,
+      "observedEvents": {
+        "broker.started": 0,
+        "broker.stopped": 0,
+        "transport.ready": 0,
+        "transport.reconnected": 0,
+        "pairing.account-pending": 0,
+        "pairing.account-approved": 0,
+        "pairing.principal-pending": 0,
+        "pairing.principal-approved": 0,
+        "membership.joined": 0,
+        "mailbox.admitted": 0,
+        "mailbox.read": 0,
+        "mailbox.acked": 0
+      },
+      "destination": "failed",
+      "failedHelperApplicable": false,
+      "peakMainRssKiB": 63328,
+      "peakHelperRssKiB": 0,
+      "peakTotalRssKiB": 63328,
+      "mainCpuSeconds": 0.13,
+      "helperCpuSeconds": 0,
+      "tail": [
+        {
+          "mainRssKiB": 63024,
+          "helperRssKiB": 0,
+          "mainCpuSeconds": 0.13,
+          "helperCpuSeconds": 0
+        },
+        {
+          "mainRssKiB": 63328,
+          "helperRssKiB": 0,
+          "mainCpuSeconds": 0.13,
+          "helperCpuSeconds": 0
+        }
+      ]
+    },
+    {
+      "revision": "old",
+      "mode": "unread",
+      "checkpointCompleted": 6,
+      "checkpointReceipts": 1,
+      "partialCheckpointFile": "partial-04-old-unread.ndjson",
+      "deployment": "one embedded Broker/client process; default callbacks; old=process-start off,new=enabled",
+      "preflight": true,
+      "importMs": 16.779375,
+      "brokerStartMs": 87.492333,
+      "warmupMs": 102.39937500000002,
+      "actualLocalFailureWarmup": 1,
+      "watchOutcomes": {
+        "churnReady": 1,
+        "persistentReady": 1,
+        "reconnectReady": 1,
+        "refusal": 1
+      },
+      "workloadPreflight": {
+        "timedWorkloadRun": false,
+        "completed": 6,
+        "outcomes": {
+          "read": 1,
+          "send": 1,
+          "deliveredRead": 1,
+          "ack": 1,
+          "census": 1,
+          "refusal": 1,
+          "localFailure": 1
+        },
+        "checkpointExpected": true,
+        "perOperationCounts": {
+          "send": 1,
+          "deliveredRead": 1,
+          "ack": 1,
+          "census": 1,
+          "emptyRead": 1,
+          "refusal": 1
+        }
+      },
+      "shutdownMs": 16.699542000000292,
+      "stdioClosureConfirmed": true,
+      "stderrDisposition": "owned unread pipe disposed after fixture/helper exit",
+      "shutdownDiagnosticObserved": false,
+      "ownedTerminalConfirmed": true,
+      "helperWasPresent": false,
+      "helperExitConfirmed": null,
+      "diagnosticBytes": 0,
+      "diagnosticLines": 0,
+      "observedEvents": {
+        "broker.started": 0,
+        "broker.stopped": 0,
+        "transport.ready": 0,
+        "transport.reconnected": 0,
+        "pairing.account-pending": 0,
+        "pairing.account-approved": 0,
+        "pairing.principal-pending": 0,
+        "pairing.principal-approved": 0,
+        "membership.joined": 0,
+        "mailbox.admitted": 0,
+        "mailbox.read": 0,
+        "mailbox.acked": 0
+      },
+      "destination": "configured unread; queue not inspected",
+      "failedHelperApplicable": false,
+      "peakMainRssKiB": 63392,
+      "peakHelperRssKiB": 0,
+      "peakTotalRssKiB": 63392,
+      "mainCpuSeconds": 0.13,
+      "helperCpuSeconds": 0,
+      "tail": [
+        {
+          "mainRssKiB": 63088,
+          "helperRssKiB": 0,
+          "mainCpuSeconds": 0.13,
+          "helperCpuSeconds": 0
+        },
+        {
+          "mainRssKiB": 63392,
+          "helperRssKiB": 0,
+          "mainCpuSeconds": 0.13,
+          "helperCpuSeconds": 0
+        }
+      ]
+    },
+    {
+      "revision": "new",
+      "mode": "healthy",
+      "checkpointCompleted": 6,
+      "checkpointReceipts": 1,
+      "partialCheckpointFile": "partial-05-new-healthy.ndjson",
+      "deployment": "one embedded Broker/client process; default callbacks; old=process-start off,new=enabled",
+      "preflight": true,
+      "importMs": 19.943375,
+      "brokerStartMs": 64.65804200000001,
+      "warmupMs": 102.177209,
+      "actualLocalFailureWarmup": 1,
+      "watchOutcomes": {
+        "churnReady": 1,
+        "persistentReady": 1,
+        "reconnectReady": 1,
+        "refusal": 1
+      },
+      "workloadPreflight": {
+        "timedWorkloadRun": false,
+        "completed": 6,
+        "outcomes": {
+          "read": 1,
+          "send": 1,
+          "deliveredRead": 1,
+          "ack": 1,
+          "census": 1,
+          "refusal": 1,
+          "localFailure": 1
+        },
+        "checkpointExpected": true,
+        "perOperationCounts": {
+          "send": 1,
+          "deliveredRead": 1,
+          "ack": 1,
+          "census": 1,
+          "emptyRead": 1,
+          "refusal": 1
+        }
+      },
+      "shutdownMs": 10.14574999999968,
+      "stdioClosureConfirmed": true,
+      "stderrDisposition": "consumed through child close",
+      "shutdownDiagnosticObserved": false,
+      "ownedTerminalConfirmed": true,
+      "helperWasPresent": true,
+      "helperExitConfirmed": true,
+      "diagnosticBytes": 8759,
+      "diagnosticLines": 24,
+      "observedEvents": {
+        "broker.started": 1,
+        "broker.stopped": 0,
+        "transport.ready": 2,
+        "transport.reconnected": 1,
+        "pairing.account-pending": 1,
+        "pairing.account-approved": 1,
+        "pairing.principal-pending": 1,
+        "pairing.principal-approved": 1,
+        "membership.joined": 5,
+        "mailbox.admitted": 2,
+        "mailbox.read": 4,
+        "mailbox.acked": 2
+      },
+      "destination": "healthy",
+      "failedHelperApplicable": false,
+      "peakMainRssKiB": 63792,
+      "peakHelperRssKiB": 43120,
+      "peakTotalRssKiB": 106912,
+      "mainCpuSeconds": 0.14,
+      "helperCpuSeconds": 0.08,
+      "tail": [
+        {
+          "mainRssKiB": 63504,
+          "helperRssKiB": 43088,
+          "mainCpuSeconds": 0.14,
+          "helperCpuSeconds": 0.08
+        },
+        {
+          "mainRssKiB": 63792,
+          "helperRssKiB": 43120,
+          "mainCpuSeconds": 0.14,
+          "helperCpuSeconds": 0.08
+        }
+      ]
+    },
+    {
+      "revision": "new",
+      "mode": "healthy",
+      "preflight": true,
+      "startupFault": true,
+      "timedWorkloadRun": false,
+      "stdioClosureConfirmed": true,
+      "stderrDisposition": "consumed through child close",
+      "importMs": 16.891709,
+      "brokerStartMs": 61.2205,
+      "warmupMs": 101.34633300000002,
+      "fixtureFailure": {
+        "stage": "fixture-startup-fault",
+        "check": "startup-injected-fault"
+      },
+      "ownedTerminalConfirmed": true,
+      "helperWasPresent": true,
+      "helperExitConfirmed": true
+    },
+    {
+      "revision": "new",
+      "mode": "failed",
+      "checkpointCompleted": 6,
+      "checkpointReceipts": 1,
+      "partialCheckpointFile": "partial-07-new-failed.ndjson",
+      "deployment": "one embedded Broker/client process; default callbacks; old=process-start off,new=enabled",
+      "preflight": true,
+      "importMs": 17.853875000000002,
+      "brokerStartMs": 80.405,
+      "warmupMs": 101.96883300000002,
+      "actualLocalFailureWarmup": 1,
+      "watchOutcomes": {
+        "churnReady": 1,
+        "persistentReady": 1,
+        "reconnectReady": 1,
+        "refusal": 1
+      },
+      "workloadPreflight": {
+        "timedWorkloadRun": false,
+        "completed": 6,
+        "outcomes": {
+          "read": 1,
+          "send": 1,
+          "deliveredRead": 1,
+          "ack": 1,
+          "census": 1,
+          "refusal": 1,
+          "localFailure": 1
+        },
+        "checkpointExpected": true,
+        "perOperationCounts": {
+          "send": 1,
+          "deliveredRead": 1,
+          "ack": 1,
+          "census": 1,
+          "emptyRead": 1,
+          "refusal": 1
+        }
+      },
+      "shutdownMs": 12.843249999999898,
+      "stdioClosureConfirmed": true,
+      "stderrDisposition": "consumed through child close",
+      "shutdownDiagnosticObserved": false,
+      "ownedTerminalConfirmed": true,
+      "helperWasPresent": true,
+      "helperExitConfirmed": true,
+      "diagnosticBytes": 5439,
+      "diagnosticLines": 15,
+      "observedEvents": {
+        "broker.started": 1,
+        "broker.stopped": 0,
+        "transport.ready": 0,
+        "transport.reconnected": 0,
+        "pairing.account-pending": 1,
+        "pairing.account-approved": 1,
+        "pairing.principal-pending": 1,
+        "pairing.principal-approved": 1,
+        "membership.joined": 5,
+        "mailbox.admitted": 1,
+        "mailbox.read": 2,
+        "mailbox.acked": 1
+      },
+      "destination": "failed",
+      "failedHelperApplicable": true,
+      "peakMainRssKiB": 63808,
+      "peakHelperRssKiB": 43040,
+      "peakTotalRssKiB": 106400,
+      "mainCpuSeconds": 0.15,
+      "helperCpuSeconds": 0.08,
+      "tail": [
+        {
+          "mainRssKiB": 63360,
+          "helperRssKiB": 43040,
+          "mainCpuSeconds": 0.13,
+          "helperCpuSeconds": 0.08
+        },
+        {
+          "mainRssKiB": 63808,
+          "helperRssKiB": 0,
+          "mainCpuSeconds": 0.15,
+          "helperCpuSeconds": 0
+        }
+      ]
+    },
+    {
+      "revision": "new",
+      "mode": "unread",
+      "checkpointCompleted": 6,
+      "checkpointReceipts": 1,
+      "partialCheckpointFile": "partial-08-new-unread.ndjson",
+      "deployment": "one embedded Broker/client process; default callbacks; old=process-start off,new=enabled",
+      "preflight": true,
+      "importMs": 16.664875,
+      "brokerStartMs": 48.882000000000005,
+      "warmupMs": 101.99945800000003,
+      "actualLocalFailureWarmup": 1,
+      "watchOutcomes": {
+        "churnReady": 1,
+        "persistentReady": 1,
+        "reconnectReady": 1,
+        "refusal": 1
+      },
+      "workloadPreflight": {
+        "timedWorkloadRun": false,
+        "completed": 6,
+        "outcomes": {
+          "read": 1,
+          "send": 1,
+          "deliveredRead": 1,
+          "ack": 1,
+          "census": 1,
+          "refusal": 1,
+          "localFailure": 1
+        },
+        "checkpointExpected": true,
+        "perOperationCounts": {
+          "send": 1,
+          "deliveredRead": 1,
+          "ack": 1,
+          "census": 1,
+          "emptyRead": 1,
+          "refusal": 1
+        }
+      },
+      "shutdownMs": 8.426875000001019,
+      "stdioClosureConfirmed": true,
+      "stderrDisposition": "owned unread pipe disposed after fixture/helper exit",
+      "shutdownDiagnosticObserved": false,
+      "ownedTerminalConfirmed": true,
+      "helperWasPresent": true,
+      "helperExitConfirmed": true,
+      "diagnosticBytes": 0,
+      "diagnosticLines": 0,
+      "observedEvents": {
+        "broker.started": 0,
+        "broker.stopped": 0,
+        "transport.ready": 0,
+        "transport.reconnected": 0,
+        "pairing.account-pending": 0,
+        "pairing.account-approved": 0,
+        "pairing.principal-pending": 0,
+        "pairing.principal-approved": 0,
+        "membership.joined": 0,
+        "mailbox.admitted": 0,
+        "mailbox.read": 0,
+        "mailbox.acked": 0
+      },
+      "destination": "configured unread; queue not inspected",
+      "failedHelperApplicable": false,
+      "peakMainRssKiB": 63392,
+      "peakHelperRssKiB": 42976,
+      "peakTotalRssKiB": 106368,
+      "mainCpuSeconds": 0.14,
+      "helperCpuSeconds": 0.08,
+      "tail": [
+        {
+          "mainRssKiB": 63136,
+          "helperRssKiB": 42944,
+          "mainCpuSeconds": 0.14,
+          "helperCpuSeconds": 0.08
+        },
+        {
+          "mainRssKiB": 63392,
+          "helperRssKiB": 42976,
+          "mainCpuSeconds": 0.14,
+          "helperCpuSeconds": 0.08
+        }
+      ]
+    }
+  ]
+}

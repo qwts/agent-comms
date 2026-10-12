@@ -1,0 +1,16 @@
+{
+  "actualExitCode": 1,
+  "completedRuns": 2,
+  "runThreeStarted": false,
+  "rawQuantilesExact": true,
+  "hashes": {
+    "/tmp/comms-mailbox-overhead-failed-01/failure.json": "11feb8aa6d7244b3f3256ab5b4327cd09027a52397ba27fc55bfa0e75ed215cd",
+    "/tmp/comms-mailbox-overhead-failed-01/pairs.json": "708520968bd93844d841a933300ccb235daba5b6e1aad31669fa3faca27f70e7",
+    "/tmp/comms-mailbox-overhead-failed-01/runs.json": "7b245bb1525cef153ad80e25c3cf78a2cd86f27a633a767680aff5b395a16983",
+    "/tmp/comms-mailbox-overhead-failed-01/old.tar": "cece6a1d97361a2178c5ffda7e9e653aa0e470e00a5f59f73b4f10c9ab4a1b06",
+    "/tmp/comms-mailbox-overhead-failed-01/new.tar": "cece6a1d97361a2178c5ffda7e9e653aa0e470e00a5f59f73b4f10c9ab4a1b06",
+    "/tmp/comms-mailbox-overhead-failed-01/partial-01-old-failed.ndjson": "f832d754913932cc8a1c4fb4d8aae12de20ac267fadc2b55eb2837c18d8a0453",
+    "/tmp/comms-mailbox-overhead-failed-01/partial-02-new-failed.ndjson": "822d1c666fc550362c493c62f3919f3cfd407479567319810deaf1be3e0c1d2d",
+    "/tmp/comms-mailbox-overhead-failed-01-host-start.json": "3ba612904b19a1afeb0f5fd2e014425eda82f51bafa0fba342a811f9a072758a"
+  }
+}

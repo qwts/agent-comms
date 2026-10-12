@@ -1,0 +1,13 @@
+{
+  "status": "failed",
+  "stage": "parent-normal-stop",
+  "check": "budget-failed",
+  "runnerSha256": "83c2abf13eb5cde8eee7351e9de9cb0bda018b629a4574fc55e1748d5ec1968d",
+  "pairModuleSha256": "37290b1872c809df0104e9f4551884de5ad35f3822ec0ae27a0e4c095c3473bb",
+  "partialWorkload": {
+    "file": "partial-02-new-failed.ndjson",
+    "persisted": true,
+    "completed": 72000,
+    "receipts": 12
+  }
+}

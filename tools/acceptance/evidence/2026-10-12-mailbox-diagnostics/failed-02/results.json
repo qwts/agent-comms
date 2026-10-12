@@ -1,0 +1,116 @@
+{
+  "v": 1,
+  "platform": "darwin",
+  "arch": "arm64",
+  "osRelease": "27.0.0",
+  "node": "v26.11.1",
+  "nodeExecutableSha256": "f75a79e4c96954709a130427e452d6720b35c90318ca8293727a4c6376198453",
+  "runnerSha256": "c0caf7dae5358c6ef20cf761347cc4a48c1807d9987d0d01fd4442b3343bfe65",
+  "pairModuleSha256": "37290b1872c809df0104e9f4551884de5ad35f3822ec0ae27a0e4c095c3473bb",
+  "logicalCpus": 18,
+  "scope": "same current production archive opted-out versus enabled reporting; 1200 fresh sends/read/census/acks over720s, aggregate100requests/s, 1/s watch churn and reconnect/10s; includes existing instrumentation timing in both; no Windows/native/host/OTLP/export-command or isolated append latency claim",
+  "archives": {
+    "old": {
+      "pin": "f0eafb4faffa757b46310c25792dd126ea611f76",
+      "tree": "902aee03358f482f382c2b830822b4cbde5f71fe",
+      "archiveSha256": "f89a7ab7d0af897893fefc728910e75263ec17cedf69d0a62e3b05b0eebac5d6"
+    },
+    "new": {
+      "pin": "f0eafb4faffa757b46310c25792dd126ea611f76",
+      "tree": "902aee03358f482f382c2b830822b4cbde5f71fe",
+      "archiveSha256": "f89a7ab7d0af897893fefc728910e75263ec17cedf69d0a62e3b05b0eebac5d6"
+    }
+  },
+  "pairs": [
+    {
+      "mode": "failed",
+      "order": "old-new",
+      "deltas": [
+        {
+          "p95Ms": -0.02237400005105883,
+          "p99Ms": -0.2152510000159964,
+          "throughputRatio": 1.0000815241116994,
+          "operations": {
+            "send": {
+              "count": 1200,
+              "p95Ms": 0.055748999991919845,
+              "p99Ms": 0.30262499989476055
+            },
+            "deliveredRead": {
+              "count": 1200,
+              "p95Ms": 0.006999999997788109,
+              "p99Ms": 0.021791999947708973
+            },
+            "ack": {
+              "count": 1200,
+              "p95Ms": -0.06224999998812564,
+              "p99Ms": -0.18520799998077564
+            },
+            "census": {
+              "count": 1200,
+              "p95Ms": 0.016207999986363575,
+              "p99Ms": 0.03929099993547425
+            },
+            "emptyRead": {
+              "count": 66480,
+              "p95Ms": -0.002916000026743859,
+              "p99Ms": -0.04937400000198977
+            },
+            "refusal": {
+              "count": 720,
+              "p95Ms": -0.020834000017202925,
+              "p99Ms": -0.03816600004211068
+            }
+          }
+        }
+      ],
+      "additionalRssKiB": -4704,
+      "passes": true
+    },
+    {
+      "mode": "failed",
+      "order": "new-old",
+      "deltas": [
+        {
+          "p95Ms": -0.08095900000989786,
+          "p99Ms": -0.46654100000159815,
+          "throughputRatio": 1.0005340141886065,
+          "operations": {
+            "send": {
+              "count": 1200,
+              "p95Ms": -3.6322500000242144,
+              "p99Ms": -9.42941699991934
+            },
+            "deliveredRead": {
+              "count": 1200,
+              "p95Ms": -0.046917000006942544,
+              "p99Ms": -0.004875000013271347
+            },
+            "ack": {
+              "count": 1200,
+              "p95Ms": -6.140750999999,
+              "p99Ms": -8.207832999993116
+            },
+            "census": {
+              "count": 1200,
+              "p95Ms": -0.00779099999635946,
+              "p99Ms": -0.1952080000191927
+            },
+            "emptyRead": {
+              "count": 66480,
+              "p95Ms": -0.018708000017795712,
+              "p99Ms": -0.12487500004135654
+            },
+            "refusal": {
+              "count": 720,
+              "p95Ms": 0.05687499999476131,
+              "p99Ms": 0.030750000005355105
+            }
+          }
+        }
+      ],
+      "additionalRssKiB": 496,
+      "passes": true
+    }
+  ]
+}

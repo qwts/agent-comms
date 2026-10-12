@@ -1,0 +1,154 @@
+{
+  "observedAtUtc": "2026-10-12T18:30:25.158963+00:00",
+  "logicalCpus": 18,
+  "loadAverage": [
+    6.31982421875,
+    6.86328125,
+    6.927734375
+  ],
+  "topCpuProcesses": [
+    {
+      "pid": 74459,
+      "ppid": 1,
+      "cpuPercent": 128.3,
+      "rssKiB": 503120,
+      "category": "other"
+    },
+    {
+      "pid": 872,
+      "ppid": 1,
+      "cpuPercent": 14.2,
+      "rssKiB": 142864,
+      "category": "other"
+    },
+    {
+      "pid": 915,
+      "ppid": 1,
+      "cpuPercent": 9.3,
+      "rssKiB": 168688,
+      "category": "other"
+    },
+    {
+      "pid": 84498,
+      "ppid": 83982,
+      "cpuPercent": 8.3,
+      "rssKiB": 44944,
+      "category": "other"
+    },
+    {
+      "pid": 8475,
+      "ppid": 1,
+      "cpuPercent": 6.4,
+      "rssKiB": 159776,
+      "category": "other"
+    },
+    {
+      "pid": 58110,
+      "ppid": 1,
+      "cpuPercent": 5.8,
+      "rssKiB": 91344,
+      "category": "other"
+    },
+    {
+      "pid": 23267,
+      "ppid": 8512,
+      "cpuPercent": 3.2,
+      "rssKiB": 595312,
+      "category": "other"
+    },
+    {
+      "pid": 39103,
+      "ppid": 1,
+      "cpuPercent": 2.7,
+      "rssKiB": 880256,
+      "category": "other"
+    },
+    {
+      "pid": 996,
+      "ppid": 1,
+      "cpuPercent": 2.5,
+      "rssKiB": 43328,
+      "category": "other"
+    },
+    {
+      "pid": 1325,
+      "ppid": 1,
+      "cpuPercent": 2.4,
+      "rssKiB": 27568,
+      "category": "other"
+    },
+    {
+      "pid": 1123,
+      "ppid": 1,
+      "cpuPercent": 1.3,
+      "rssKiB": 43120,
+      "category": "other"
+    },
+    {
+      "pid": 884,
+      "ppid": 1,
+      "cpuPercent": 1.0,
+      "rssKiB": 20112,
+      "category": "other"
+    },
+    {
+      "pid": 40355,
+      "ppid": 22737,
+      "cpuPercent": 1.0,
+      "rssKiB": 512848,
+      "category": "other"
+    },
+    {
+      "pid": 1199,
+      "ppid": 1,
+      "cpuPercent": 0.8,
+      "rssKiB": 158544,
+      "category": "other"
+    },
+    {
+      "pid": 9493,
+      "ppid": 9137,
+      "cpuPercent": 0.8,
+      "rssKiB": 199792,
+      "category": "other"
+    },
+    {
+      "pid": 54934,
+      "ppid": 57945,
+      "cpuPercent": 0.8,
+      "rssKiB": 509680,
+      "category": "other"
+    },
+    {
+      "pid": 84844,
+      "ppid": 57945,
+      "cpuPercent": 0.8,
+      "rssKiB": 538096,
+      "category": "other"
+    },
+    {
+      "pid": 842,
+      "ppid": 1,
+      "cpuPercent": 0.7,
+      "rssKiB": 94400,
+      "category": "other"
+    },
+    {
+      "pid": 1526,
+      "ppid": 1,
+      "cpuPercent": 0.7,
+      "rssKiB": 35168,
+      "category": "other"
+    },
+    {
+      "pid": 31004,
+      "ppid": 22737,
+      "cpuPercent": 0.7,
+      "rssKiB": 81824,
+      "category": "other"
+    }
+  ],
+  "knownAgentComputeHeld": true,
+  "externalActivityControlled": false,
+  "qualification": "Point observation only; external activity unknown and uncontrolled."
+}
