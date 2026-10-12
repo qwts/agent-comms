@@ -23,8 +23,9 @@ head `2d94b16a17f7d0a8625e6151e97fee844232aab1`, tree
 `d3465c40e5e11561f22f3aa720f74146aa70b2091dcd09c34c1c4046daea6853`.
 The tool refuses a tree or digest mismatch before extraction/import. This
 single candidate report has no old/new comparison or offered-rate stages;
-the existing capacity pins remain unchanged. No corrected native startup pass
-is claimed before a reviewed manual run. Resource/profile/cleanup guards and
+the existing capacity pins remain unchanged. The first reviewed manual attempt failed; its
+[retained receipt](../../docs/windows-candidate-startup-evidence.md)
+does not establish corrected native startup or capacity. Resource/profile/cleanup guards and
 the 90-second startup deadline remain identical. Known production refusal
 codes are retained through correlated fixture IPC; error text and causes are
 excluded. Local stub IPC tests establish classification and cleanup mechanics,

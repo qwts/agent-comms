@@ -114,7 +114,9 @@ rate offers, old/new comparison or capacity qualification. CPU remains
 recorded without a numeric gate. A retained fixed broker refusal code does
 not include raw error text, paths, cause or request data. This source repair
 addresses demonstrated probe settlement defects; it is not asserted to explain
-previous hosted timeouts. No corrected startup result is claimed yet.
+previous hosted timeouts. The first corrected-source startup attempt failed;
+its [retained receipt](windows-candidate-startup-evidence.md)
+establishes cleanup, not corrected native startup or capacity.
 
 After exact tool source review and native CI, the explicit candidate command is:
 

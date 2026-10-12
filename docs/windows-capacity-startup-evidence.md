@@ -108,3 +108,7 @@ probe precede any subsequent startup/preflight/capacity work.
 
 [Observer sample evidence](windows-capacity-sample-evidence.md) records the
 subsequent custody-ready result and sampling timeout with retained cleanup.
+
+
+[Corrected-source startup evidence](windows-candidate-startup-evidence.md) records
+the separate reviewed correction attempt, which also failed before pairing.
