@@ -7,8 +7,11 @@ an authorization, release work or dispatch a daemon event. Those remain the
 responsibility of the custody-checked, journal-backed coordinator.
 
 Inputs are the retained prepared wrapper and independently saved admission,
-complete native `p1` token, independently enrolled presence public key, broker
-receipt private key and trusted current clock. The issuer snapshots admission
+complete native `p1` token, independently enrolled presence and broker public
+keys, and trusted current clock. Public-only preparation returns an opaque
+snapshotted signing intent; a separate one-use finalizer verifies the native
+raw signature at a fresh finish clock. The legacy private-KeyObject wrapper
+remains a synthetic fixture API only. See [protected signing](owner-decision-protected-signing.md). The issuer snapshots admission
 bytes and fields, validates the retained challenge and stage with the existing
 prepared decoder, and checks presence with the pinned bot-owned verifier.
 Receipt, presence and selected daemon vouch key identities must all differ.
@@ -18,7 +21,8 @@ Issuance time is the current clock floored to epoch seconds. Expiry is the
 minimum of issuance plus 60 seconds, the saved preparation deadline (including
 its stage cap), and presence expiry. Equality with any expiry refuses issuance;
 the presence verifier's historical skew allowance never extends a new receipt.
-The issuer signs the canonical unpadded base64url payload segment, then checks
+The protected producer signs the canonical unpadded base64url payload segment;
+the finalizer checks
 the complete result through the existing joint action/challenge/presence/receipt
 verifier. Only the receipt token, its complete-token digest and typed payload
 are returned. Errors have a fixed message and contain no source data.

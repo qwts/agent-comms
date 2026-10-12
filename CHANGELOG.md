@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Disabled connected asynchronous receipt signing retains a durable presence intent before signing, verifies private candidates with a fresh clock, and requires one-use journal completion before dispatch. Bounded invocation lifetime, cancellation/revocation/restart tests and an operation-specific native contract advance integration without activating protected custody or physical support (#77).
+
 ## [0.5.3] - 2026-10-12
 
 ### Fixed

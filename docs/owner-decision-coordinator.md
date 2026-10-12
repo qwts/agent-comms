@@ -6,8 +6,7 @@ and [receipt issuer](owner-decision-receipt-issuer.md). Actual Broker ingress no
 imports a separate refusing production factory. Only an explicitly selected trusted
 synthetic fixture can construct the working composition. All authority and
 physical capability flags remain false.
-This is integration source and fixture evidence, not native custody, physical
-reservation support or completed #77 acceptance.
+This is source/fixture evidence, not completed #77 acceptance.
 
 ## Authentication and target provenance
 
@@ -17,7 +16,7 @@ principal impersonation is rejected. Exact operation envelopes accept no sender,
 alternate principal, alternate authentication identity, verifier or authorization
 callback. Internal object encoding is bounded before recursion at depth eight,
 32 KiB and 32 keys per object; the exact operation decoders impose smaller
-semantic bounds. Future transport framing remains independently required.
+semantic bounds.
 
 Before admission, a distinctly named selector-scope check intersects the current
 approved principal's ordinary target grant and scoped owner grant with its exact
@@ -51,9 +50,9 @@ exhaustion cannot reset the namespace, retained IDs or reservations. The termina
 revocation safety property agrees with the daemon producer direction, but this
 synthetic state is not that producer's persistence implementation.
 
-Each accepted request retains exactly its selected socket and enrollment pair
-revision in a bounded ephemeral map (at most 4096 entries). Issuance and release
-read a fresh synchronous enrollment snapshot and recheck current principal,
+Each request retains its selected socket and exact enrollment/source identity
+in a bounded ephemeral map (at most 4096 entries). Issuance and release
+read a fresh public enrollment snapshot and recheck current principal,
 ordinary/scoped grants, account/daemon approval, exact selected key/epoch/watch
 and three-way receipt/presence/daemon key separation. Re-enrolling identical keys
 with another revision cannot revive that attempt. Native protected custody and
@@ -70,12 +69,13 @@ never replaces a request's saved socket. Prepared reports reconstruct the
 challenge from broker-saved fields and strictly validate nonce, time and public
 stage before persisting the existing prepared wrapper and acknowledging it.
 
-Confirmation validates complete p1 through the existing issuer. The complete
-outgoing decision frame is bounded before spending any proof. Presence, exact
-receipt and authorization are journaled before one decision event; duplicate
-confirmation never signs or dispatches another receipt. Partial proof prefixes
-cannot be used to authorize again. Visible bytes after reopen require explicit
-storage recovery; neither status nor duplicate handling auto-forwards work.
+The [asynchronous signing path](owner-decision-protected-signing.md) validates
+p1 and bounds the eventual frame before durably retaining presence. A private
+one-use handle completes receipt/authorization only after a native candidate
+and fresh authority checks; duplicate or restarted attempts cannot re-sign.
+Candidates remain private until durable authorization, before one decision
+event. Partial prefixes require explicit recovery and never auto-forward.
+Legacy synchronous signing remains an explicit synthetic fixture API only.
 
 The first online check rechecks current authority and the complete proof, then
 synchronously journals release with no asynchronous gap. Only a newly persisted

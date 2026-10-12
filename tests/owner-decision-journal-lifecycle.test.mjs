@@ -185,3 +185,27 @@ test('fixed error mapping is sanitized and never invents outcome state', () => {
     assert.equal(JSON.stringify(result).includes('secret-canary'), false); assert.equal(Object.hasOwn(result, 'state'), false);
   }
 });
+
+test('signing intent and private finish survive real process interruption only as spent or uncertain evidence', darwin, async t => {
+  const run = children(t);
+  for (const point of ['presence:fixed-body-flushed', 'presence:fixed-trailer-flushed',
+    'receipt:fixed-body-flushed', 'receipt:fixed-trailer-flushed', 'authorization:fixed-body-flushed', 'authorization:fixed-trailer-flushed']) {
+    const dir = temporary(t); prefix(dir, 1);
+    const source = `import fs from 'node:fs';
+      import { OwnerDecisionJournalStore as Store } from ${JSON.stringify(journalUrl)};
+      import { lifecycleInput, config, namespaceDigest } from ${JSON.stringify(helperUrl)};
+      const i=lifecycleInput(), id=i.action.requestId;
+      const s=new Store(${JSON.stringify(dir)},{namespaceDigest,format:'fixed-v1',lifecycle:{brokerPublicKeys:config.brokerPublicKeys,presencePublicKeys:config.presencePublicKeys},now:()=>i.acceptance.acceptedAt*1000,
+        fault:at=>{if(at===${JSON.stringify(point)}){fs.writeSync(1, 'FAULT:'+at+'\\n');process.kill(process.pid,'SIGKILL')}}});
+      s.recover(id); const handle=s.beginSigning(id,i.slots.get('presence'));
+      s.finishSigning(handle,{receiptBytes:i.slots.get('receipt'),authorizationBytes:i.slots.get('authorization')});process.exit(42);`;
+    const result = await run(source);
+    assert.deepEqual([result.code, result.signal], [null, 'SIGKILL']); assert.equal(result.output, `FAULT:${point}\n`);
+    let reopened;
+    try { reopened = open(dir); } catch (error) { assert.equal(error.message, 'owner-journal-corrupt'); assert(point.includes('body')); continue; }
+    reopened.recover(id);
+    reject(() => reopened.beginSigning(id, input.slots.get('presence')), 'owner-journal-id-spent');
+    reject(() => reopened.finishSigning({}, { receiptBytes: input.slots.get('receipt'), authorizationBytes: input.slots.get('authorization') }), 'owner-journal-id-spent');
+    assert.equal(reopened.read(id).slots.has('release'), false);
+  }
+});
