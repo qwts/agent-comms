@@ -198,8 +198,16 @@ try {
         $exitCode = 1
     }
     # This fallback contains only bounded control fields, never paths or SIDs.
+    $childGate = $null
+    $childErrorType = $null
+    if ($reportData.standardUser.failure) {
+        $candidateGate = $reportData.standardUser.failure.gate
+        $childGate = if ($candidateGate -in @('validate-profile-token','clone-child-owned-inputs','production-connector-capacity','production-interactive-task-and-engine')) { $candidateGate } else { 'unknown-child-stage' }
+        $candidateType = [string]$reportData.standardUser.failure.errorType
+        $childErrorType = if ($candidateType -cmatch '^[A-Za-z][A-Za-z0-9]{0,95}$') { $candidateType } else { 'unknown-child-error' }
+    }
     @{status=$(if ($exitCode -eq 0) { 'passed' } else { 'failed' });gate=$gate;
-      errorType=$(if ($failure) { $failure.errorType } else { $null });cleanup=@($cleanupErrors.ToArray())} |
+      errorType=$(if ($failure) { $failure.errorType } else { $null });childGate=$childGate;childErrorType=$childErrorType;cleanup=@($cleanupErrors.ToArray())} |
         ConvertTo-Json -Depth 4 -Compress | ForEach-Object { [Console]::Out.WriteLine($_) }
     if ($password) { $password.Dispose() }
     $password = $null

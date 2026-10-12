@@ -103,6 +103,20 @@ the FileSystem provider path explicitly and prints a fixed, path-free terminal
 summary even if report writing fails. Windows CI deliberately separates those
 directories to check that reports follow PowerShell's location.
 
+The second preflight
+[38202529932](https://github.com/qwts/agent-comms/actions/runs/38202529932), at
+head `bf91367c2ae21950a1796330173514a07c649109`, also failed. Its fixed console
+summary records a failed child exit with no bootstrap exception or cleanup
+errors. Its retained full-log SHA256 is
+`37ce2d742f87e38324f745a15d68420b91025bf01d65e22ca632528373b4b12b`.
+The upload step again omitted reports: the action's default hidden-file
+exclusion applies to files within `.windows-results/`. This confirmed upload
+defect is separate from the earlier directory-resolution hypothesis. The
+workflow now enables hidden files only for four named JSON report paths; it
+uploads no recursive source, credential or state directories. The console
+fallback also records the bounded child bootstrap failure gate and error type.
+Neither failed run establishes startup/cleanup or capacity qualification.
+
 After reviewing the exact PR, root dispatches `capacity-preflight` first. It
 checks old/new normal startup and cleanup, an injected startup fault and forced
 job disposal, with no offered capacity workload. Review any failure before
@@ -117,8 +131,11 @@ verified standard-user bootstrap environment and Windows Node executable.
 This CI bootstrap must never run on an owner's computer. Root alone operates
 the separate signed-in desktop lab; hosted results cannot substitute for it.
 
-Retain the entire `windows-engine-acceptance` workflow artifact, including
-source archives, exact raw capacity/failure/partial records and bootstrap cleanup.
+Retain the entire `windows-engine-acceptance` workflow artifact, containing
+the named acceptance, capacity, failure and partial JSON records when present,
+including bootstrap cleanup and source archive hashes. Source archives and
+extractions stay in disposable scratch and are not uploaded; reproduce them
+with `git archive --format=tar` at the recorded exact pins.
 Do not check source archives, extracted trees or generated credentials into Git.
 An early failure remains failure; cleanup or account provisioning failure must
 not be relabelled as a measured connector capacity limit. No release bump or
