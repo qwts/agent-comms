@@ -100,13 +100,18 @@ function owned(file,args,stdio) {
 // actual Node serialization -> WMI -> the existing CommandLineToArgvW guard,
 // without running the worker. CI's account/profile is not hosted standard-user
 // PowerShell bootstrap or production compiler acceptance.
+// Only this inert argv canary requests console detachment. Windows libuv does
+// not request job breakaway: the fixture is attached before this spawn, and
+// the unchanged sampler must still observe the child in the private job.
+// Keep the child referenced, drain its pipes, kill it explicitly and await
+// close; this test does not claim production launcher or console parity.
 for (const variant of ['exact','count-mismatch','value-mismatch']) test(`native classifier preserves ${variant} for trusted multiline worker argv`,{skip:process.platform!=='win32',timeout:60000},async()=>{
   const directory=mkdtempSync(path.join(os.tmpdir(),'comms argv parity '));
   const script=path.join(directory,'paused.mjs');
   writeFileSync(script,`import {spawn} from 'node:child_process';
 let child;process.send({id:0,paused:true});
 process.on('message',({id,op,args})=>{
- if(op==='start'){child=spawn(process.execPath,args,{stdio:['ignore','pipe','pipe'],windowsHide:true});child.stdout.resume();child.stderr.resume();child.once('spawn',()=>process.send({id,ok:true,spawned:true}));}
+ if(op==='start'){child=spawn(process.execPath,args,{stdio:['ignore','pipe','pipe'],windowsHide:true,detached:true});child.stdout.resume();child.stderr.resume();child.once('spawn',()=>process.send({id,ok:true,spawned:true}));}
  if(op==='stop'){child.once('close',()=>process.send({id,ok:true,stopped:true},()=>process.disconnect()));child.kill();}
 });`);
   const shell=path.join(process.env.SystemRoot,'System32/WindowsPowerShell/v1.0/powershell.exe');

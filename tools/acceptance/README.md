@@ -114,6 +114,13 @@ then retained a builtin console-host match with a nonfixture parent. This
 establishes that executable observation in this CI sample; it does not establish
 its creation timing, an argv serialization failure, or the earlier hosted
 compiler-control failure's cause.
+The subsequent [phase diagnostic](https://github.com/qwts/agent-comms/actions/runs/38258216938)
+passed its fixture-only sample and refused a console-host row after child start,
+with an owned nonfixture Node-executable parent. The inert argv canary now
+requests console detachment while retaining inherited private-job containment,
+piped output, explicit termination and close waits. Exact whole-job acceptance
+remains required. This test-only launch differs from the production helper;
+it does not establish production console parity or explain the prior failures.
 
 ## Incremental lifecycle instrumentation comparison
 
