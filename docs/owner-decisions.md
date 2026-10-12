@@ -5,7 +5,9 @@
 released API. The issue remains [#77](https://github.com/qwts/agent-comms/issues/77).
 Agent-comms owns broker authorization/receipts; agent-bot owns mutation and
 presence semantics; the native host owns credential custody and prompting.
-Every field and fixture needs joint review before implementation.
+The [wire schemas and state machine](owner-decision-wire.md) define envelopes,
+display and adapter boundaries. Every field/fixture needs joint review before
+implementation; no runtime, migration or capability advertisement is authorized.
 
 ## Prepare and confirm
 
@@ -17,28 +19,32 @@ Every field and fixture needs joint review before implementation.
 2. The daemon resolves its soul, validates parameters and expected revision,
    and durably records a challenge: request ID, principal, operation,
    canonical payload digest, random 32-byte base64url nonce and expiry.
-   It returns the challenge through a daemon-authenticated result. A
+   It returns the challenge through a daemon-authenticated prepared response.
+   The broker durably records it before exposing it to the principal. A
    preparation lasts 180 seconds; it can be cancelled without mutation.
 3. The native host independently validates the operation and rebuilds the
    action text from the challenge and parameters. It shows the complete
    bounded summary and requests a `p1` presence assertion with that nonce.
-   Native custody and verified signing identity must meet ADR-0077. Merely
-   setting a method name or capability flag is not evidence of support.
+   Native custody and verified signing identity must meet ADR-0077; a method
+   name or capability flag proves no support.
 4. `owner-decision` confirms the same request with its presence assertion.
    Broker rechecks grants and verifies action, nonce, native key and time.
-   It first requires a live target watch, then durably spends the challenge,
+   It first requires the selected live target watch and unchanged daemon
+   pairing epoch, then durably spends the challenge,
    records authorization, signs the receipt and delivers it only to that
    watch. Principal secrets never enter a daemon frame. No live watch returns
    `daemon-unavailable` without spending; a lost delivery after spending is
    reconciled through status, never resubmitted as a new authorized effect.
-5. The daemon verifies the receipt and presence, rechecks its challenge,
-   target and expected revision under its per-soul mutation lock, and asks the broker `owner-decision-check`
-   with the receipt digest using its daemon credential. The broker confirms
-   current principal/account/grant/key validity and durably marks this
-   receipt released to that daemon, once. The daemon then durably marks its
-   challenge spent before entering the mutation. Its result is recorded
-   through `owner-decision-result` and queried by the principal through
-   `owner-decision-status`.
+5. The daemon verifies the receipt and presence and checks its challenge and
+   target in its per-soul asynchronous coordinator. It asks the broker
+   `owner-decision-check` with the complete-token receipt digest using its
+   daemon credential. The broker confirms current principal/account/grant/key
+   validity and durably releases this receipt to that daemon, once. With the
+   first successful response still live, the daemon takes the existing
+   synchronous mutation lock, rechecks all expected state and the receipt
+   deadline, then durably consumes its challenge before the effect. No await
+   crosses that lock. Its result is recorded through `owner-decision-result`
+   and queried by the principal through `owner-decision-status`.
 
 The broker check is the authorization linearization point: revocation that
 precedes it refuses; revocation after it cannot undo an authorized operation
@@ -50,14 +56,13 @@ retried into mutation. It is reconciled as an uncertain request.
 | Operation | Parameters and daemon validation |
 | --- | --- |
 | `revision.approve`, `revision.reject` | `proposalId`, `expectedRevision`, bounded `reason`; verify that the proposal belongs to this soul and is pending. |
-| `revision.adopt`, `revision.edit` | `stagingId`, `packageDigest`, `expectedRevision`, `reason`; edit also requires explicit boolean `apply`. Use a daemon-owned prepared snapshot, verify its digest, and call existing package validation. |
-| `cold-wake.set` | `mode`: `on`, `off`, `webhook` or `resume`; `session` is required only for `resume`. Apply existing daemon policy and session validation. |
+| `revision.adopt`, `revision.edit` | `stagingId`, `packageDigest`, `expectedRevision`, `reason`; adopt requires `expectedRevision: null` (no revision head), edit requires a revision and explicit boolean `apply`. Use a daemon-owned prepared snapshot, verify its digest, and call existing package validation. |
+| `cold-wake.set` | `mode`: `on`, `off`, `webhook` or `resume`; resume requires `policy: "read-only"` or `"workspace"`, never a caller-selected session. Webhook requires a prepared secret snapshot, its digest and public host. Apply existing daemon validation. |
 
-Staging requires a separate owner-authenticated preparation path reviewed in
-agent-bot. A receipt never instructs the daemon to read an arbitrary host
-path, interpret a shell string or accept an unchecked package. Stage expiry,
-size and retention must be bounded before enabling adopt/edit. Unsupported
-operations refuse; deploying only approve/reject cannot close #77.
+Package and webhook-secret staging require a separate owner-authenticated
+preparation path reviewed in agent-bot and the native host. A receipt never instructs the daemon to read an arbitrary host
+path, interpret a shell string or accept an unchecked package. Staging limits apply before enabling adopt/edit/webhook. Unsupported operations
+refuse; deploying only approve/reject cannot close #77.
 
 Unknown fields, ambiguous addresses and invalid types refuse. Limits are
 the smaller of the existing daemon limit and 32 KiB for the complete frame;
@@ -69,35 +74,22 @@ added by preparation.
 
 The immutable action payload is
 `{ v, requestId, principal, account, soul, operation, parameters }` with `v: 1`.
-Action and decoded `d1` receipt payloads use canonical UTF-8 JSON, without
-BOM or whitespace outside strings:
-
-- Object keys must be the ASCII field names allowed by the applicable schema,
-  sorted recursively by unsigned ASCII bytes. Reject duplicate, unknown and
-  non-ASCII keys. Arrays preserve order;
-  booleans and null use their JSON literals.
-- Numbers are integers in `[-9007199254740991, 9007199254740991]`, written in
-  decimal with an optional minus followed by digits. Zero is `0`; reject
-  negative zero, leading zeros, plus signs, decimal points and exponent forms.
-- Strings contain Unicode scalar values; reject invalid UTF-8 and unpaired
-  surrogates. Escape quotation mark and backslash as `\"` and `\\`, and
-  U+0008/0009/000A/000C/000D as `\b`/`\t`/`\n`/`\f`/`\r`. Escape other
-  U+0000–001F values as lowercase `\u00xx`. Emit all other characters as
-  their UTF-8 bytes, including `/` and non-ASCII characters. Do not normalize
-  Unicode or allow alternative escapes for those characters.
-
-Only bounded strings, objects, arrays, booleans, null and these integers are
-permitted. Reject bytes differing from this canonical encoding; hash the
-canonical action bytes with SHA-256.
+Action and decoded `d1` receipt payloads use the strict
+[canonical UTF-8 encoding](owner-decision-serialization.md). Hash the exact
+canonical action bytes with SHA-256; alternate representations refuse.
 
 The presence action is the one-line text
 `Owner decision <operation> for <account>/<soul>: <summary>; request <requestId>; payload sha256:<digest>`.
-`summary` names every decision-relevant parameter and is independently derived
-from validated typed parameters; both verifiers reconstruct the exact text.
-It must fit the native trusted prompt
-in full, capped at 500 UTF-8 bytes. If it does not fit, refuse preparation;
-never truncate. The
-nonce and action therefore bind the human ceremony to one immutable request.
+`summary` uses the exact labeled per-operation grammar in the
+[wire specification](owner-decision-wire.md#typed-summary-and-native-display).
+It names the proposed change; the digest also binds staging locators and
+expected-revision preconditions omitted from the summary. Both verifiers
+reconstruct the exact text from validated typed parameters. The complete action
+must satisfy keyd's existing printable-text bound of 400 Unicode scalar values
+and the additional 500 UTF-8 byte bound. If either fails, refuse preparation;
+never truncate, shorten a digest or silently invoke another proof mechanism.
+The existing separate local owner ceremony may be offered explicitly. The nonce
+and action bind the human ceremony to one immutable request.
 
 ```text
 d1.<base64url(payload JSON)>.<base64url(Ed25519 signature)>
@@ -118,7 +110,8 @@ original segment, including zero unused trailing bits. The
 in the action text are exactly 64 lowercase hexadecimal characters: no
 `sha256:` prefix inside a field, uppercase, padding or alternate encoding.
 `payloadDigest` and the action's `<digest>` hash the canonical action payload;
-`presenceDigest` hashes the complete ASCII `p1` token. `brokerKey` and
+`presenceDigest` hashes the complete ASCII `p1` token; `receiptDigest` in
+check/result envelopes hashes the complete ASCII `d1` token. `brokerKey` and
 `presenceKey` identify enrolled public keys by SHA-256 of DER SPKI bytes;
 neither supplies a new trusted key. keyd's `actionDigest` remains lowercase
 SHA-256 hex of the action text.
@@ -143,11 +136,12 @@ request returns its recorded status; it never repeats presence or application
 automatically. Only the original principal with current grants can read
 status; only the target daemon can report a matching result.
 
-Persist authorization/consumption before side effects. Terminal outcomes are
-`applied`, `refused` and `indeterminate`; retain spent IDs through at least
-the last possible receipt acceptance. After that, reject expired tokens
-before consulting retained status. Keep unsettled IDs until explicit owner
-reconciliation. Crash after effect but before result, or after authorization
+Persist authorization/consumption before side effects. Application outcomes are
+`applied`, `refused` and `indeterminate`; the state machine separately records
+pre-authorization cancellation and expiry. Retain spent-ID tombstones; a
+request ID is never reusable. Expired tokens cannot authorize any work, while
+an authenticated status query can still read retained outcomes. Keep unsettled
+IDs until explicit owner-local reconciliation. Crash after effect but before result, or after authorization
 release without proven application, is `indeterminate`. Reconciliation checks
 the actual revision/settings and records a result; any new attempt uses a
 new request ID and fresh owner presence. Journal write failure refuses work.
@@ -161,10 +155,8 @@ replacement. Lost/corrupt/mismatched keys disable owner decisions, with a
 separate owner-verified recovery ceremony and audit receipt. Clients never
 trust a key sent in an unverified frame or silently adopt changed names.
 
-Current agent-bot
-[owner-statement behavior](https://github.com/qwts/agent-bot-identity/blob/64b1c170ed25f4943e01a9f20334c065fd92d661/docs/owner-statements.md)
-keeps challenge authorization disabled until pin integrity is protected.
-This proposal neither enables that fallback nor claims existing `p1`
-issuance meets the strengthened native storage boundary. No native presence
-means no broker receipt. Existing local administrator consent does not become
-an exportable assertion merely because a host says it succeeded.
+Agent-bot's [pin-attested statement path](owner-decision-conformance.md#dependency-boundaries)
+is distinct from this proposal. Existing p1 issuance does not establish the
+required native custody. Without protected native presence, no broker receipt
+is issued; a host's success claim or local administrator consent is not an
+exportable assertion.
