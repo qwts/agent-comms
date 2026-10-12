@@ -23,6 +23,9 @@ head `cb50469ca0b6757c4ab860de582b9b140fc525a0`, tree
 `85991a457b19c0f7367ca7a1d7fabbeadd7acb3bf15828f37594a5669c185ef6`.
 The [explicit source refresh](../../docs/windows-candidate-stage-refresh.md) preserves
 the original `2d94b16a` reports without relabelling them as current-pin evidence.
+The [first refreshed-source attempt](../../docs/windows-candidate-connector-stage-evidence.md)
+failed at pair with the existing local `startup-timeout` stage; no underlying
+helper cause or startup-plus-delivery acceptance is inferred.
 The tool refuses a tree or digest mismatch before extraction/import. This
 single candidate report has no old/new comparison or offered-rate stages;
 the existing capacity pins remain unchanged. The first reviewed manual attempt failed; its

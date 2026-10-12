@@ -61,3 +61,8 @@ nonguaranteed diagnostic headroom, not performance acceptance or an extrapolated
 storage wall-time budget. Only exact reviewed-head native CI and separate
 manual authorization can precede a new candidate-startup run. No rerun or
 capacity qualification is implied by this source change.
+
+The [first refreshed-source startup attempt](windows-candidate-connector-stage-evidence.md)
+retains a fixed `startup-timeout` at pairing and confirmed owned cleanup.
+It does not qualify startup-plus-delivery or identify which helper startup
+interval consumed the production connector deadline.
