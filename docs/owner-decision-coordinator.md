@@ -132,18 +132,19 @@ created and no owner event is sent.
 The line reader supplies privately attested original Buffer frame size,
 including LF and CR when present. Owner ingress requires at most 32768 bytes,
 including whitespace and escaped JSON; a request field cannot forge that
-metadata. A trusted UTF-8 validity flag rejects malformed owner frames before
-authentication or reconstruction; ordinary JSON parsing retains its existing
-replacement behavior. Already decoded streams cannot attest original bytes. Ordinary comms
-retains its existing 128 KiB line limit and JSON behavior. These owner routes
+metadata. A trusted UTF-8 flag rejects malformed owner frames before
+authentication; ordinary JSON parsing retains replacement behavior.
+Decoded streams cannot attest original bytes. Ordinary comms
+retains its 128 KiB line limit and JSON behavior. These owner routes
 are reachable refusals, not an enabled owner capability.
 
-The shared generic envelope JSON parser still accepts up to its existing
-128 KiB bound before operation classification. The stricter owner 32 KiB check
-then precedes authentication and typed canonical decoding; it is not a preparse
-owner limit. The wire contract's before-decoding owner bound remains an enabling
-prerequisite: a dedicated bounded ingress or jointly reviewed incremental
-envelope classifier must satisfy it. This slice does not waive that requirement.
+Broker readers scan each complete bounded raw line once before JSON parsing.
+Any top-level owner `op`, including escaped keys/values or duplicate fields,
+requires valid UTF-8 and at most 32768 bytes including LF. Nested/quoted decoys
+do not select this policy. Only bounded ASCII candidates are decoded, without
+JSON parsing; generic grammar validation follows. Shared buffering retains the
+128 KiB ceiling: this is an owner preparse limit, not a 32 KiB buffering claim.
+Ingress independently rechecks attested size/UTF-8 before authentication.
 
 Preparation has a rolling monotonic 60-second limit of six attempts per
 authenticated principal/account and twelve per principal. Both buckets share
