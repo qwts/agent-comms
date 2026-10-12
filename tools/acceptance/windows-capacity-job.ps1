@@ -312,6 +312,9 @@ public static class CapacityJob {
                         $classification.executablePathPresent = $row.ExecutablePath -is [string] -and $row.ExecutablePath.Length -gt 0
                         $classification.builtinConsoleHostMatch = [string]::Equals($row.ExecutablePath, [IO.Path]::Combine($env:SystemRoot,'System32','conhost.exe'), [StringComparison]::OrdinalIgnoreCase)
                         $classification.parentIsFixture = $row.ParentProcessId -eq $fixtureId
+                        $ownedParent = @($rows | Where-Object { $_.ProcessId -eq $row.ParentProcessId })
+                        $classification.parentInOwnedRows = $ownedParent.Count -gt 0
+                        $classification.parentIsDiagnostic = @($ownedParent | Where-Object { $_.ProcessId -ne $fixtureId -and $_.ExecutablePath -ieq $nodeExecutable }).Count -gt 0
                         throw 'unexpected-owned-executable'
                     }
                     $classification.check = 'owned-parent'
@@ -378,7 +381,7 @@ public static class CapacityJob {
         $failure = @{check='job-supervisor-failed';phase=$phase}
         if ($phase -eq 'sample-classify' -and $classification.check -in @('argv-parse','executable','compiler-parent','compiler-arguments','compiler-response','owned-parent','argv-count','argv-equality','pid-reuse','history-bound','kind-bound')) {
             $failure.classification = @{check=$classification.check}
-            foreach ($key in @('argvCountMatches','argvMatches','executablePathPresent','builtinConsoleHostMatch','parentIsFixture')) {
+            foreach ($key in @('argvCountMatches','argvMatches','executablePathPresent','builtinConsoleHostMatch','parentIsFixture','parentIsDiagnostic','parentInOwnedRows')) {
                 if ($classification[$key] -is [bool]) { $failure.classification[$key] = $classification[$key] }
             }
         }

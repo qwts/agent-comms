@@ -18,9 +18,11 @@ test('classification projector retains closed own primitive fields and independe
   assert.equal(projected.check,'argv-equality');
   const error=new Error('CANARY-error');Object.defineProperty(error,'supervisorClassification',{value:projected});
   assert.deepEqual(supervisorClassificationFromError(error),projected);
-  const executable={check:'executable',executablePathPresent:true,builtinConsoleHostMatch:true,parentIsFixture:false};
+  const executable={check:'executable',executablePathPresent:true,builtinConsoleHostMatch:true,parentIsFixture:false,parentIsDiagnostic:true,parentInOwnedRows:true};
   assert.deepEqual(projectSupervisorClassification(executable),executable);
   assert.deepEqual(projectSupervisorClassification({...executable,executablePathPresent:false,builtinConsoleHostMatch:false}),{...executable,executablePathPresent:false,builtinConsoleHostMatch:false});
+  assert.deepEqual(projectSupervisorClassification({...executable,parentIsDiagnostic:false,parentInOwnedRows:false}),{...executable,parentIsDiagnostic:false,parentInOwnedRows:false});
+  assert.deepEqual(projectSupervisorClassification({...executable,parentIsFixture:true,parentIsDiagnostic:false}),{...executable,parentIsFixture:true,parentIsDiagnostic:false});
   for (const check of ['argv-parse','executable','compiler-parent','compiler-arguments','compiler-response','owned-parent','pid-reuse','history-bound','kind-bound']) {
     assert.deepEqual(projectSupervisorClassification({check}),{check});
   }
@@ -35,11 +37,21 @@ test('classification projector rejects unknown keys, accessors, inherited fields
     {check:'argv-parse',argvCountMatches:'CANARY'},
     {check:'argv-parse',argvMatches:false},
     {check:'executable',executablePathPresent:true},
-    {check:'executable',executablePathPresent:false,builtinConsoleHostMatch:true,parentIsFixture:false},
+    {check:'executable',executablePathPresent:false,builtinConsoleHostMatch:true,parentIsFixture:false,parentIsDiagnostic:true,parentInOwnedRows:true},
     {check:'executable',executablePathPresent:true,builtinConsoleHostMatch:false,parentIsFixture:'CANARY'},
     {check:'argv-parse',executablePathPresent:true,builtinConsoleHostMatch:false,parentIsFixture:true},
     {check:'executable',executablePathPresent:true,builtinConsoleHostMatch:false,parentIsFixture:true,argvCountMatches:true}
   ]) assert.equal(projectSupervisorClassification(value),undefined);
+  const complete={check:'executable',executablePathPresent:true,builtinConsoleHostMatch:true,parentIsFixture:false,parentIsDiagnostic:true,parentInOwnedRows:true};
+  for(const invalid of [
+    {...complete,parentInOwnedRows:false},
+    {...complete,parentIsFixture:true},
+    {...complete,parentIsDiagnostic:'CANARY'},
+    {...complete,parentInOwnedRows:undefined},
+    {...complete,check:'argv-parse'},
+  ]) assert.equal(projectSupervisorClassification(invalid),undefined);
+  const missingParent={...complete};delete missingParent.parentIsDiagnostic;
+  assert.equal(projectSupervisorClassification(missingParent),undefined);
   const record={};Object.defineProperty(record,'failure',{get(){assert.fail('getter executed');}});
   assert.equal(supervisorClassificationFromFailure(record),undefined);
   assert.equal(supervisorClassificationFromError(Object.create({supervisorClassification:{check:'argv-parse'}})),undefined);
@@ -47,7 +59,7 @@ test('classification projector rejects unknown keys, accessors, inherited fields
 
 for(const classification of [
   {check:'argv-equality',argvCountMatches:true,argvMatches:false},
-  {check:'executable',executablePathPresent:true,builtinConsoleHostMatch:true,parentIsFixture:false},
+  {check:'executable',executablePathPresent:true,builtinConsoleHostMatch:true,parentIsFixture:false,parentIsDiagnostic:true,parentInOwnedRows:true},
 ]) test(`real supervisor control IPC preserves fixed ${classification.check} classification through failure retention and owned exit`,async()=>{
   const source=`import {createInterface} from 'node:readline';
 process.stdout.write(JSON.stringify({id:0,ok:true,phase:'ready'})+'\\n');
@@ -117,10 +129,14 @@ process.on('message',({id,op,args})=>{
     assert.equal((await within(control.startup,15000)).phase,'ready');
     assert.equal((await control.request('attach',{pid:fixture.child.pid,parentPid:process.pid,nodeExecutable:realpathSync(process.execPath),shellExecutable:shell,fixtureArgs,
       relayArgs:[],diagnosticArgs:expectedArgs,compilerExecutables:[],compilerTemp:realpathSync(process.env.TEMP),commitLimitBytes:536870912},15000)).attached,true);
+    const preStart=await control.request('sample',{},5000).catch(error=>{
+      assert.fail('native-classification-refused pre-start '+JSON.stringify(supervisorClassificationFromError(error)??{check:'classification-unavailable'}));
+    });
+    assert.equal(preStart.totals.main.count,1);assert.equal(preStart.totals.diagnostic.count,0);
     assert.equal((await fixtureControl.request('start',{args:actualArgs},5000)).spawned,true);
     if(variant==='exact') {
       const sample=await control.request('sample',{},5000).catch(error=>{
-        assert.fail('native-classification-refused '+JSON.stringify(supervisorClassificationFromError(error)??{check:'classification-unavailable'}));
+        assert.fail('native-classification-refused post-start '+JSON.stringify(supervisorClassificationFromError(error)??{check:'classification-unavailable'}));
       });
       assert.equal(sample.totals.main.count,1);assert.equal(sample.totals.diagnostic.count,1);
       assert.equal((await fixtureControl.request('stop',{},5000)).stopped,true);
@@ -130,7 +146,7 @@ process.on('message',({id,op,args})=>{
     } else {
       const expected=variant==='count-mismatch'?{check:'argv-count',argvCountMatches:false}:{check:'argv-equality',argvCountMatches:true,argvMatches:false};
       await assert.rejects(control.request('sample',{},5000),error=>{
-        assert.equal(error.message,'job-supervisor-failed');assert.deepEqual(supervisorClassificationFromError(error),expected);return true;
+        assert.equal(error.message,'job-supervisor-failed');assert.deepEqual(supervisorClassificationFromError(error),expected,'native-classification-refused post-start');return true;
       });
     }
     await within(supervisor.exited,5000);await within(supervisor.closed,5000);

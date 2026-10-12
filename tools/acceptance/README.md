@@ -96,12 +96,24 @@ argv on a recognized Node descendant: exact argv passes; count and value
 mismatches refuse. This covers Node serialization, WMI capture and the actual
 supervisor parser in CI's account/profile, not hosted standard-user PowerShell
 bootstrap, worker compilation or production acceptance.
-An existing executable refusal can additionally retain three fixed booleans:
+An existing executable refusal can additionally retain five fixed booleans:
 whether its executable path is present, whether it equals the exact built-in
-System32 console-host path, and whether its parent is the fixture. These fields
-do not accept an additional executable category. Initial native CI attempts
-failed the exact case at the executable checkpoint, including after matching
-the helper's piped stdio; they establish no quoting or console-host cause.
+System32 console-host path, whether its parent is the fixture, whether its
+parent is a nonfixture sampled row with the same Node executable, and whether
+its parent appears in the owned sample rows. The Node-parent field observes an
+executable match; it does not prove that parent's argv or category acceptance.
+All five fields must be present together. They do not accept an additional
+executable category.
+Native golden cases sample the attached paused fixture before starting the inert
+child and label refusals with fixed `pre-start` or `post-start` phases. Exact
+whole-job acceptance remains required. Initial native CI attempts failed the
+exact case at the executable checkpoint, including after matching the helper's
+piped stdio. The merged-main run
+[38257191845](https://github.com/qwts/agent-comms/actions/runs/38257191845)
+then retained a builtin console-host match with a nonfixture parent. This
+establishes that executable observation in this CI sample; it does not establish
+its creation timing, an argv serialization failure, or the earlier hosted
+compiler-control failure's cause.
 
 ## Incremental lifecycle instrumentation comparison
 
