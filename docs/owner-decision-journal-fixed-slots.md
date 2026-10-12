@@ -92,30 +92,34 @@ valid lifecycle. Reads do not recreate missing initialized files.
 
 Only indeterminate observation may replace bytes. The precreated scratch inode
 has fixed EOF 33024 and embeds the exact destination-bound next frame at offset
-zero, with its contract cap and zero bytes after its cap+256 frame. It is not an
-independent new scratch slot schema. Preserve/flush that candidate before
-invalidating the destination trailer, then flush body, trailer and final equality
-before zeroing/flushing scratch. A crash with nonzero scratch freezes ordinary
-writes. Exact recovery/retrieval semantics for an interrupted replacement remain
-an explicit prerequisite; no routine cleanup may discard the newest unresolved
-observation. Daemon observation-pair and terminal-pair each reserve 4352 payload bytes,
-including the exact bounded wrapper; no separate preimage slot exists. Terminal
-pair publication is immutable and follows durable completed/refused proof,
-before terminal outcome/report. Observation replacement remains unfinished.
+zero, with zero bytes after its cap+256 frame. Broker source now implements the
+[retained-mirror amendment](owner-decision-journal-observation.md): scratch stays
+as a validated mirror, observation contents alone may quarantine, and independent
+terminal publication remains available. Both authority/physical flags stay false.
+The [peer487 receipt](owner-decision-journal-lifecycle.md#joint-observation-review)
+records producer agreement; no daemon format change is implied.
+
+Daemon sequence-1/scratch-pending behavior remains unchanged. Its original
+candidate-preserve, destination-invalidate/body/trailer-flush and zero-clear
+proposal remains unfinished; nonzero scratch freezes ordinary daemon writes.
+Exact interrupted-replacement recovery/retrieval remains its prerequisite. No
+routine cleanup may discard the newest unresolved observation. Daemon observation-
+pair and terminal-pair each reserve 4352 payload bytes including the bounded
+wrapper; no separate preimage slot exists. Terminal pair publication is immutable
+and follows durable completed/refused proof before terminal outcome/report.
 Original entered/completed/refused evidence and terminal resolution never change.
 
 ## Next disabled integration and required tests
 
 The [disabled broker admission core](owner-decision-journal-core.md) now includes
-a strict frame reader/writer and an explicitly selected fixed-v1 admission-prefix
-experiment behind the existing unconsumed journal module. It reuses the exact
+a strict frame reader/writer and trusted fixed-v1 typed lifecycle/observation
+storage behind the existing unconsumed journal module. It reuses the exact
 acceptance/action validator, namespace binding, count accounting, Darwin lock
 lifetime and sanitized errors. Its ordinary full-zero initialization is test
-mechanics and supplies no persistent physical reservation. Keep unsupported lifecycle phases
-explicitly refused until their graph validators are implemented. No daemon files,
+mechanics and supplies no persistent physical reservation. Default admission-only mode still refuses later phases. No daemon files,
 request-selectable authority callback or owner-decision route belongs in this
-slice. A reviewed Darwin allocation bridge is still required before supported
-physical admission; the test-only C executable is not that bridge.
+slice. Reviewed native bridge packaging and physical-support evidence remain required
+before supported admission.
 
 Meaningful interruption tests must cover creation, allocation, zero initialization,
 each file/directory flush, partial body/trailer writes, their flushes, visible
@@ -126,8 +130,8 @@ or corrupt graph refusal, no read recreation, exclusive lock contention/crash
 release and deterministic finite refusal at 4096 IDs. Inject EIO, ENOSPC,
 EDQUOT, short writes and short reads; test every header/trailer primitive,
 digest, padding and cross-binding. Include actual canonical action/acceptance
-bytes, not only maximal synthetic frames. Observation replacement needs its
-own complete interruption matrix before that phase is claimed supported.
+bytes, not only maximal synthetic frames. The broker observation amendment has its own complete interruption matrix;
+daemon replacement remains a separate prerequisite.
 
 The logical 262144/524288 reservations and 256-byte framing charge are unchanged.
 They are not physical byte guarantees: the lab's rounded eleven-inode allocation

@@ -122,7 +122,7 @@ test('all later publication crash points retain typed prefixes or freeze torn fr
   for (let n = 0; n < steps.length; n++) {
     const measureDir = temporary(t), events = [];
     const measure = prefix(measureDir, n, { fault: at => events.push(at) }); events.length = 0; steps[n][2](measure);
-    assert.equal(events.length, n === 1 ? 18 : 6);
+    assert.equal(events.length, n === 1 ? 18 : n === 4 ? 14 : 6);
     for (const event of events) {
       const dir = temporary(t); prefix(dir, n);
       const result = await runChild(childSource(dir, n, event));
@@ -132,17 +132,22 @@ test('all later publication crash points retain typed prefixes or freeze torn fr
       assert.equal(s.read(id).finding, 'admission-visible'); assert.equal(s.read(id).authorizationSupported, false);
       reject(() => steps[n][2](s), 'owner-journal-recovery-required'); s.recover(id);
       const saved = s.read(id);
-      if (n === 1 && !saved.slots.has('authorization')) {
+      if (n === 4 && saved.observation.finding === 'quarantined') {
+        reject(() => s.recoverObservation(id), 'owner-journal-recovery-required');
+        assert.equal(steps[5][2](s).state, 'applied');
+      } else if (n === 4 && saved.observation.finding === 'pending') {
+        s.recoverObservation(id); assert.equal(steps[n][2](s).duplicate, true);
+      } else if (n === 1 && !saved.slots.has('authorization')) {
         assert.equal(saved.state, 'prepared'); reject(() => steps[n][2](s), 'owner-journal-id-spent');
       } else assert.equal(steps[n][2](s).duplicate, true);
     }
   }
-  assert.equal(crashes, 48);
+  assert.equal(crashes, 56);
 });
 
 test('EIO/ENOSPC/EDQUOT at each later flush never acknowledges; valid visibility needs recovery', darwin, t => {
   for (let n = 0; n < steps.length; n++) for (const code of ['EIO', 'ENOSPC', 'EDQUOT']) {
-    const flushes = n === 1 ? 6 : 2;
+    const flushes = n === 1 ? 6 : n === 4 ? 5 : 2;
     for (let selected = 1; selected <= flushes; selected++) {
       const dir = temporary(t); prefix(dir, n); let calls = 0, armed = false;
       const s = open(dir, { io: { ...fs, fsyncSync: fd => {

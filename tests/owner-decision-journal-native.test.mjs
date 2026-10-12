@@ -11,6 +11,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { acquireOwnerJournalLock } from '../lib/platform/owner-journal-lock.mjs';
 import { OwnerDecisionAdmissionStore as OriginalStore } from '../lib/owner-decision-journal.mjs';
 import { OWNER_JOURNAL_FIXED_SLOTS } from '../lib/owner-decision-journal-frame.mjs';
+import { lifecycleInput, config, bytes as lifecycleBytes } from './helpers/owner-decision-lifecycle.mjs';
 const darwin = { skip: process.platform !== 'darwin', timeout: 30000 };
 const namespaceDigest = 'a'.repeat(64), hash = b => createHash('sha256').update(b).digest('hex');
 const allSlots = [...OWNER_JOURNAL_FIXED_SLOTS, { slot: 'scratch', cap: 32768 }];
@@ -70,6 +71,28 @@ test('native bridge allocates eleven actual final inodes and full-flushes admiss
   assert.equal(reopened.recover(requestId).finding, 'admission-complete');
   assert.equal(reopened.admit(actionBytes, acceptanceBytes).duplicate, true);
   assert.equal(reopened.inspect().physicalAllocationSupported, false); assert.equal(reopened.inspect().authorizationSupported, false);
+});
+test('native retained-mirror publication and recovery bind scratch11 EOF33024 and destination9 EOF2304 without file-fsync fallback', darwin, async t => {
+  const f = await fixture(t), i = lifecycleInput(); let armed = false;
+  const extra = { lifecycle: { brokerPublicKeys: config.brokerPublicKeys, presencePublicKeys: config.presencePublicKeys },
+    now: () => i.acceptance.acceptedAt * 1000, io: { ...fs, fsyncSync: fd => {
+      if (armed) assert(fs.fstatSync(fd).isDirectory(), 'native slot flush must not fall back to Node file fsync');
+      return fs.fsyncSync(fd);
+    } } };
+  const s = open(f, extra), id = i.action.requestId;
+  s.admit(i.slots.get('original-action'), i.slots.get('acceptance')); s.recordPrepared(id, i.slots.get('prepared-challenge'));
+  s.recordAuthorization(id, { presenceBytes: i.slots.get('presence'), receiptBytes: i.slots.get('receipt'), authorizationBytes: i.slots.get('authorization') });
+  s.recordRelease(id, i.slots.get('release')); s.recordOutcome(id, i.slots.get('initial-outcome')); armed = true;
+  for (let n = 1; n <= 2; n++) assert.equal(s.recordObservation(id, lifecycleBytes({ ...i.reference, at: n })).generation, n);
+  const dir = path.join(f.state, 'requests', id), d = fs.readFileSync(path.join(dir, 'observation-reference.record'));
+  const saved = fs.readFileSync(path.join(dir, 'scratch.record'));
+  assert.equal(d.length, 2304); assert.equal(saved.length, 33024); assert(saved.subarray(0, 2304).equals(d)); assert(saved.subarray(2304).every(b => b === 0));
+  const interrupted = Buffer.from(d); interrupted.fill(0, 2176);
+  fs.writeFileSync(path.join(dir, 'observation-reference.record'), interrupted);
+  const reopened = open(f, extra); reopened.recover(id);
+  assert.equal(reopened.read(id).observation.finding, 'pending');
+  assert.equal(reopened.recoverObservation(id).generation, 2); assert.equal(reopened.inspect().physicalAllocationSupported, false);
+  assert(fs.readFileSync(path.join(dir, 'observation-reference.record')).equals(d));
 });
 
 test('missing or untrusted pinned artifacts refuse before journal creation; no PATH/runtime compiler fallback', darwin, async t => {
