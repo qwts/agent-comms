@@ -73,3 +73,6 @@ release uncertainty, deadline exhaustion, unknown close, malformed canonical
 responses, and unsigned normal refusal. The existing compiled receipt fixture
 has fixed synthetic source/head/observation bindings; translating a real
 observer digest into those fixture bindings would not prove shared authority.
+
+The [shared source receipt fixture](owner-receipt-source-fixture.md) connects both
+compiled processes to identical scanned bindings through explicit debug plumbing.
