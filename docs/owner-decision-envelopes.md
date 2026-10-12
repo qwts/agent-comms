@@ -5,6 +5,20 @@ and [receipt contract](owner-decisions.md). Joint comms/bot/native-host review
 remains required before implementation. [Lifecycle rules](owner-decision-lifecycle.md)
 control every transition; envelope availability alone grants no authority.
 
+## Implemented watch identity prerequisite
+
+Account-watch `ready` now adds UUIDv4 `watchId`, positive safe-integer
+`daemonEpoch` and `daemonKey` (SHA-256 of approved daemon DER SPKI). The daemon
+compares the key with its own paired vouch key. Joint daemon review confirmed
+additive-field compatibility. Soul-watch ready remains unchanged.
+
+Each socket has a frozen, ephemeral binding. Internal selection chooses one
+live socket; later checks revalidate that exact socket, account/daemon approval,
+key and epoch. Reconnect creates a fresh ID; it cannot replace a saved selection.
+Delayed revoked-stream close callbacks cannot erase replacement watch sets.
+No owner route, event dispatch or capability advertisement is enabled.
+The remaining envelopes below are proposed.
+
 ## Envelopes and daemon binding
 
 Use the existing protocol `v: 1`, custody-checked channel and authentication

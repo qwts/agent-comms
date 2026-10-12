@@ -279,7 +279,10 @@ test('reconnect and restart catch-up wakes cannot recover trace context from ret
 test('a burst produces one wake per soul, and the census shows the daemon watching', async () => {
   const watcher = openStream({ op: 'account-watch', auth: daemonAuth });
   await until(() => watcher.events.some((event) => event.event === 'ready'), 'ready');
-  assert.deepEqual(watcher.events[0], { event: 'ready' });
+  assert.deepEqual(Object.keys(watcher.events[0]).sort(), ['daemonEpoch', 'daemonKey', 'event', 'watchId']);
+  assert.equal(watcher.events[0].daemonEpoch, broker.state.daemons.get('owner').epoch);
+  assert.match(watcher.events[0].watchId, /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/);
+  assert.match(watcher.events[0].daemonKey, /^[a-f0-9]{64}$/);
 
   const watching = rowOf(await census(), burstSoul);
   assert.equal(watching.daemonWatching, true);
@@ -534,6 +537,9 @@ test('approving a replacement daemon key closes streams opened with the old key'
   assert.equal(stale.reply.error.code, 'unauthenticated');
   const fresh = openStream({ op: 'account-watch', auth: { daemon: 'persona', secret: rotated } });
   await until(() => fresh.events.some((event) => event.event === 'ready'), 'new key ready');
+  assert.notEqual(fresh.events[0].watchId, watcher.events[0].watchId);
+  assert.ok(fresh.events[0].daemonEpoch > watcher.events[0].daemonEpoch);
+  assert.notEqual(fresh.events[0].daemonKey, watcher.events[0].daemonKey);
   await closeSocket(fresh.socket);
   await pairDaemon('persona', personaDaemonSecret);
 });
