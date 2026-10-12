@@ -11,6 +11,18 @@ while preserving the exact Miniflare 4/workerd pins. Updating a transitive HTTP
 client changes the graph/lock hash; reports record the actual Undici version and
 the probe must be rerun. No Miniflare 5 prerelease upgrade is implied.
 
+A narrow Sharp override pins 0.35.5 for
+[GHSA-wq5f-xc86-pv6w](https://github.com/lovell/sharp/security/advisories/GHSA-wq5f-xc86-pv6w).
+The September 30 advisory affects Sharp below 0.35.5 and supersedes the earlier
+assessment that no affecting Sharp advisory had been established. Its possible
+RCE impact requires particular glibc Linux runtime conditions and SVG decoding;
+our synthetic storage probes do not configure an Images binding or submit SVG
+input. Updating this installed dev dependency avoids retaining the affected
+library without implying demonstrated exploit reachability in the probe.
+A bounded benign SVG native smoke test exercises the updated image dependency.
+Miniflare/workerd remain unchanged: prior full-cap measurements retain their
+original source and lock hashes, rather than being relabelled as new evidence.
+
 ## Run
 
 Use supported Node on macOS or Linux. Install this package separately:
