@@ -119,12 +119,11 @@ authority to a worker.
 
 ## Request a daemon launch
 
-`client.launch({ account, soul, harness, name?, comms?, model?, brief?, role?, parent? })` launches
-an existing soul; `package` instead of `soul` names a package path in the
-target account (exactly one; the broker never opens it). Account names use the
-pairing grammar, soul IDs are `agent_<uuid>`, package paths are nonblank and
-at most 4096 characters, harness names at most 64 and display names at most
-128. Strings cannot contain controls.
+`client.launch({ account, soul, harness, name?, comms?, model?, brief?, role?, parent?, traceparent? })` launches
+an existing soul; alternatively, `package` names a target-account path (exactly
+one; the broker never opens it). Accounts follow pairing grammar; souls use
+`agent_<uuid>`. Strings cannot contain controls. Package paths are nonblank,
+at most 4096 characters; harness names at most 64, display names at most 128.
 Boolean `comms` sets the soul's agent-comms before it starts.
 Optional `model` selects a model (at most 120 printable characters).
 Optional `brief` supplies launch instructions: 1–4000 characters after
@@ -142,7 +141,9 @@ The broker forwards it unchecked; the daemon validates against its census and
 reports refusal as `failed`. Older brokers drop it; daemons without the
 `launch-parent` capability ignore it, so hosts gate on that capability.
 
-The CLI uses the saved principal credential and the same launch contract:
+Optional [launch trace context](launch-trace-context.md) uses `traceparent`.
+
+The CLI uses the saved principal credential:
 
 ```bash
 agent-comms launch --account persona --package /path/to/helper.soul \
@@ -154,14 +155,13 @@ agent-comms launch --account persona --soul agent_UUID --harness codex --brief '
 `--name`, `--comms on|off`, `--model`, `--brief`, `--role` and
 `--parent none|AGENT_ID` are optional. Output is JSON with status `pending`.
 
-Approved principals launch into approved paired accounts: existing souls require
-account, soul, or address grants and receive allowlist permission; packages
-require account or unrestricted grants. Launches share the principal send rate
-limit.
+Approved principals launch into approved accounts. Existing souls require
+account/soul/address grants and receive permission; packages require account
+or unrestricted grants. Launches share the principal send rate limit.
 
 Launch returns `{ ok, requestId, status: 'pending', agentId: null }`.
-Poll `client.launchStatus(requestId)` (wire op `launch-status`) for terminal
-status `launched` or `failed`; a failure may have a null `agentId`. Status
+Poll `client.launchStatus(requestId)` (`launch-status`) until `launched` or
+`failed`; failures may have null `agentId`. Status
 requires the original principal and current target authorization; hidden or
 unknown requests return `unknown-launch`. There is no launch inbox message. An
 account without an open daemon watch returns `daemon-unavailable`. The broker
@@ -174,7 +174,7 @@ The newline-delimited watch frame is:
 ```
 
 Package frames use `package` instead of `soul`. Optional `name`, `comms`,
-`model`, `brief`, `role` and `parent` fields are omitted when absent (`parent`
+`model`, `brief`, `role`, `parent` and validated `traceparent` fields are omitted when absent (`parent`
 is null or an agent ID). Agent-bot resolves packages, creates processes,
 starts harnesses and joins; fields are data, never shell commands.
 

@@ -33,6 +33,7 @@ request fields, arbitrary messages, paths, bodies or credentials are serialized.
 | `broker.storage-failure` | `broker.storage` | `append` or `compact` | `storage-failed` | `recovery-required` |
 | `broker.maintenance-failure` | `broker.maintenance` | `maintenance` | `internal` | `failed` |
 | `broker.maintenance-storage` | `broker.maintenance` | `maintenance` | `storage-failed` | `recovery-required` |
+| `broker.traceparent-dropped` | `broker.launch` | `propagation` | `traceparent_dropped` | `dropped` |
 | `transport.unreachable` | `transport.connect` | `connect` | `broker-unreachable` | `failed` |
 | `transport.timeout` | `transport.request` | `deadline` | `broker-timeout` | `failed` |
 | `transport.untrusted` | `transport.connect` | `custody` or `proof` | `broker-untrusted` | `refused` |
@@ -47,6 +48,16 @@ completion. Retry observations omit duration because the wait has not occurred.
 Client deadlines and lost channels measure elapsed local time to detection;
 they do not measure broker work. Remote reply error codes never create local
 transport-failure observations, and explicit cancellation is not a failure.
+
+`broker.traceparent-dropped` has exact
+`details: { traceparentDroppedCount }`: a cumulative local counter per broker
+instance, saturated at `Number.MAX_SAFE_INTEGER`, for malformed optional launch
+context after ordinary principal authentication, target validation and grant
+checks. It never contains the supplied value, trace/span IDs, baggage or
+tracestate. Reports use the existing finite queue/rate/failure bounds; a lost
+report is not a launch failure and later counts can include earlier losses.
+The count is local diagnostic state, never a durable audit record or public
+status field. Valid trace context does not create diagnostic links.
 
 A `storage-failed` result still requires stopping the broker, correcting the
 storage problem and restarting to recover before retrying. Diagnostics are

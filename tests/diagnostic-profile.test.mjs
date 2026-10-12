@@ -36,6 +36,7 @@ test('local producer emits the reviewed exact profile subset and every finite br
     ['storage-compact', 'broker.storage-failure', 'broker.storage', 'compact', 'storage-failed', 'recovery-required'],
     ['maintenance-internal', 'broker.maintenance-failure', 'broker.maintenance', 'maintenance', 'internal', 'failed'],
     ['maintenance-storage', 'broker.maintenance-storage', 'broker.maintenance', 'maintenance', 'storage-failed', 'recovery-required'],
+    ['traceparent-dropped', 'broker.traceparent-dropped', 'broker.launch', 'propagation', 'traceparent_dropped', 'dropped'],
     ['transport-unreachable', 'transport.unreachable', 'transport.connect', 'connect', 'broker-unreachable', 'failed'],
     ['transport-timeout', 'transport.timeout', 'transport.request', 'deadline', 'broker-timeout', 'failed'],
     ['transport-custody', 'transport.untrusted', 'transport.connect', 'custody', 'broker-untrusted', 'refused'],
@@ -52,7 +53,7 @@ test('local producer emits the reviewed exact profile subset and every finite br
     const [token, event, operation, stage, code, outcome] = fixtures[index];
     assert.deepEqual(Object.keys(record).sort(), ['v', 'component', 'buildVersion', 'buildSource', 'event', 'eventId',
       'sessionId', 'operation', 'stage', 'code', 'outcome', 'observedAtUnixMs', 'durationMs',
-      ...(token === 'transport-retry' ? ['details'] : [])].sort());
+      ...(['transport-retry','traceparent-dropped'].includes(token) ? ['details'] : [])].sort());
     assert.equal(record.v, 1);
     assert.equal(record.component, token.startsWith('transport-') ? 'agent-comms-client' : 'agent-comms-broker');
     assert.match(record.buildVersion, /^[A-Za-z0-9][A-Za-z0-9.+_-]{0,63}$/);
@@ -63,10 +64,28 @@ test('local producer emits the reviewed exact profile subset and every finite br
     assert.equal(record.durationMs, 17);
     assert.ok(record.observedAtUnixMs >= before && record.observedAtUnixMs <= Date.now());
     if (token === 'transport-retry') assert.deepEqual(record.details, { attempt: 2, delayMs: 500 });
+    if (token === 'traceparent-dropped') assert.deepEqual(record.details, { traceparentDroppedCount: 2 });
     return record;
   });
   assert.equal(new Set(records.map((record) => record.sessionId)).size, 1);
   assert.equal(new Set(records.map((record) => record.eventId)).size, fixtures.length);
+});
+
+test('launch context drop counter accepts only bounded local integers and never serializes peer context', async (t) => {
+  const { stream, lines, sink } = capture(); t.after(() => stream.emit('close'));
+  const hostile = new Proxy({}, { get() { assert.fail('counter inspected peer metadata'); } });
+  for (const count of [hostile, 0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1]) sink.report('traceparent-dropped', undefined, count);
+  sink.report('traceparent-dropped', undefined, Number.MAX_SAFE_INTEGER, hostile);
+  await flush(sink);
+  const counter = lines.map(JSON.parse).find((record) => record.event === 'broker.traceparent-dropped');
+  assert.ok(counter); assert.equal(counter.durationMs, undefined);
+  assert.deepEqual(counter.details, { traceparentDroppedCount: Number.MAX_SAFE_INTEGER });
+  assert.equal(sink.stats().dropped, 7);
+  for (const line of lines) {
+    assert.ok(Buffer.byteLength(line) <= DIAGNOSTIC_LIMITS.eventBytes);
+    const record = JSON.parse(line);
+    assert.ok(!Object.hasOwn(record, 'context') && !Object.hasOwn(record, 'links') && !Object.hasOwn(record, 'traceparent'));
+  }
 });
 
 test('primitive-only measurements discard hostile data without getters, coercion, context or links', async (t) => {
