@@ -18,7 +18,7 @@ const CANARY = 'CANARY-windows-capacity-body-secret';
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 let output, activeStage = 'arguments', fixtureCleanup;
-const supervisorPhases = new Set(['script-entry','compile-supervisor','supervisor-compiled','module-observation','import-utility','utility-imported','serialize-ready','ready-serialized','control-read','parse-control','control-parsed','cim-module-observation','query-fixture','fixture-queried','create-private-job','private-job-assigned','read-control','verify-fixture','assign-private-job','sample-job','query-members','close-job']);
+const supervisorPhases = new Set(['script-entry','compile-supervisor','supervisor-compiled','module-observation','import-utility','utility-imported','serialize-ready','ready-serialized','control-read','parse-control','control-parsed','cim-module-observation','verify-fixture-existence','verify-fixture-parent','verify-fixture-executable','parse-fixture-command','verify-fixture-argument-count','verify-fixture-arguments','convert-fixture-creation','verify-job-limit','query-fixture','fixture-queried','create-private-job','private-job-assigned','read-control','verify-fixture','assign-private-job','sample-job','query-members','close-job']);
 const checks = new Set(['fixture-terminal', 'fixture-deadline', 'control-deadline', 'control-closed',
   'control-output-bound', 'control-invalid', 'job-supervisor-failed', 'natural-exit-unconfirmed',
   'relay-exit-unconfirmed', 'scratch-retained', 'job-exit-unconfirmed', 'diagnostic-output-invalid',

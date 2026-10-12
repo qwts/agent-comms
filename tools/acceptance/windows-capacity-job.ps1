@@ -218,11 +218,29 @@ public static class CapacityJob {
             $main = Get-CimInstance Win32_Process -Filter "ProcessId=$fixtureId" -OperationTimeoutSec 2
             $phase = 'fixture-queried'
             [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"fixture-queried"}'); [Console]::Out.Flush()
-            if (-not $main -or $main.ParentProcessId -ne $parentId -or $main.ExecutablePath -ine $nodeExecutable) { throw 'fixture-identity-unconfirmed' }
+            $phase = 'verify-fixture-existence'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"verify-fixture-existence"}'); [Console]::Out.Flush()
+            if (-not $main) { throw 'fixture-identity-unconfirmed' }
+            $phase = 'verify-fixture-parent'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"verify-fixture-parent"}'); [Console]::Out.Flush()
+            if ($main.ParentProcessId -ne $parentId) { throw 'fixture-identity-unconfirmed' }
+            $phase = 'verify-fixture-executable'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"verify-fixture-executable"}'); [Console]::Out.Flush()
+            if ($main.ExecutablePath -ine $nodeExecutable) { throw 'fixture-identity-unconfirmed' }
+            $phase = 'parse-fixture-command'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"parse-fixture-command"}'); [Console]::Out.Flush()
             $actual = [CapacityJob]::Args($main.CommandLine)
+            $phase = 'verify-fixture-argument-count'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"verify-fixture-argument-count"}'); [Console]::Out.Flush()
             if ($actual.Count -ne $fixtureArgs.Count) { throw 'fixture-command-unconfirmed' }
+            $phase = 'verify-fixture-arguments'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"verify-fixture-arguments"}'); [Console]::Out.Flush()
             for ($i=0; $i -lt $actual.Count; $i++) { if ($actual[$i] -cne $fixtureArgs[$i]) { throw 'fixture-command-unconfirmed' } }
+            $phase = 'convert-fixture-creation'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"convert-fixture-creation"}'); [Console]::Out.Flush()
             $fixtureCreation = $main.CreationDate.ToUniversalTime().Ticks.ToString()
+            $phase = 'verify-job-limit'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"verify-job-limit"}'); [Console]::Out.Flush()
             $limit = [ulong]$inputData.commitLimitBytes
             if ($limit -lt 536870912 -or $limit -gt 2147483648) { throw 'invalid-memory-limit' }
             $phase = 'create-private-job'

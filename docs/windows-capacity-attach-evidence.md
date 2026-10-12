@@ -58,3 +58,15 @@ The native test now includes only the controller-validated fixed phase,
 encoding and boolean observations in its failure message; no raw child error
 or fixture fields are printed. No live attach diagnostic is dispatched while
 native CI remains failing. Process identity and lifetime checks are unchanged.
+
+The classified [native CI 38214149682](https://github.com/qwts/agent-comms/actions/runs/38214149682),
+at `e4c564222514a4b5d8972a53a18d659d9309c141`, again passed the original
+five controls and refused the real attach in 1,749 ms. The fixed state was
+`fixture-queried`, ASCII-compatible, with Utility home/manifest and CIM
+manifest present. The query returned; this native refusal precedes job
+creation, within fixture identity/command/creation/limit validation. It does
+not establish the earlier standard-user deadline's cause. Failed-step log:
+`4281a965c2b56aee191c12a34715aea3c32b7062bce7de8b37e4d6e8f364dc1c`.
+Literal phases now distinguish every existing guard in that interval, without
+printing values or exception text. All exact comparisons and the process-time
+tolerance remain unchanged; manual attach dispatch is still gated on native CI.
