@@ -55,12 +55,11 @@ pending proposal/current head or prepared cold-wake/session/configuration state,
 stage bytes and receipt expiry, durably marks consumed, then calls existing
 validated mutation logic without an await. A local write racing that interval
 causes refusal when expected state differs; release never bypasses that check.
-For cold-wake/webhook changes, bot must define lock order and a durable
-request-linked effect journal across settings and secret files. For edit without
-apply, bot must provide equivalent atomic validation/consumption for its current
-asynchronous append path. Do not nest existing locks, treat asynchronous returns
-as atomic, or wire a generic authorization callback into a mutation. Companion
-bot review must validate these adapters before any operation is enabled.
+The proposed [typed effect evidence](owner-decision-effect-evidence.md) defines
+preparation, request linkage, private preimages and lock/crash requirements for
+revision and settings/secret changes. Joint bot review must validate those
+adapters before enabling any operation; static vectors are not runtime proof.
+Never nest public lock-acquiring operations or introduce generic auth callbacks.
 
 Retain compact tombstones for every durably accepted ID, including cancelled,
 expired and refused preparations as well as spent/released IDs, until the
