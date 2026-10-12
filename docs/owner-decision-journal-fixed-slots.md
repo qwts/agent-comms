@@ -103,6 +103,11 @@ including the exact bounded wrapper; no separate preimage slot exists. Terminal
 pair publication is immutable and follows durable completed/refused proof,
 before terminal outcome/report. Observation replacement remains unfinished.
 Original entered/completed/refused evidence and terminal resolution never change.
+The [observation recovery amendment](owner-decision-journal-observation.md)
+proposes a broker-only override of the zero-clear/freeze rule: retained scratch
+mirrors and independent terminal publication during observation quarantine.
+Daemon scratch-pending recovery and sequence-1 framing remain unchanged. The
+amendment remains subject to joint producer review.
 
 ## Next disabled integration and required tests
 
