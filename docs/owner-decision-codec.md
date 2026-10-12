@@ -70,3 +70,24 @@ staging expiry and sanitized failures. These checks establish pure parsing,
 signature and binding behavior, not live native custody,
 broker/daemon interoperability or R1–R4 acceptance. The
 [conformance matrix](owner-decision-conformance.md) retains those requirements.
+
+## Durable daemon generations prerequisite
+
+The broker retains a per-account daemon epoch across daemon revocation, account
+revocation, re-pairing and checkpoint compaction. Each approval, including an
+identical public-key replacement, receives a strictly greater epoch. Pending
+pairing requests do not replace the approved epoch. The final safe integer is
+reserved for revocation: exhaustion refuses future approvals while still allowing
+the owner to disable the daemon. Counters are never removed with pairings.
+
+Checkpoint version 3 carries these counters and validates approved daemon/epoch
+consistency. Versions 1 and 2 remain readable; their currently approved daemons
+receive migration baseline 1 because those formats predate enabled owner receipts.
+Discarded legacy generations are not reconstructed or claimed known. Version 3
+checkpoints are intentionally unreadable by older engines; rollback requires the
+existing explicit state compatibility process, never deleting the counters.
+
+This prerequisite does not expose epochs on watches or enable owner operations.
+The future watch/challenge adapter must bind current epoch and selected watch,
+and recheck both at release. Native Windows upgrade evidence for checkpoint 3
+remains separate from earlier recorded version 2 acceptance.

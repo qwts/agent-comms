@@ -213,9 +213,9 @@ try {
     client = newClient; paths = newPaths.brokerPaths(env);
     await installCurrent(); const evidence = await continuity();
     const checkpoint = JSON.parse(readFileSync(path.join(paths.state, 'events.jsonl'), 'utf8').split('\n')[0]);
-    assert.equal(checkpoint.t, 'checkpoint'); assert.equal(checkpoint.version, 2);
+    assert.equal(checkpoint.t, 'checkpoint'); assert.equal(checkpoint.version, 3);
     result.upgradedLogSha256 = logHash();
-    return { ...evidence, checkpointVersion: 2 };
+    return { ...evidence, checkpointVersion: 3 };
   });
   await record('current-task-restart-preserves-upgraded-outcomes', async () => {
     await stopCurrent(); result.beforeRestartLogSha256 = logHash(); await installCurrent();

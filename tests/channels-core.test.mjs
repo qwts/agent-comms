@@ -222,7 +222,7 @@ test('strict version-one checkpoint migration adds empty channel state and rejec
   log.compact(state);
   const fixture = JSON.parse(readFileSync(log.file, 'utf8'));
   fixture.version = 1;
-  for (const field of ['originHubId', 'channels', 'principalChannelGrants']) delete fixture.snapshot[field];
+  for (const field of ['originHubId', 'channels', 'principalChannelGrants', 'daemonEpochs']) delete fixture.snapshot[field];
   fixture.checksum = createHash('sha256').update(JSON.stringify(fixture.snapshot)).digest('hex');
   writeFileSync(log.file, `${JSON.stringify(fixture)}\n`);
   assert.equal(new EventLog(root).replay().originHubId, null);
@@ -243,7 +243,7 @@ test('version-one accepted direct retry survives migration and still conflicts w
     await context.broker.stop();
     const fixture = JSON.parse(readFileSync(context.broker.log.file, 'utf8'));
     fixture.version = 1;
-    for (const field of ['originHubId', 'channels', 'principalChannelGrants']) delete fixture.snapshot[field];
+    for (const field of ['originHubId', 'channels', 'principalChannelGrants', 'daemonEpochs']) delete fixture.snapshot[field];
     const entry = fixture.snapshot.idempotency[0][1];
     delete entry.operation;
     entry.fingerprint = createHash('sha256').update(JSON.stringify([alice, bob, 'message', 'legacy', [], null, null])).digest('hex');
@@ -255,7 +255,7 @@ test('version-one accepted direct retry survives migration and still conflicts w
       assert.deepEqual(retry, { ...sent, duplicate: true });
       const { channel } = await request(alice, 'channel-create', { name: 'new version' });
       await assert.rejects(request(alice, 'channel-post', { channel, key: 'legacy-key', body: 'legacy' }), { code: 'conflict' });
-      assert.equal(JSON.parse(readFileSync(restarted.log.file, 'utf8').split('\n')[0]).version, 2);
+      assert.equal(JSON.parse(readFileSync(restarted.log.file, 'utf8').split('\n')[0]).version, 3);
     } finally { await restarted.stop(); }
   }, options(clock));
 });
