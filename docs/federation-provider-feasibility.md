@@ -139,3 +139,7 @@ Local results cannot establish production replication durability, billing,
 provider-region failover, PITR recovery or metadata/key custody. Those remain
 reviewed remote evidence gates requiring separate deployment authorization.
 Independent crypto review still precedes the production protocol/codec/schema.
+
+The separate [encrypted envelope review requirements](federation-crypto-review.md)
+propose immutable-field, construction and custody review inputs. They do not
+select or approve a production cryptographic protocol.
