@@ -1,7 +1,7 @@
 # Disabled owner-decision receipt producer
 
 The internal [issuer](../lib/owner-decision-issuer.mjs) produces canonical `d1`
-receipts for the [owner-decision protocol](owner-decisions.md). No route imports
+receipts for the [owner-decision protocol](owner-decisions.md). Refusing ingress imports
 it. It does not acquire keys, authorize an operation, consume a nonce, journal
 an authorization, release work or dispatch a daemon event. Those remain the
 responsibility of the custody-checked, journal-backed coordinator.

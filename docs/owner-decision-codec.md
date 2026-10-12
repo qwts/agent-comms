@@ -1,9 +1,10 @@
 # Owner decisions: disabled pure codec
 
 This internal implementation slice supports [#77](https://github.com/qwts/agent-comms/issues/77)
-and the proposed [wire contract](owner-decision-wire.md). It enables no broker
-route, native ceremony, receipt issuance, migration or owner capability. No
-production route imports the codec or challenge-binding modules.
+and the proposed [wire contract](owner-decision-wire.md). It enables no owner
+authority, native ceremony, receipt issuance, migration or owner capability. No
+production route can use these modules to authorize work; ingress now imports
+them transitively through its refusing production coordinator factory.
 
 ## Covered checks
 
