@@ -1,4 +1,8 @@
 param([switch]$ValidateOnly)
+if (-not $ValidateOnly) {
+    [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"script-entry"}')
+    [Console]::Out.Flush()
+}
 # Dev-only supervisor for one paused fixture. No runtime or connector changes.
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
@@ -16,9 +20,11 @@ function Reply($Value) {
 }
 
 try {
-    if (-not $ValidateOnly) { Reply @{id=-1;ok=$true;phase=$phase} }
     $phase = 'compile-supervisor'
-    if (-not $ValidateOnly) { Reply @{id=-1;ok=$true;phase=$phase} }
+    if (-not $ValidateOnly) {
+        [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"compile-supervisor"}')
+        [Console]::Out.Flush()
+    }
     Add-Type -TypeDefinition @'
 using System;
 using System.Collections.Generic;

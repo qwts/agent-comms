@@ -3,6 +3,36 @@ import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
+import { createCapacityController } from '../tools/acceptance/windows-capacity-control.mjs';
+
+async function within(promise, ms) {
+  let timer;
+  try { return await Promise.race([promise, new Promise((resolve, reject) => { timer = setTimeout(() => reject(new Error('owned process deadline')), ms); })]); }
+  finally { clearTimeout(timer); }
+}
+
+test('bare classic shell emits literal control and exits naturally with stdin still open', { skip: process.platform !== 'win32' }, async () => {
+  const shell = path.join(process.env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe');
+  const command = `[Console]::Out.WriteLine('{"id":0,"ok":true,"phase":"ready"}');[Console]::Out.Flush()`;
+  const child = spawn(shell, ['-NoLogo','-NoProfile','-NonInteractive','-Command',command], { stdio: ['pipe','pipe','pipe'], windowsHide: true });
+  let terminal = false, stderrBytes = 0;
+  const exited = new Promise((resolve) => {
+    child.once('error', () => { terminal = true; resolve({ code: null }); });
+    child.once('exit', (code) => { terminal = true; resolve({ code }); });
+  });
+  const closed = new Promise((resolve) => child.once('close', resolve));
+  child.stderr.on('data', (chunk) => { stderrBytes += chunk.length; });
+  child.stderr.on('error', () => { stderrBytes = -1; });
+  const control = createCapacityController({ child, exited, terminal: () => terminal });
+  try {
+    assert.deepEqual(await within(control.startup, 15000), { id: 0, ok: true, phase: 'ready' });
+    assert.equal((await within(exited, 5000)).code, 0);
+    await within(closed, 5000); assert.equal(stderrBytes, 0);
+  } finally {
+    if (!terminal) child.kill();
+    await within(exited, 5000); await within(closed, 5000);
+  }
+});
 
 test('classic supervisor exchanges bounded control records with stdin still open', { skip: process.platform !== 'win32' }, async () => {
   const shell = path.join(process.env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe');

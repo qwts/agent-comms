@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import test from 'node:test';
-import { createCapacityController } from '../tools/acceptance/windows-capacity-control.mjs';
+import { collectSupervisorProbes, createCapacityController } from '../tools/acceptance/windows-capacity-control.mjs';
 
 function transport() {
   const child = new EventEmitter(); child.stdin = new PassThrough(); child.stdout = new PassThrough();
@@ -72,4 +72,27 @@ test('IPC send failure persists for later calls without waiting for child exit',
   const control = createCapacityController(owned, { ipc: true });
   await assert.rejects(control.request('start'), { message: 'control-closed' });
   await assert.rejects(control.request('start'), { message: 'control-closed' }); owned.close();
+});
+test('supervisor variants never start a second process after uncertain exit or stdio cleanup', async () => {
+  for (const receipt of [{ ownedTerminalConfirmed: false, stdioClosedConfirmed: true },
+    { ownedTerminalConfirmed: true, stdioClosedConfirmed: false },
+    { ownedTerminalConfirmed: true, stdioClosedConfirmed: 'true' }]) {
+    const calls = [], records = [];
+    await collectSupervisorProbes(async (variant) => {
+      calls.push(variant); return { variant, status: 'failed', ...receipt };
+    }, (record) => records.push(record));
+    assert.deepEqual(calls, ['literal-command']);
+    assert.equal(records[0].status, 'failed');
+    assert.deepEqual(records[1], { runType: 'supervisor-only-no-workload', variant: 'supervisor-script',
+      productionImported: false, status: 'not-run', reason: 'prior-cleanup-unconfirmed' });
+  }
+});
+test('a failed but fully disposed first probe allows a matched second diagnostic without erasing failure', async () => {
+  const calls = [], records = [];
+  await collectSupervisorProbes(async (variant) => {
+    calls.push(variant); return { variant, status: calls.length === 1 ? 'failed' : 'passed',
+      ownedTerminalConfirmed: true, stdioClosedConfirmed: true };
+  }, (record) => records.push(record));
+  assert.deepEqual(calls, ['literal-command','supervisor-script']);
+  assert.deepEqual(records.map((record) => record.status), ['failed','passed']);
 });

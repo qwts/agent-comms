@@ -9,7 +9,7 @@ import { performance } from 'node:perf_hooks';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 import { admissionStage, RATES } from './windows-capacity-policy.mjs';
-import { createCapacityController, encodingSignature } from './windows-capacity-control.mjs';
+import { collectSupervisorProbes, createCapacityController, encodingSignature } from './windows-capacity-control.mjs';
 
 const exec = promisify(execFile), SELF = fileURLToPath(import.meta.url);
 const JOB = fileURLToPath(new URL('./windows-capacity-job.ps1', import.meta.url));
@@ -50,7 +50,8 @@ function ownedChild(file, args, options) {
     child.once('error', () => { if (!child.pid) { terminal = true; resolve({ code: null, signal: null }); } });
     child.once('exit', (code, signal) => { terminal = true; resolve({ code, signal }); });
   });
-  return { child, exited, terminal: () => terminal };
+  const stdioClosed = new Promise((resolve) => child.once('close', resolve));
+  return { child, exited, stdioClosed, terminal: () => terminal };
 }
 
 async function fixture(source) {
@@ -110,17 +111,23 @@ function productionArguments(source) {
   return { relayArgs: ['-NoLogo', '-NoProfile', '-NonInteractive', '-OutputFormat', 'Text', '-Command', command],
     diagnosticArgs: ['--input-type=module', '-e', `import(${JSON.stringify(pathToFileURL(path.join(source, 'lib/diagnostic-writer.mjs')).href)}).catch(() => process.exit(0));`] };
 }
-async function supervisorProbe() {
+async function supervisorProbe(variant) {
+  const started = performance.now(), workDeadline = started + 19_000, cleanupDeadline = started + 29_000;
+  const remaining = (at, cap) => Math.max(1, Math.min(cap, Math.floor(at - performance.now())));
   const shell = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
   const cleanEnvironment = environment();
-  const owned = ownedChild(shell, ['-NoLogo','-NoProfile','-NonInteractive','-File',JOB], {
+  const command = `[Console]::Out.WriteLine('{"id":0,"ok":true,"phase":"ready"}');[Console]::Out.Flush()`;
+  const owned = ownedChild(shell, ['-NoLogo','-NoProfile','-NonInteractive',
+    ...(variant === 'literal-command' ? ['-Command',command] : ['-File',JOB])], {
     env: cleanEnvironment, stdio: ['pipe','pipe','pipe'], windowsHide: true });
   const control = createCapacityController(owned, { classifyFailure: supervisorFailure });
-  const evidence = { runType: 'supervisor-only-no-workload', productionImported: false,
+  const evidence = { runType: 'supervisor-only-no-workload', variant, productionImported: false,
     executionPolicyObservation: 'not-queried',
     environmentParity: { inheritedExecutionPolicy: Object.keys(cleanEnvironment).some((key) => key.toLowerCase() === 'psexecutionpolicypreference'),
       inheritedModulePath: Object.keys(cleanEnvironment).some((key) => key.toLowerCase() === 'psmodulepath'), explicitExecutionPolicyArgument: false },
-    stderrBytes: 0, stderrByteCountCapped: false, stderrEncoding: null, control: null, ownedTerminalConfirmed: false };
+    stderrBytes: 0, stderrByteCountCapped: false, stderrEncoding: null, control: null,
+    eofSent: false, forcedTerminationRequested: false, terminal: null,
+    stdioClosedConfirmed: false, ownedTerminalConfirmed: false };
   owned.child.stderr.on('data', (chunk) => {
     evidence.stderrBytes = Math.min(1048577, evidence.stderrBytes + chunk.length);
     evidence.stderrByteCountCapped = evidence.stderrBytes > 1048576;
@@ -129,31 +136,45 @@ async function supervisorProbe() {
   owned.child.stderr.on('error', () => { evidence.stderrEncoding = 'stream-error'; });
   let original;
   try {
-    activeStage = 'supervisor-only-startup';
+    activeStage = variant === 'literal-command' ? 'supervisor-literal-startup' : 'supervisor-only-startup';
     const ready = await deadline(control.startup, 15_000, 'control-deadline');
     if (ready.ok === false) throw supervisorFailure(ready);
     assert.equal(ready.phase, 'ready');
-    activeStage = 'supervisor-only-close';
-    const closed = await control.request('close', {}, 10_000);
-    assert.equal(closed.jobEmptyConfirmed, true);
-    const terminal = await deadline(owned.exited, 5000, 'job-exit-unconfirmed');
+    activeStage = variant === 'literal-command' ? 'supervisor-literal-exit' : 'supervisor-only-close';
+    if (variant !== 'literal-command') {
+      const closed = await control.request('close', {}, remaining(workDeadline, 10_000));
+      assert.equal(closed.jobEmptyConfirmed, true);
+    }
+    const terminal = await deadline(owned.exited, remaining(workDeadline, 5000), 'job-exit-unconfirmed');
+    await deadline(owned.stdioClosed, remaining(workDeadline, 5000), 'job-exit-unconfirmed');
     assert.equal(terminal.code, 0); assert.equal(evidence.stderrBytes, 0); assert.notEqual(evidence.stderrEncoding, 'stream-error');
-    evidence.cleanup = { jobEmptyConfirmed: true, naturalJobEmptyConfirmed: true, scratchRemoved: true, scratchCreated: false };
+    evidence.cleanup = { jobEmptyConfirmed: true, naturalJobEmptyConfirmed: true,
+      jobCreated: variant !== 'literal-command', scratchRemoved: true, scratchCreated: false };
     return evidence;
   } catch (error) {
     if (!error.supervisorPhase && supervisorPhases.has(control.state().phase)) error.supervisorPhase = control.state().phase;
     error.supervisorProbe = evidence; original = error; throw error;
   } finally {
     if (!owned.terminal()) {
+      evidence.eofSent = true;
       owned.child.stdin.end();
-      try { await deadline(owned.exited, 5000, 'job-exit-unconfirmed'); }
+      try { await deadline(owned.exited, remaining(cleanupDeadline, 5000), 'job-exit-unconfirmed'); }
       catch {
+        evidence.forcedTerminationRequested = true;
         owned.child.kill();
-        try { await deadline(owned.exited, 5000, 'job-exit-unconfirmed'); }
+        try { await deadline(owned.exited, remaining(cleanupDeadline, 5000), 'job-exit-unconfirmed'); }
         catch { if (original) original.cleanup = [{ stage: 'cleanup', check: 'job-exit-unconfirmed' }]; }
       }
     }
+    if (owned.terminal()) {
+      const terminal = await owned.exited;
+      evidence.terminal = { code: Number.isSafeInteger(terminal.code) ? terminal.code : null,
+        signal: ['SIGTERM','SIGKILL','SIGINT'].includes(terminal.signal) ? terminal.signal : null };
+      try { await deadline(owned.stdioClosed, remaining(cleanupDeadline, 5000), 'job-exit-unconfirmed'); evidence.stdioClosedConfirmed = true; }
+      catch { if (original) original.cleanup = [{ stage: 'cleanup', check: 'job-exit-unconfirmed' }]; }
+    }
     evidence.control = control.state(); evidence.ownedTerminalConfirmed = owned.terminal();
+    evidence.elapsedMs = Math.ceil(performance.now() - started);
   }
 }
 async function run(source, revision, rates, preflight, commitLimitBytes) {
@@ -317,7 +338,20 @@ async function main() {
       node: process.version, runnerSha256: hash(readFileSync(SELF)), supervisorSha256: hash(readFileSync(JOB)),
       controlSha256: hash(readFileSync(new URL('./windows-capacity-control.mjs', import.meta.url))), runs: [] };
     const persist = () => writeFileSync(path.join(output, 'capacity.json'), `${JSON.stringify(result, null, 2)}\n`);
-    persist(); result.runs.push(await supervisorProbe()); result.status = 'passed'; persist();
+    persist(); let firstFailure;
+    await collectSupervisorProbes(async (variant) => {
+      try { return { ...await supervisorProbe(variant), status: 'passed' }; }
+      catch (error) {
+        const original = failure(error);
+        firstFailure ??= { error, stage: original.stage };
+        return { ...error.supervisorProbe, status: 'failed', failure: original };
+      }
+    }, (receipt) => {
+      result.runs.push(receipt); persist();
+      if (receipt.status === 'not-run') firstFailure ??= { error: new Error('job-exit-unconfirmed'), stage: 'supervisor-probe-cleanup' };
+    });
+    result.status = firstFailure ? 'failed' : 'passed'; persist();
+    if (firstFailure) { activeStage = firstFailure.stage; throw firstFailure.error; }
     process.stdout.write('{"status":"passed","supervisorOnly":true,"workloadRun":false}\n'); return;
   }
   const commitLimitBytes = Math.min(2 * 1024 ** 3, Math.floor(os.totalmem() / 4));

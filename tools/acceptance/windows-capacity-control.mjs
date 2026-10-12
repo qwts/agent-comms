@@ -8,6 +8,20 @@ export function encodingSignature(chunk) {
   if (chunk.subarray(0, 9).toString('ascii') === '#< CLIXML') return 'clixml';
   return chunk.subarray(0, 16).every((byte) => byte < 128) ? 'ascii-compatible' : 'other';
 }
+// A subsequent diagnostic must not overlap a child whose lifetime is unknown.
+export async function collectSupervisorProbes(probe, record) {
+  let mayContinue = true;
+  for (const variant of ['literal-command','supervisor-script']) {
+    if (!mayContinue) {
+      await record({ runType: 'supervisor-only-no-workload', variant, productionImported: false,
+        status: 'not-run', reason: 'prior-cleanup-unconfirmed' });
+      continue;
+    }
+    const result = await probe(variant);
+    await record(result);
+    mayContinue = result.ownedTerminalConfirmed === true && result.stdioClosedConfirmed === true;
+  }
+}
 export function createCapacityController(owned, { ipc = false, classifyFailure = () => new Error('job-supervisor-failed') } = {}) {
   const pending = new Map(); let id = 1, bytes = '', rejected, phase, encoding;
   let resolveStartup, rejectStartup;
