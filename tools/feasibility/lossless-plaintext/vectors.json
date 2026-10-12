@@ -1,0 +1,21 @@
+{
+  "golden": [
+    {"name":"empty", "value":["message","",[],null,null,0], "hex":"86676d6573736167656080f6f600"},
+    {"name":"lone-high", "value":["a","\ud800",[],null,null,8], "hex":"8661618119d80080f6f608"},
+    {"name":"mixed", "value":["a","x\ud800y",[],null,null,0], "hex":"86616183617819d800617980f6f600"},
+    {"name":"pair", "value":["a","\ud83d\ude00",[],null,null,0], "hex":"86616164f09f988080f6f600"},
+    {"name":"composed", "value":["a","\u00e9",[],null,null,0], "hex":"86616162c3a980f6f600"},
+    {"name":"decomposed", "value":["a","e\u0301",[],null,null,0], "hex":"8661616365cc8180f6f600"}
+  ],
+  "negative": [
+    {"name":"nonminimal-array", "hex":"980661616080f6f600"},
+    {"name":"pair-as-integers", "hex":"8661618219d83d19de0080f6f600"},
+    {"name":"adjacent-text", "hex":"866161836178617919d80080f6f600"},
+    {"name":"empty-run", "hex":"866161826019d80080f6f600"},
+    {"name":"text-only-array", "hex":"86616181617880f6f600"},
+    {"name":"surrogate-utf8", "hex":"86616163eda08080f6f600"},
+    {"name":"trailing", "hex":"8661616080f6f60000"},
+    {"name":"overlong-declaration", "hex":"8661617a00010000"},
+    {"name":"wrong-depth", "hex":"8661616080f6f609"}
+  ]
+}
