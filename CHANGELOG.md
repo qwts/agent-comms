@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add explicit bounded local diagnostic export from a selected file or stdin, with strict private-profile reconstruction, selected time range and qualified coverage metadata. No automatic capture, persistence, credentials or network route is added; optional OTLP and live host consumption remain pending (#164).
 - Add grant-filtered census oldest unacknowledged age and bounded private direct-send, read and acknowledgment completion observations. Admission, mailbox receipt and task completion remain distinct; existing authorization, retention and idempotency are unchanged. Additional-producer numeric overhead remains pending (#164).
 - Fixture-only bounded process adapter connects an actual compiled operation-specific native receipt worker to the broker journal/coordinator, with exact response correlation, independent process-close ownership, eleven command integrations, raw p1 JSON parity, and cancellation/revocation tests. Production artifact provenance, protected native observation, installed signing custody and physical readiness remain prerequisites; no owner route is enabled (#77).
 - Private bounded broker startup/shutdown and client watch readiness/reconnection observations use fixed outcomes and local monotonic durations. Failed startup cleanup, repeated readiness, cancellation and permission refusal retain their existing semantics; native Windows numeric budgets and packaged-host acceptance remain outstanding (#164).

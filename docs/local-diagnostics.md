@@ -105,6 +105,10 @@ unreferenced; parent exit kills the helper, and IPC disconnection also makes the
 helper exit. A failed helper is not restarted. The helper is an ephemeral local
 diagnostic writer, not a second account service or identity store.
 
+[Explicit local export](diagnostic-export.md) inspects a selected capture with
+strict field reconstruction and finite resource limits; it writes no capture
+files and creates no automatic upload route.
+
 The broker adds no diagnostic files, retention policy, rotation, network
 listener or exporter. A supervisor may capture stderr under its own existing
 policy. This local event format is a private partial implementation of

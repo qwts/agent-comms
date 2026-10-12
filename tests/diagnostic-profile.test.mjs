@@ -144,6 +144,7 @@ test('invalid or missing build metadata has explicit unknown provenance without 
   const root = mkdtempSync(path.join(os.tmpdir(), 'ac-diagnostic-profile-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   mkdirSync(path.join(root, 'lib', 'platform'), { recursive: true });
+  copyFileSync(new URL('../lib/diagnostic-profile.mjs', import.meta.url), path.join(root, 'lib', 'diagnostic-profile.mjs'));
   copyFileSync(new URL('../lib/diagnostics.mjs', import.meta.url), path.join(root, 'lib', 'diagnostics.mjs'));
   copyFileSync(new URL('../lib/platform/diagnostic-stderr.mjs', import.meta.url), path.join(root, 'lib', 'platform', 'diagnostic-stderr.mjs'));
   writeFileSync(path.join(root, 'package.json'), JSON.stringify({ version: 'CANARY-private-version/path' }));

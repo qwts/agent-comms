@@ -125,6 +125,8 @@ jobs:
         run: node --test tests/durable-file.test.mjs
       - name: Verify isolated diagnostic writer lifecycle
         run: node --test tests/diagnostic-process.test.mjs
+      - name: Verify explicit diagnostic export and owned helper liveness
+        run: node --test tests/diagnostic-export.test.mjs tests/diagnostic-export-cli.test.mjs
       - name: Verify local diagnostic profile and client custody attribution
         run: node --test tests/diagnostic-profile.test.mjs tests/client-diagnostics.test.mjs
       - name: Validate dev-only Windows capacity supervisor without workload

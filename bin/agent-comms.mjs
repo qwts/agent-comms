@@ -4,6 +4,7 @@
 // stdout carries one JSON document, or JSON Lines for `inbox watch`;
 // diagnostics go to stderr; every failure exits non-zero with a stable code.
 
+import { diagnosticExportRange, readDiagnosticExport, writeDiagnosticExportOwned } from '../lib/diagnostic-export.mjs';
 import { groupId } from '../lib/platform/account-isolation.mjs';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -29,6 +30,7 @@ const VERSION = '0.5.3';
 
 // Each row owns its positional arity and value flags; help uses the same schema.
 const COMMANDS = [
+  { name: 'diagnostics export', args: [], flags: ['input', 'from-unix-ms', 'until-unix-ms'] },
   { name: 'join', args: [], flags: ['name', 'harness', 'parent', 'allow'] },
   { name: 'leave', args: [], flags: [] },
   { name: 'whoami', args: [], flags: [] },
@@ -194,14 +196,39 @@ const print = (value) => process.stdout.write(`${JSON.stringify(value, null, 2)}
 let jsonLines = false;
 
 async function run(argv, env) {
-  const { positional, flags } = parse(argv);
+  let parsed;
+  try { parsed = parse(argv); } catch (error) {
+    if (argv[0] === 'diagnostics') fail('usage', 'invalid diagnostic export arguments');
+    throw error;
+  }
+  const { positional, flags } = parsed;
   const [command, sub, ...rest] = positional;
   jsonLines = command === 'inbox' && sub === 'watch';
-  const paths = brokerPaths(env, HOST_CONFIG);
-  const client = clientPaths(env, HOST_CONFIG);
 
   if (flags.version) return process.stdout.write(`agent-comms ${VERSION}\n`);
   if (flags.help || !command) return process.stdout.write(HELP);
+
+  if (command === 'diagnostics') {
+    if (sub !== 'export' || flags.input === undefined) fail('usage', 'diagnostics export requires explicit --input');
+    const time = (value) => {
+      if (value === undefined) return null;
+      if (!/^\d{1,16}$/.test(value) || !Number.isSafeInteger(Number(value))) fail('usage', 'diagnostic time bounds must be nonnegative safe integers');
+      return Number(value);
+    };
+    const range = diagnosticExportRange(time(flags['from-unix-ms']), time(flags['until-unix-ms']));
+    const result = await readDiagnosticExport(flags.input, range);
+    try { await writeDiagnosticExportOwned(result.output); }
+    catch (error) {
+      // The first document may already be partial. Never print a second one.
+      process.stderr.write(`agent-comms: ${error.code === 'diagnostic-output-timeout' ? 'diagnostic-output-timeout' : 'diagnostic-output-failed'}\n`);
+      process.exit(1);
+    }
+    // This explicit one-shot command owns its stdin and pending I/O. Callback
+    // completion/drain precede exit; a timed-out input cannot keep it alive.
+    process.exit(result.exitCode);
+  }
+  const paths = brokerPaths(env, HOST_CONFIG);
+  const client = clientPaths(env, HOST_CONFIG);
 
   // One resolution per process: the report below needs the same binding the
   // call was made under, and re-reading a file mid-command could refuse a
