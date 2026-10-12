@@ -1,0 +1,42 @@
+{
+  "preflight-01-failure.json": {
+    "sha256": "405b53c18bc641afa81e305ff5e7ff672680be022c679beaa20832ecb33c344f",
+    "bytes": 90
+  },
+  "preflight-01-disposition.json": {
+    "sha256": "c7c6fb3d9b5a12ca05a7a6b0ece9704aea944e625a462a2477dcff4af91acb05",
+    "bytes": 485
+  },
+  "preflight-02-failure.json": {
+    "sha256": "a696e6b4bd81cf6637a6304c87c1b8b129f45759c1a643be7c5638b07e540bf7",
+    "bytes": 584
+  },
+  "preflight-02-partial-runs.json": {
+    "sha256": "905ec5350092111f8e351a352079abafb6ab8ded290ad703e8e92e87da3525fb",
+    "bytes": 1408
+  },
+  "preflight-03-success.json": {
+    "sha256": "61b7ca77b405a1085971250a05be61abc1c35a1716ddf5544d822c33f49100a4",
+    "bytes": 3726
+  },
+  "preflight-04-success.json": {
+    "sha256": "3e2adacf22cd2d0f67b579b75afb507d2b24a6cb7a32b2374d30b0505faaf6b6",
+    "bytes": 3710
+  },
+  "preflight-05-frozen-success.json": {
+    "sha256": "24ea932f165a4d892d5f19e6f2ec4e0569af35ab1308696532bd5e4590a192d8",
+    "bytes": 3726
+  },
+  "healthy-results.json": {
+    "sha256": "eb3776360fe4dc15b828150e997677410b4c21d7de151f35f81d6a9be71fc4a9",
+    "bytes": 1877
+  },
+  "healthy-runs.json": {
+    "sha256": "2765c0ecf95dcfa8fd1a262257cfcd8012ea6c246db5005a6aad7072427293b6",
+    "bytes": 62679
+  },
+  "runner.mjs.txt": {
+    "sha256": "0437dcc8af4ce34a7e5fa7f7e16041bade7bbc63f2a0e0a80c2f8b25c253403a",
+    "bytes": 25395
+  }
+}

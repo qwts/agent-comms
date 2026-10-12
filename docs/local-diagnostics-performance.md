@@ -6,6 +6,10 @@ This is bounded local evidence for the broker/client instrumentation slice of
 Related to [SOP #85](https://github.com/qwts/qwts-agent-sop/issues/85); both issues
 remain open. The exact records and source snapshots are retained in the
 [evidence directory](../tools/acceptance/evidence/2026-10-12-local-diagnostics/README.md).
+The later [pinned-runtime comparison](local-diagnostics-total-overhead.md)
+adds scoped total-instrumentation evidence for a defined embedded-process
+workload with a healthy destination; it preserves these earlier records and
+their individual dispositions.
 
 ## Scope and baseline
 
@@ -23,8 +27,9 @@ callback disabled. New request timing reads and imports remain present. These
 deltas measure enabled reporting/helper overhead only; they do not establish
 total new instrumentation overhead against the preceding runtime. The proposed
 budget says to compare with diagnostics disabled but does not define whether
-timing reads remain. A pinned pre-change runtime baseline is still required
-before claiming total instrumentation acceptance. Native Windows numeric
+timing reads remain. A pinned pre-change runtime baseline is required
+for a total-instrumentation claim; the later comparison supplies that baseline
+for its explicitly bounded workload. Native Windows numeric
 budgets, packaged host evidence and cross-repository adoption also remain open.
 
 Main/helper RSS and CPU were measured separately using one asynchronous batched

@@ -1,0 +1,24 @@
+{
+  "status": "failed",
+  "check": "cleanup-failed",
+  "originalFailure": {
+    "stage": "parent-startup-accounting",
+    "check": "owned-helper-command-unconfirmed",
+    "systemCode": "ERR_ASSERTION"
+  },
+  "cleanupFailures": [
+    {
+      "stage": "parent-cleanup",
+      "check": "owned-cleanup-identity-unconfirmed"
+    },
+    {
+      "stage": "parent-cleanup",
+      "check": "owned-exit-unconfirmed"
+    },
+    {
+      "stage": "parent-cleanup",
+      "check": "scratch-retained"
+    }
+  ],
+  "runnerSha256": "54081b246ef416bd145b0940262501c84e03bc9211cd2670b8b89fd6e716bee0"
+}

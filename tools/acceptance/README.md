@@ -1,5 +1,76 @@
 # Opt-in local acceptance tools
 
+## Total instrumentation comparison with actual source archives
+
+The separate macOS-only probe compares complete unmodified production trees:
+pre-change main `25dfa8362401489503f704c7322ad1314b7e6ddb` and PR #188 head
+`e648d71277da72fc50c70ebcbb94c3c8f53c7cf3`. It archives both exact Git objects,
+retains archive/tree/source-runner hashes, and loads each archive's default
+Broker and client in **one embedded process**. It does not replace diagnostic
+callbacks, patch runtime source or claim a separate daemon/CLI deployment.
+Both objects must already exist locally; extraction needs Git and `tar`.
+The scoped healthy result and all preflight attempts are retained in the
+[total instrumentation evidence](evidence/2026-10-12-total-instrumentation/README.md),
+with [interpretation and remaining limits](../../docs/local-diagnostics-total-overhead.md).
+
+The bounded startup/default-failure/normal-and-fault-cleanup preflight does not run the
+timed workload. It retains separate old/new source and lifecycle evidence,
+including an injected harness startup failure after the default helper is
+observed and before any workload. Runtime archive sources remain unmodified:
+
+```sh
+node tools/acceptance/diagnostic-total-overhead.mjs --output /tmp/comms-total-preflight --preflight
+```
+
+After tool review and a coordinated quiet interval, use a new output directory:
+
+```sh
+node tools/acceptance/diagnostic-total-overhead.mjs --output /tmp/comms-total-overhead --modes healthy
+```
+
+Each mode runs old/new/new/old, about five minutes. Omitting `--modes` selects
+healthy, failed and unread destinations in sequence, about fourteen minutes.
+Each opposite-order pair independently retains the unchanged candidate latency,
+throughput, helper-inclusive RSS and natural-exit thresholds. Earlier failures
+must remain retained; this is not a rerun that overwrites prior evidence.
+
+At 100 real requests/s, a fixed cycle performs one send/read/ack per 1000
+requests, an unauthenticated refusal every 100 requests, and otherwise empty
+reads. This respects unmodified default send limits. The 10-second burst adds
+1000 actual local client `broker-unreachable` failures/s against an absent
+endpoint. The old client did not emit diagnostics for those failures; absence
+of its helper is recorded, not treated as a fabricated failure/lifecycle pass.
+Actual operation counts and errors must match at both pins. Sparse successful
+appends are covered, but this is not isolated append p99, compaction or every
+internal-error-path acceptance. Delivery/ack and ordinary recovery are checked.
+Uncertain-storage behavior retains its separate existing regression evidence.
+
+Steady-state comparisons include the new timing reads and reporting behavior
+for this workload. Runtime import, broker startup and warmup are reported
+separately. The parent samples only its owned main/direct diagnostic helper,
+verifies executable/parent/command identity, and retains separate RSS/CPU.
+CPU seconds are recorded as supporting evidence; CPU has no pass/fail threshold
+in this probe.
+Failed helpers are killed only while their verified owning fixture is live;
+no restart is allowed. Unread stderr is never consumed; this probe reports RSS
+plateau evidence, not private queue counts or direct proof of a blocked write.
+Existing bounded writer regressions provide those separate observations.
+
+The fixture stops actual Broker handles and disconnects naturally; no
+`process.exit` substitutes for shutdown. Parent disconnect also disposes the
+fixture. Cleanup awaits the owned process terminal state, retains credential
+scratch on unconfirmed cleanup, and preserves fixed-stage original/cleanup
+failures. An early terminal fixture whose helper state was never observed
+retains scratch rather than claiming cleanup was proven.
+Completed individual runs, progress, failures and source archives are retained
+under the selected evidence directory. Reports contain fixed outcome and
+resource summaries, not credentials, message bodies, runtime paths or peer IDs.
+
+Native Windows capacity qualification is separate: keep the production
+Identification-level PowerShell/.NET connector and account for those relay
+processes. Hosted standard-user and signed-in desktop evidence remain distinct.
+This tool does not run Windows or certify its numeric budgets.
+
 ## Diagnostic resource and latency budgets
 
 The standalone diagnostic probe uses fresh single-account broker processes and
