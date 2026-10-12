@@ -34,7 +34,12 @@ test('host transport receives only typed operation payloads and preserves result
   assert.equal(client.approve, undefined);
   const hostile = { op: 'principal-approve', auth: { principal, secret: 'do-not-forward' },
     sender: 'other', agentId: 'other', secret: 'do-not-forward' };
-  assert.equal(await client.send({ ...hostile, to: 'target', body: 'hello', key: 'once' }), result);
+  const sendTrace = '00-abcdef1234567890abcdef1234567890-abcd1234567890ef-ff';
+  assert.equal(await client.send({ ...hostile, to: 'target', body: 'hello', key: 'once', traceparent: sendTrace,
+    baggage: 'do-not-forward', tracestate: 'do-not-forward' }), result);
+  assert.equal(calls[0][0].traceparent, sendTrace);
+  assert.equal(Object.hasOwn(calls[0][0], 'baggage'), false);
+  assert.equal(Object.hasOwn(calls[0][0], 'tracestate'), false);
   await client.inbox({ ...hostile, after: 7, limit: 2, channel: 'channel' });
   const traceparent = '00-1234567890abcdef1234567890abcdef-1234567890abcdef-01';
   await client.launch({ ...hostile, account: 'persona', soul: 'target', harness: 'test', parent: null, traceparent,

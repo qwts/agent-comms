@@ -2,9 +2,10 @@
 
 Related to [principal launch](principal-client.md#request-a-daemon-launch),
 [#164](https://github.com/qwts/agent-comms/issues/164) and
-[agent-bot #983](https://github.com/qwts/agent-bot-identity/issues/983);
-both issues remain open. This is a principal launch propagation slice, with
-no return/wake propagation, exporter, CLI flag or host release.
+[agent-bot #983](https://github.com/qwts/agent-bot-identity/issues/983).
+This launch propagation slice has no return propagation, exporter or CLI flag.
+[Mailbox wake context](mailbox-wake-trace-context.md) has separate coalescing
+and replay rules; launch context is never reused for mailbox wakes.
 
 Optional `traceparent` is untrusted correlation data with no authority. The
 broker forwards only an exact 55-character lowercase W3C version-00 value
@@ -21,10 +22,10 @@ Oversized frames still fail under their existing limits; optional context does
 not exempt them. Omission preserves existing behavior. Older brokers may
 ignore the field; this change does not update an installed host or daemon.
 
-Native host adoption also needs its transport field allowlist updated; the
-[host transport work](https://github.com/true-line/geniusbar/pull/378) does not
-establish support for this optional field. A newer SDK alone does not establish
-installed end-to-end trace propagation through that host.
+The [host trace update](https://github.com/true-line/geniusbar/pull/380)
+updates its transport allowlist and tests the actual Node factory/Rust/released
+broker path with a synthetic daemon watcher. That source evidence does not
+establish installed-host or actual harness trace acceptance.
 
 The broker constructs its durable launch target separately from the watch
 event. The trace value never enters launch records/state, launch
