@@ -8,6 +8,7 @@ $fixtureId = 0
 $fixtureCreation = $null
 $known = @{}
 $maximumRows = 128 # private-job membership, including compiler descendants
+$phase = 'compile-supervisor'
 
 function Reply($Value) {
     [Console]::Out.WriteLine(($Value | ConvertTo-Json -Depth 8 -Compress))
@@ -141,11 +142,14 @@ public static class CapacityJob {
         Reply @{ok=$true;validated=$true;workloadRun=$false}
         return
     }
+    $phase = 'read-control'
+    Reply @{id=0;ok=$true;phase='ready'}
     while ($null -ne ($line = [Console]::In.ReadLine())) {
         if ($line.Length -gt 32768) { throw 'invalid-control-line' }
         $inputData = $line | ConvertFrom-Json
         $requestId = [int]$inputData.id
         if ($inputData.op -eq 'attach' -and -not $attached) {
+            $phase = 'verify-fixture'
             $fixtureId = [int]$inputData.pid
             $parentId = [int]$inputData.parentPid
             if ($fixtureId -le 0 -or $parentId -le 0) { throw 'invalid-fixture-id' }
@@ -165,10 +169,12 @@ public static class CapacityJob {
             $limit = [ulong]$inputData.commitLimitBytes
             if ($limit -lt 536870912 -or $limit -gt 2147483648) { throw 'invalid-memory-limit' }
             $job = [CapacityJob]::Create($limit)
+            $phase = 'assign-private-job'
             [CapacityJob]::Attach($job, $fixtureId, [long]$fixtureCreation)
             $attached = $true
             Reply @{id=$requestId;ok=$true;attached=$true;powershellVersion=@($PSVersionTable.PSVersion.Major,$PSVersionTable.PSVersion.Minor,$PSVersionTable.PSVersion.Build)}
         } elseif ($inputData.op -eq 'sample' -and $attached) {
+            $phase = 'sample-job'
             $ids = @([CapacityJob]::Pids($job))
             if ($ids.Count -eq 0 -or $ids.Count -gt $maximumRows) { throw 'owned-job-empty-or-overbound' }
             $filter = ($ids | ForEach-Object { 'ProcessId=' + $_ }) -join ' OR '
@@ -210,8 +216,10 @@ public static class CapacityJob {
             $observer = Get-Process -Id $PID
             Reply @{id=$requestId;ok=$true;totals=$totals;jobPeakCommitBytes=[CapacityJob]::PeakCommit($job);jobCpu100ns=[CapacityJob]::Cpu100ns($job);observer=@{workingSetBytes=[ulong]$observer.WorkingSet64;cpu100ns=[ulong]$observer.TotalProcessorTime.Ticks}}
         } elseif ($inputData.op -eq 'members' -and $attached) {
+            $phase = 'query-members'
             Reply @{id=$requestId;ok=$true;activeMembers=@([CapacityJob]::Pids($job)).Count}
         } elseif ($inputData.op -eq 'close') {
+            $phase = 'close-job'
             if ($job -ne [IntPtr]::Zero) {
                 [CapacityJob]::Stop($job)
                 for ($attempt=0; $attempt -lt 50 -and @([CapacityJob]::Pids($job)).Count -gt 0; $attempt++) { Start-Sleep -Milliseconds 100 }
@@ -226,7 +234,8 @@ public static class CapacityJob {
     }
 } catch {
     # A fixed failure record, never PowerShell errors, command lines or stacks.
-    Reply @{id=$requestId;ok=$false;check='job-supervisor-failed'}
+    $failureId = if ($null -eq $requestId) { 0 } else { $requestId }
+    Reply @{id=$failureId;ok=$false;failure=@{check='job-supervisor-failed';phase=$phase}}
     exit 1
 } finally {
     if ($job -ne [IntPtr]::Zero) { [void][CapacityJob]::CloseHandle($job) }

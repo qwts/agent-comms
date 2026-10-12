@@ -136,11 +136,14 @@ jobs:
             if ($parseErrors.Count -ne 0) { throw 'Capacity PowerShell parse failed' }
           }
           & ./tests/windows-acceptance-report-path.ps1
+          & ./tests/windows-capacity-cleanup-evidence.ps1
           $env:PSModulePath = "$env:WINDIR\System32\WindowsPowerShell\v1.0\Modules"
           & "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -File tests/windows-acceptance-native-command.ps1
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           & "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -File tools/acceptance/windows-capacity-job.ps1 -ValidateOnly
           exit $LASTEXITCODE
+      - name: Verify classic capacity supervisor duplex control without workload
+        run: node --test tests/windows-capacity-supervisor-control.test.mjs
       - name: Verify native custody and DPAPI through inherited PowerShell 7 environment
         run: node --test tests/platform-win32-custody-native.test.mjs
 

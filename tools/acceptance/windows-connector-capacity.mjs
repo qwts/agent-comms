@@ -17,12 +17,19 @@ const CANARY = 'CANARY-windows-capacity-body-secret';
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 let output, activeStage = 'arguments', fixtureCleanup;
+const supervisorPhases = new Set(['compile-supervisor','read-control','verify-fixture','assign-private-job','sample-job','query-members','close-job']);
 const checks = new Set(['fixture-terminal', 'fixture-deadline', 'control-deadline', 'control-closed',
   'control-output-bound', 'control-invalid', 'job-supervisor-failed', 'natural-exit-unconfirmed',
   'relay-exit-unconfirmed', 'scratch-retained', 'job-exit-unconfirmed', 'diagnostic-output-invalid',
   'owned-startup-fault', 'owned-forced-cleanup', 'policy-failed', 'memory-headroom-insufficient']);
 function failure(error) {
-  return { stage: activeStage, check: checks.has(error?.message) ? error.message : error?.code === 'ERR_ASSERTION' ? 'assertion-failed' : 'operation-failed' };
+  return { stage: activeStage, check: checks.has(error?.message) ? error.message : error?.code === 'ERR_ASSERTION' ? 'assertion-failed' : 'operation-failed',
+    ...(supervisorPhases.has(error?.supervisorPhase) ? { supervisorPhase: error.supervisorPhase } : {}) };
+}
+function supervisorFailure(record) {
+  const error = new Error('job-supervisor-failed');
+  if (supervisorPhases.has(record?.failure?.phase)) error.supervisorPhase = record.failure.phase;
+  return error;
 }
 async function deadline(promise, ms, code) {
   let timer;
@@ -76,7 +83,10 @@ function controller(owned, ipc = false) {
       else owned.child.stdin.write(`${JSON.stringify(record)}\n`);
       const result = await deadline(response, timeout, 'control-deadline');
       if (rejected) throw rejected;
-      if (result.ok === false) throw new Error(checks.has(result.failure?.check) ? result.failure.check : 'job-supervisor-failed');
+      if (result.ok === false) {
+        if (result.failure?.check === 'job-supervisor-failed') throw supervisorFailure(result);
+        throw new Error(checks.has(result.failure?.check) ? result.failure.check : 'job-supervisor-failed');
+      }
       return result;
     } finally { pending.delete(requestId); }
   } };
@@ -193,10 +203,16 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
   try {
     activeStage = 'paused-fixture-startup';
     assert.equal((await deadline(Promise.race([control.startup, fixtureOwned.exited.then(() => { throw new Error('fixture-terminal'); })]), 5000, 'fixture-deadline')).paused, true);
+    const attachStarted = performance.now();
+    activeStage = 'supervisor-startup';
+    const ready = await deadline(Promise.race([supervisor.startup, supervisorOwned.exited.then(() => { throw new Error('control-closed'); })]), 15_000, 'control-deadline');
+    if (ready.ok === false) throw supervisorFailure(ready);
+    assert.equal(ready.phase, 'ready');
+    activeStage = 'supervisor-attach';
     const attachment = await supervisor.request('attach', { pid: fixtureOwned.child.pid, parentPid: process.pid, nodeExecutable: realpathSync(process.execPath),
       shellExecutable: shell, fixtureArgs: args, ...productionArguments(source), commitLimitBytes,
       compilerExecutables: ['Framework', 'Framework64'].map((name) => path.join(process.env.SystemRoot, 'Microsoft.NET', name, 'v4.0.30319', 'csc.exe')),
-      compilerTemp: realpathSync(process.env.TEMP) }, 15_000);
+      compilerTemp: realpathSync(process.env.TEMP) }, Math.max(1, 15_000 - (performance.now() - attachStarted)));
     attached = true; powershellVersion = attachment.powershellVersion;
     activeStage = 'production-startup';
     const startup = await control.request('start', {}, 90_000);

@@ -89,60 +89,9 @@ use the disposable standard-user account/profile bootstrap and install no
 scheduled task, daemon or host. The workflow remains manual; normal CI runs
 only the small admission regressions and empty-job supervisor validation.
 
-The initial hosted preflight
-[38202022510](https://github.com/qwts/agent-comms/actions/runs/38202022510), at
-head `1e45919a5a6efbf2c345915509963fda671bd2f9`, failed in the standard-user
-bootstrap, with no uploaded reports or assessable cases. Its retained full log
-has SHA256 `8b9a657633bc18e03cf065f9ed0f4eeeddefd937c38c3f036f0113270674a3d8`.
-The relative report argument was resolved through .NET's process directory,
-which can differ from PowerShell's location: a hypothesis, not an established
-failure cause. The bootstrap now resolves FileSystem provider paths and prints
-a fixed summary even if report writing fails. Windows CI tests divergent
-directories.
-
-The second preflight
-[38202529932](https://github.com/qwts/agent-comms/actions/runs/38202529932), at
-head `bf91367c2ae21950a1796330173514a07c649109`, also failed. Its fixed console
-summary records a failed child exit with no bootstrap exception or cleanup
-errors. Its retained full-log SHA256 is
-`37ce2d742f87e38324f745a15d68420b91025bf01d65e22ca632528373b4b12b`.
-The action's hidden-file exclusion omitted `.windows-results/`: a confirmed
-upload defect separate from the earlier path hypothesis. Hidden files are now
-enabled only for four named JSON paths, with no recursive source, credential or
-state upload. The console also records bounded child failure gate/error type.
-Neither failed run establishes startup/cleanup or capacity qualification.
-
-The third preflight
-[38202921658](https://github.com/qwts/agent-comms/actions/runs/38202921658), at
-head `17cdf5a6a2fc34a1c322384acc0b01470bf87099`, retained its report successfully.
-Its [retained report](../tools/acceptance/evidence/2026-10-12-windows-connector/preflight-38202921658-acceptance.json)
-records `clone-child-owned-inputs` / `RemoteException`, a loaded non-admin
-profile, and completed bootstrap cleanup with no errors. Report SHA256 is
-`51ea6de477df90104e344ad9b814615e46d5295fafc6b6576811cbf573b8be9a`;
-full-log SHA256 is
-`8d8937ddd5fbe4669e9ee3929c99ff69fc23314c909758bedcab816e0a59e205`.
-No production fixture or offered workload ran. This is consistent with classic
-PowerShell promoting Git's native stderr under `Stop`, but the failed report
-does not capture Git's exit status. Child clones now minimize informational
-output with `--quiet`, suppress native stderr under a scoped `Continue`
-preference, restore the prior preference, and explicitly reject a nonzero or
-missing native exit status. A classic Windows PowerShell regression exercises
-real native children emitting stderr with exit zero and exit seven, preserving
-actual command failures without treating informational stderr as failure.
-
-The first native-stderr CI regression at head
-`0a9e057fc07020e1094d485a9068f6ae291e1d5f`, run
-[38203257627](https://github.com/qwts/agent-comms/actions/runs/38203257627),
-failed on its exit-zero case. The retained Windows job log has SHA256
-`69c48e972f2b40853c703531a1e1821fb0c2a73afed9a370e38404dd887c2ee4`.
-The initial wrapper locally shadowed `LASTEXITCODE`, while PowerShell's native
-processor updates the global automatic variable in the reviewed official
-PowerShell source. Native confirmation of the corrected behavior is still
-required. The correction explicitly reads/resets that global exit status,
-restores the caller's prior value and keeps missing/nonzero rejection.
-The regression now reports only numeric/unavailable exit status on failure
-and requires the failing native child to return exactly seven. This CI failure
-ran no production fixture or preflight.
+Retained runs and fixes are recorded in the
+[preflight evidence history](windows-connector-capacity-evidence.md). No failed
+preflight establishes capacity qualification.
 
 After reviewing the exact PR, root dispatches `capacity-preflight` first. It
 checks old/new normal startup and cleanup, an injected startup fault and forced

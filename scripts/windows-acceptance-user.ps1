@@ -12,6 +12,7 @@ if (-not ([Security.Principal.WindowsPrincipal]$identity).IsInRole([Security.Pri
 }
 $repository = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 . (Join-Path $repository 'tools/acceptance/windows-report-path.ps1')
+. (Join-Path $repository 'tools/acceptance/windows-capacity-cleanup.ps1')
 $Report = Resolve-WindowsAcceptanceReportPath $Report
 $runId = [Guid]::NewGuid().ToString('N')
 $userName = 'comms' + $runId.Substring(0, 12)
@@ -158,6 +159,11 @@ try {
         if (Test-Path -LiteralPath $engineReport) { $reportData = Get-Content -LiteralPath $engineReport -Raw | ConvertFrom-Json -AsHashtable }
         if (Test-Path -LiteralPath $childReport) { $reportData.standardUser = Get-Content -LiteralPath $childReport -Raw | ConvertFrom-Json -AsHashtable }
     } catch { $cleanupErrors.Add('report-read') }
+    if ($Mode -ne 'engine' -and $child) {
+        if (-not (Test-WindowsCapacityCleanupConfirmed (Join-Path $stage 'results/capacity'))) {
+            $cleanupErrors.Add('capacity-tool-cleanup-unconfirmed')
+        }
+    }
     if ($sid) {
         try {
             for ($attempt=0; $attempt -lt 20; $attempt++) {

@@ -1,0 +1,15 @@
+{
+  "status": "failed",
+  "stage": "paused-fixture-startup",
+  "check": "scratch-retained",
+  "cleanup": [
+    {
+      "stage": "cleanup",
+      "check": "job-exit-unconfirmed"
+    }
+  ],
+  "original": {
+    "stage": "paused-fixture-startup",
+    "check": "control-deadline"
+  }
+}
