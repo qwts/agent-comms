@@ -143,13 +143,10 @@ One shared projector ignores unknown, inherited, accessor or nonprimitive
 values; it never reads exception messages, causes or arbitrary properties.
 Remote broker response fields are not projected into this metadata.
 
-This does not change the public `broker-unreachable` code, error/wire JSON,
-authentication, pin/proof validation, connection/request deadlines or retry
-policy. It does not serialize PowerShell output, paths, commands or secrets,
-and is not a new shared public event schema. A refused helper can now retain
-its existing local stage through the connector, handshake and client wrapper
-for separately reviewed internal evidence consumers. No underlying cause or
-platform acceptance follows merely from a stage label.
+The public `broker-unreachable` code, error/wire JSON, authentication,
+pin/proof validation, deadlines and retries remain unchanged. PowerShell
+output, paths, commands and secrets remain excluded. Refusal stages survive connector, handshake and client wrapping for internal
+evidence consumers; stage labels establish neither cause nor platform acceptance.
 
 The client preserves its first result or error before guarded stream disposal.
 A synchronous disposal throw or later close/error cannot replace that outcome.
@@ -158,3 +155,6 @@ has exited; owned-process acceptance tools still need their independent terminal
 stdio and job cleanup receipts.
 
 See [terminal destination failure](diagnostic-destination-failure.md).
+
+See [actual-process backpressure evidence](diagnostic-backpressure-evidence.md)
+for scoped live plateau and terminal-failure acceptance.

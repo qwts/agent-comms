@@ -208,6 +208,7 @@ for (const mode of ['unread-stderr', 'stopped-helper', 'killed-helper']) {
     let helper;
     t.after(() => { child.kill('SIGKILL'); if (helper) { try { process.kill(helper, 'SIGKILL'); } catch {} } });
     const exited = once(child, 'exit');
+    const closed = once(child, 'close');
     await Promise.race([once(child, 'message'), delay(3000).then(() => { throw new Error('broker startup timed out'); })]);
     const paired = await pairAccount(paths, os.userInfo().username, process.getuid());
     await admin(paths, { op: 'approve', code: paired.code }, { timeoutMs: 1000 });
@@ -221,6 +222,10 @@ for (const mode of ['unread-stderr', 'stopped-helper', 'killed-helper']) {
       if (stats.helper && stats.written > 0) break;
     }
     helper = stats.helper;
+    const plateauSamples = [];
+    const receipt = (stage, snapshot, cleanup = {}) => t.diagnostic(JSON.stringify({ stage,
+      ...(snapshot ? Object.fromEntries(['disabled', 'inFlight', 'queued', 'written', 'dropped', 'queuedBytes', 'inFlightBytes'].map(key => [key, snapshot[key]])) : {}), ...cleanup }));
+    receipt('start', stats);
     assert.ok(helper && stats.written > 0, 'the actual production helper must have started and written');
     if (mode === 'stopped-helper') process.kill(helper, 'SIGSTOP');
     if (mode === 'killed-helper') {
@@ -237,20 +242,35 @@ for (const mode of ['unread-stderr', 'stopped-helper', 'killed-helper']) {
       }
       assert.equal(gone, true, 'killed helper must actually disappear before delivery');
     }
-    let previous = stats.written;
-    let stalledChecks = 0;
-    // The production rate cap is 100 events/s. Allow a finite ten-second
-    // fill window so the test still proves an actually blocked destination,
-    // rather than disabling the cap or mistaking rate drops for backpressure.
-    for (let attempt = 0; attempt < 500; attempt += 1) {
-      await delay(20); stats = await send(child, 'stats');
-      stalledChecks = stats.inFlight && stats.queued === 64 && stats.written === previous ? stalledChecks + 1 : 0;
-      if (stats.disabled || stalledChecks >= 5) break;
-      previous = stats.written;
+    function liveBounded(snapshot) {
+      assert.equal(snapshot.helper, helper, 'no replacement helper');
+      assert.equal(snapshot.disabled, false, 'disabled sink is not live backpressure evidence');
+      assert.doesNotThrow(() => process.kill(helper, 0), 'blocked helper must remain alive');
+      assert.ok(snapshot.queued <= 64 && snapshot.queuedBytes <= 32 * 1024);
+      assert.ok(snapshot.inFlight <= 1 && snapshot.inFlightBytes <= 512);
     }
-    assert.ok(stats.disabled || stalledChecks >= 5, 'stderr or the isolated helper must actually be saturated/stalled');
-    assert.ok(stats.dropped > 0);
-    assert.ok(stats.queuedBytes <= 32 * 1024 && stats.inFlightBytes <= 512);
+    if (mode !== 'killed-helper') {
+      let previous = stats.written;
+      let previousDropped = stats.dropped;
+      let stalledChecks = 0;
+      // Preserve the existing ten-second fill window and five-check plateau.
+      // Rate-limit drops alone, or terminal sink failure, cannot satisfy this gate.
+      for (let attempt = 0; attempt < 500; attempt += 1) {
+        await delay(20); stats = await send(child, 'stats');
+        liveBounded(stats);
+        stalledChecks = stats.inFlight === 1 && stats.queued === 64 &&
+          stats.written === previous && stats.dropped > previousDropped ? stalledChecks + 1 : 0;
+        if (stalledChecks) plateauSamples.push(stats); else plateauSamples.length = 0;
+        if (stalledChecks >= 5) break;
+        previous = stats.written;
+        previousDropped = stats.dropped;
+      }
+      assert.equal(stalledChecks, 5, 'live pending write/full queue must plateau while drops grow');
+      for (const snapshot of plateauSamples) receipt('plateau', snapshot);
+    } else {
+      assert.ok(stats.dropped > 0);
+      assert.equal(stats.queued, 0); assert.equal(stats.inFlight, 0);
+    }
     const sent = await request({ op: 'send', agentId: alice, to: bob, body: 'delivery survives diagnostic backpressure', key: mode });
     const page = await request({ op: 'read', agentId: bob });
     assert.equal(page.messages[0].id, sent.messageId);
@@ -262,6 +282,15 @@ for (const mode of ['unread-stderr', 'stopped-helper', 'killed-helper']) {
       assert.equal(after.written, stats.written); assert.ok(after.dropped > stats.dropped);
       assert.equal(after.queued, 0); assert.equal(after.inFlight, 0);
       assert.throws(() => process.kill(helper, 0), { code: 'ESRCH' });
+      receipt('postcanonical-disabled', after);
+    }
+    if (mode !== 'killed-helper') {
+      const after = await send(child, 'stats');
+      liveBounded(after);
+      assert.equal(after.inFlight, 1); assert.equal(after.queued, 64);
+      assert.equal(after.written, stats.written); assert.ok(after.dropped > stats.dropped);
+      assert.deepEqual((await request({ op: 'read', agentId: bob })).messages, []);
+      receipt('postcanonical', after);
     }
     await assert.rejects(request({ op: 'read', agentId: bob }, { ...paired.credential, secret: 'CANARY-secret' }), { code: 'unauthenticated' });
     await send(child, 'stop');
@@ -272,5 +301,10 @@ for (const mode of ['unread-stderr', 'stopped-helper', 'killed-helper']) {
       await delay(10);
     }
     assert.equal(helper, null, 'a blocked/stopped helper must not survive its parent');
+    // Disposal is only after actual process exit and verified helper disappearance.
+    child.stderr.destroy();
+    const closure = await Promise.race([closed, delay(3000).then(() => { throw new Error('owned stdio close timed out'); })]);
+    assert.deepEqual(closure, [0, null]);
+    receipt('cleanup', null, { naturalExitConfirmed: true, helperGoneConfirmed: true, stdioClosedConfirmed: true });
   });
 }

@@ -1,0 +1,16 @@
+{
+  "sourceCommit": "ff4ef9283ae6afdf82e27c5d51673b881fa848ab",
+  "node": "v26.11.1",
+  "run01TestSha256": "4a5f12305f0f1791c1ab267f37fd2830a9287a1e77d9ceb6b84b0f4211abc436",
+  "run02TestSha256": "d124c89d4674aa77f12167c37bfe8b58d169dcfc2d26896d3674ce161dd9d5cd",
+  "files": {
+    "run-01.log": {
+      "sha256": "6c90c145320d3afb12e560501d6f772abddde11bfbe7139f51aa02ce91752c3f",
+      "bytes": 425
+    },
+    "run-02.log": {
+      "sha256": "237bd319cede037c5a9cdf862845033aef8dad72e69fe23769408c7d9f6f4ddc",
+      "bytes": 2912
+    }
+  }
+}

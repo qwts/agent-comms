@@ -1,0 +1,11 @@
+✔ spawned broker delivers and exits naturally with unread-stderr and leaves no helper (4374.912ms)
+✔ spawned broker delivers and exits naturally with stopped-helper and leaves no helper (1395.395791ms)
+✔ spawned broker delivers and exits naturally with killed-helper and leaves no helper (668.323541ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9582.103125
