@@ -2,8 +2,8 @@
 
 `principal-target-check` narrows agent-bot's existing revision and cold-wake
 principal checks. It queries current target grants; it is not a signed
-decision receipt, presence proof or mutation relay. Native custody, operation
-grants, receipts and migration remain [#77](https://github.com/qwts/agent-comms/issues/77).
+decision receipt, presence proof or mutation relay. The separate [operation-grant administration](owner-operation-grants.md) is a
+prerequisite; native custody, complete operation authorization, receipts and migration remain [#77](https://github.com/qwts/agent-comms/issues/77).
 
 The raw broker protocol accepts `agentId` and principal authentication. A
 successful response contains `{ principal, agentId, account }`. The broker

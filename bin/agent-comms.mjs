@@ -62,6 +62,7 @@ const COMMANDS = [
   { name: 'principal pair', args: [], flags: ['name'] },
   { name: 'admin principals', args: [], flags: [] },
   { name: 'admin principal-approve', args: ['CODE'], flags: ['grant'] },
+  { name: 'admin principal-owner-grant', args: ['PRINCIPAL'], flags: ['operations'] },
   { name: 'admin principal-revoke', args: ['PRINCIPAL'], flags: [] },
   { name: 'admin channel-grant', args: ['PRINCIPAL'], flags: ['capabilities-file'] },
   { name: 'admin channel-manager', args: ['CHANNEL', 'TO'], flags: [] },
@@ -439,6 +440,11 @@ async function run(argv, env) {
       }
       if (sub === 'channel-manager') return print(await admin(paths, { op: 'channel-manager', channel: rest[0], to: rest[1] }));
       if (sub === 'principals') return print(await admin(paths, { op: 'principals' }));
+      if (sub === 'principal-owner-grant') {
+        if (flags.operations === undefined) fail('usage', 'principal-owner-grant requires --operations (use none to clear)');
+        return print(await admin(paths, { op: 'principal-owner-grant', principal: rest[0],
+          operations: flags.operations === 'none' ? [] : flags.operations.split(',').map(value => value.trim()) }));
+      }
       if (sub === 'principal-approve') return print(await admin(paths, {
         op: 'principal-approve', code: rest[0],
         grant: flags.grant === undefined ? null : flags.grant.split(',').map((entry) => entry.trim()).filter(Boolean),
