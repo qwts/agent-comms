@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Retain daemon generation counters through revocation and re-pairing as an owner-decision prerequisite (#77). Checkpoint format 3 reads formats 1 and 2, but older engines refuse the new format; owner operations remain disabled.
+
 ## [0.4.4] - 2026-10-11
 
 ### Added

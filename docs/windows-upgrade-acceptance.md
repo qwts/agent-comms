@@ -37,7 +37,8 @@ The harness performs the following operations against newly generated state:
    released v0.4.1 scheduled broker against the same namespace. Verify broker
    pin and credential hashes, approved pairings, original mail/envelope,
    acknowledgement, principal inbox, original retry result and conflicting
-   retry refusal. Require the migrated version 2 checkpoint.
+   retry refusal. Require the migrated version 3 checkpoint. Earlier recorded candidate evidence
+   used version 2; it does not establish the new checkpoint acceptance.
 3. Stop and reinstall the current task, then repeat those continuity checks.
 4. Stop the task and copy its disposable state. Append one complete unknown
    future record to the copy; require a specific refusal and unchanged copied
