@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-12
+
+### Fixed
+- Exact principal approval uses the distinct private-admin `principal-approve-exact` operation, exposed by `admin principal-approve CODE --expected-principal ID`. A mismatched pending identity refuses without mutation, and older brokers refuse the unknown operation instead of ignoring its identity constraint. Ordinary code-only approval remains supported (#205).
+- Journal publication clears owned descriptor bookkeeping before an uncertain close, avoiding an unsafe second close of a potentially reused descriptor (#207).
+
+### Added
+- Optional direct-send and principal-SDK `traceparent` propagation on live daemon mailbox wakes. A coalesced window and its rate hold carry context only when every contributor supplies the same valid value. Mixed/invalid batches, retries and catch-up/restart do not introduce context; messages, journals, outcomes, inbox events and receipts exclude it. Compatible daemon adoption and connected release acceptance remain separate (#164, #208).
+- Disabled Darwin fixed-descriptor journal source bridge with pinned artifact checks, bounded actual-descriptor enumeration, persistent allocation and explicit full-flush primitives. No production helper binary or manifest is shipped; owner routes, physical-capacity support and native activation remain disabled. macOS 13 runtime, power-loss and installed app-only custody acceptance remain outstanding (#77, #207).
+
+### Upgrade notes
+- The 0.5.0 checkpoint and rollback guidance still applies when upgrading from 0.4.x. This patch does not introduce another state format or authorize credential cutover.
+- Windows numeric capacity remains unqualified; retained supervisor/preflight diagnostics are separate development evidence, not Windows acceptance.
+
 ## [0.5.0] - 2026-10-12
 
 ### Upgrade notes
