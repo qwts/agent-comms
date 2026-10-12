@@ -77,7 +77,7 @@ Immutable action:
 Action and decoded `d1` receipt payloads use the strict
 [canonical UTF-8 encoding](owner-decision-serialization.md). Hash the exact
 canonical action bytes with SHA-256; alternate representations refuse.
-[Disabled issuer](owner-decision-receipt-issuer.md).
+[Disabled issuer/coordinator](owner-decision-coordinator.md).
 
 The presence action is the one-line text
 `Owner decision <operation> for <account>/<soul>: <summary>; request <requestId>; payload sha256:<digest>`.
