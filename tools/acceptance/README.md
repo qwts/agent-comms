@@ -84,6 +84,55 @@ required. Sampling failures stop the control, and the sampler drains before
 fixture/job cleanup. Samples cannot prove the command of every short-lived
 descendant; the private job contains all descendants regardless.
 
+## Incremental lifecycle instrumentation comparison
+
+The opt-in macOS runner `diagnostic-lifecycle-overhead.mjs` compares PR #197
+base `a618508ab4c4d7185b198c89b1befce513a66b8e` with PR #225 signed head
+`5276f77d6bbcc68e42ef6ba5654495d2df56bc35`, using complete unmodified source
+archives and default Broker/client callbacks in one embedded process. Both pins
+have diagnostic helpers; identity checks, failed-helper treatment and cleanup
+are symmetric. Both exact Git objects must already exist locally; retained
+source archives stay outside Git. The [lifecycle evidence](evidence/2026-10-12-lifecycle-overhead/README.md)
+records all three paired groups and their original archive hashes. Existing total-instrumentation results below predate these new
+producers and do not establish their overhead.
+
+The bounded preflight exercises each pin with healthy normal/fault cleanup,
+failed-helper and configured-unread destinations. Normal cases also exercise
+actual authenticated initial/churn watch readiness, one reconnect, cancellation
+and permission refusal. Consumed diagnostics are checked through independent
+child-close receipts after actual fixture/helper exit; unread owned stderr is
+explicitly disposed after those exits, without claiming its contents were read.
+It does not run the 70-second numeric workload:
+
+```sh
+node tools/acceptance/diagnostic-lifecycle-overhead.mjs --output /tmp/comms-lifecycle-preflight --preflight
+```
+
+After exact runner review, passing preflight and a coordinated quiet interval,
+use a separate new output directory for each mode:
+
+```sh
+node tools/acceptance/diagnostic-lifecycle-overhead.mjs --output /tmp/comms-lifecycle-healthy --modes healthy
+```
+
+The request/failure schedule and opposite-order budget checks match the total
+comparison below. Additional actual watch work is one initial watch per second
+and one persistent watch reconnected through its owned channel every ten
+seconds: each 70-second run requires 70 churn-ready events, one persistent-ready
+event, seven recovered-ready events and one permission refusal. Candidate
+healthy diagnostics require safe fixed lifecycle tuples from the preburst
+window; sampled/dropped burst diagnostics cannot prove canonical watch counts.
+The 1000/s burst is actual local client failures, not lifecycle completions.
+
+Startup/import/warmup and stop/restart recovery are recorded separately from
+steady-state request service latency. Watch scheduling also contributes to
+driver lateness and total throughput. Every opposite-order pair retains p95
+increase at most 2ms, p99 at most 5ms, throughput at least 98%, additional
+main-plus-helper RSS at most 64MiB and natural exit within two seconds. CPU is
+recorded without a pass threshold. Preserve failures, exact archive/runner/Node
+hashes and owned terminal/helper cleanup receipts. No source, native Windows,
+packaged host or numeric acceptance follows merely from preparing this runner.
+
 ## Total instrumentation comparison with actual source archives
 
 The separate macOS-only probe compares complete unmodified production trees:

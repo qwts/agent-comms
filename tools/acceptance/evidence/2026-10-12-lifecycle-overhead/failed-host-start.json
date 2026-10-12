@@ -1,0 +1,77 @@
+{
+  "observedAtUtc": "2026-10-12T12:38:08.324244+00:00",
+  "platform": "Darwin",
+  "osRelease": "27.0.0",
+  "machine": "arm64",
+  "logicalCpus": 18,
+  "loadAverages": [
+    4.02978515625,
+    4.0517578125,
+    4.287109375
+  ],
+  "topObservedProcesses": [
+    {
+      "cpuPercent": 109.7,
+      "processBasename": "mediaanalysisd"
+    },
+    {
+      "cpuPercent": 46.0,
+      "processBasename": "WindowServer"
+    },
+    {
+      "cpuPercent": 17.2,
+      "processBasename": "com.apple.WebKit.WebContent"
+    },
+    {
+      "cpuPercent": 17.1,
+      "processBasename": "Brave Browser Helper (Renderer)"
+    },
+    {
+      "cpuPercent": 10.2,
+      "processBasename": "com.apple.WebKit.GPU"
+    },
+    {
+      "cpuPercent": 9.5,
+      "processBasename": "Terminal"
+    },
+    {
+      "cpuPercent": 5.7,
+      "processBasename": "geniusbar"
+    },
+    {
+      "cpuPercent": 4.2,
+      "processBasename": "codex"
+    },
+    {
+      "cpuPercent": 3.9,
+      "processBasename": "codex"
+    },
+    {
+      "cpuPercent": 3.3,
+      "processBasename": "WindowManager"
+    },
+    {
+      "cpuPercent": 1.9,
+      "processBasename": "Brave Browser Helper"
+    },
+    {
+      "cpuPercent": 1.8,
+      "processBasename": "mdworker_shared"
+    },
+    {
+      "cpuPercent": 1.7,
+      "processBasename": "dasd"
+    },
+    {
+      "cpuPercent": 1.5,
+      "processBasename": "syspolicyd"
+    },
+    {
+      "cpuPercent": 1.5,
+      "processBasename": "codex-code-mode-host"
+    }
+  ],
+  "priorOwnedComputeObservation": "No diagnostic lifecycle runner, node --test, npm test, cargo build/test or dotnet build/test process observed before launch; only the inspection shell/rg matched.",
+  "coordination": "Root authorizes failed-helper only. Other agents remain idle; root read-only remote/local.",
+  "limitations": "Single start process observation, not continuous proof; OS/UI/browser, other sessions and external activity remain uncontrolled."
+}

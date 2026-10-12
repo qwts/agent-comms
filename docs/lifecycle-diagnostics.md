@@ -51,4 +51,7 @@ and queue bounds apply to the new fixed tuples.
 These are source fixtures, not packaged-host or native Windows numeric
 acceptance. Existing [performance records](local-diagnostics-total-overhead.md)
 predate the new lifecycle producers and do not establish their overhead.
-Paired producer workload measurements and platform acceptance remain open.
+[Incremental paired evidence](lifecycle-diagnostics-performance.md) covers the
+defined macOS embedded-process producer workload with healthy, failed and
+configured-unread destinations. Native Windows numeric budgets and packaged-host
+acceptance remain open.

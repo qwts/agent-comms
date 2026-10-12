@@ -1,0 +1,91 @@
+{
+  "terminalObservedAtUtc": "2026-10-12T12:43:05.822467+00:00",
+  "exitCode": 0,
+  "runCount": 4,
+  "allCanonicalOutcomesEqual": true,
+  "allWatchOutcomesEqual": true,
+  "allOwnedTerminalConfirmed": true,
+  "allHelperExitConfirmed": true,
+  "allStdioClosureConfirmed": true,
+  "allFailedHelperApplicable": true,
+  "runs": [
+    {
+      "revision": "old",
+      "shutdownMs": 8.202457999999751,
+      "mainCpuSeconds": 4.98,
+      "helperCpuSeconds": 0.07,
+      "observedEvents": {
+        "broker.started": 0,
+        "broker.stopped": 0,
+        "transport.ready": 0,
+        "transport.reconnected": 0
+      },
+      "watchOutcomes": {
+        "churnReady": 70,
+        "persistentReady": 1,
+        "reconnectReady": 7,
+        "refusal": 1
+      }
+    },
+    {
+      "revision": "new",
+      "shutdownMs": 5.767374999995809,
+      "mainCpuSeconds": 5.43,
+      "helperCpuSeconds": 0.07,
+      "observedEvents": {
+        "broker.started": 1,
+        "broker.stopped": 0,
+        "transport.ready": 0,
+        "transport.reconnected": 0
+      },
+      "watchOutcomes": {
+        "churnReady": 70,
+        "persistentReady": 1,
+        "reconnectReady": 7,
+        "refusal": 1
+      }
+    },
+    {
+      "revision": "new",
+      "shutdownMs": 9.391832999972394,
+      "mainCpuSeconds": 5.12,
+      "helperCpuSeconds": 0.07,
+      "observedEvents": {
+        "broker.started": 1,
+        "broker.stopped": 0,
+        "transport.ready": 0,
+        "transport.reconnected": 0
+      },
+      "watchOutcomes": {
+        "churnReady": 70,
+        "persistentReady": 1,
+        "reconnectReady": 7,
+        "refusal": 1
+      }
+    },
+    {
+      "revision": "old",
+      "shutdownMs": 5.03366700001061,
+      "mainCpuSeconds": 5.44,
+      "helperCpuSeconds": 0.07,
+      "observedEvents": {
+        "broker.started": 0,
+        "broker.stopped": 0,
+        "transport.ready": 0,
+        "transport.reconnected": 0
+      },
+      "watchOutcomes": {
+        "churnReady": 70,
+        "persistentReady": 1,
+        "reconnectReady": 7,
+        "refusal": 1
+      }
+    }
+  ],
+  "loadAverages": [
+    5.14404296875,
+    4.16357421875,
+    4.21630859375
+  ],
+  "limitations": "Coordinated agent hold; OS/UI/browser and external activity uncontrolled. Start/end observations are not continuous quiet proof."
+}

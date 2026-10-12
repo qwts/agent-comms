@@ -1,0 +1,2094 @@
+[
+  {
+    "revision": "old",
+    "mode": "healthy",
+    "deployment": "one embedded Broker/client process; default callbacks",
+    "importMs": 14.900250000000002,
+    "brokerStartMs": 24.640292000000002,
+    "warmupMs": 102.83133300000001,
+    "recoveryMs": 19.43124999999418,
+    "phases": [
+      {
+        "seconds": 60,
+        "completed": 6000,
+        "elapsedMs": 60001.139500000005,
+        "throughput": 99.99810086940099,
+        "p95Ms": 0.7384579999998095,
+        "p99Ms": 0.9456669999999576,
+        "actualLocalFailureAttempts": 0,
+        "windows": [
+          {
+            "requestSecond": 1,
+            "p95Ms": 0.33975000000003774,
+            "p99Ms": 4.019124999999974,
+            "driverLatenessMaxMs": 2.113124999999968
+          },
+          {
+            "requestSecond": 2,
+            "p95Ms": 0.8838749999999891,
+            "p99Ms": 1.005625000000009,
+            "driverLatenessMaxMs": 2.1232500000000982
+          },
+          {
+            "requestSecond": 3,
+            "p95Ms": 0.9456669999999576,
+            "p99Ms": 0.9861249999999018,
+            "driverLatenessMaxMs": 2.136250000000018
+          },
+          {
+            "requestSecond": 4,
+            "p95Ms": 0.8726670000000922,
+            "p99Ms": 1.3666669999997794,
+            "driverLatenessMaxMs": 2.3503749999999854
+          },
+          {
+            "requestSecond": 5,
+            "p95Ms": 0.8354579999995622,
+            "p99Ms": 1.0091249999995853,
+            "driverLatenessMaxMs": 2.7648330000001806
+          },
+          {
+            "requestSecond": 6,
+            "p95Ms": 0.7846659999995609,
+            "p99Ms": 0.9644589999998061,
+            "driverLatenessMaxMs": 255.80354100000022
+          },
+          {
+            "requestSecond": 7,
+            "p95Ms": 0.7843330000005153,
+            "p99Ms": 0.9330410000002303,
+            "driverLatenessMaxMs": 2.332666000000245
+          },
+          {
+            "requestSecond": 8,
+            "p95Ms": 0.7614579999999478,
+            "p99Ms": 0.8109580000000278,
+            "driverLatenessMaxMs": 2.135207999999693
+          },
+          {
+            "requestSecond": 9,
+            "p95Ms": 0.7951669999984006,
+            "p99Ms": 0.8476250000003347,
+            "driverLatenessMaxMs": 2.841374999999971
+          },
+          {
+            "requestSecond": 10,
+            "p95Ms": 0.43995799999902374,
+            "p99Ms": 0.6036669999994047,
+            "driverLatenessMaxMs": 2.1090000000003783
+          },
+          {
+            "requestSecond": 11,
+            "p95Ms": 0.7793750000000728,
+            "p99Ms": 4.055624999999054,
+            "driverLatenessMaxMs": 2.770750000001499
+          },
+          {
+            "requestSecond": 12,
+            "p95Ms": 0.7882920000010927,
+            "p99Ms": 1.414708000000246,
+            "driverLatenessMaxMs": 2.1217500000002474
+          },
+          {
+            "requestSecond": 13,
+            "p95Ms": 0.787583999999697,
+            "p99Ms": 0.9426660000008269,
+            "driverLatenessMaxMs": 2.1842500000002474
+          },
+          {
+            "requestSecond": 14,
+            "p95Ms": 0.7980840000000171,
+            "p99Ms": 1.0482499999998254,
+            "driverLatenessMaxMs": 2.2258330000004207
+          },
+          {
+            "requestSecond": 15,
+            "p95Ms": 0.7307500000006257,
+            "p99Ms": 0.8555830000004789,
+            "driverLatenessMaxMs": 2.1263750000016444
+          },
+          {
+            "requestSecond": 16,
+            "p95Ms": 0.7633339999993041,
+            "p99Ms": 1.2056250000005093,
+            "driverLatenessMaxMs": 255.70570800000132
+          },
+          {
+            "requestSecond": 17,
+            "p95Ms": 0.7103749999987485,
+            "p99Ms": 0.7904159999998228,
+            "driverLatenessMaxMs": 2.5565409999981057
+          },
+          {
+            "requestSecond": 18,
+            "p95Ms": 0.8366249999999127,
+            "p99Ms": 0.943583000000217,
+            "driverLatenessMaxMs": 2.1940409999988333
+          },
+          {
+            "requestSecond": 19,
+            "p95Ms": 0.7574590000003809,
+            "p99Ms": 0.9245829999999842,
+            "driverLatenessMaxMs": 2.875832999998238
+          },
+          {
+            "requestSecond": 20,
+            "p95Ms": 0.7282090000007884,
+            "p99Ms": 1.0585409999985131,
+            "driverLatenessMaxMs": 2.550082999998267
+          },
+          {
+            "requestSecond": 21,
+            "p95Ms": 0.5787500000005821,
+            "p99Ms": 3.602500000000873,
+            "driverLatenessMaxMs": 2.2517079999997804
+          },
+          {
+            "requestSecond": 22,
+            "p95Ms": 0.22520799999983865,
+            "p99Ms": 0.28491699999722186,
+            "driverLatenessMaxMs": 2.0494999999973516
+          },
+          {
+            "requestSecond": 23,
+            "p95Ms": 0.19004099999801838,
+            "p99Ms": 0.2011659999989206,
+            "driverLatenessMaxMs": 2.1142909999980475
+          },
+          {
+            "requestSecond": 24,
+            "p95Ms": 0.5710409999992407,
+            "p99Ms": 0.7942089999996824,
+            "driverLatenessMaxMs": 2.04175000000032
+          },
+          {
+            "requestSecond": 25,
+            "p95Ms": 0.6949160000003758,
+            "p99Ms": 0.7384579999998095,
+            "driverLatenessMaxMs": 2.785707999999431
+          },
+          {
+            "requestSecond": 26,
+            "p95Ms": 0.7105830000000424,
+            "p99Ms": 0.7417920000007143,
+            "driverLatenessMaxMs": 254.3220829999991
+          },
+          {
+            "requestSecond": 27,
+            "p95Ms": 0.7192910000012489,
+            "p99Ms": 0.7806249999994179,
+            "driverLatenessMaxMs": 2.0560829999994894
+          },
+          {
+            "requestSecond": 28,
+            "p95Ms": 0.6662919999980659,
+            "p99Ms": 0.7822500000002037,
+            "driverLatenessMaxMs": 2.2678329999980633
+          },
+          {
+            "requestSecond": 29,
+            "p95Ms": 0.7094160000015108,
+            "p99Ms": 0.8447090000008757,
+            "driverLatenessMaxMs": 2.1242910000000848
+          },
+          {
+            "requestSecond": 30,
+            "p95Ms": 0.7194159999999101,
+            "p99Ms": 1.5932080000020505,
+            "driverLatenessMaxMs": 2.2759579999983544
+          },
+          {
+            "requestSecond": 31,
+            "p95Ms": 0.7179999999971187,
+            "p99Ms": 4.72845800000141,
+            "driverLatenessMaxMs": 2.7189999999973224
+          },
+          {
+            "requestSecond": 32,
+            "p95Ms": 0.7007919999996375,
+            "p99Ms": 0.8302079999994021,
+            "driverLatenessMaxMs": 2.128415999999561
+          },
+          {
+            "requestSecond": 33,
+            "p95Ms": 0.6781249999985448,
+            "p99Ms": 1.1864170000044396,
+            "driverLatenessMaxMs": 2.101915999999619
+          },
+          {
+            "requestSecond": 34,
+            "p95Ms": 0.6650000000008731,
+            "p99Ms": 0.7446659999986878,
+            "driverLatenessMaxMs": 2.187708000004932
+          },
+          {
+            "requestSecond": 35,
+            "p95Ms": 0.7264170000053127,
+            "p99Ms": 0.7739999999976135,
+            "driverLatenessMaxMs": 5.99041600000055
+          },
+          {
+            "requestSecond": 36,
+            "p95Ms": 0.660916000000725,
+            "p99Ms": 0.7597910000040429,
+            "driverLatenessMaxMs": 253.80520800000522
+          },
+          {
+            "requestSecond": 37,
+            "p95Ms": 0.6963749999995343,
+            "p99Ms": 0.834167000000889,
+            "driverLatenessMaxMs": 2.0947910000031698
+          },
+          {
+            "requestSecond": 38,
+            "p95Ms": 0.6796250000043074,
+            "p99Ms": 0.7803330000024289,
+            "driverLatenessMaxMs": 2.231541000001016
+          },
+          {
+            "requestSecond": 39,
+            "p95Ms": 0.6959580000038841,
+            "p99Ms": 0.8147920000046724,
+            "driverLatenessMaxMs": 2.084999999999127
+          },
+          {
+            "requestSecond": 40,
+            "p95Ms": 0.7225830000024871,
+            "p99Ms": 0.7512920000008307,
+            "driverLatenessMaxMs": 2.0766250000015134
+          },
+          {
+            "requestSecond": 41,
+            "p95Ms": 0.7599579999950947,
+            "p99Ms": 3.6986249999972642,
+            "driverLatenessMaxMs": 2.24529099999927
+          },
+          {
+            "requestSecond": 42,
+            "p95Ms": 0.7069589999955497,
+            "p99Ms": 0.7755420000030426,
+            "driverLatenessMaxMs": 2.120999999999185
+          },
+          {
+            "requestSecond": 43,
+            "p95Ms": 0.6961669999946025,
+            "p99Ms": 0.7470000000030268,
+            "driverLatenessMaxMs": 5.843416000003344
+          },
+          {
+            "requestSecond": 44,
+            "p95Ms": 0.7204159999964759,
+            "p99Ms": 0.7334580000024289,
+            "driverLatenessMaxMs": 2.1297080000003916
+          },
+          {
+            "requestSecond": 45,
+            "p95Ms": 0.672166999996989,
+            "p99Ms": 0.797166999996989,
+            "driverLatenessMaxMs": 2.162958000000799
+          },
+          {
+            "requestSecond": 46,
+            "p95Ms": 0.7043329999942216,
+            "p99Ms": 0.7722500000018044,
+            "driverLatenessMaxMs": 253.4760000000024
+          },
+          {
+            "requestSecond": 47,
+            "p95Ms": 0.705415999997058,
+            "p99Ms": 0.8889580000031856,
+            "driverLatenessMaxMs": 2.0831250000046566
+          },
+          {
+            "requestSecond": 48,
+            "p95Ms": 0.6908750000002328,
+            "p99Ms": 0.8079579999975977,
+            "driverLatenessMaxMs": 2.1509580000056303
+          },
+          {
+            "requestSecond": 49,
+            "p95Ms": 0.6813329999931739,
+            "p99Ms": 0.7868339999986347,
+            "driverLatenessMaxMs": 2.08612500000163
+          },
+          {
+            "requestSecond": 50,
+            "p95Ms": 0.6701670000038575,
+            "p99Ms": 0.7934999999997672,
+            "driverLatenessMaxMs": 2.2819999999992433
+          },
+          {
+            "requestSecond": 51,
+            "p95Ms": 0.7098339999938617,
+            "p99Ms": 4.365957999994862,
+            "driverLatenessMaxMs": 2.1250829999989946
+          },
+          {
+            "requestSecond": 52,
+            "p95Ms": 0.6759999999994761,
+            "p99Ms": 0.7572080000027199,
+            "driverLatenessMaxMs": 2.301707999999053
+          },
+          {
+            "requestSecond": 53,
+            "p95Ms": 0.7081669999970472,
+            "p99Ms": 0.9227919999975711,
+            "driverLatenessMaxMs": 2.364000000001397
+          },
+          {
+            "requestSecond": 54,
+            "p95Ms": 0.7432919999992009,
+            "p99Ms": 0.768499999998312,
+            "driverLatenessMaxMs": 2.139000000002852
+          },
+          {
+            "requestSecond": 55,
+            "p95Ms": 0.6864999999961583,
+            "p99Ms": 0.9532499999986612,
+            "driverLatenessMaxMs": 2.131500000003143
+          },
+          {
+            "requestSecond": 56,
+            "p95Ms": 0.6604160000060801,
+            "p99Ms": 0.6882089999999152,
+            "driverLatenessMaxMs": 252.09220800000185
+          },
+          {
+            "requestSecond": 57,
+            "p95Ms": 0.6858749999955762,
+            "p99Ms": 0.7171670000025188,
+            "driverLatenessMaxMs": 5.04754099999991
+          },
+          {
+            "requestSecond": 58,
+            "p95Ms": 0.6997919999994338,
+            "p99Ms": 0.8509580000027199,
+            "driverLatenessMaxMs": 2.544041000001016
+          },
+          {
+            "requestSecond": 59,
+            "p95Ms": 0.7468750000043656,
+            "p99Ms": 0.8160839999982272,
+            "driverLatenessMaxMs": 2.089333000003535
+          },
+          {
+            "requestSecond": 60,
+            "p95Ms": 0.6754999999975553,
+            "p99Ms": 0.8020830000023125,
+            "driverLatenessMaxMs": 2.115458000000217
+          }
+        ]
+      },
+      {
+        "seconds": 10,
+        "completed": 1000,
+        "elapsedMs": 9999.764541999997,
+        "throughput": 100.0023546354418,
+        "p95Ms": 1.041166000002704,
+        "p99Ms": 1.2536249999975553,
+        "actualLocalFailureAttempts": 10000,
+        "windows": [
+          {
+            "requestSecond": 1,
+            "p95Ms": 1.097208999999566,
+            "p99Ms": 4.036791999998968,
+            "driverLatenessMaxMs": 2.5575840000019525
+          },
+          {
+            "requestSecond": 2,
+            "p95Ms": 1.0085420000032173,
+            "p99Ms": 1.2068330000038259,
+            "driverLatenessMaxMs": 2.5773340000014286
+          },
+          {
+            "requestSecond": 3,
+            "p95Ms": 1.0299999999988358,
+            "p99Ms": 1.2501249999986612,
+            "driverLatenessMaxMs": 2.8132499999992433
+          },
+          {
+            "requestSecond": 4,
+            "p95Ms": 0.7908339999994496,
+            "p99Ms": 0.9629169999971054,
+            "driverLatenessMaxMs": 2.84375
+          },
+          {
+            "requestSecond": 5,
+            "p95Ms": 1.063916999999492,
+            "p99Ms": 1.2262080000000424,
+            "driverLatenessMaxMs": 2.789875000002212
+          },
+          {
+            "requestSecond": 6,
+            "p95Ms": 0.8412499999976717,
+            "p99Ms": 1.0826669999951264,
+            "driverLatenessMaxMs": 252.96716700000252
+          },
+          {
+            "requestSecond": 7,
+            "p95Ms": 1.0577079999929992,
+            "p99Ms": 1.259875000003376,
+            "driverLatenessMaxMs": 3.021792000014102
+          },
+          {
+            "requestSecond": 8,
+            "p95Ms": 0.9686669999937294,
+            "p99Ms": 1.201374999989639,
+            "driverLatenessMaxMs": 2.5450000000128057
+          },
+          {
+            "requestSecond": 9,
+            "p95Ms": 1.0500410000095144,
+            "p99Ms": 1.2122919999965234,
+            "driverLatenessMaxMs": 2.6237500000133878
+          },
+          {
+            "requestSecond": 10,
+            "p95Ms": 1.0174580000020796,
+            "p99Ms": 1.224792000008165,
+            "driverLatenessMaxMs": 2.6455000000132713
+          }
+        ]
+      }
+    ],
+    "outcomes": {
+      "read": 6909,
+      "send": 7,
+      "deliveredRead": 7,
+      "ack": 7,
+      "refusal": 70,
+      "localFailure": 10001
+    },
+    "watchOutcomes": {
+      "churnReady": 70,
+      "persistentReady": 1,
+      "reconnectReady": 7,
+      "refusal": 1
+    },
+    "deliveryChecks": 2,
+    "ordinaryRecoveryChecks": 1,
+    "shutdownMs": 4.596166000002995,
+    "stdioClosureConfirmed": true,
+    "stderrDisposition": "consumed through child close",
+    "shutdownDiagnosticObserved": false,
+    "ownedTerminalConfirmed": true,
+    "helperWasPresent": true,
+    "helperExitConfirmed": true,
+    "diagnosticBytes": 396220,
+    "diagnosticLines": 1085,
+    "observedEvents": {
+      "broker.started": 0,
+      "broker.stopped": 0,
+      "transport.ready": 0,
+      "transport.reconnected": 0
+    },
+    "destination": "healthy",
+    "failedHelperApplicable": false,
+    "peakMainRssKiB": 128912,
+    "peakHelperRssKiB": 46992,
+    "peakTotalRssKiB": 175904,
+    "mainCpuSeconds": 4.76,
+    "helperCpuSeconds": 0.24,
+    "tail": [
+      {
+        "mainRssKiB": 127088,
+        "helperRssKiB": 46944,
+        "mainCpuSeconds": 4.34,
+        "helperCpuSeconds": 0.18
+      },
+      {
+        "mainRssKiB": 127104,
+        "helperRssKiB": 46944,
+        "mainCpuSeconds": 4.44,
+        "helperCpuSeconds": 0.2
+      },
+      {
+        "mainRssKiB": 128800,
+        "helperRssKiB": 46992,
+        "mainCpuSeconds": 4.57,
+        "helperCpuSeconds": 0.21
+      },
+      {
+        "mainRssKiB": 128800,
+        "helperRssKiB": 46992,
+        "mainCpuSeconds": 4.66,
+        "helperCpuSeconds": 0.23
+      },
+      {
+        "mainRssKiB": 128912,
+        "helperRssKiB": 46992,
+        "mainCpuSeconds": 4.76,
+        "helperCpuSeconds": 0.24
+      }
+    ]
+  },
+  {
+    "revision": "new",
+    "mode": "healthy",
+    "deployment": "one embedded Broker/client process; default callbacks",
+    "importMs": 16.51175,
+    "brokerStartMs": 19.098334,
+    "warmupMs": 102.15474999999999,
+    "recoveryMs": 22.831375000008848,
+    "phases": [
+      {
+        "seconds": 60,
+        "completed": 6000,
+        "elapsedMs": 60001.303250000004,
+        "throughput": 99.9978279638451,
+        "p95Ms": 0.8172500000000582,
+        "p99Ms": 1.077625000005355,
+        "actualLocalFailureAttempts": 0,
+        "windows": [
+          {
+            "requestSecond": 1,
+            "p95Ms": 1.3063750000000027,
+            "p99Ms": 3.5838339999999675,
+            "driverLatenessMaxMs": 2.9869170000000054
+          },
+          {
+            "requestSecond": 2,
+            "p95Ms": 1.0505410000000666,
+            "p99Ms": 1.346749999999929,
+            "driverLatenessMaxMs": 2.832249999999931
+          },
+          {
+            "requestSecond": 3,
+            "p95Ms": 0.9252500000002328,
+            "p99Ms": 1.0348750000002838,
+            "driverLatenessMaxMs": 2.7790830000003552
+          },
+          {
+            "requestSecond": 4,
+            "p95Ms": 0.8784169999998994,
+            "p99Ms": 1.0417080000001988,
+            "driverLatenessMaxMs": 2.8995420000001104
+          },
+          {
+            "requestSecond": 5,
+            "p95Ms": 0.8678749999999127,
+            "p99Ms": 1.0672090000007302,
+            "driverLatenessMaxMs": 2.22912499999984
+          },
+          {
+            "requestSecond": 6,
+            "p95Ms": 0.897291999999652,
+            "p99Ms": 1.0308749999994689,
+            "driverLatenessMaxMs": 253.89716700000008
+          },
+          {
+            "requestSecond": 7,
+            "p95Ms": 0.8740420000003724,
+            "p99Ms": 1.0502500000002328,
+            "driverLatenessMaxMs": 2.1464169999999285
+          },
+          {
+            "requestSecond": 8,
+            "p95Ms": 0.7947919999996884,
+            "p99Ms": 1.0544580000005226,
+            "driverLatenessMaxMs": 2.116791999999805
+          },
+          {
+            "requestSecond": 9,
+            "p95Ms": 0.7906249999996362,
+            "p99Ms": 0.9207920000008016,
+            "driverLatenessMaxMs": 2.0272920000006707
+          },
+          {
+            "requestSecond": 10,
+            "p95Ms": 0.22000000000116415,
+            "p99Ms": 0.25574999999844295,
+            "driverLatenessMaxMs": 2.2773329999999987
+          },
+          {
+            "requestSecond": 11,
+            "p95Ms": 0.6104169999998703,
+            "p99Ms": 4.081833000000188,
+            "driverLatenessMaxMs": 2.0952500000003056
+          },
+          {
+            "requestSecond": 12,
+            "p95Ms": 0.8436669999991864,
+            "p99Ms": 0.9851249999992433,
+            "driverLatenessMaxMs": 2.1037080000005517
+          },
+          {
+            "requestSecond": 13,
+            "p95Ms": 0.8446659999990516,
+            "p99Ms": 1.2640419999988808,
+            "driverLatenessMaxMs": 3.0528749999994034
+          },
+          {
+            "requestSecond": 14,
+            "p95Ms": 0.8380420000012236,
+            "p99Ms": 1.0389580000010028,
+            "driverLatenessMaxMs": 2.826375000000553
+          },
+          {
+            "requestSecond": 15,
+            "p95Ms": 0.7454999999990832,
+            "p99Ms": 1.0294159999994008,
+            "driverLatenessMaxMs": 2.1928750000006403
+          },
+          {
+            "requestSecond": 16,
+            "p95Ms": 0.798584000000119,
+            "p99Ms": 1.126166000000012,
+            "driverLatenessMaxMs": 253.88416700000016
+          },
+          {
+            "requestSecond": 17,
+            "p95Ms": 0.776333000001614,
+            "p99Ms": 1.0802499999990687,
+            "driverLatenessMaxMs": 2.067917000000307
+          },
+          {
+            "requestSecond": 18,
+            "p95Ms": 0.8284579999999551,
+            "p99Ms": 0.9247079999986454,
+            "driverLatenessMaxMs": 2.173624999999447
+          },
+          {
+            "requestSecond": 19,
+            "p95Ms": 0.8462079999990237,
+            "p99Ms": 1.1210419999988517,
+            "driverLatenessMaxMs": 2.194166999997833
+          },
+          {
+            "requestSecond": 20,
+            "p95Ms": 0.7766669999982696,
+            "p99Ms": 0.9280839999992168,
+            "driverLatenessMaxMs": 2.129791999999725
+          },
+          {
+            "requestSecond": 21,
+            "p95Ms": 0.8513329999987036,
+            "p99Ms": 4.701750000000175,
+            "driverLatenessMaxMs": 2.1005420000001322
+          },
+          {
+            "requestSecond": 22,
+            "p95Ms": 0.7707080000000133,
+            "p99Ms": 0.8544170000022859,
+            "driverLatenessMaxMs": 2.1358329999966372
+          },
+          {
+            "requestSecond": 23,
+            "p95Ms": 0.8533749999987776,
+            "p99Ms": 0.9420830000017304,
+            "driverLatenessMaxMs": 3.2798750000001746
+          },
+          {
+            "requestSecond": 24,
+            "p95Ms": 0.8335829999996349,
+            "p99Ms": 1.1142499999987194,
+            "driverLatenessMaxMs": 2.104457999997976
+          },
+          {
+            "requestSecond": 25,
+            "p95Ms": 0.7718329999988782,
+            "p99Ms": 0.9241249999977299,
+            "driverLatenessMaxMs": 2.0659169999998994
+          },
+          {
+            "requestSecond": 26,
+            "p95Ms": 0.7542910000011034,
+            "p99Ms": 0.8429590000014286,
+            "driverLatenessMaxMs": 254.070499999998
+          },
+          {
+            "requestSecond": 27,
+            "p95Ms": 0.7700829999994312,
+            "p99Ms": 0.8860840000015742,
+            "driverLatenessMaxMs": 2.095374999997148
+          },
+          {
+            "requestSecond": 28,
+            "p95Ms": 0.7995410000003176,
+            "p99Ms": 0.9685829999980342,
+            "driverLatenessMaxMs": 2.09166699999696
+          },
+          {
+            "requestSecond": 29,
+            "p95Ms": 0.7126659999994445,
+            "p99Ms": 0.7659579999999551,
+            "driverLatenessMaxMs": 2.1101249999992433
+          },
+          {
+            "requestSecond": 30,
+            "p95Ms": 0.7384590000001481,
+            "p99Ms": 0.8034590000024764,
+            "driverLatenessMaxMs": 2.2424169999976584
+          },
+          {
+            "requestSecond": 31,
+            "p95Ms": 0.7577500000006694,
+            "p99Ms": 5.1102500000015425,
+            "driverLatenessMaxMs": 2.1532919999990554
+          },
+          {
+            "requestSecond": 32,
+            "p95Ms": 0.7548750000023574,
+            "p99Ms": 1.0067499999968277,
+            "driverLatenessMaxMs": 2.3104999999995925
+          },
+          {
+            "requestSecond": 33,
+            "p95Ms": 0.7199579999942216,
+            "p99Ms": 0.8479589999988093,
+            "driverLatenessMaxMs": 2.1027499999981956
+          },
+          {
+            "requestSecond": 34,
+            "p95Ms": 0.7802079999964917,
+            "p99Ms": 0.8138340000004973,
+            "driverLatenessMaxMs": 2.242000000005646
+          },
+          {
+            "requestSecond": 35,
+            "p95Ms": 0.7301670000015292,
+            "p99Ms": 0.927917000000889,
+            "driverLatenessMaxMs": 2.1545420000038575
+          },
+          {
+            "requestSecond": 36,
+            "p95Ms": 0.8007090000028256,
+            "p99Ms": 1.1360419999982696,
+            "driverLatenessMaxMs": 254.50545799999963
+          },
+          {
+            "requestSecond": 37,
+            "p95Ms": 0.7222079999992275,
+            "p99Ms": 0.776583999999275,
+            "driverLatenessMaxMs": 2.135708000001614
+          },
+          {
+            "requestSecond": 38,
+            "p95Ms": 0.7808749999967404,
+            "p99Ms": 0.8954579999990528,
+            "driverLatenessMaxMs": 2.123082999998587
+          },
+          {
+            "requestSecond": 39,
+            "p95Ms": 0.7182079999984126,
+            "p99Ms": 0.8124160000006668,
+            "driverLatenessMaxMs": 2.125917000004847
+          },
+          {
+            "requestSecond": 40,
+            "p95Ms": 0.7420840000049793,
+            "p99Ms": 0.8227499999993597,
+            "driverLatenessMaxMs": 2.2564170000041486
+          },
+          {
+            "requestSecond": 41,
+            "p95Ms": 0.8081660000025295,
+            "p99Ms": 5.3336249999993015,
+            "driverLatenessMaxMs": 2.185958000001847
+          },
+          {
+            "requestSecond": 42,
+            "p95Ms": 0.7769590000025346,
+            "p99Ms": 0.8455420000027516,
+            "driverLatenessMaxMs": 2.2570420000047307
+          },
+          {
+            "requestSecond": 43,
+            "p95Ms": 0.7020829999964917,
+            "p99Ms": 0.7532500000015716,
+            "driverLatenessMaxMs": 2.2626670000026934
+          },
+          {
+            "requestSecond": 44,
+            "p95Ms": 0.7839579999999842,
+            "p99Ms": 0.8548329999975977,
+            "driverLatenessMaxMs": 2.173417000005429
+          },
+          {
+            "requestSecond": 45,
+            "p95Ms": 0.742166999996698,
+            "p99Ms": 1.5766660000008414,
+            "driverLatenessMaxMs": 2.105083000002196
+          },
+          {
+            "requestSecond": 46,
+            "p95Ms": 0.6644579999992857,
+            "p99Ms": 0.6963329999998678,
+            "driverLatenessMaxMs": 250.6495419999992
+          },
+          {
+            "requestSecond": 47,
+            "p95Ms": 0.7771250000005239,
+            "p99Ms": 0.920124999996915,
+            "driverLatenessMaxMs": 2.5432920000021113
+          },
+          {
+            "requestSecond": 48,
+            "p95Ms": 0.7239999999947031,
+            "p99Ms": 0.8024580000055721,
+            "driverLatenessMaxMs": 2.035083000002487
+          },
+          {
+            "requestSecond": 49,
+            "p95Ms": 0.7967910000006668,
+            "p99Ms": 0.8858329999929992,
+            "driverLatenessMaxMs": 2.155417000001762
+          },
+          {
+            "requestSecond": 50,
+            "p95Ms": 0.8174579999977141,
+            "p99Ms": 1.3171670000010636,
+            "driverLatenessMaxMs": 4.188207999999577
+          },
+          {
+            "requestSecond": 51,
+            "p95Ms": 0.7219589999949676,
+            "p99Ms": 4.349833000000217,
+            "driverLatenessMaxMs": 2.109708000003593
+          },
+          {
+            "requestSecond": 52,
+            "p95Ms": 0.19900000000052387,
+            "p99Ms": 0.23241699999925913,
+            "driverLatenessMaxMs": 2.0359580000003916
+          },
+          {
+            "requestSecond": 53,
+            "p95Ms": 0.7825000000011642,
+            "p99Ms": 1.0452500000028522,
+            "driverLatenessMaxMs": 2.554667000003974
+          },
+          {
+            "requestSecond": 54,
+            "p95Ms": 0.773417000003974,
+            "p99Ms": 0.8172500000000582,
+            "driverLatenessMaxMs": 2.1949170000007143
+          },
+          {
+            "requestSecond": 55,
+            "p95Ms": 0.7907080000004498,
+            "p99Ms": 0.8647909999999683,
+            "driverLatenessMaxMs": 2.2089170000035665
+          },
+          {
+            "requestSecond": 56,
+            "p95Ms": 0.7328750000015134,
+            "p99Ms": 0.9088340000016615,
+            "driverLatenessMaxMs": 253.03783300000214
+          },
+          {
+            "requestSecond": 57,
+            "p95Ms": 0.7882079999981215,
+            "p99Ms": 0.8524170000018785,
+            "driverLatenessMaxMs": 2.3838749999995343
+          },
+          {
+            "requestSecond": 58,
+            "p95Ms": 0.7023330000010901,
+            "p99Ms": 0.7427499999976135,
+            "driverLatenessMaxMs": 2.247917000000598
+          },
+          {
+            "requestSecond": 59,
+            "p95Ms": 0.6893340000024182,
+            "p99Ms": 0.7831250000017462,
+            "driverLatenessMaxMs": 2.487375000004249
+          },
+          {
+            "requestSecond": 60,
+            "p95Ms": 0.7502499999973224,
+            "p99Ms": 0.7934580000001006,
+            "driverLatenessMaxMs": 2.2117080000025453
+          }
+        ]
+      },
+      {
+        "seconds": 10,
+        "completed": 1000,
+        "elapsedMs": 10001.227708000006,
+        "throughput": 99.98772442708184,
+        "p95Ms": 1.135374999998021,
+        "p99Ms": 1.382499999999709,
+        "actualLocalFailureAttempts": 10000,
+        "windows": [
+          {
+            "requestSecond": 1,
+            "p95Ms": 1.241374999997788,
+            "p99Ms": 4.960458999994444,
+            "driverLatenessMaxMs": 2.982292000000598
+          },
+          {
+            "requestSecond": 2,
+            "p95Ms": 1.2037080000009155,
+            "p99Ms": 1.382499999999709,
+            "driverLatenessMaxMs": 2.7604170000049635
+          },
+          {
+            "requestSecond": 3,
+            "p95Ms": 1.1334579999966081,
+            "p99Ms": 1.3597910000025877,
+            "driverLatenessMaxMs": 2.345500000003085
+          },
+          {
+            "requestSecond": 4,
+            "p95Ms": 1.0606669999979204,
+            "p99Ms": 1.2118330000012065,
+            "driverLatenessMaxMs": 2.416125000003376
+          },
+          {
+            "requestSecond": 5,
+            "p95Ms": 1.119749999998021,
+            "p99Ms": 1.2337079999997513,
+            "driverLatenessMaxMs": 3.0215830000015558
+          },
+          {
+            "requestSecond": 6,
+            "p95Ms": 1.0588750000024447,
+            "p99Ms": 1.4662499999976717,
+            "driverLatenessMaxMs": 253.74812500000553
+          },
+          {
+            "requestSecond": 7,
+            "p95Ms": 0.9757079999981215,
+            "p99Ms": 1.113500000006752,
+            "driverLatenessMaxMs": 2.997457999998005
+          },
+          {
+            "requestSecond": 8,
+            "p95Ms": 1.0336249999963911,
+            "p99Ms": 1.137749999994412,
+            "driverLatenessMaxMs": 2.205083000008017
+          },
+          {
+            "requestSecond": 9,
+            "p95Ms": 1.1792500000010477,
+            "p99Ms": 1.2984160000050906,
+            "driverLatenessMaxMs": 3.3340420000022277
+          },
+          {
+            "requestSecond": 10,
+            "p95Ms": 1.042250000013155,
+            "p99Ms": 1.1555829999997513,
+            "driverLatenessMaxMs": 2.5427500000078
+          }
+        ]
+      }
+    ],
+    "outcomes": {
+      "read": 6909,
+      "send": 7,
+      "deliveredRead": 7,
+      "ack": 7,
+      "refusal": 70,
+      "localFailure": 10001
+    },
+    "watchOutcomes": {
+      "churnReady": 70,
+      "persistentReady": 1,
+      "reconnectReady": 7,
+      "refusal": 1
+    },
+    "deliveryChecks": 2,
+    "ordinaryRecoveryChecks": 1,
+    "shutdownMs": 5.175542000011774,
+    "stdioClosureConfirmed": true,
+    "stderrDisposition": "consumed through child close",
+    "shutdownDiagnosticObserved": true,
+    "ownedTerminalConfirmed": true,
+    "helperWasPresent": true,
+    "helperExitConfirmed": true,
+    "diagnosticBytes": 420801,
+    "diagnosticLines": 1156,
+    "observedEvents": {
+      "broker.started": 2,
+      "broker.stopped": 1,
+      "transport.ready": 62,
+      "transport.reconnected": 6
+    },
+    "destination": "healthy",
+    "failedHelperApplicable": false,
+    "peakMainRssKiB": 129600,
+    "peakHelperRssKiB": 46880,
+    "peakTotalRssKiB": 176480,
+    "mainCpuSeconds": 5.29,
+    "helperCpuSeconds": 0.26,
+    "tail": [
+      {
+        "mainRssKiB": 128000,
+        "helperRssKiB": 46832,
+        "mainCpuSeconds": 4.89,
+        "helperCpuSeconds": 0.21
+      },
+      {
+        "mainRssKiB": 128000,
+        "helperRssKiB": 46848,
+        "mainCpuSeconds": 4.98,
+        "helperCpuSeconds": 0.22
+      },
+      {
+        "mainRssKiB": 128000,
+        "helperRssKiB": 46848,
+        "mainCpuSeconds": 5.06,
+        "helperCpuSeconds": 0.24
+      },
+      {
+        "mainRssKiB": 129488,
+        "helperRssKiB": 46848,
+        "mainCpuSeconds": 5.19,
+        "helperCpuSeconds": 0.25
+      },
+      {
+        "mainRssKiB": 129600,
+        "helperRssKiB": 46880,
+        "mainCpuSeconds": 5.29,
+        "helperCpuSeconds": 0.26
+      }
+    ]
+  },
+  {
+    "revision": "new",
+    "mode": "healthy",
+    "deployment": "one embedded Broker/client process; default callbacks",
+    "importMs": 17.478665999999997,
+    "brokerStartMs": 19.450917,
+    "warmupMs": 102.553417,
+    "recoveryMs": 18.678040999991936,
+    "phases": [
+      {
+        "seconds": 60,
+        "completed": 6000,
+        "elapsedMs": 60001.594333,
+        "throughput": 99.99734284893972,
+        "p95Ms": 0.7820000000001528,
+        "p99Ms": 1.0091659999999933,
+        "actualLocalFailureAttempts": 0,
+        "windows": [
+          {
+            "requestSecond": 1,
+            "p95Ms": 1.0909999999998945,
+            "p99Ms": 3.39470799999998,
+            "driverLatenessMaxMs": 3.7332499999999413
+          },
+          {
+            "requestSecond": 2,
+            "p95Ms": 0.9753749999999854,
+            "p99Ms": 1.0609999999999218,
+            "driverLatenessMaxMs": 3.0603329999999005
+          },
+          {
+            "requestSecond": 3,
+            "p95Ms": 0.8691250000001673,
+            "p99Ms": 0.9617499999999382,
+            "driverLatenessMaxMs": 2.548917000000074
+          },
+          {
+            "requestSecond": 4,
+            "p95Ms": 1.0225000000000364,
+            "p99Ms": 1.1883340000003955,
+            "driverLatenessMaxMs": 2.928625000000011
+          },
+          {
+            "requestSecond": 5,
+            "p95Ms": 0.9176669999997102,
+            "p99Ms": 1.1568329999990965,
+            "driverLatenessMaxMs": 2.1645000000007713
+          },
+          {
+            "requestSecond": 6,
+            "p95Ms": 0.7971250000000509,
+            "p99Ms": 0.8955829999995331,
+            "driverLatenessMaxMs": 256.85854200000085
+          },
+          {
+            "requestSecond": 7,
+            "p95Ms": 0.7447089999996024,
+            "p99Ms": 0.8665000000000873,
+            "driverLatenessMaxMs": 2.2271670000000086
+          },
+          {
+            "requestSecond": 8,
+            "p95Ms": 0.781542000000627,
+            "p99Ms": 0.8607499999998254,
+            "driverLatenessMaxMs": 2.422125000000051
+          },
+          {
+            "requestSecond": 9,
+            "p95Ms": 0.7994999999991705,
+            "p99Ms": 1.3591670000005251,
+            "driverLatenessMaxMs": 2.2060419999997976
+          },
+          {
+            "requestSecond": 10,
+            "p95Ms": 0.7116660000010597,
+            "p99Ms": 0.8762500000011642,
+            "driverLatenessMaxMs": 2.6651249999995343
+          },
+          {
+            "requestSecond": 11,
+            "p95Ms": 0.8037499999991269,
+            "p99Ms": 5.062459000000672,
+            "driverLatenessMaxMs": 2.3037080000012793
+          },
+          {
+            "requestSecond": 12,
+            "p95Ms": 0.7980000000006839,
+            "p99Ms": 0.8953750000000582,
+            "driverLatenessMaxMs": 2.1921670000010636
+          },
+          {
+            "requestSecond": 13,
+            "p95Ms": 0.7399999999997817,
+            "p99Ms": 0.8456249999999272,
+            "driverLatenessMaxMs": 2.269125000000713
+          },
+          {
+            "requestSecond": 14,
+            "p95Ms": 0.7583340000001044,
+            "p99Ms": 1.6246250000003783,
+            "driverLatenessMaxMs": 2.185542000001078
+          },
+          {
+            "requestSecond": 15,
+            "p95Ms": 0.7099579999994603,
+            "p99Ms": 0.7971249999991414,
+            "driverLatenessMaxMs": 2.5657499999997526
+          },
+          {
+            "requestSecond": 16,
+            "p95Ms": 0.7300840000007156,
+            "p99Ms": 1.1223750000008295,
+            "driverLatenessMaxMs": 253.8412500000013
+          },
+          {
+            "requestSecond": 17,
+            "p95Ms": 0.557916000001569,
+            "p99Ms": 0.6358330000002752,
+            "driverLatenessMaxMs": 2.2527919999993173
+          },
+          {
+            "requestSecond": 18,
+            "p95Ms": 0.7451660000006086,
+            "p99Ms": 1.0798329999997804,
+            "driverLatenessMaxMs": 2.0341670000016165
+          },
+          {
+            "requestSecond": 19,
+            "p95Ms": 0.7379579999978887,
+            "p99Ms": 0.8065830000014103,
+            "driverLatenessMaxMs": 2.505250000001979
+          },
+          {
+            "requestSecond": 20,
+            "p95Ms": 0.7342920000010054,
+            "p99Ms": 0.7713750000002619,
+            "driverLatenessMaxMs": 2.367000000002008
+          },
+          {
+            "requestSecond": 21,
+            "p95Ms": 0.7553750000006403,
+            "p99Ms": 4.544499999999971,
+            "driverLatenessMaxMs": 2.151832999999897
+          },
+          {
+            "requestSecond": 22,
+            "p95Ms": 0.7707919999993464,
+            "p99Ms": 0.8661659999997937,
+            "driverLatenessMaxMs": 2.100957999999082
+          },
+          {
+            "requestSecond": 23,
+            "p95Ms": 0.7459999999991851,
+            "p99Ms": 0.8419169999979204,
+            "driverLatenessMaxMs": 2.1179169999995793
+          },
+          {
+            "requestSecond": 24,
+            "p95Ms": 0.7306669999998121,
+            "p99Ms": 0.867500000000291,
+            "driverLatenessMaxMs": 3.8402920000007725
+          },
+          {
+            "requestSecond": 25,
+            "p95Ms": 0.7854579999984708,
+            "p99Ms": 0.8957499999996799,
+            "driverLatenessMaxMs": 2.1302079999986745
+          },
+          {
+            "requestSecond": 26,
+            "p95Ms": 0.7092089999969176,
+            "p99Ms": 0.8553329999995185,
+            "driverLatenessMaxMs": 252.92604199999914
+          },
+          {
+            "requestSecond": 27,
+            "p95Ms": 0.184333000001061,
+            "p99Ms": 0.20237499999711872,
+            "driverLatenessMaxMs": 2.0380000000004657
+          },
+          {
+            "requestSecond": 28,
+            "p95Ms": 0.20066600000063772,
+            "p99Ms": 0.6127919999998994,
+            "driverLatenessMaxMs": 2.0759580000012647
+          },
+          {
+            "requestSecond": 29,
+            "p95Ms": 0.15470899999854737,
+            "p99Ms": 0.2446669999990263,
+            "driverLatenessMaxMs": 2.0391249999993306
+          },
+          {
+            "requestSecond": 30,
+            "p95Ms": 0.6944169999987935,
+            "p99Ms": 0.9081670000014128,
+            "driverLatenessMaxMs": 2.1822080000019923
+          },
+          {
+            "requestSecond": 31,
+            "p95Ms": 0.72858400000041,
+            "p99Ms": 4.514291999999841,
+            "driverLatenessMaxMs": 2.5440420000013546
+          },
+          {
+            "requestSecond": 32,
+            "p95Ms": 0.7189169999983278,
+            "p99Ms": 0.7535839999982272,
+            "driverLatenessMaxMs": 2.249833000001672
+          },
+          {
+            "requestSecond": 33,
+            "p95Ms": 0.6866670000017621,
+            "p99Ms": 0.7127499999987776,
+            "driverLatenessMaxMs": 2.1284579999992275
+          },
+          {
+            "requestSecond": 34,
+            "p95Ms": 0.7164169999959995,
+            "p99Ms": 1.0971250000002328,
+            "driverLatenessMaxMs": 2.108249999997497
+          },
+          {
+            "requestSecond": 35,
+            "p95Ms": 0.6826250000012806,
+            "p99Ms": 0.745083000001614,
+            "driverLatenessMaxMs": 2.22529200000281
+          },
+          {
+            "requestSecond": 36,
+            "p95Ms": 0.7572910000017146,
+            "p99Ms": 0.8333750000019791,
+            "driverLatenessMaxMs": 254.79295799999818
+          },
+          {
+            "requestSecond": 37,
+            "p95Ms": 0.7084580000009737,
+            "p99Ms": 0.8049580000006245,
+            "driverLatenessMaxMs": 2.1505830000023707
+          },
+          {
+            "requestSecond": 38,
+            "p95Ms": 0.7580420000012964,
+            "p99Ms": 0.9037079999980051,
+            "driverLatenessMaxMs": 2.1904579999973066
+          },
+          {
+            "requestSecond": 39,
+            "p95Ms": 0.707749999994121,
+            "p99Ms": 0.7494579999984126,
+            "driverLatenessMaxMs": 2.143917000001238
+          },
+          {
+            "requestSecond": 40,
+            "p95Ms": 0.6633749999964493,
+            "p99Ms": 0.756375000004482,
+            "driverLatenessMaxMs": 2.13154200000281
+          },
+          {
+            "requestSecond": 41,
+            "p95Ms": 0.7484579999945709,
+            "p99Ms": 4.670458000000508,
+            "driverLatenessMaxMs": 2.1325829999987036
+          },
+          {
+            "requestSecond": 42,
+            "p95Ms": 0.736084000003757,
+            "p99Ms": 0.907666999999492,
+            "driverLatenessMaxMs": 2.197542000001704
+          },
+          {
+            "requestSecond": 43,
+            "p95Ms": 0.7386660000047414,
+            "p99Ms": 0.9107500000027358,
+            "driverLatenessMaxMs": 2.1413329999995767
+          },
+          {
+            "requestSecond": 44,
+            "p95Ms": 0.6793330000000424,
+            "p99Ms": 0.8227919999990263,
+            "driverLatenessMaxMs": 4.485375000003842
+          },
+          {
+            "requestSecond": 45,
+            "p95Ms": 0.6691250000003492,
+            "p99Ms": 0.8544170000022859,
+            "driverLatenessMaxMs": 2.0851669999974547
+          },
+          {
+            "requestSecond": 46,
+            "p95Ms": 0.6589169999933802,
+            "p99Ms": 0.8970409999965341,
+            "driverLatenessMaxMs": 254.47499999999854
+          },
+          {
+            "requestSecond": 47,
+            "p95Ms": 0.6845830000020214,
+            "p99Ms": 0.7833749999990687,
+            "driverLatenessMaxMs": 2.10095800000272
+          },
+          {
+            "requestSecond": 48,
+            "p95Ms": 0.7099999999991269,
+            "p99Ms": 0.8517080000019632,
+            "driverLatenessMaxMs": 5.727666999999201
+          },
+          {
+            "requestSecond": 49,
+            "p95Ms": 0.6646250000048894,
+            "p99Ms": 0.7154159999990952,
+            "driverLatenessMaxMs": 2.153375000001688
+          },
+          {
+            "requestSecond": 50,
+            "p95Ms": 0.6504160000040429,
+            "p99Ms": 0.6890829999974812,
+            "driverLatenessMaxMs": 2.1169169999993755
+          },
+          {
+            "requestSecond": 51,
+            "p95Ms": 0.7132919999930891,
+            "p99Ms": 4.814166999996814,
+            "driverLatenessMaxMs": 2.3135420000035083
+          },
+          {
+            "requestSecond": 52,
+            "p95Ms": 0.675333999999566,
+            "p99Ms": 0.7512920000008307,
+            "driverLatenessMaxMs": 2.103167000001122
+          },
+          {
+            "requestSecond": 53,
+            "p95Ms": 0.7161249999990105,
+            "p99Ms": 0.7778749999997672,
+            "driverLatenessMaxMs": 2.1007079999981215
+          },
+          {
+            "requestSecond": 54,
+            "p95Ms": 0.7953330000018468,
+            "p99Ms": 0.8422080000018468,
+            "driverLatenessMaxMs": 2.717833000002429
+          },
+          {
+            "requestSecond": 55,
+            "p95Ms": 0.7382920000018203,
+            "p99Ms": 0.8800830000036513,
+            "driverLatenessMaxMs": 2.1043330000029528
+          },
+          {
+            "requestSecond": 56,
+            "p95Ms": 0.6908750000002328,
+            "p99Ms": 0.7508749999979045,
+            "driverLatenessMaxMs": 253.19958300000144
+          },
+          {
+            "requestSecond": 57,
+            "p95Ms": 0.6899160000029951,
+            "p99Ms": 0.7672079999974812,
+            "driverLatenessMaxMs": 2.1045000000012806
+          },
+          {
+            "requestSecond": 58,
+            "p95Ms": 0.7304579999981797,
+            "p99Ms": 0.8210419999959413,
+            "driverLatenessMaxMs": 7.667708000000857
+          },
+          {
+            "requestSecond": 59,
+            "p95Ms": 0.7570829999967827,
+            "p99Ms": 0.8851250000006985,
+            "driverLatenessMaxMs": 2.140958000003593
+          },
+          {
+            "requestSecond": 60,
+            "p95Ms": 0.7386659999974654,
+            "p99Ms": 0.8738749999974971,
+            "driverLatenessMaxMs": 2.7958750000034343
+          }
+        ]
+      },
+      {
+        "seconds": 10,
+        "completed": 1000,
+        "elapsedMs": 10001.382124999996,
+        "throughput": 99.98618066000556,
+        "p95Ms": 0.9661669999986771,
+        "p99Ms": 1.2421249999970314,
+        "actualLocalFailureAttempts": 10000,
+        "windows": [
+          {
+            "requestSecond": 1,
+            "p95Ms": 1.191791999997804,
+            "p99Ms": 5.27366699999402,
+            "driverLatenessMaxMs": 2.588000000003376
+          },
+          {
+            "requestSecond": 2,
+            "p95Ms": 0.9599159999997937,
+            "p99Ms": 1.0835839999999735,
+            "driverLatenessMaxMs": 2.6621670000022277
+          },
+          {
+            "requestSecond": 3,
+            "p95Ms": 1.0177909999983967,
+            "p99Ms": 1.0797500000044238,
+            "driverLatenessMaxMs": 2.55116700000508
+          },
+          {
+            "requestSecond": 4,
+            "p95Ms": 1.1514580000002752,
+            "p99Ms": 1.2274580000012065,
+            "driverLatenessMaxMs": 4.454167000003508
+          },
+          {
+            "requestSecond": 5,
+            "p95Ms": 1.0186669999966398,
+            "p99Ms": 1.158292000000074,
+            "driverLatenessMaxMs": 2.6083330000037677
+          },
+          {
+            "requestSecond": 6,
+            "p95Ms": 0.7774159999971744,
+            "p99Ms": 0.9599170000001322,
+            "driverLatenessMaxMs": 251.48454199999833
+          },
+          {
+            "requestSecond": 7,
+            "p95Ms": 0.8904580000089481,
+            "p99Ms": 1.0255409999954281,
+            "driverLatenessMaxMs": 2.8621249999996508
+          },
+          {
+            "requestSecond": 8,
+            "p95Ms": 0.8411250000062864,
+            "p99Ms": 1.0053340000013122,
+            "driverLatenessMaxMs": 2.657874999989872
+          },
+          {
+            "requestSecond": 9,
+            "p95Ms": 0.9370840000046883,
+            "p99Ms": 1.506041999993613,
+            "driverLatenessMaxMs": 2.6287499999889405
+          },
+          {
+            "requestSecond": 10,
+            "p95Ms": 0.737542000002577,
+            "p99Ms": 0.9315829999977723,
+            "driverLatenessMaxMs": 2.6752919999998994
+          }
+        ]
+      }
+    ],
+    "outcomes": {
+      "read": 6909,
+      "send": 7,
+      "deliveredRead": 7,
+      "ack": 7,
+      "refusal": 70,
+      "localFailure": 10001
+    },
+    "watchOutcomes": {
+      "churnReady": 70,
+      "persistentReady": 1,
+      "reconnectReady": 7,
+      "refusal": 1
+    },
+    "deliveryChecks": 2,
+    "ordinaryRecoveryChecks": 1,
+    "shutdownMs": 6.161666999978479,
+    "stdioClosureConfirmed": true,
+    "stderrDisposition": "consumed through child close",
+    "shutdownDiagnosticObserved": true,
+    "ownedTerminalConfirmed": true,
+    "helperWasPresent": true,
+    "helperExitConfirmed": true,
+    "diagnosticBytes": 420798,
+    "diagnosticLines": 1156,
+    "observedEvents": {
+      "broker.started": 2,
+      "broker.stopped": 1,
+      "transport.ready": 62,
+      "transport.reconnected": 6
+    },
+    "destination": "healthy",
+    "failedHelperApplicable": false,
+    "peakMainRssKiB": 128048,
+    "peakHelperRssKiB": 46848,
+    "peakTotalRssKiB": 174896,
+    "mainCpuSeconds": 4.99,
+    "helperCpuSeconds": 0.25,
+    "tail": [
+      {
+        "mainRssKiB": 126416,
+        "helperRssKiB": 46800,
+        "mainCpuSeconds": 4.59,
+        "helperCpuSeconds": 0.2
+      },
+      {
+        "mainRssKiB": 126416,
+        "helperRssKiB": 46832,
+        "mainCpuSeconds": 4.69,
+        "helperCpuSeconds": 0.22
+      },
+      {
+        "mainRssKiB": 126432,
+        "helperRssKiB": 46832,
+        "mainCpuSeconds": 4.79,
+        "helperCpuSeconds": 0.23
+      },
+      {
+        "mainRssKiB": 127920,
+        "helperRssKiB": 46832,
+        "mainCpuSeconds": 4.9,
+        "helperCpuSeconds": 0.24
+      },
+      {
+        "mainRssKiB": 128048,
+        "helperRssKiB": 46848,
+        "mainCpuSeconds": 4.99,
+        "helperCpuSeconds": 0.25
+      }
+    ]
+  },
+  {
+    "revision": "old",
+    "mode": "healthy",
+    "deployment": "one embedded Broker/client process; default callbacks",
+    "importMs": 14.906666999999999,
+    "brokerStartMs": 19.019125,
+    "warmupMs": 102.843833,
+    "recoveryMs": 20.29725000000326,
+    "phases": [
+      {
+        "seconds": 60,
+        "completed": 6000,
+        "elapsedMs": 60001.422374999995,
+        "throughput": 99.99762943119731,
+        "p95Ms": 0.750333000003593,
+        "p99Ms": 0.9865410000020347,
+        "actualLocalFailureAttempts": 0,
+        "windows": [
+          {
+            "requestSecond": 1,
+            "p95Ms": 1.0254160000000638,
+            "p99Ms": 3.714207999999985,
+            "driverLatenessMaxMs": 3.7097909999999956
+          },
+          {
+            "requestSecond": 2,
+            "p95Ms": 0.9740830000000642,
+            "p99Ms": 1.148332999999866,
+            "driverLatenessMaxMs": 3.448916000000054
+          },
+          {
+            "requestSecond": 3,
+            "p95Ms": 0.8540419999999358,
+            "p99Ms": 1.5447920000001432,
+            "driverLatenessMaxMs": 2.1791250000001128
+          },
+          {
+            "requestSecond": 4,
+            "p95Ms": 0.8503749999999854,
+            "p99Ms": 1.3716249999997672,
+            "driverLatenessMaxMs": 2.4231249999998
+          },
+          {
+            "requestSecond": 5,
+            "p95Ms": 0.8294160000004922,
+            "p99Ms": 1.234917000000678,
+            "driverLatenessMaxMs": 2.126125000000684
+          },
+          {
+            "requestSecond": 6,
+            "p95Ms": 0.6811669999997321,
+            "p99Ms": 0.8212499999999636,
+            "driverLatenessMaxMs": 256.22100000000046
+          },
+          {
+            "requestSecond": 7,
+            "p95Ms": 0.19408300000031886,
+            "p99Ms": 0.2207090000001699,
+            "driverLatenessMaxMs": 2.038666000000376
+          },
+          {
+            "requestSecond": 8,
+            "p95Ms": 0.8230839999996533,
+            "p99Ms": 0.9772910000001502,
+            "driverLatenessMaxMs": 2.170625000000655
+          },
+          {
+            "requestSecond": 9,
+            "p95Ms": 0.489292000000205,
+            "p99Ms": 0.6778340000000753,
+            "driverLatenessMaxMs": 2.2217080000009446
+          },
+          {
+            "requestSecond": 10,
+            "p95Ms": 0.684624999999869,
+            "p99Ms": 0.7860409999993863,
+            "driverLatenessMaxMs": 2.041666000000987
+          },
+          {
+            "requestSecond": 11,
+            "p95Ms": 0.7380840000005264,
+            "p99Ms": 4.11462500000016,
+            "driverLatenessMaxMs": 2.1845830000002024
+          },
+          {
+            "requestSecond": 12,
+            "p95Ms": 0.7402079999992566,
+            "p99Ms": 0.7662079999990965,
+            "driverLatenessMaxMs": 2.102833000000828
+          },
+          {
+            "requestSecond": 13,
+            "p95Ms": 0.7121669999996811,
+            "p99Ms": 0.781542000000627,
+            "driverLatenessMaxMs": 2.1300000000010186
+          },
+          {
+            "requestSecond": 14,
+            "p95Ms": 0.712666999999783,
+            "p99Ms": 0.8460830000003625,
+            "driverLatenessMaxMs": 2.1307080000005953
+          },
+          {
+            "requestSecond": 15,
+            "p95Ms": 0.7576249999983702,
+            "p99Ms": 1.1239999999997963,
+            "driverLatenessMaxMs": 2.2697079999998095
+          },
+          {
+            "requestSecond": 16,
+            "p95Ms": 0.7203340000014578,
+            "p99Ms": 0.8463750000009895,
+            "driverLatenessMaxMs": 256.3066660000004
+          },
+          {
+            "requestSecond": 17,
+            "p95Ms": 0.7180829999997513,
+            "p99Ms": 0.7328329999982088,
+            "driverLatenessMaxMs": 3.028416000001016
+          },
+          {
+            "requestSecond": 18,
+            "p95Ms": 0.817416999998386,
+            "p99Ms": 1.0372090000018943,
+            "driverLatenessMaxMs": 2.1287499999998545
+          },
+          {
+            "requestSecond": 19,
+            "p95Ms": 0.7427910000005795,
+            "p99Ms": 0.8774579999990237,
+            "driverLatenessMaxMs": 2.0692500000004657
+          },
+          {
+            "requestSecond": 20,
+            "p95Ms": 0.7192499999982829,
+            "p99Ms": 0.9759169999997539,
+            "driverLatenessMaxMs": 6.9198749999995925
+          },
+          {
+            "requestSecond": 21,
+            "p95Ms": 0.7491249999984575,
+            "p99Ms": 4.934457999999722,
+            "driverLatenessMaxMs": 2.2473749999990105
+          },
+          {
+            "requestSecond": 22,
+            "p95Ms": 0.8199580000000424,
+            "p99Ms": 0.8838329999998678,
+            "driverLatenessMaxMs": 2.3220000000001164
+          },
+          {
+            "requestSecond": 23,
+            "p95Ms": 0.6922910000030242,
+            "p99Ms": 1.3472920000021986,
+            "driverLatenessMaxMs": 2.0983330000017304
+          },
+          {
+            "requestSecond": 24,
+            "p95Ms": 0.6852499999986321,
+            "p99Ms": 0.7830419999991136,
+            "driverLatenessMaxMs": 2.324000000000524
+          },
+          {
+            "requestSecond": 25,
+            "p95Ms": 0.7192499999982829,
+            "p99Ms": 0.8572500000009313,
+            "driverLatenessMaxMs": 6.601208000000042
+          },
+          {
+            "requestSecond": 26,
+            "p95Ms": 0.6812910000007832,
+            "p99Ms": 0.7941250000003492,
+            "driverLatenessMaxMs": 253.77729100000215
+          },
+          {
+            "requestSecond": 27,
+            "p95Ms": 0.6981670000022859,
+            "p99Ms": 0.7676250000004075,
+            "driverLatenessMaxMs": 2.1033749999987776
+          },
+          {
+            "requestSecond": 28,
+            "p95Ms": 0.7119579999998678,
+            "p99Ms": 0.7273329999989073,
+            "driverLatenessMaxMs": 2.1199999999989814
+          },
+          {
+            "requestSecond": 29,
+            "p95Ms": 0.7295830000002752,
+            "p99Ms": 0.8684580000008282,
+            "driverLatenessMaxMs": 6.345165999999153
+          },
+          {
+            "requestSecond": 30,
+            "p95Ms": 0.7235419999997248,
+            "p99Ms": 1.1993750000001455,
+            "driverLatenessMaxMs": 2.099500000000262
+          },
+          {
+            "requestSecond": 31,
+            "p95Ms": 0.6910829999978887,
+            "p99Ms": 4.599165999999968,
+            "driverLatenessMaxMs": 2.2885410000017146
+          },
+          {
+            "requestSecond": 32,
+            "p95Ms": 0.6919579999994312,
+            "p99Ms": 0.7883330000004207,
+            "driverLatenessMaxMs": 2.136333000002196
+          },
+          {
+            "requestSecond": 33,
+            "p95Ms": 0.5582079999985581,
+            "p99Ms": 0.6846669999977166,
+            "driverLatenessMaxMs": 2.028290999995079
+          },
+          {
+            "requestSecond": 34,
+            "p95Ms": 0.5671659999934491,
+            "p99Ms": 0.7145000000018626,
+            "driverLatenessMaxMs": 2.027874999999767
+          },
+          {
+            "requestSecond": 35,
+            "p95Ms": 0.721624999998312,
+            "p99Ms": 0.9276250000038999,
+            "driverLatenessMaxMs": 2.1346659999981057
+          },
+          {
+            "requestSecond": 36,
+            "p95Ms": 0.6489579999979469,
+            "p99Ms": 0.7400829999969574,
+            "driverLatenessMaxMs": 254.57941599999322
+          },
+          {
+            "requestSecond": 37,
+            "p95Ms": 0.6665829999983544,
+            "p99Ms": 0.7512080000014976,
+            "driverLatenessMaxMs": 2.1282909999936237
+          },
+          {
+            "requestSecond": 38,
+            "p95Ms": 0.759249999995518,
+            "p99Ms": 1.872457999998005,
+            "driverLatenessMaxMs": 3.2002079999947455
+          },
+          {
+            "requestSecond": 39,
+            "p95Ms": 0.6924999999973807,
+            "p99Ms": 0.809291999998095,
+            "driverLatenessMaxMs": 2.240665999997873
+          },
+          {
+            "requestSecond": 40,
+            "p95Ms": 0.7064170000012382,
+            "p99Ms": 0.8975000000064028,
+            "driverLatenessMaxMs": 2.2774999999965075
+          },
+          {
+            "requestSecond": 41,
+            "p95Ms": 0.6239590000041062,
+            "p99Ms": 5.114249999998719,
+            "driverLatenessMaxMs": 2.064874999996391
+          },
+          {
+            "requestSecond": 42,
+            "p95Ms": 0.6446670000004815,
+            "p99Ms": 0.8575419999979204,
+            "driverLatenessMaxMs": 4.201790999999503
+          },
+          {
+            "requestSecond": 43,
+            "p95Ms": 0.6016670000026352,
+            "p99Ms": 0.6824170000036247,
+            "driverLatenessMaxMs": 2.071249999993597
+          },
+          {
+            "requestSecond": 44,
+            "p95Ms": 0.6137910000034026,
+            "p99Ms": 0.8192500000004657,
+            "driverLatenessMaxMs": 2.0788329999995767
+          },
+          {
+            "requestSecond": 45,
+            "p95Ms": 0.7037909999999101,
+            "p99Ms": 0.750333000003593,
+            "driverLatenessMaxMs": 2.1062909999964177
+          },
+          {
+            "requestSecond": 46,
+            "p95Ms": 0.6937079999988782,
+            "p99Ms": 0.9194999999963329,
+            "driverLatenessMaxMs": 254.03870800000004
+          },
+          {
+            "requestSecond": 47,
+            "p95Ms": 0.6961250000022119,
+            "p99Ms": 0.9759580000027199,
+            "driverLatenessMaxMs": 2.149249999994936
+          },
+          {
+            "requestSecond": 48,
+            "p95Ms": 0.6945839999971213,
+            "p99Ms": 0.8395830000008573,
+            "driverLatenessMaxMs": 2.41533299999719
+          },
+          {
+            "requestSecond": 49,
+            "p95Ms": 0.701375000004191,
+            "p99Ms": 0.762166000000434,
+            "driverLatenessMaxMs": 2.1483749999970314
+          },
+          {
+            "requestSecond": 50,
+            "p95Ms": 0.6612919999970472,
+            "p99Ms": 0.7654580000016722,
+            "driverLatenessMaxMs": 2.1144579999963753
+          },
+          {
+            "requestSecond": 51,
+            "p95Ms": 0.6898750000036671,
+            "p99Ms": 4.97716699999728,
+            "driverLatenessMaxMs": 4.855290999999852
+          },
+          {
+            "requestSecond": 52,
+            "p95Ms": 0.6751670000012382,
+            "p99Ms": 0.7652499999967404,
+            "driverLatenessMaxMs": 2.116874999999709
+          },
+          {
+            "requestSecond": 53,
+            "p95Ms": 0.6786670000001322,
+            "p99Ms": 0.7605000000039581,
+            "driverLatenessMaxMs": 2.12870799999655
+          },
+          {
+            "requestSecond": 54,
+            "p95Ms": 0.7078750000000582,
+            "p99Ms": 0.756375000004482,
+            "driverLatenessMaxMs": 2.2952909999949043
+          },
+          {
+            "requestSecond": 55,
+            "p95Ms": 0.7177920000031008,
+            "p99Ms": 0.7987910000010743,
+            "driverLatenessMaxMs": 5.596540999998979
+          },
+          {
+            "requestSecond": 56,
+            "p95Ms": 0.6862909999981639,
+            "p99Ms": 0.8131670000002487,
+            "driverLatenessMaxMs": 253.997832999994
+          },
+          {
+            "requestSecond": 57,
+            "p95Ms": 0.6456249999973807,
+            "p99Ms": 0.7033329999976559,
+            "driverLatenessMaxMs": 2.521499999995285
+          },
+          {
+            "requestSecond": 58,
+            "p95Ms": 0.6581670000014128,
+            "p99Ms": 0.7717919999995502,
+            "driverLatenessMaxMs": 2.375040999999328
+          },
+          {
+            "requestSecond": 59,
+            "p95Ms": 0.7086249999993015,
+            "p99Ms": 0.8772079999980633,
+            "driverLatenessMaxMs": 2.205415999997058
+          },
+          {
+            "requestSecond": 60,
+            "p95Ms": 0.7052500000063446,
+            "p99Ms": 0.7821250000051805,
+            "driverLatenessMaxMs": 2.1627499999958673
+          }
+        ]
+      },
+      {
+        "seconds": 10,
+        "completed": 1000,
+        "elapsedMs": 10000.469625000005,
+        "throughput": 99.99530397053724,
+        "p95Ms": 1.0320000000065193,
+        "p99Ms": 1.199291999990237,
+        "actualLocalFailureAttempts": 10000,
+        "windows": [
+          {
+            "requestSecond": 1,
+            "p95Ms": 1.1440000000002328,
+            "p99Ms": 4.767250000004424,
+            "driverLatenessMaxMs": 2.391042000002926
+          },
+          {
+            "requestSecond": 2,
+            "p95Ms": 0.15616700000100536,
+            "p99Ms": 0.19212499999412103,
+            "driverLatenessMaxMs": 2.314417000001413
+          },
+          {
+            "requestSecond": 3,
+            "p95Ms": 0.9932909999988624,
+            "p99Ms": 1.1289579999938724,
+            "driverLatenessMaxMs": 2.666125000003376
+          },
+          {
+            "requestSecond": 4,
+            "p95Ms": 0.9748749999998836,
+            "p99Ms": 1.1665420000063023,
+            "driverLatenessMaxMs": 2.8896250000034343
+          },
+          {
+            "requestSecond": 5,
+            "p95Ms": 0.9921249999970314,
+            "p99Ms": 1.206958000002487,
+            "driverLatenessMaxMs": 2.1402500000040163
+          },
+          {
+            "requestSecond": 6,
+            "p95Ms": 1.008084000000963,
+            "p99Ms": 1.0724999999947613,
+            "driverLatenessMaxMs": 253.30504199999996
+          },
+          {
+            "requestSecond": 7,
+            "p95Ms": 1.0287499999976717,
+            "p99Ms": 1.114625000001979,
+            "driverLatenessMaxMs": 2.5834169999870937
+          },
+          {
+            "requestSecond": 8,
+            "p95Ms": 1.0190000000002328,
+            "p99Ms": 1.0582499999873107,
+            "driverLatenessMaxMs": 2.573041999989073
+          },
+          {
+            "requestSecond": 9,
+            "p95Ms": 1.0357499999954598,
+            "p99Ms": 1.1882080000068527,
+            "driverLatenessMaxMs": 3.3469999999942956
+          },
+          {
+            "requestSecond": 10,
+            "p95Ms": 1.1487080000079004,
+            "p99Ms": 1.1945410000043921,
+            "driverLatenessMaxMs": 2.458999999988009
+          }
+        ]
+      }
+    ],
+    "outcomes": {
+      "read": 6909,
+      "send": 7,
+      "deliveredRead": 7,
+      "ack": 7,
+      "refusal": 70,
+      "localFailure": 10001
+    },
+    "watchOutcomes": {
+      "churnReady": 70,
+      "persistentReady": 1,
+      "reconnectReady": 7,
+      "refusal": 1
+    },
+    "deliveryChecks": 2,
+    "ordinaryRecoveryChecks": 1,
+    "shutdownMs": 5.950792000046931,
+    "stdioClosureConfirmed": true,
+    "stderrDisposition": "consumed through child close",
+    "shutdownDiagnosticObserved": false,
+    "ownedTerminalConfirmed": true,
+    "helperWasPresent": true,
+    "helperExitConfirmed": true,
+    "diagnosticBytes": 396585,
+    "diagnosticLines": 1086,
+    "observedEvents": {
+      "broker.started": 0,
+      "broker.stopped": 0,
+      "transport.ready": 0,
+      "transport.reconnected": 0
+    },
+    "destination": "healthy",
+    "failedHelperApplicable": false,
+    "peakMainRssKiB": 129088,
+    "peakHelperRssKiB": 46912,
+    "peakTotalRssKiB": 176000,
+    "mainCpuSeconds": 4.44,
+    "helperCpuSeconds": 0.2,
+    "tail": [
+      {
+        "mainRssKiB": 127424,
+        "helperRssKiB": 46816,
+        "mainCpuSeconds": 4.05,
+        "helperCpuSeconds": 0.14
+      },
+      {
+        "mainRssKiB": 127456,
+        "helperRssKiB": 46816,
+        "mainCpuSeconds": 4.14,
+        "helperCpuSeconds": 0.16
+      },
+      {
+        "mainRssKiB": 127504,
+        "helperRssKiB": 46864,
+        "mainCpuSeconds": 4.23,
+        "helperCpuSeconds": 0.17
+      },
+      {
+        "mainRssKiB": 128976,
+        "helperRssKiB": 46912,
+        "mainCpuSeconds": 4.35,
+        "helperCpuSeconds": 0.19
+      },
+      {
+        "mainRssKiB": 129088,
+        "helperRssKiB": 46912,
+        "mainCpuSeconds": 4.44,
+        "helperCpuSeconds": 0.2
+      }
+    ]
+  }
+]
