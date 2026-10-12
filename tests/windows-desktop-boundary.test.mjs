@@ -195,15 +195,15 @@ test('diagnostic-only copied SID stage localization', {
 });
 
 // Isolate the original child's first cmdlet without debugger instrumentation.
-test('diagnostic-only classic Get-Content primitive', {
+for (const mode of ['autoload','management-import','utility-import']) test(`diagnostic-only classic module boundary: ${mode}`, {
   skip: process.platform !== 'win32', timeout: 30000,
 }, async t => {
   const root = await scratch(t, 'comms-ci-content-diagnostic-');
   await writeFile(path.join(root, 'inputs.json'), JSON.stringify({ sid: 'S-1-0-0', mode: 'candidate-compiler' }), { flag: 'wx' });
   const stage = path.join(root, 'stages.txt');
-  const evidence = { kind: 'diagnostic-only-get-content', acceptanceSubstitute: false, completed: false, owned: null, stages: [] };
+  const evidence = { kind: 'diagnostic-only-classic-module', mode, acceptanceSubstitute: false, completed: false, owned: null, stages: [] };
   try {
-    const result = await owned(shell(), [...args('tests/windows-desktop-content-diagnostic.ps1'), '-Root', root], clean(root));
+    const result = await owned(shell(), [...args('tests/windows-desktop-content-diagnostic.ps1'), '-Root', root, '-Mode', mode], clean(root));
     evidence.completed = true; evidence.exitCode = result.code;
   } catch (error) { evidence.owned = error.ownedState ?? null; }
   try {
@@ -211,7 +211,7 @@ test('diagnostic-only classic Get-Content primitive', {
     try { ({ bytesRead } = await file.read(bytes, 0, bytes.length, 0)); } finally { await file.close(); }
     if (bytesRead <= 256) {
       const stages = bytes.subarray(0, bytesRead).toString('utf8').trim().split(/\r?\n/);
-      if (stages.length <= 2 && stages.every(value => ['content-start','content-complete'].includes(value))) evidence.stages = stages;
+      if (stages.length <= 6 && stages.every(value => ['content-start','import-start','import-complete','command-start','command-complete','content-complete'].includes(value))) evidence.stages = stages;
     }
   } catch { /* No inferred progress from unavailable evidence. */ }
   t.diagnostic(JSON.stringify(evidence));
