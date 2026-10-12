@@ -5,7 +5,8 @@ cover this scoped macOS archive comparison. Related to
 [#164](https://github.com/qwts/agent-comms/issues/164) and
 [SOP #85](https://github.com/qwts/qwts-agent-sop/issues/85); both issues remain
 open. The [earlier reporting-only evidence](../2026-10-12-local-diagnostics/README.md)
-is unchanged, including all failed and confounded results.
+is unchanged, including all failed and confounded results. This update adds eight failed/unread
+runs without replacing the original healthy evidence.
 
 ## Retained records
 
@@ -21,6 +22,8 @@ every retained original JSON record and the exact frozen runner snapshot.
 | [Frozen preflight 05](preflight-05-frozen-success.json) | Four cases passed at the exact healthy-run runner; absent old helper has null lifecycle result |
 | [Healthy results](healthy-results.json) | Both opposite-order pairs pass unchanged candidate thresholds |
 | [Healthy individual runs](healthy-runs.json) | All four outcomes, latency/lateness windows, CPU/RSS samples, startup and natural cleanup |
+| [Failed/unread results](failed-unread-results.json) | Four independent pairs pass unchanged candidate thresholds |
+| [Failed/unread individual runs](failed-unread-runs.json) | All eight outcomes, latency/lateness windows, CPU/RSS samples and natural cleanup |
 | [Frozen runner](runner.mjs.txt) | Exact tested source, SHA-256 `0437dcc8af4ce34a7e5fa7f7e16041bade7bbc63f2a0e0a80c2f8b25c253403a` |
 
 Preflight 01's runner hash was recorded before launch and in its later
@@ -32,10 +35,11 @@ hash recorded in preflight 05 and the healthy result.
 
 The fault cases inject a harness failure after identity observation, before a
 timed workload. They do not patch either runtime archive. CPU seconds are
-recorded, not gated. Sparse appends, a healthy destination and one embedded
-Broker/client process limit the claim; compaction, every internal error,
-failed/unread archive comparisons and native Windows numeric evidence remain
-open.
+recorded, not gated. Sparse appends and one embedded Broker/client process
+limit the claim; compaction, every internal error and native Windows numeric
+evidence remain open. Failed helpers are checked for no respawn. Unread stderr
+is configured but never consumed, and no private queue count or direct stalled
+write is claimed.
 
 ## Source archives and reproduction
 
@@ -59,4 +63,9 @@ actual supported Node executable for both pins and a coordinated quiet interval.
 The healthy run started at 02:34:00 UTC and terminal cleanup was observed at
 02:38:51 UTC on 2026-10-12. Root and both other agents held runtime/tests/builds
 through that interval. Each opposite-order pair retains its own pass/fail;
-passing averages never cancel a failure. No further timed run is included.
+passing averages never cancel a failure. The separate failed/unread run started
+at 03:08:52 UTC and terminal cleanup was observed at 03:18:24 UTC on the same
+date, under a new coordinated hold. Its eight runs and four individual pair
+results are retained unchanged. Every owned process and candidate helper exit
+was confirmed. Both source-archive hashes, Node executable hash and exact runner
+hash match the healthy comparison. No retry occurred.
