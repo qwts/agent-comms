@@ -150,7 +150,11 @@ test('classic supervisor verifies and attaches an owned paused fixture before na
   const fixture = owned(process.execPath, fixtureArgs, ['ignore','ignore','pipe','ipc']);
   const fixtureControl = createCapacityController(fixture, { ipc: true });
   const supervisor = owned(shell, ['-NoLogo','-NoProfile','-NonInteractive','-File',script], ['pipe','pipe','pipe']);
-  const control = createCapacityController(supervisor);
+  // state() retains only controller-validated fixed phases/encoding/booleans.
+  // Preserve the refusal interval without printing PowerShell errors or input.
+  const control = createCapacityController(supervisor, {
+    classifyFailure: () => new Error('job-supervisor-failed ' + JSON.stringify(control.state())),
+  });
   const started = Date.now(), remaining = () => Math.max(1, 15000 - (Date.now() - started));
   try {
     assert.equal((await within(fixtureControl.startup, remaining())).paused, true);

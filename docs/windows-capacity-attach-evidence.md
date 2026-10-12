@@ -46,3 +46,15 @@ bounded, and incomplete cleanup retains the disposable profile/account/stage.
 No stale PID kill or production load is used. All earlier failures remain
 retained; any subsequent manual dispatch requires reviewed exact-head native
 CI and a separate result checkpoint before capacity work resumes.
+
+Native [CI 38213752759](https://github.com/qwts/agent-comms/actions/runs/38213752759),
+at `d6a812eb81285e1a7ec3779626be6e1653bde0c9`, passed the existing five
+shell/supervisor controls but failed the new real-fixture attach in 853 ms
+with `job-supervisor-failed`. The test's default classifier omitted the
+existing fixed phase metadata, so this log does not identify the refusal
+interval. Its failed-step log SHA256 is
+`9d8f0f2fc69224c05151d5bf42a76fb150f7bf73ccb2b8dfa20d1b8fc6497dd7`.
+The native test now includes only the controller-validated fixed phase,
+encoding and boolean observations in its failure message; no raw child error
+or fixture fields are printed. No live attach diagnostic is dispatched while
+native CI remains failing. Process identity and lifetime checks are unchanged.
