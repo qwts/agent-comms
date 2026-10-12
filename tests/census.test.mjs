@@ -119,7 +119,7 @@ test('a principal pairing waits for the owner on the admin socket', async () => 
   const { at, ...row } = reply.principals.find((entry) => entry.principal === pending.principal);
   assert.equal(typeof at, 'number');
   assert.deepEqual(row, {
-    principal: pending.principal, name: 'GeniusBar', account: 'owner', grant: null, ownerOperations: [], state: 'pending', code: pending.code,
+    principal: pending.principal, name: 'GeniusBar', account: 'owner', grant: null, ownerOperations: [], ownerGrants: [], state: 'pending', code: pending.code,
   });
 
   // Neither code space approves the other kind of pairing.
