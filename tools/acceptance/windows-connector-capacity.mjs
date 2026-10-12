@@ -10,6 +10,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 import { admissionStage, RATES } from './windows-capacity-policy.mjs';
 import { projectWindowsPipeStage } from '../../lib/platform/windows-pipe-stage.mjs';
+import { connectWindowsPipe } from '../../lib/platform/windows-pipe-client.mjs';
+import { captureCompilerPrefix, compilerControlArgs, observeCompilerControl, projectCompilerObservation, collectCompilerControls, sampleCompilerControl, COMPILER_SOURCE, COMPILER_DEADLINE_MS } from './windows-capacity-compiler.mjs';
 import { collectSupervisorProbes, createCapacityController, encodingSignature, FIXTURE_PHASES, snapshotCapacityPhases } from './windows-capacity-control.mjs';
 
 import { capacityTimingMode, capacityTimingProfile, createCapacityPhaseTiming, timeCapacityRequest } from './windows-capacity-timing.mjs';
@@ -33,7 +35,7 @@ const supervisorPhases = new Set(['script-entry','compile-supervisor','superviso
 const checks = new Set(['fixture-terminal', 'fixture-deadline', 'control-deadline', 'control-closed',
   'control-output-bound', 'control-invalid', 'job-supervisor-failed', 'natural-exit-unconfirmed',
   'relay-exit-unconfirmed', 'scratch-retained', 'job-exit-unconfirmed', 'diagnostic-output-invalid',
-  'owned-startup-fault', 'owned-forced-cleanup', 'policy-failed', 'memory-headroom-insufficient', 'candidate-source-mismatch', 'operation-failed', 'assertion-failed', 'timing-unavailable']);
+  'compiler-source-mismatch', 'compiler-control-failed', 'compiler-deadline', 'compiler-terminal', 'owned-startup-fault', 'owned-forced-cleanup', 'policy-failed', 'memory-headroom-insufficient', 'candidate-source-mismatch', 'operation-failed', 'assertion-failed', 'timing-unavailable']);
 function failure(error) {
   const windowsPipeStage = projectWindowsPipeStage(error);
   return { stage: activeStage, check: checks.has(error?.message) ? error.message : error?.code === 'ERR_ASSERTION' ? 'assertion-failed' : 'operation-failed',
@@ -66,6 +68,25 @@ function ownedChild(file, args, options) {
   });
   const stdioClosed = new Promise((resolve) => child.once('close', resolve));
   return { child, exited, stdioClosed, terminal: () => terminal };
+}
+
+async function compilerFixture(source, variant) {
+  assert.ok(['implicit','explicit'].includes(variant));
+  process.send({ id: 0, paused: true });
+  const start = await new Promise(resolve => process.once('message', resolve));
+  assert.equal(start.op, 'start'); fixtureRequestId = start.id;
+  // Assignment to the private job precedes this pinned import and child spawn.
+  const pinned = await import(pathToFileURL(path.join(source, 'lib/platform/windows-pipe-client.mjs')).href);
+  const prefix = captureCompilerPrefix(pinned.connectWindowsPipe, process.env);
+  const shell = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
+  const child = ownedChild(shell, compilerControlArgs(prefix, variant), {
+    env: environment(), stdio: ['ignore','pipe','pipe'], windowsHide: true });
+  const receipt = await observeCompilerControl(child, variant);
+  process.send({ id: start.id, ok: true, compilerObservation: receipt });
+  process.once('message', ({ id, op }) => {
+    if (op !== 'stop') { process.exitCode = 1; process.disconnect(); return; }
+    process.send({ id, ok: true, stopped: true }, () => { if (process.connected) process.disconnect(); });
+  });
 }
 
 async function fixture(source, timingMode = 'default') {
@@ -285,6 +306,82 @@ async function supervisorProbe(variant) {
     evidence.elapsedMs = Math.ceil(performance.now() - started);
   }
 }
+async function compilerProbe(source, variant, commitLimitBytes) {
+  const root = mkdtempSync(path.join(process.env.LOCALAPPDATA, 'agent-comms-compiler-'));
+  const shell = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
+  const args = [SELF, '--compiler-fixture', source, variant];
+  let fixture, control, supervisor, job;
+  activeStage = 'compiler-process-setup';
+  try {
+    fixture = ownedChild(process.execPath, args, { env: environment(), stdio: ['ignore','ignore','pipe','ipc'], windowsHide: true });
+    control = createCapacityController(fixture, { ipc: true, classifyFailure: record => classifyFixtureFailure(record, checks) });
+    supervisor = ownedChild(shell, ['-NoLogo','-NoProfile','-NonInteractive','-File',JOB], {
+      env: environment(), stdio: ['pipe','pipe','pipe'], windowsHide: true });
+    job = createCapacityController(supervisor, { classifyFailure: supervisorFailure });
+  } catch (error) {
+    // Setup can throw after an earlier child was created. No attach/start has
+    // been sent: terminate every existing owned handle and stop the sequence.
+    for (const owned of [fixture, supervisor].filter(Boolean)) {
+      if (!owned.terminal()) { try { owned.child.kill(); } catch { /* Confirmation below. */ } }
+      try { await deadline(Promise.all([owned.exited,owned.stdioClosed]),5000,'fixture-terminal'); } catch { /* Uncertainty remains explicit. */ }
+    }
+    return {status:'failed',failure:failure(error),ownedTerminalConfirmed:false,stdioClosedConfirmed:false,
+      descendantsEmptyConfirmed:false,cleanupConfirmed:false,cleanup:{scratchRemoved:false,jobEmptyConfirmed:false}};
+  }
+  let attached = false, disposed = false, observation, original, outputBytes = 0;
+  let relayCommandConfirmed = false;
+  const receipt = { jobEmptyConfirmed: false, scratchRemoved: false };
+  for (const stream of [fixture.child.stderr,supervisor.child.stderr]) {
+    stream.on('data', chunk => { outputBytes = Math.min(1048577, outputBytes + chunk.length); });
+    stream.on('error', () => { outputBytes = 1048577; });
+  }
+  async function closeJob() {
+    const result = await job.request('close', {}, 10_000);
+    assert.equal(result.jobEmptyConfirmed, true, 'job-exit-unconfirmed');
+    for (const key of ['finalJobCpu100ns','peakJobCommitBytes']) assert.ok(Number.isSafeInteger(result[key]) && result[key] >= 0, 'job-exit-unconfirmed');
+    Object.assign(receipt,result); disposed = true;
+  }
+  try {
+    activeStage = 'compiler-fixture-startup';
+    assert.equal((await deadline(control.startup,5000,'fixture-deadline')).paused,true);
+    activeStage = 'compiler-supervisor-startup';
+    const ready = await deadline(job.startup,15_000,'control-deadline');
+    if (ready.ok === false) throw supervisorFailure(ready);
+    assert.equal(ready.phase,'ready');
+    activeStage = 'compiler-private-job-attach';
+    const prefix = captureCompilerPrefix(connectWindowsPipe, environment());
+    const result = await job.request('attach', { pid: fixture.child.pid, parentPid: process.pid,
+      nodeExecutable: realpathSync(process.execPath), shellExecutable: shell, fixtureArgs: args,
+      relayArgs: compilerControlArgs(prefix, variant), diagnosticArgs: [], commitLimitBytes,
+      compilerExecutables: ['Framework','Framework64'].map(name => path.join(process.env.SystemRoot,'Microsoft.NET',name,'v4.0.30319','csc.exe')),
+      compilerTemp: realpathSync(process.env.TEMP) },15_000);
+    assert.equal(result.attached,true); attached = true;
+    activeStage = 'derived-compiler-control';
+    const started = control.request('start',{},COMPILER_DEADLINE_MS + 15_000);
+    const reply = await sampleCompilerControl(job,started);
+    relayCommandConfirmed = true;
+    observation = projectCompilerObservation(reply.compilerObservation,variant);
+    activeStage = 'compiler-fixture-stop';
+    assert.equal((await control.request('stop',{},5000)).stopped,true);
+    assert.equal((await deadline(fixture.exited,5000,'fixture-terminal')).code,0);
+    await deadline(fixture.stdioClosed,5000,'fixture-terminal');
+    receipt.naturalJobEmptyConfirmed = (await job.request('members')).activeMembers === 0;
+    assert.equal(receipt.naturalJobEmptyConfirmed,true,'relay-exit-unconfirmed');
+    assert.equal(outputBytes,0,'diagnostic-output-invalid');
+  } catch(error) { original = failure(error); }
+  const cleanup = await cleanupCapacityRun({ fixture, supervisor, attached, disposed, closeJob, receipt,
+    removeScratch: () => rmSync(root,{recursive:true,force:true}) });
+  // The fixed observation comes from our owned derived fixture, not a peer.
+  return { status: original || observation?.status !== 'passed' || cleanup.errors.length ? 'failed' : 'passed',
+    ...(original ? {failure:original} : {}), ...(observation ? {compilerObservation:observation} : {}),
+    ownedTerminalConfirmed: cleanup.fixtureOwnedTerminalConfirmed && cleanup.supervisorOwnedTerminalConfirmed && observation?.ownedTerminalConfirmed === true,
+    stdioClosedConfirmed: cleanup.fixtureStdioClosedConfirmed && cleanup.supervisorStdioClosedConfirmed && observation?.stdioClosedConfirmed === true,
+    descendantsEmptyConfirmed: cleanup.jobEmptyConfirmed,
+    cleanupConfirmed: cleanup.errors.length === 0 && cleanup.scratchRemoved === true,
+    relayCommandConfirmed,
+    cleanup: {...cleanup,naturalJobEmptyConfirmed:receipt.naturalJobEmptyConfirmed === true} };
+}
+
 async function run(source, revision, rates, preflight, commitLimitBytes) {
   source = realpathSync(source);
   const root = mkdtempSync(path.join(process.env.LOCALAPPDATA, 'agent-comms-capacity-'));
@@ -451,10 +548,11 @@ async function main() {
   const components = JSON.parse(readFileSync(new URL('../../tests/fixtures/windows-host-components.json', import.meta.url)));
   assert.equal(process.version, `v${components.node.version}`);
   assert.equal(process.env.AGENT_COMMS_NODE_ARCHIVE_SHA256, components.node.sha256['win-x64']);
+  const candidateCompiler = process.argv[2] === '--candidate-compiler';
   const candidateChannel = process.argv[2] === '--candidate-channel';
   const candidateStorage = process.argv[2] === '--candidate-storage';
   const candidateStartup = process.argv[2] === '--candidate';
-  const candidateOnly = candidateStartup || candidateStorage || candidateChannel;
+  const candidateOnly = candidateStartup || candidateStorage || candidateChannel || candidateCompiler;
   if (candidateOnly) { assert.equal(process.argv.length, 6); assert.equal(process.argv[4], '--output'); }
   else {
     assert.equal(process.argv[2], '--old'); assert.equal(process.argv[4], '--new'); assert.equal(process.argv[6], '--output');
@@ -503,9 +601,28 @@ async function main() {
     const archive = path.join(output, `${revision}.tar`), source = path.join(output, revision);
     writeFileSync(archive, bytes); mkdirSync(source);
     await exec('tar.exe', ['-xf', archive, '-C', source], { windowsHide: true });
+    if (candidateCompiler) assert.equal(hash(readFileSync(path.join(source,'lib/platform/windows-pipe-client.mjs'))),
+      hash(readFileSync(new URL('../../lib/platform/windows-pipe-client.mjs',import.meta.url))), 'candidate-source-mismatch');
     if (candidateOnly) assert.equal(hash(readFileSync(path.join(source, 'lib/platform/windows-pipe-stage.mjs'))),
       hash(readFileSync(new URL('../../lib/platform/windows-pipe-stage.mjs', import.meta.url))), 'candidate-source-mismatch');
     archives[revision] = { source, pin, tree: tree.trim(), archiveSha256: hash(bytes) };
+  }
+  if (candidateCompiler) {
+    const result = {v:1,compilerOnly:true,scope:'derived exact fixed worker compiler controls; implicit-explicit-explicit-implicit; no broker, pipe connection or workload',
+      node:process.version,nodeArchiveSha256:process.env.AGENT_COMMS_NODE_ARCHIVE_SHA256,
+      nodeExecutableSha256:hash(readFileSync(process.execPath)),runnerSha256:hash(readFileSync(SELF)),
+      compilerSha256:hash(readFileSync(new URL('./windows-capacity-compiler.mjs',import.meta.url))),
+      supervisorSha256:hash(readFileSync(JOB)),controlSha256:hash(readFileSync(new URL('./windows-capacity-control.mjs',import.meta.url))),
+      lifecycleSha256:hash(readFileSync(new URL('./windows-capacity-lifecycle.mjs',import.meta.url))),
+      workerSource:COMPILER_SOURCE,requestDeadlineMs:COMPILER_DEADLINE_MS,
+      archives:Object.fromEntries(Object.entries(archives).map(([key,{source,...value}])=>[key,value])),runs:[]};
+    const persist=()=>writeFileSync(path.join(output,'capacity.json'),`${JSON.stringify(result,null,2)}\n`);
+    persist();
+    await collectCompilerControls(variant=>compilerProbe(archives.candidate.source,variant,commitLimitBytes),row=>{result.runs.push(row);persist();});
+    result.status=result.runs.every(row=>row.status==='passed')?'passed':'failed';persist();
+    process.stdout.write(`${JSON.stringify({status:result.status,compilerOnly:true,runs:result.runs.length})}\n`);
+    if(result.status!=='passed') process.exitCode=1;
+    return;
   }
   const result = { v: 1, scope: candidateChannel ? 'hosted standard-user exact corrected-source channel-prepare-and-stale-probes only; actual default channel; no Broker.start, EventLog, replay, maintenance, listeners, delivery or offered rates' : candidateStorage ? 'hosted standard-user exact corrected-source fresh storage prefix only; actual prepare, EventLog custody/replay and compacting maintenance; no Broker.start, stale probes, listeners, delivery or offered rates' : candidateStartup ? 'hosted standard-user exact corrected-source Broker startup, one delivery and disposal only; no offered-rate stages, capacity comparison, desktop or host acceptance' : connectorOnly ? 'actual-connector-events; prepare/main stale probe then unconsumed admin connector; no Broker, listener, EventLog, replay, maintenance or workload' : channelOnly ? 'channel-prepare-and-stale-probes; actual pinned default channel; no Broker, listener, EventLog, replay, maintenance or workload' : custodyOnly ? 'hosted standard-user Windows pinned custody API only; no Broker or connector or offered-rate stages' : startupOnly ? 'hosted standard-user Windows old-pin production startup and disposal only; no offered-rate stages or capacity acceptance' : 'hosted standard-user Windows finite capacity pilot; no benchmark, desktop, host or 100/s support acceptance',
     ...(candidateStorage ? { storageHelperLifetime: 'actual production subprocesses belong to private job; configured timeout is not exit proof; no individual helper terminal observation' } : {}),
@@ -553,19 +670,21 @@ try {
       if (op !== 'stop') { process.exitCode = 1; process.disconnect(); return; }
       process.send({ id, ok: true, stopped: true }, () => { if (process.connected) process.disconnect(); });
     });
+  } else if (process.argv[2] === '--compiler-fixture') {
+    assert.equal(process.argv.length,5); await compilerFixture(process.argv[3],process.argv[4]);
   } else if (process.argv[2] === '--fixture') {
     assert.ok(process.argv.length === 4 || (process.argv.length === 5 && ['--candidate-channel-timing','--candidate-startup-timing'].includes(process.argv[4])));
     await fixture(process.argv[3], process.argv[4] === '--candidate-channel-timing' ? 'candidate-channel' : process.argv[4] === '--candidate-startup-timing' ? 'candidate-startup' : 'default');
   } else await main();
 } catch (error) {
   // Deliver only the fixed classification before cleanup disconnects IPC.
-  if (process.argv[2] === '--fixture' && Number.isSafeInteger(fixtureRequestId) && process.connected) {
+  if (['--fixture','--compiler-fixture'].includes(process.argv[2]) && Number.isSafeInteger(fixtureRequestId) && process.connected) {
     try { process.send({ id: fixtureRequestId, ok: false, failure: failure(error) }, () => {}); } catch { /* Owned cleanup still runs if IPC closed. */ }
   }
   if (fixtureCleanup) await fixtureCleanup().catch(() => {});
   const result = { status: 'failed', ...(error.capacityFailure ?? failure(error)), ...(error.cleanup ? { cleanup: error.cleanup, original: error.original ?? null } : {}),
     ...(error.supervisorProbe ? { supervisorProbe: error.supervisorProbe } : {}) };
   if (output) writeFileSync(path.join(output, 'failure.json'), `${JSON.stringify(result, null, 2)}\n`);
-  if (process.argv[2] !== '--fixture') process.stderr.write(`${JSON.stringify(result)}\n`);
+  if (!['--fixture','--compiler-fixture'].includes(process.argv[2])) process.stderr.write(`${JSON.stringify(result)}\n`);
   process.exitCode = 1;
 }

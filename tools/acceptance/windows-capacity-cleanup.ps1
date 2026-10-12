@@ -8,7 +8,14 @@ function Test-WindowsCapacityCleanupConfirmed([string]$Directory) {
         if ($evidence.status -notin @('passed','capacity-not-qualified')) { return $false }
         $runs = @($evidence.runs)
         if ($runs.Count -lt 1 -or $runs.Count -gt 6) { return $false }
+        if ($evidence.compilerOnly -eq $true -and $runs.Count -ne 4) { return $false }
         foreach ($run in $runs) {
+            if ($evidence.compilerOnly -eq $true) {
+                foreach ($receipt in @($run.stdioClosedConfirmed,$run.descendantsEmptyConfirmed,$run.cleanupConfirmed,$run.relayCommandConfirmed)) {
+                    if ($receipt -isnot [bool] -or -not $receipt) { return $false }
+                }
+                if ($run.status -ne 'passed') { return $false }
+            }
             foreach ($receipt in @($run.ownedTerminalConfirmed,$run.cleanup.jobEmptyConfirmed,$run.cleanup.scratchRemoved)) {
                 if ($receipt -isnot [bool] -or -not $receipt) { return $false }
             }

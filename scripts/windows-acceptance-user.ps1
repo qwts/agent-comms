@@ -1,7 +1,7 @@
 # CI-only bootstrap. Never run on an owner's computer.
 [CmdletBinding()]
 param([Parameter(Mandatory)][string]$Report,
-      [ValidateSet('engine','candidate-startup','candidate-storage','candidate-channel','capacity-supervisor','capacity-attach','capacity-sample','capacity-startup','capacity-custody','capacity-channel','capacity-connector','capacity-preflight','capacity-pilot')][string]$Mode = 'engine')
+      [ValidateSet('engine','candidate-startup','candidate-storage','candidate-channel','candidate-compiler','capacity-supervisor','capacity-attach','capacity-sample','capacity-startup','capacity-custody','capacity-channel','capacity-connector','capacity-preflight','capacity-pilot')][string]$Mode = 'engine')
 $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -ne 'true' -or $env:AGENT_COMMS_DISPOSABLE_WINDOWS -ne '1') {
     throw 'Disposable GitHub Windows runner required'
@@ -56,7 +56,7 @@ try {
     if ($Mode -eq 'engine') {
         $entries += @(@{name='bot';source=(Join-Path $repository '.windows-fixtures/agent-bot')},
                       @{name='released';source=(Join-Path $repository '.windows-fixtures/agent-comms')})
-    } elseif ($Mode -in @('candidate-startup','candidate-storage','candidate-channel')) {
+    } elseif ($Mode -in @('candidate-startup','candidate-storage','candidate-channel','candidate-compiler')) {
         $entries += @(@{name='correction';source=(Join-Path $repository '.windows-fixtures/stale-correction')})
     } else {
         $entries += @(@{name='old';source=(Join-Path $repository '.windows-fixtures/observability-old')},
