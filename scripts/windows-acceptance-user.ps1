@@ -1,7 +1,7 @@
 # CI-only bootstrap. Never run on an owner's computer.
 [CmdletBinding()]
 param([Parameter(Mandatory)][string]$Report,
-      [ValidateSet('engine','capacity-preflight','capacity-pilot')][string]$Mode = 'engine')
+      [ValidateSet('engine','capacity-supervisor','capacity-preflight','capacity-pilot')][string]$Mode = 'engine')
 $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -ne 'true' -or $env:AGENT_COMMS_DISPOSABLE_WINDOWS -ne '1') {
     throw 'Disposable GitHub Windows runner required'

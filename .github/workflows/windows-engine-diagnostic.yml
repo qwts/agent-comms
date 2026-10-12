@@ -8,7 +8,7 @@ on:
       task:
         description: 'Engine acceptance or finite production-connector capacity evidence'
         type: choice
-        options: [engine, capacity-preflight, capacity-pilot]
+        options: [engine, capacity-supervisor, capacity-preflight, capacity-pilot]
         default: engine
 
 permissions:

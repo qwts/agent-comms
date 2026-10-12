@@ -9,6 +9,7 @@ import { performance } from 'node:perf_hooks';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 import { admissionStage, RATES } from './windows-capacity-policy.mjs';
+import { createCapacityController, encodingSignature } from './windows-capacity-control.mjs';
 
 const exec = promisify(execFile), SELF = fileURLToPath(import.meta.url);
 const JOB = fileURLToPath(new URL('./windows-capacity-job.ps1', import.meta.url));
@@ -17,7 +18,7 @@ const CANARY = 'CANARY-windows-capacity-body-secret';
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 let output, activeStage = 'arguments', fixtureCleanup;
-const supervisorPhases = new Set(['compile-supervisor','read-control','verify-fixture','assign-private-job','sample-job','query-members','close-job']);
+const supervisorPhases = new Set(['script-entry','policy-query','compile-supervisor','read-control','verify-fixture','assign-private-job','sample-job','query-members','close-job']);
 const checks = new Set(['fixture-terminal', 'fixture-deadline', 'control-deadline', 'control-closed',
   'control-output-bound', 'control-invalid', 'job-supervisor-failed', 'natural-exit-unconfirmed',
   'relay-exit-unconfirmed', 'scratch-retained', 'job-exit-unconfirmed', 'diagnostic-output-invalid',
@@ -50,46 +51,6 @@ function ownedChild(file, args, options) {
     child.once('exit', (code, signal) => { terminal = true; resolve({ code, signal }); });
   });
   return { child, exited, terminal: () => terminal };
-}
-function controller(owned, ipc = false) {
-  const pending = new Map(); let id = 1, bytes = '', rejected;
-  const startup = new Promise((resolve) => {
-    const receive = (record) => {
-      if (record.id === 0) resolve(record);
-      else pending.get(record.id)?.resolve(record);
-    };
-    if (ipc) owned.child.on('message', receive);
-    else owned.child.stdout.on('data', (chunk) => {
-      bytes += chunk.toString('utf8');
-      if (bytes.length > 65536) { rejected = new Error('control-output-bound'); return; }
-      while (bytes.includes('\n')) {
-        const end = bytes.indexOf('\n'), line = bytes.slice(0, end); bytes = bytes.slice(end + 1);
-        try { receive(JSON.parse(line)); } catch { rejected = new Error('control-invalid'); }
-      }
-    });
-  });
-  // A terminal promise is handled at construction, including spawn failures.
-  const closed = () => { for (const entry of pending.values()) entry.reject(new Error('control-closed')); };
-  owned.exited.then(closed);
-  owned.child.stdin?.on('error', closed);
-  owned.child.stdout?.on('error', closed);
-  return { startup, async request(op, fields = {}, timeout = 5000) {
-    if (rejected) throw rejected;
-    const requestId = id++;
-    const response = new Promise((resolve, reject) => pending.set(requestId, { resolve, reject }));
-    try {
-      const record = { id: requestId, op, ...fields };
-      if (ipc) owned.child.send(record, (error) => { if (error) pending.get(requestId)?.reject(new Error('control-closed')); });
-      else owned.child.stdin.write(`${JSON.stringify(record)}\n`);
-      const result = await deadline(response, timeout, 'control-deadline');
-      if (rejected) throw rejected;
-      if (result.ok === false) {
-        if (result.failure?.check === 'job-supervisor-failed') throw supervisorFailure(result);
-        throw new Error(checks.has(result.failure?.check) ? result.failure.check : 'job-supervisor-failed');
-      }
-      return result;
-    } finally { pending.delete(requestId); }
-  } };
 }
 
 async function fixture(source) {
@@ -149,6 +110,51 @@ function productionArguments(source) {
   return { relayArgs: ['-NoLogo', '-NoProfile', '-NonInteractive', '-OutputFormat', 'Text', '-Command', command],
     diagnosticArgs: ['--input-type=module', '-e', `import(${JSON.stringify(pathToFileURL(path.join(source, 'lib/diagnostic-writer.mjs')).href)}).catch(() => process.exit(0));`] };
 }
+async function supervisorProbe() {
+  const shell = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
+  const cleanEnvironment = environment();
+  const owned = ownedChild(shell, ['-NoLogo','-NoProfile','-NonInteractive','-File',JOB], {
+    env: cleanEnvironment, stdio: ['pipe','pipe','pipe'], windowsHide: true });
+  const control = createCapacityController(owned, { classifyFailure: supervisorFailure });
+  const evidence = { runType: 'supervisor-only-no-workload', productionImported: false,
+    environmentParity: { inheritedExecutionPolicy: Object.keys(cleanEnvironment).some((key) => key.toLowerCase() === 'psexecutionpolicypreference'),
+      inheritedModulePath: Object.keys(cleanEnvironment).some((key) => key.toLowerCase() === 'psmodulepath'), explicitExecutionPolicyArgument: false },
+    stderrBytes: 0, stderrByteCountCapped: false, stderrEncoding: null, control: null, ownedTerminalConfirmed: false };
+  owned.child.stderr.on('data', (chunk) => {
+    evidence.stderrBytes = Math.min(1048577, evidence.stderrBytes + chunk.length);
+    evidence.stderrByteCountCapped = evidence.stderrBytes > 1048576;
+    evidence.stderrEncoding ??= encodingSignature(chunk);
+  });
+  owned.child.stderr.on('error', () => { evidence.stderrEncoding = 'stream-error'; });
+  let original;
+  try {
+    activeStage = 'supervisor-only-startup';
+    const ready = await deadline(control.startup, 15_000, 'control-deadline');
+    if (ready.ok === false) throw supervisorFailure(ready);
+    assert.equal(ready.phase, 'ready');
+    activeStage = 'supervisor-only-close';
+    const closed = await control.request('close', {}, 10_000);
+    assert.equal(closed.jobEmptyConfirmed, true);
+    const terminal = await deadline(owned.exited, 5000, 'job-exit-unconfirmed');
+    assert.equal(terminal.code, 0); assert.equal(evidence.stderrBytes, 0); assert.notEqual(evidence.stderrEncoding, 'stream-error');
+    evidence.cleanup = { jobEmptyConfirmed: true, naturalJobEmptyConfirmed: true, scratchRemoved: true, scratchCreated: false };
+    return evidence;
+  } catch (error) {
+    if (!error.supervisorPhase && supervisorPhases.has(control.state().phase)) error.supervisorPhase = control.state().phase;
+    error.supervisorProbe = evidence; original = error; throw error;
+  } finally {
+    if (!owned.terminal()) {
+      owned.child.stdin.end();
+      try { await deadline(owned.exited, 5000, 'job-exit-unconfirmed'); }
+      catch {
+        owned.child.kill();
+        try { await deadline(owned.exited, 5000, 'job-exit-unconfirmed'); }
+        catch { if (original) original.cleanup = [{ stage: 'cleanup', check: 'job-exit-unconfirmed' }]; }
+      }
+    }
+    evidence.control = control.state(); evidence.ownedTerminalConfirmed = owned.terminal();
+  }
+}
 async function run(source, revision, rates, preflight, commitLimitBytes) {
   source = realpathSync(source);
   const root = mkdtempSync(path.join(process.env.LOCALAPPDATA, 'agent-comms-capacity-'));
@@ -158,10 +164,10 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
     AGENT_COMMS_SHARED_DIR: path.join(root, 'shared'), AGENT_COMMS_BROKER_STATE_DIR: path.join(root, 'broker'),
     AGENT_COMMS_CLIENT_STATE_DIR: path.join(root, 'client'), AGENT_COMMS_SERVICE_LABEL: `test.capacity.${randomUUID()}`,
   }), stdio: ['ignore', 'ignore', 'pipe', 'ipc'], windowsHide: true });
-  const control = controller(fixtureOwned, true);
+  const control = createCapacityController(fixtureOwned, { ipc: true, classifyFailure: (record) => new Error(checks.has(record.failure?.check) ? record.failure.check : 'job-supervisor-failed') });
   const supervisorOwned = ownedChild(shell, ['-NoLogo', '-NoProfile', '-NonInteractive', '-File', JOB], {
     env: environment(), stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
-  const supervisor = controller(supervisorOwned);
+  const supervisor = createCapacityController(supervisorOwned, { classifyFailure: supervisorFailure });
   let attached = false, disposed = false, sampler, sampling, sampleFailure, outputFailure = false, diagnosticBytes = 0, original;
   let powershellVersion;
   const samples = [], stages = [], cleanupReceipt = { jobEmptyConfirmed: false, scratchRemoved: false };
@@ -264,7 +270,10 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
       sampledPeakJobWorkingSetBytes: Math.max(...samples.map((sample) => ['main','relay','diagnostic','compiler'].reduce((sum, kind) => sum + sample[kind].workingSetBytes, 0))),
       accountingScope: 'sampled private-job WorkingSet is not instantaneous peak; job CPU/peak committed bytes include short-lived descendants; observer excluded and separately reported',
       ownedTerminalConfirmed: fixtureOwned.terminal(), cleanup: cleanupReceipt };
-  } catch (error) { original = failure(error); throw error; }
+  } catch (error) {
+    if (!error.supervisorPhase && supervisorPhases.has(supervisor.state().phase)) error.supervisorPhase = supervisor.state().phase;
+    original = failure(error); throw error;
+  }
   finally {
     clearInterval(sampler); if (sampling) await sampling;
     const errors = [];
@@ -299,9 +308,17 @@ async function main() {
   assert.equal(process.version, `v${components.node.version}`);
   assert.equal(process.env.AGENT_COMMS_NODE_ARCHIVE_SHA256, components.node.sha256['win-x64']);
   assert.equal(process.argv[2], '--old'); assert.equal(process.argv[4], '--new'); assert.equal(process.argv[6], '--output');
-  assert.ok(process.argv.length === 8 || (process.argv.length === 9 && process.argv[8] === '--preflight'));
+  assert.ok(process.argv.length === 8 || (process.argv.length === 9 && ['--preflight','--supervisor-preflight'].includes(process.argv[8])));
   const preflight = process.argv[8] === '--preflight';
   output = path.resolve(process.argv[7]); mkdirSync(output);
+  if (process.argv[8] === '--supervisor-preflight') {
+    const result = { v: 1, scope: 'standard-user sanitized-environment supervisor control only; no production workload',
+      node: process.version, runnerSha256: hash(readFileSync(SELF)), supervisorSha256: hash(readFileSync(JOB)),
+      controlSha256: hash(readFileSync(new URL('./windows-capacity-control.mjs', import.meta.url))), runs: [] };
+    const persist = () => writeFileSync(path.join(output, 'capacity.json'), `${JSON.stringify(result, null, 2)}\n`);
+    persist(); result.runs.push(await supervisorProbe()); result.status = 'passed'; persist();
+    process.stdout.write('{"status":"passed","supervisorOnly":true,"workloadRun":false}\n'); return;
+  }
   const commitLimitBytes = Math.min(2 * 1024 ** 3, Math.floor(os.totalmem() / 4));
   if (commitLimitBytes < 512 * 1024 ** 2 || os.freemem() < commitLimitBytes + 512 * 1024 ** 2) throw new Error('memory-headroom-insufficient');
   const archives = {};
@@ -319,6 +336,7 @@ async function main() {
     node: process.version, nodeExecutableSha256: hash(readFileSync(process.execPath)),
     osRelease: os.release(), arch: process.arch, logicalCpus: os.availableParallelism(), physicalMemoryBytes: os.totalmem(), commitLimitBytes,
     runnerSha256: hash(readFileSync(SELF)), policySha256: hash(readFileSync(new URL('./windows-capacity-policy.mjs', import.meta.url))), supervisorSha256: hash(readFileSync(JOB)),
+    controlSha256: hash(readFileSync(new URL('./windows-capacity-control.mjs', import.meta.url))),
     archives: Object.fromEntries(Object.entries(archives).map(([key, { source, ...value }]) => [key, value])), runs: [] };
   const persist = () => writeFileSync(path.join(output, 'capacity.json'), `${JSON.stringify(result, null, 2)}\n`);
   persist();
@@ -338,7 +356,8 @@ try {
   if (process.argv[2] === '--fixture') await fixture(process.argv[3]); else await main();
 } catch (error) {
   if (fixtureCleanup) await fixtureCleanup().catch(() => {});
-  const result = { status: 'failed', ...failure(error), ...(error.cleanup ? { cleanup: error.cleanup, original: error.original ?? null } : {}) };
+  const result = { status: 'failed', ...failure(error), ...(error.cleanup ? { cleanup: error.cleanup, original: error.original ?? null } : {}),
+    ...(error.supervisorProbe ? { supervisorProbe: error.supervisorProbe } : {}) };
   if (output) writeFileSync(path.join(output, 'failure.json'), `${JSON.stringify(result, null, 2)}\n`);
   if (process.argv[2] !== '--fixture') process.stderr.write(`${JSON.stringify(result)}\n`);
   process.exitCode = 1;

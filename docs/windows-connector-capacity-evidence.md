@@ -94,3 +94,31 @@ Attach diagnosis now uses a fixed supervisor ready handshake and phase codes,
 with startup plus attach sharing the original fifteen-second budget. A native
 CI test exercises live duplex stdin/stdout control without a workload. These
 changes do not attribute the timeout to a cause or widen the deadline.
+
+The fifth preflight
+[38204709268](https://github.com/qwts/agent-comms/actions/runs/38204709268), at
+head `f23f67a7870283e57b5be79603f9a3c0e14b1075`, failed before supervisor
+readiness (`supervisor-startup` / `control-deadline`), with two
+`job-exit-unconfirmed` cleanup records. The guard correctly recorded
+`removed=false`, `capacity-tool-cleanup-unconfirmed` and `test-profile-cleanup`.
+No production import or offered workload ran. Original hashes:
+
+- [Acceptance](../tools/acceptance/evidence/2026-10-12-windows-connector/preflight-38204709268/acceptance.json):
+  `7f6903c8efd7095eb342d5130a94ba141665cc683043255217fac87800300f0f`.
+- [Capacity](../tools/acceptance/evidence/2026-10-12-windows-connector/preflight-38204709268/capacity.json):
+  `b9057eed366a718a121a0820dc91ca07eab2b29d9dc84dc832b72257e8ae5726`.
+- [Failure](../tools/acceptance/evidence/2026-10-12-windows-connector/preflight-38204709268/failure.json):
+  `20b9269a671f3285234427a31528c726a3ab014bc90431526bd4eb8b204f932d`.
+- Full log: `e55d5d4307a8c14088363e098b3b0eabe4c426df937f38174615a64384bb438d`.
+
+Native CI had used an inherited environment; the standard-user supervisor uses
+the same whitelist as capacity fixtures, excluding `PSExecutionPolicyPreference`
+and `PSModulePath`, with no explicit execution-policy argument. The parent
+standard-user shell uses `-ExecutionPolicy Bypass`; this difference is recorded
+without changing policy speculatively. The separate `capacity-supervisor`
+manual task probes this exact environment/command with no production imports.
+It reports fixed script-entry/precompile phases, an allowlisted execution-policy
+enum if reached, stdout/stderr encoding signatures and a capped stderr byte
+count, never raw output. Framing and output-bound errors now reject startup and
+pending control requests immediately; they cannot masquerade as a readiness
+deadline. The fifteen-second startup budget is unchanged.

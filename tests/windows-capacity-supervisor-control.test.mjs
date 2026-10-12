@@ -9,7 +9,7 @@ test('classic supervisor exchanges bounded control records with stdin still open
   const script = fileURLToPath(new URL('../tools/acceptance/windows-capacity-job.ps1', import.meta.url));
   const child = spawn(shell, ['-NoProfile','-NonInteractive','-File',script], { stdio: ['pipe','pipe','pipe'], windowsHide: true });
   let terminal = false, bytes = '', fault, stderrBytes = 0;
-  const records = new Map();
+  const records = new Map(), phases = new Set();
   const exited = new Promise((resolve) => {
     child.once('error', () => { terminal = true; resolve({ code: null }); });
     child.once('exit', (code) => { terminal = true; resolve({ code }); });
@@ -25,6 +25,10 @@ test('classic supervisor exchanges bounded control records with stdin still open
       const end = bytes.indexOf('\n'), line = bytes.slice(0, end); bytes = bytes.slice(end + 1);
       try {
         const value = JSON.parse(line);
+        if (value.id === -1) {
+          if (!['script-entry','compile-supervisor'].includes(value.phase)) { fault = true; return; }
+          phases.add(value.phase);
+        }
         if (!records.has(value.id) && records.size >= 4) { fault = true; return; }
         records.set(value.id, value);
       } catch { fault = true; }
@@ -46,6 +50,8 @@ test('classic supervisor exchanges bounded control records with stdin still open
   }
   try {
     assert.deepEqual(await record(0), { id: 0, ok: true, phase: 'ready' });
+    assert.deepEqual([...phases].sort(), ['compile-supervisor','script-entry']);
+    assert.ok(['Restricted','AllSigned','RemoteSigned','Unrestricted','Bypass','Undefined'].includes(records.get(-1).executionPolicy));
     child.stdin.write('{"id":1,"op":"close"}\n');
     // Do not send EOF: this checks the same live duplex control path as attach.
     const closed = await record(1);

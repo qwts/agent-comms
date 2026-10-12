@@ -8,7 +8,7 @@ $fixtureId = 0
 $fixtureCreation = $null
 $known = @{}
 $maximumRows = 128 # private-job membership, including compiler descendants
-$phase = 'compile-supervisor'
+$phase = 'script-entry'
 
 function Reply($Value) {
     [Console]::Out.WriteLine(($Value | ConvertTo-Json -Depth 8 -Compress))
@@ -16,6 +16,11 @@ function Reply($Value) {
 }
 
 try {
+    if (-not $ValidateOnly) { Reply @{id=-1;ok=$true;phase=$phase} }
+    $phase = 'policy-query'
+    $executionPolicy = [string](Get-ExecutionPolicy)
+    $phase = 'compile-supervisor'
+    if (-not $ValidateOnly) { Reply @{id=-1;ok=$true;phase=$phase;executionPolicy=$executionPolicy} }
     Add-Type -TypeDefinition @'
 using System;
 using System.Collections.Generic;

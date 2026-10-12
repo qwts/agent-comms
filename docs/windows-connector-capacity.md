@@ -82,8 +82,10 @@ lines, credentials or message bodies.
 
 ## Manual hosted execution
 
-The existing manual `Windows desktop diagnostics` workflow offers three tasks:
-`engine` retains existing engine acceptance; `capacity-preflight` and
+The manual `Windows desktop diagnostics` workflow offers four tasks:
+`engine` retains existing acceptance; `capacity-supervisor` checks supervisor
+control under the actual sanitized standard-user environment without importing
+production code; `capacity-preflight` and
 `capacity-pilot` select this separate foreground-library probe. Capacity modes
 use the disposable standard-user account/profile bootstrap and install no
 scheduled task, daemon or host. The workflow remains manual; normal CI runs
