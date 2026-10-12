@@ -21,7 +21,7 @@ Mismatches, inferred formats, conversion and mixed-format recovery refuse. Empty
 construction creates only the lock, namespace and request-container directory.
 Later calls validate these; missing established files refuse without recreation.
 
-Methods are synchronous under one kernel lock:
+Methods share a synchronous kernel lock:
 
 - `admit(actionBytes, acceptanceBytes)` validates and snapshots the complete exact action and acceptance before creating a request artifact. It returns only `{requestId,finding:"admission-complete",duplicate}`. An exact duplicate reads the original bytes; changed bytes conflict. It does not forward or acknowledge any protocol preparation.
 - `inspect()` returns retained-ID count, full logical reservation charge and bounded per-ID admission/orphan findings. `physicalAllocationSupported` and `authorizationSupported` are always false.
@@ -45,7 +45,6 @@ accept opaque future records or fall back to an earlier permission state.
 The default scratch-v1 experiment frames exact payload bytes with a canonical
 JSON `{bytes,sha256,slot,v:1}` header and LF. Header plus LF is at most 256 bytes;
 action/acceptance/namespace payload caps are 32768/4096/4096 bytes.
-This experimental format selects no wire encoding.
 
 Its fixed `pending` scratch publishes through write-all, file fsync, exclusive
 hard link, directory fsync, scratch unlink and directory fsync. `EEXIST` never
@@ -69,9 +68,10 @@ validates exact action/acceptance schemas and namespace/request/digest binding.
 After charging and flushing the request directory, the disabled initializer
 exclusively creates the ten final broker slot files and scratch inode, sets each
 fixed EOF, writes its full contents as zeros, flushes/closes/reopens it, and
-flushes the directory. It rechecks all eleven complete blank files before any
-action write. These ordinary full-zero writes are test mechanics, **not persistent
-physical reservation**. No allocator bridge or physical-support option exists.
+flushes the directory. It rechecks all eleven blank files before writing the action. Default full-zero
+writes are test mechanics, **not persistent physical reservation**. The disabled
+[native bridge](owner-decision-journal-native-bridge.md) requests allocation and
+full flush through the same core; physical support remains false.
 Original-action and acceptance then publish in that order through positional
 header/padded-body write, file fsync, trailer write, file fsync, close and exact
 readback. Every destination must be a complete all-zero, private, regular file
@@ -142,5 +142,5 @@ exclusive conflicts, corrupt/future records and process interruption. Fixed-v1
 covers initialized/admission/recovery phases, torn frames, explicit recovery,
 inode/link/EOF checks and EIO/ENOSPC/EDQUOT at every flush boundary. Children
 have finite lifetimes, bounded output and awaited cleanup.
-Trusted `io`/`fault` injection exists only for internal failure tests; it is not
-request-selectable authority or a production allocation adapter.
+Trusted `io`/`fault` injection remains internal test instrumentation, never
+request-selectable authority.
