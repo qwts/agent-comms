@@ -87,6 +87,15 @@ The [first retained compiler-control failure](../../docs/windows-candidate-compi
 stopped at the existing descendant classifier before any compiler observation
 was retained; cleanup uncertainty skipped all remaining controls. It does not
 establish an implicit/explicit comparison or compiler cause.
+Supervisor refusals can retain a closed classification checkpoint and primitive
+argv count/equality booleans through an own-data projector. These fields do not
+retain commands, executable paths, process IDs or exception text, and do not
+change any accepted process category or classification predicate. Native CI
+golden cases exercise the existing sampler with inert public multiline worker
+argv on a recognized Node descendant: exact argv passes; count and value
+mismatches refuse. This covers Node serialization, WMI capture and the actual
+supervisor parser in CI's account/profile, not hosted standard-user PowerShell
+bootstrap, worker compilation or production acceptance.
 
 ## Incremental lifecycle instrumentation comparison
 

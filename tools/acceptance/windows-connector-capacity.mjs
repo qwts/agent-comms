@@ -11,6 +11,7 @@ import { promisify } from 'node:util';
 import { admissionStage, RATES } from './windows-capacity-policy.mjs';
 import { projectWindowsPipeStage } from '../../lib/platform/windows-pipe-stage.mjs';
 import { connectWindowsPipe } from '../../lib/platform/windows-pipe-client.mjs';
+import { supervisorClassificationFromError, supervisorClassificationFromFailure } from './windows-capacity-classification.mjs';
 import { captureCompilerPrefix, compilerControlArgs, observeCompilerControl, projectCompilerObservation, collectCompilerControls, sampleCompilerControl, COMPILER_SOURCE, COMPILER_DEADLINE_MS } from './windows-capacity-compiler.mjs';
 import { collectSupervisorProbes, createCapacityController, encodingSignature, FIXTURE_PHASES, snapshotCapacityPhases } from './windows-capacity-control.mjs';
 
@@ -38,14 +39,18 @@ const checks = new Set(['fixture-terminal', 'fixture-deadline', 'control-deadlin
   'compiler-source-mismatch', 'compiler-control-failed', 'compiler-deadline', 'compiler-terminal', 'owned-startup-fault', 'owned-forced-cleanup', 'policy-failed', 'memory-headroom-insufficient', 'candidate-source-mismatch', 'operation-failed', 'assertion-failed', 'timing-unavailable']);
 function failure(error) {
   const windowsPipeStage = projectWindowsPipeStage(error);
+  const supervisorClassification = supervisorClassificationFromError(error);
   return { stage: activeStage, check: checks.has(error?.message) ? error.message : error?.code === 'ERR_ASSERTION' ? 'assertion-failed' : 'operation-failed',
     ...(boundedBrokerCode(error?.brokerCode ?? error?.code) ? { brokerCode: boundedBrokerCode(error.brokerCode ?? error.code) } : {}),
     ...(windowsPipeStage === undefined ? {} : { windowsPipeStage }),
-    ...(supervisorPhases.has(error?.supervisorPhase) ? { supervisorPhase: error.supervisorPhase } : {}) };
+    ...(supervisorPhases.has(error?.supervisorPhase) ? { supervisorPhase: error.supervisorPhase } : {}),
+    ...(supervisorClassification ? {supervisorClassification} : {}) };
 }
 function supervisorFailure(record) {
   const error = new Error('job-supervisor-failed');
   if (supervisorPhases.has(record?.failure?.phase)) error.supervisorPhase = record.failure.phase;
+  const classification = supervisorClassificationFromFailure(record);
+  if (classification) Object.defineProperty(error,'supervisorClassification',{value:classification});
   return error;
 }
 async function deadline(promise, ms, code) {
@@ -612,6 +617,7 @@ async function main() {
       node:process.version,nodeArchiveSha256:process.env.AGENT_COMMS_NODE_ARCHIVE_SHA256,
       nodeExecutableSha256:hash(readFileSync(process.execPath)),runnerSha256:hash(readFileSync(SELF)),
       compilerSha256:hash(readFileSync(new URL('./windows-capacity-compiler.mjs',import.meta.url))),
+      classificationSha256:hash(readFileSync(new URL('./windows-capacity-classification.mjs',import.meta.url))),
       supervisorSha256:hash(readFileSync(JOB)),controlSha256:hash(readFileSync(new URL('./windows-capacity-control.mjs',import.meta.url))),
       lifecycleSha256:hash(readFileSync(new URL('./windows-capacity-lifecycle.mjs',import.meta.url))),
       workerSource:COMPILER_SOURCE,requestDeadlineMs:COMPILER_DEADLINE_MS,
