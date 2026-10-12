@@ -8,9 +8,13 @@ import { fileURLToPath } from 'node:url';
 import { CORRECTED_STARTUP_SOURCE, verifyCorrectedStartupSource, classifyFixtureFailure } from '../tools/acceptance/windows-corrected-startup.mjs';
 import { createCapacityController } from '../tools/acceptance/windows-capacity-control.mjs';
 import { retainCapacityFailure } from '../tools/acceptance/windows-capacity-lifecycle.mjs';
+import { projectWindowsPipeStage } from '../lib/platform/windows-pipe-stage.mjs';
 
 test('corrected startup requires both the reviewed tree and Windows archive digest, independent of caller checkout', () => {
   const { tree, archiveSha256 } = CORRECTED_STARTUP_SOURCE;
+  assert.equal(CORRECTED_STARTUP_SOURCE.pin, 'cb50469ca0b6757c4ab860de582b9b140fc525a0');
+  assert.throws(() => verifyCorrectedStartupSource('9c1719821d656e17eb04dc477cc9415e4697f12f',
+    'd3465c40e5e11561f22f3aa720f74146aa70b2091dcd09c34c1c4046daea6853'), { message: 'candidate-source-mismatch' });
   const receipt = verifyCorrectedStartupSource(tree, archiveSha256);
   assert.deepEqual(receipt, CORRECTED_STARTUP_SOURCE);
   receipt.pin = 'unreviewed';
@@ -29,14 +33,19 @@ test('candidate failure receipt retains the scoped revision and known code while
   assert.equal(retainCapacityFailure({ stage: 'production-startup', check: 'operation-failed', brokerCode: 'CANARY-private-code' }, {}, {}).brokerCode, undefined);
 });
 
-for (const [code, probe] of [['broker-probe-failed', undefined], ['CANARY-private-code', undefined], ['broker-timeout', undefined], ['storage-failed', 'storage'], ['broker-probe-failed', 'channel']]) {
-  test(`actual fixture IPC reports ${probe === 'channel' ? 'channel refusal' : probe === 'storage' ? 'storage failure' : code === 'broker-timeout' ? 'known timeout' : code === 'broker-probe-failed' ? 'known refusal' : 'unknown failure'} and still performs owned cleanup`, async () => {
+for (const [code, probe, stage] of [['broker-probe-failed', undefined], ['CANARY-private-code', undefined], ['broker-timeout', undefined], ['storage-failed', 'storage'], ['broker-probe-failed', 'channel'],
+  ['broker-unreachable', undefined, 'startup-timeout'], ['broker-unreachable', undefined, 'CANARY-stage'], ['broker-unreachable', undefined, 'getter']]) {
+  test(`actual fixture IPC reports ${stage ? `${stage} stage` : probe === 'channel' ? 'channel refusal' : probe === 'storage' ? 'storage failure' : code === 'broker-timeout' ? 'known timeout' : code === 'broker-probe-failed' ? 'known refusal' : 'unknown failure'} and still performs owned cleanup`, async () => {
     // Harness regression only: the manual acceptance mode always verifies and
     // imports the pinned production archive. This stub makes failure deterministic.
     const scratch = mkdtempSync(path.join(os.tmpdir(), 'comms-candidate-ipc-'));
     const cleaned = path.join(scratch, 'cleaned');
+    const stageSetup = stage === 'getter'
+      ? "Object.defineProperty(error,'windowsPipeStage',{get(){throw new Error('CANARY-stage-getter')}});"
+      : stage === undefined ? '' : `Object.defineProperty(error,'windowsPipeStage',{value:${JSON.stringify(stage)}});`;
+    const expectedStage = stage === 'startup-timeout' ? stage : undefined;
     mkdirSync(path.join(scratch, 'lib'));
-    writeFileSync(path.join(scratch, 'lib/broker.mjs'), `import {writeFileSync} from 'node:fs';export class Broker{async start(){throw Object.assign(new Error('CANARY-body-source-secret'),{code:${JSON.stringify(code)},cause:new Error('CANARY-cause')})}maintain(){throw Object.assign(new Error('CANARY-storage-secret'),{code:${JSON.stringify(code)}})}async stop(){writeFileSync(${JSON.stringify(cleaned)},'stopped')}}`);
+    writeFileSync(path.join(scratch, 'lib/broker.mjs'), `import {writeFileSync} from 'node:fs';export class Broker{async start(){const error=Object.assign(new Error('CANARY-body-source-secret'),{code:${JSON.stringify(code)},cause:new Error('CANARY-cause')});${stageSetup}throw error}maintain(){throw Object.assign(new Error('CANARY-storage-secret'),{code:${JSON.stringify(code)}})}async stop(){writeFileSync(${JSON.stringify(cleaned)},'stopped')}}`);
     writeFileSync(path.join(scratch, 'lib/client.mjs'), 'export const unused = true;');
     writeFileSync(path.join(scratch, 'lib/paths.mjs'), 'export function brokerPaths(){return {}};export function clientPaths(){return {}};');
     writeFileSync(path.join(scratch, 'lib/state.mjs'), 'export class EventLog{constructor(){this.file="private"}replay(){return {seq:0}}}');
@@ -57,13 +66,17 @@ for (const [code, probe] of [['broker-probe-failed', undefined], ['CANARY-privat
       await assert.rejects(control.request('start', { ...(probe ? { probe } : {}), phaseTimings: true, timingCapMs: 999_999 }), error => {
         assert.equal(error.message, 'operation-failed');
         assert.equal(error.brokerCode, code !== 'CANARY-private-code' ? code : undefined);
+        assert.equal(projectWindowsPipeStage(error), expectedStage);
+        const retained = retainCapacityFailure(error, { revision: 'candidate', preflight: 'candidate-startup' }, {});
+        assert.equal(retained.windowsPipeStage, expectedStage);
         assert.equal(JSON.stringify(error).includes('CANARY'), false);
         return true;
       });
       assert.deepEqual(await terminal, { exitCode: 1, signal: null });
       assert.equal(readFileSync(cleaned, 'utf8'), 'stopped');
       assert.deepEqual(failure, { id: 1, ok: false, failure: { stage: 'fixture-startup', check: 'operation-failed',
-        ...(code !== 'CANARY-private-code' ? { brokerCode: code } : {}) } });
+        ...(code !== 'CANARY-private-code' ? { brokerCode: code } : {}),
+        ...(expectedStage === undefined ? {} : { windowsPipeStage: expectedStage }) } });
       assert.equal(control.state().phase, probe === 'channel' ? 'channel-stale-main-returned' : probe === 'storage' ? 'storage-maintain' : 'fixture-broker-start');
       const timeline = control.state().phaseTimings;
       assert.ok(timeline.length >= 2); assert.equal(timeline.at(-1).phase, control.state().phase);

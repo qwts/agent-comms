@@ -55,12 +55,12 @@ jobs:
           ref: e648d71277da72fc50c70ebcbb94c3c8f53c7cf3
           path: .windows-fixtures/observability-new
           persist-credentials: false
-      - name: Fetch exact reviewed stale-probe correction source
+      - name: Fetch exact reviewed connector-stage source
         if: inputs.task == 'candidate-startup' || inputs.task == 'candidate-storage' || inputs.task == 'candidate-channel'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: qwts/agent-comms
-          ref: 2d94b16a17f7d0a8625e6151e97fee844232aab1
+          ref: cb50469ca0b6757c4ab860de582b9b140fc525a0
           path: .windows-fixtures/stale-correction
           persist-credentials: false
       - name: Download and verify the host-selected Windows Node sidecar

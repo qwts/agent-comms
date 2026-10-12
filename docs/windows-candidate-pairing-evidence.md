@@ -61,6 +61,10 @@ Original reports are retained byte-for-byte:
   `e94509c41621c8dfcac75295f8afd51582dfcf500b89c29b427b5acd504bbf5c`.
 - Full log SHA256: `4386c31a8d2d54884f410462c320c8b4b6c13a86856d993ce26c5f3c1e75cb02`.
 
+The [explicit fixed-source refresh](windows-candidate-stage-refresh.md) selects
+reviewed connector-stage observability for a later separately authorized run;
+it preserves this original failure and its source attribution.
+
 Whole startup-plus-delivery, native Windows capacity and installed desktop/host
 acceptance remain open. Older immutable comparison pins are not validated by
 this candidate observation. Complete instrumentation/health taxonomy, optional

@@ -1,3 +1,4 @@
+import { projectWindowsPipeStage } from '../../lib/platform/windows-pipe-stage.mjs';
 import { boundedBrokerCode } from './windows-corrected-startup.mjs';
 import { capacityTimingMode, capacityTimingProfile, validCapacityTiming, validCapacityPhaseTimings } from './windows-capacity-timing.mjs';
 import { FIXTURE_PHASES, validConnectorProgress } from './windows-capacity-control.mjs';
@@ -53,8 +54,10 @@ export async function cleanupCapacityRun({ fixture, supervisor, attached, dispos
 // never spread the Error or copy an arbitrary message/cause/property.
 export function retainCapacityFailure(original, { revision, preflight, fixturePhase }, ownedCleanup) {
   const timingMode = capacityTimingMode(revision, preflight);
+  const windowsPipeStage = projectWindowsPipeStage(original);
   return { status: 'failed',
     ...(revision === 'candidate' ? { timingProfile: capacityTimingProfile(timingMode) } : {}), stage: original.stage, check: original.check,
+    ...(windowsPipeStage === undefined ? {} : { windowsPipeStage }),
     ...(boundedBrokerCode(original.brokerCode) ? { brokerCode: original.brokerCode } : {}),
     ...(original.supervisorPhase ? { supervisorPhase: original.supervisorPhase } : {}),
     ...(validConnectorProgress(original.connectorProgress) ? { connectorProgress: { ...original.connectorProgress } } : {}),

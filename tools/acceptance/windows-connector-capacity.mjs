@@ -9,6 +9,7 @@ import { performance } from 'node:perf_hooks';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 import { admissionStage, RATES } from './windows-capacity-policy.mjs';
+import { projectWindowsPipeStage } from '../../lib/platform/windows-pipe-stage.mjs';
 import { collectSupervisorProbes, createCapacityController, encodingSignature, FIXTURE_PHASES, snapshotCapacityPhases } from './windows-capacity-control.mjs';
 
 import { capacityTimingMode, capacityTimingProfile, createCapacityPhaseTiming, timeCapacityRequest } from './windows-capacity-timing.mjs';
@@ -34,8 +35,10 @@ const checks = new Set(['fixture-terminal', 'fixture-deadline', 'control-deadlin
   'relay-exit-unconfirmed', 'scratch-retained', 'job-exit-unconfirmed', 'diagnostic-output-invalid',
   'owned-startup-fault', 'owned-forced-cleanup', 'policy-failed', 'memory-headroom-insufficient', 'candidate-source-mismatch', 'operation-failed', 'assertion-failed', 'timing-unavailable']);
 function failure(error) {
+  const windowsPipeStage = projectWindowsPipeStage(error);
   return { stage: activeStage, check: checks.has(error?.message) ? error.message : error?.code === 'ERR_ASSERTION' ? 'assertion-failed' : 'operation-failed',
     ...(boundedBrokerCode(error?.brokerCode ?? error?.code) ? { brokerCode: boundedBrokerCode(error.brokerCode ?? error.code) } : {}),
+    ...(windowsPipeStage === undefined ? {} : { windowsPipeStage }),
     ...(supervisorPhases.has(error?.supervisorPhase) ? { supervisorPhase: error.supervisorPhase } : {}) };
 }
 function supervisorFailure(record) {
@@ -500,6 +503,8 @@ async function main() {
     const archive = path.join(output, `${revision}.tar`), source = path.join(output, revision);
     writeFileSync(archive, bytes); mkdirSync(source);
     await exec('tar.exe', ['-xf', archive, '-C', source], { windowsHide: true });
+    if (candidateOnly) assert.equal(hash(readFileSync(path.join(source, 'lib/platform/windows-pipe-stage.mjs'))),
+      hash(readFileSync(new URL('../../lib/platform/windows-pipe-stage.mjs', import.meta.url))), 'candidate-source-mismatch');
     archives[revision] = { source, pin, tree: tree.trim(), archiveSha256: hash(bytes) };
   }
   const result = { v: 1, scope: candidateChannel ? 'hosted standard-user exact corrected-source channel-prepare-and-stale-probes only; actual default channel; no Broker.start, EventLog, replay, maintenance, listeners, delivery or offered rates' : candidateStorage ? 'hosted standard-user exact corrected-source fresh storage prefix only; actual prepare, EventLog custody/replay and compacting maintenance; no Broker.start, stale probes, listeners, delivery or offered rates' : candidateStartup ? 'hosted standard-user exact corrected-source Broker startup, one delivery and disposal only; no offered-rate stages, capacity comparison, desktop or host acceptance' : connectorOnly ? 'actual-connector-events; prepare/main stale probe then unconsumed admin connector; no Broker, listener, EventLog, replay, maintenance or workload' : channelOnly ? 'channel-prepare-and-stale-probes; actual pinned default channel; no Broker, listener, EventLog, replay, maintenance or workload' : custodyOnly ? 'hosted standard-user Windows pinned custody API only; no Broker or connector or offered-rate stages' : startupOnly ? 'hosted standard-user Windows old-pin production startup and disposal only; no offered-rate stages or capacity acceptance' : 'hosted standard-user Windows finite capacity pilot; no benchmark, desktop, host or 100/s support acceptance',
@@ -514,6 +519,7 @@ async function main() {
     channelSha256: hash(readFileSync(new URL('./windows-capacity-channel.mjs', import.meta.url))),
     connectorSha256: hash(readFileSync(new URL('./windows-capacity-connector.mjs', import.meta.url))),
     timingSha256: hash(readFileSync(new URL('./windows-capacity-timing.mjs', import.meta.url))),
+    pipeStageSha256: hash(readFileSync(new URL('../../lib/platform/windows-pipe-stage.mjs', import.meta.url))),
     ...(candidateOnly ? { timingProfile: capacityTimingProfile(candidateChannel ? 'candidate-channel' : candidateStartup ? 'candidate-startup' : 'default'),
       timingScope: 'parent start-request duration and independent child relative fixed-phase observations; explicit trusted-mode deadline/reporting cap; observational, not performance acceptance' } : {}),
     storageSha256: hash(readFileSync(new URL('./windows-capacity-storage.mjs', import.meta.url))),
