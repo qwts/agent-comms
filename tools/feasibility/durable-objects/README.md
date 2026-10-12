@@ -46,7 +46,7 @@ must read at most 64 rows, so a full-population scan fails. The report separates
 payload bytes, serialized synthetic outcome bytes and SQLite database bytes. RSS
 is the Node test runner only, **excluding workerd**, and is not the Worker memory
 limit measurement. Record observed timings, not a performance SLA. The sample is
-2 MiB, not the accepted 256 MiB/full-population capacity test.
+2 MiB; the separate full relay capacity test is documented below.
 
 ## Evidence boundaries and next gates
 
@@ -80,3 +80,38 @@ regional failures or full accepted caps. Those remain in the
 [federation acceptance plan](../../../docs/federation-acceptance-plan.md).
 Independent crypto review still precedes production protocol implementation;
 remote experiments need separate deployment/spending authorization.
+
+
+## Opt-in full relay storage and expiry probe
+
+Run `npm run test:full-cap` separately on macOS or Linux. This can take several
+minutes and uses disposable disk space for 256 MiB of bodies plus 32 MiB of
+serialized synthetic outcome evidence and SQLite overhead. The finite overall
+operation deadline is fifteen minutes, followed by bounded owned-process cleanup.
+It does not run as part of the default probe or the runtime test suite.
+
+The test fills exactly 10,000 pending bodies and 100,000 protected outcomes at
+both accepted relay count and byte caps. It uses padded synthetic digest labels,
+not production evidence sizes or cryptographic retry authentication. Batches have
+at most 100 admissions; requests and responses stay within 64 KiB. Response size
+is verified after reading this trusted synthetic worker; it is not a streaming
+limiter for an untrusted response. Complete body
+pages contain one record; evidence pages contain at most 32. Streaming hashes
+verify accepted content is unchanged after capacity refusal, lowered caps and
+retry/conflict checks, without collecting the full population in memory.
+
+An injected logical clock removes bodies at their expiry while protected outcome
+reservations remain full and block new acceptance. Conservative millisecond
+semantics retain outcomes at exactly `expiresAt + 120000` and release only after
+that boundary (`+120001` in the test). Releasing one reservation admits exactly
+one new outcome; no accepted record is evicted to make room. This synthetic clock
+does not patch production time or implement production envelope validation.
+
+The report samples RSS of the exact owned native workerd process using `ps`,
+checking the actual parent PID and exact launch command as well as that the
+ChildProcess remains alive around each sample. This includes native
+runtime and SQLite/cache memory and can miss peaks between samples; it is neither
+Node runner RSS nor proof that a Worker isolate meets Cloudflare's 128 MiB limit.
+Database size and serialized evidence are reported separately. The observation
+covers the entire-relay body/outcome budgets, not route, broker, multihub, soul,
+mailbox, provider-cloud or production protocol acceptance.
