@@ -308,7 +308,12 @@ public static class CapacityJob {
                         $classification.check = 'compiler-response'
                         $responsePath = [IO.Path]::GetFullPath($response.Substring(1))
                         if (-not $responsePath.StartsWith($compilerTemp.TrimEnd('\') + '\', [StringComparison]::OrdinalIgnoreCase) -or -not $responsePath.EndsWith('.cmdline')) { throw 'compiler-response-unconfirmed' }
-                    } else { throw 'unexpected-owned-executable' }
+                    } else {
+                        $classification.executablePathPresent = $row.ExecutablePath -is [string] -and $row.ExecutablePath.Length -gt 0
+                        $classification.builtinConsoleHostMatch = [string]::Equals($row.ExecutablePath, [IO.Path]::Combine($env:SystemRoot,'System32','conhost.exe'), [StringComparison]::OrdinalIgnoreCase)
+                        $classification.parentIsFixture = $row.ParentProcessId -eq $fixtureId
+                        throw 'unexpected-owned-executable'
+                    }
                     $classification.check = 'owned-parent'
                     if ($kind -ne 'compiler' -and $row.ParentProcessId -ne $fixtureId) { throw 'owned-parent-unconfirmed' }
                     $classification.check = 'argv-count'
@@ -373,7 +378,7 @@ public static class CapacityJob {
         $failure = @{check='job-supervisor-failed';phase=$phase}
         if ($phase -eq 'sample-classify' -and $classification.check -in @('argv-parse','executable','compiler-parent','compiler-arguments','compiler-response','owned-parent','argv-count','argv-equality','pid-reuse','history-bound','kind-bound')) {
             $failure.classification = @{check=$classification.check}
-            foreach ($key in @('argvCountMatches','argvMatches')) {
+            foreach ($key in @('argvCountMatches','argvMatches','executablePathPresent','builtinConsoleHostMatch','parentIsFixture')) {
                 if ($classification[$key] -is [bool]) { $failure.classification[$key] = $classification[$key] }
             }
         }

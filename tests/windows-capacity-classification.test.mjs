@@ -18,6 +18,9 @@ test('classification projector retains closed own primitive fields and independe
   assert.equal(projected.check,'argv-equality');
   const error=new Error('CANARY-error');Object.defineProperty(error,'supervisorClassification',{value:projected});
   assert.deepEqual(supervisorClassificationFromError(error),projected);
+  const executable={check:'executable',executablePathPresent:true,builtinConsoleHostMatch:true,parentIsFixture:false};
+  assert.deepEqual(projectSupervisorClassification(executable),executable);
+  assert.deepEqual(projectSupervisorClassification({...executable,executablePathPresent:false,builtinConsoleHostMatch:false}),{...executable,executablePathPresent:false,builtinConsoleHostMatch:false});
   for (const check of ['argv-parse','executable','compiler-parent','compiler-arguments','compiler-response','owned-parent','pid-reuse','history-bound','kind-bound']) {
     assert.deepEqual(projectSupervisorClassification({check}),{check});
   }
@@ -30,14 +33,22 @@ test('classification projector rejects unknown keys, accessors, inherited fields
     {check:'argv-count',argvCountMatches:false,argvMatches:false},
     {check:'argv-equality',argvCountMatches:true,argvMatches:true},
     {check:'argv-parse',argvCountMatches:'CANARY'},
-    {check:'argv-parse',argvMatches:false}]) assert.equal(projectSupervisorClassification(value),undefined);
+    {check:'argv-parse',argvMatches:false},
+    {check:'executable',executablePathPresent:true},
+    {check:'executable',executablePathPresent:false,builtinConsoleHostMatch:true,parentIsFixture:false},
+    {check:'executable',executablePathPresent:true,builtinConsoleHostMatch:false,parentIsFixture:'CANARY'},
+    {check:'argv-parse',executablePathPresent:true,builtinConsoleHostMatch:false,parentIsFixture:true},
+    {check:'executable',executablePathPresent:true,builtinConsoleHostMatch:false,parentIsFixture:true,argvCountMatches:true}
+  ]) assert.equal(projectSupervisorClassification(value),undefined);
   const record={};Object.defineProperty(record,'failure',{get(){assert.fail('getter executed');}});
   assert.equal(supervisorClassificationFromFailure(record),undefined);
   assert.equal(supervisorClassificationFromError(Object.create({supervisorClassification:{check:'argv-parse'}})),undefined);
 });
 
-test('real supervisor control IPC preserves fixed classification through failure retention and owned exit',async()=>{
-  const classification={check:'argv-equality',argvCountMatches:true,argvMatches:false};
+for(const classification of [
+  {check:'argv-equality',argvCountMatches:true,argvMatches:false},
+  {check:'executable',executablePathPresent:true,builtinConsoleHostMatch:true,parentIsFixture:false},
+]) test(`real supervisor control IPC preserves fixed ${classification.check} classification through failure retention and owned exit`,async()=>{
   const source=`import {createInterface} from 'node:readline';
 process.stdout.write(JSON.stringify({id:0,ok:true,phase:'ready'})+'\\n');
 createInterface({input:process.stdin}).once('line',line=>{

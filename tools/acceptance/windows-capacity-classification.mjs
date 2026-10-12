@@ -9,7 +9,7 @@ export function projectSupervisorClassification(value) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
     const result = {};
     for (const key of Object.keys(value)) {
-      if (!['check','argvCountMatches','argvMatches'].includes(key)) return undefined;
+      if (!['check','argvCountMatches','argvMatches','executablePathPresent','builtinConsoleHostMatch','parentIsFixture'].includes(key)) return undefined;
       const descriptor = Object.getOwnPropertyDescriptor(value,key);
       if (!descriptor || !Object.hasOwn(descriptor,'value')) return undefined;
       result[key] = descriptor.value;
@@ -17,6 +17,12 @@ export function projectSupervisorClassification(value) {
     if (!CHECKS.includes(result.check)) return undefined;
     for (const key of ['argvCountMatches','argvMatches']) {
       if (Object.hasOwn(result,key) && typeof result[key] !== 'boolean') return undefined;
+    }
+    const executableKeys = ['executablePathPresent','builtinConsoleHostMatch','parentIsFixture'];
+    if (executableKeys.some(key => Object.hasOwn(result,key))) {
+      if (result.check !== 'executable' || executableKeys.some(key => typeof result[key] !== 'boolean')
+          || result.argvCountMatches !== undefined || result.argvMatches !== undefined
+          || (result.builtinConsoleHostMatch && !result.executablePathPresent)) return undefined;
     }
     if (result.argvMatches !== undefined && result.argvCountMatches !== true) return undefined;
     if (result.check === 'argv-count' && (result.argvCountMatches !== false || result.argvMatches !== undefined)) return undefined;
