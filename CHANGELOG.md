@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Both principal client factories expose the existing authenticated `health()` operation with additive cached running-build and supported private diagnostic-format metadata. Existing health fields, grant-filtered census, authentication and storage-uncertainty refusals remain unchanged; documented recovery categories add no public errors or automatic retries (#164).
 - Add bounded private account/daemon/principal pairing request and approval observations plus authenticated join completion, with strict export reconstruction and no identifying details. Pending approval, registration, connectivity and task completion remain distinct; combined-producer numeric overhead remains pending (#164).
 - Add disabled private daemon preparation-v2, effect-v1 and reconciliation-pair admission with context-owned evidence tokens, explicit retained-graph and ceremony assertions, and exact original linked writer bytes. Independent synthetic companions exercise causal bindings; authenticated transport, durable graph custody and production activation remain outstanding (#77).
 - Add process-start `AGENT_COMMS_DIAGNOSTICS=off` to disable built-in broker/client diagnostic sink activity and helper creation, while preserving explicit offline export and canonical security/delivery behavior. Existing instrumentation calls remain; no zero-overhead claim (#164).

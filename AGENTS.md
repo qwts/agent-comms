@@ -39,6 +39,11 @@ inherit by default, vary by explicit delta).
 
 ## What is specific to this repository
 
+- **Partial PR references:** use `Refs #N` for work that leaves its parent
+  issue incomplete. Avoid GitHub closing keywords followed by an issue
+  reference, even in a negated sentence: negation does not prevent automatic
+  closure. After merging a partial PR, verify that the parent issue remains
+  open and its project status still reflects the remaining work.
 - **Architecture decisions:** the `ADR-NNNN` series in
   [docs/decisions/](docs/decisions/README.md). Numbering, format, and status
   rules are in that index. A decision that changes more than this repository
