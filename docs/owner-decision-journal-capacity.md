@@ -34,8 +34,9 @@ counts, IDs or unsettled reservations.
 
 The daemon keys a request by its independently enrolled **stable broker
 installation namespace** and request ID. The local index may retain a fixed
-64-hex namespace digest, but its exact preimage and authenticated trust-record
-binding require the reviewed enrollment adapter. A filesystem path, caller
+64-hex namespace digest, with the proposed exact preimage fixed by the
+[namespace derivation companion](owner-decision-broker-namespace.md). Its
+authenticated trust-record binding still requires the reviewed enrollment adapter. A filesystem path, caller
 string or rotating receipt-key ID is not automatically an installation identity.
 This indexing prerequisite creates no new credential or caller-selected wire
 identity. A missing/ambiguous namespace refuses admission.
