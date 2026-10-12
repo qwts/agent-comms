@@ -202,3 +202,22 @@ test('UUID failure cannot prevent module import or escape best-effort reporting'
   assert.equal(result.stderr, '');
   assert.equal(JSON.parse(result.stdout).dropped, 1);
 });
+
+test('direct mailbox completions use exact bounded count projectors, never caller metadata', async (t) => {
+  const { stream, lines, sink } = capture(); t.after(() => stream.emit('close'));
+  const hostile = new Proxy({}, { get() { assert.fail('mailbox projector inspected metadata'); } });
+  for (const token of ['mailbox-read', 'mailbox-acked']) {
+    for (const value of [hostile, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1]) sink.report(token, 0, value, 0);
+    sink.report(token, 0, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER);
+  }
+  sink.report('mailbox-admitted', 0, hostile, hostile);
+  sink.report('mailbox-duplicate', 0, hostile, hostile);
+  await flush(sink);
+  const records = lines.map(JSON.parse).filter((record) => record.event.startsWith('mailbox.'));
+  assert.deepEqual(records.map((record) => record.event), ['mailbox.read', 'mailbox.acked', 'mailbox.admitted', 'mailbox.duplicate']);
+  assert.deepEqual(records[0].details, { returnedCount: Number.MAX_SAFE_INTEGER, remainingCount: Number.MAX_SAFE_INTEGER });
+  assert.deepEqual(records[1].details, { acknowledgedCount: Number.MAX_SAFE_INTEGER, alreadyAcknowledgedCount: Number.MAX_SAFE_INTEGER });
+  assert.equal(records[2].details, undefined); assert.equal(records[3].details, undefined);
+  for (const line of lines) assert.ok(Buffer.byteLength(line) <= DIAGNOSTIC_LIMITS.eventBytes);
+  assert.equal(sink.stats().dropped, 12);
+});
