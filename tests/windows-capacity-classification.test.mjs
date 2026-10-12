@@ -108,7 +108,9 @@ process.on('message',({id,op,args})=>{
       relayArgs:[],diagnosticArgs:expectedArgs,compilerExecutables:[],compilerTemp:realpathSync(process.env.TEMP),commitLimitBytes:536870912},15000)).attached,true);
     assert.equal((await fixtureControl.request('start',{args:actualArgs},5000)).spawned,true);
     if(variant==='exact') {
-      const sample=await control.request('sample',{},5000);
+      const sample=await control.request('sample',{},5000).catch(error=>{
+        assert.fail('native-classification-refused '+JSON.stringify(supervisorClassificationFromError(error)??{check:'classification-unavailable'}));
+      });
       assert.equal(sample.totals.main.count,1);assert.equal(sample.totals.diagnostic.count,1);
       assert.equal((await fixtureControl.request('stop',{},5000)).stopped,true);
       await within(fixture.exited,5000);await within(fixture.closed,5000);
