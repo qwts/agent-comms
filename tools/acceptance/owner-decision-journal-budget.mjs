@@ -15,7 +15,7 @@ const number = v => assert(Number.isSafeInteger(v) && v >= 0);
 const epoch = v => { number(v); assert(v > 0); };
 const nullable = (v, check) => { if (v !== null) check(v); };
 const operations = ['cold-wake.set', 'revision.adopt', 'revision.approve', 'revision.edit', 'revision.reject'];
-const codes = { applied: ['applied'], refused: ['validation-refused', 'authority-refused', 'deadline-expired'], cancelled: ['cancelled'], expired: ['deadline-expired'], indeterminate: ['effect-uncertain'] };
+const codes = { applied: ['applied'], refused: ['validation-refused', 'authority-refused', 'deadline-expired', 'storage-refused'], cancelled: ['cancelled'], expired: ['deadline-expired'], indeterminate: ['effect-uncertain'] };
 function inspect(r) {
   assert.equal(r.v, 1); uuid(r.requestId); hash(r.payloadDigest);
   if (r.kind === 'acceptance') {
@@ -37,6 +37,9 @@ function inspect(r) {
     assert(Object.hasOwn(codes, r.state)); nullable(r.receiptDigest, hash); exact(r.outcome, 'code effectDigest');
     assert(codes[r.state].includes(r.outcome.code)); nullable(r.outcome.effectDigest, hash); number(r.at);
     assert(['broker', 'daemon'].includes(r.source));
+    if (r.outcome.code === 'storage-refused') {
+      assert.equal(r.source, 'daemon'); assert.notEqual(r.outcome.effectDigest, null);
+    }
     if (r.source === 'broker') {
       assert.equal(r.reportingDaemonKey, null); assert.equal(r.reportingDaemonEpoch, null);
       assert.notEqual(r.state, 'applied'); assert.equal(r.outcome.effectDigest, null);

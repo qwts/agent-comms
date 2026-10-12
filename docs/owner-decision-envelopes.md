@@ -73,7 +73,8 @@ Status is exactly `{ requestId, payloadDigest, state, challenge, outcome }`.
 `challenge` is null except in `prepared`; `outcome` is null except for
 `applied`, `refused`, `cancelled`, `expired` or `indeterminate`. It is then
 `{ code, effectDigest }`. Outcome codes map exactly: applied → `applied`,
-refused → `validation-refused`, `authority-refused` or `deadline-expired`,
+refused → `validation-refused`, `authority-refused`, `deadline-expired` or
+`storage-refused`,
 cancelled → `cancelled`, expired → `deadline-expired`, indeterminate →
 `effect-uncertain`. Compacted terminal details use `details-retired` with the
 retained state. `effectDigest` is SHA-256 of the canonical request-linked daemon
