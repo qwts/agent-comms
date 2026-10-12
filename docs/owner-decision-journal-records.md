@@ -33,7 +33,7 @@ custody of the daemon's canonical evidence.
 | --- | ---: | --- |
 | Acceptance | 4096 | Immutable original request ID, principal, account, soul, operation, payloadDigest, acceptedAt, selected daemonKey/epoch/watchId and local namespace binding. |
 | Original action | 32768 | Exact canonical action bytes, not parsed/re-serialized transport input. |
-| Prepared challenge | 32768 | Exact canonical local serialization of the challenge's existing exact field set. This is not a new transport encoding. |
+| Prepared challenge | 32768 | Canonical `{challenge,stage,v:1}` wrapper. challenge is the existing exact public field set; stage is null or the authenticated daemon public stage descriptor. The whole wrapper remains bounded by 32768 bytes. |
 | Presence | 4096 | Complete original ASCII p1 token. |
 | Receipt | 4096 | Complete original ASCII d1 token. |
 | Authorization | 4096 | Durable spent nonce and exact proof digests, receipt expiry, selected binding and authorized state, referencing the immutable preceding slots. |
@@ -41,6 +41,24 @@ custody of the daemon's canonical evidence.
 | Initial outcome | 4096 | One monotonic lifecycle outcome plus its bounded authenticated report/reference, or a broker-origin cancellation/deadline/uncertainty finding without invented daemon evidence. |
 | Indeterminate observation reference | 2048 | One bounded reporting key/epoch, auditId/evidenceDigest and unchanged original request/daemon binding. Replaceable only while indeterminate. |
 | Terminal resolution reference | 2048 | One immutable applied/refused resolution reference with original and reporting key IDs/epochs and the existing auditId/evidenceDigest pair. |
+
+The broker wrapper is exact: stage is `null` without action staging, otherwise
+`{stagingId,kind,contentDigest,expiresAt}`. Match its ID/type/content digest to
+the original action; expiry is exactly the minimum of acceptedAt+180,
+preparedAt+180 and stage expiry when present. Hash only the canonical inner
+challenge for challengeDigest; retain original p1/d1 bytes unchanged. Daemon
+slot 3 remains the exact challenge; daemon preparation already retains stage.
+The [budget checker](../tools/acceptance/owner-decision-journal-budget.mjs)
+checks conservative maximal structural bounds across eight action shapes:
+action 1544, challenge 2720, stage 181 and complete wrapper 2930 bytes. These
+supersets include maximum-width values that display/time policy can reject;
+they bound legal inputs without relaxing those policies. Check the complete
+wrapper cap before any prepared publication.
+
+Outcome/reconciliation at values are nonnegative safe Unix seconds, not causal
+proof or freshness. The causal slot graph and authenticated producer binding
+establish order; wallclock adjustment does not invalidate retained findings.
+Effects and explicit reconciliation may finish after receipt expiry.
 
 No arbitrary JSON, credentials, daemon error text or unbounded history can
 occupy these records' spare bytes. The action/challenge/proof and

@@ -96,9 +96,16 @@ the current approved account/daemon pairings; echoed bindings are not authority.
 
 | Daemon request | Operation-specific fields | Success value |
 | --- | --- | --- |
-| `owner-decision-prepared` | `{ nonce, preparedAt, exp }` | `{ requestId, state }`, where state is the recorded lifecycle value. First acceptance journals prepared before replying/exposing it; repeats or late responses return the current authorized/terminal state without moving it backward. Altered saved bindings/content conflict. |
+| `owner-decision-prepared` | `{ nonce, preparedAt, exp, stage }` | `{ requestId, state }`, where state is the recorded lifecycle value. First acceptance journals prepared before replying/exposing it; repeats or late responses return the current authorized/terminal state without moving it backward. Altered saved bindings/content conflict. |
 | `owner-decision-check` | `{ receiptDigest }` | `{ requestId, payloadDigest, receiptDigest, daemonKey, daemonEpoch, watchId, state, mayApply, exp }`; only the first durably released check can answer `state: "released", mayApply: true`. Every repeat has `mayApply: false`. `exp` is the saved receipt expiry. |
 | `owner-decision-result` | `{ receiptDigest, state, outcome, reconciliation }` | `{ requestId, state, recorded }`; state is applied/refused/indeterminate, outcome uses the status schema. `receiptDigest` is null only for refusal before issuance; `reconciliation` is null except for an owner-local reconciliation record. |
+
+The prepared request carries `stage:null` for an unstaged action, otherwise the
+exact public `{stagingId,kind,contentDigest,expiresAt}` from the daemon
+[preparation evidence](owner-decision-preparation-evidence.md). The broker checks
+its action binding and exact three-way expiry cap before retaining the
+[prepared wrapper](owner-decision-journal-records.md#producer-owned-slots).
+This adds no field to the public challenge or signed d1 bytes.
 
 `receiptDigest` is lowercase SHA-256 hex of the entire ASCII
 `d1.<payload segment>.<signature segment>` token, including both dots and

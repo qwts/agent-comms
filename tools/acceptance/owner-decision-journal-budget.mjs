@@ -90,6 +90,54 @@ assert.equal(data.administrativeRecords.find(v => v.id === 'acceptance-daemon').
 for (const [state, values] of Object.entries(codes)) for (const code of values) assert(data.administrativeRecords.some(v => v.record.state === state && v.record.outcome.code === code));
 for (const finding of ['applied', 'refused', 'indeterminate']) assert(data.administrativeRecords.some(v => v.record.finding === finding));
 assert.deepEqual(maximum, { acceptance: 682, authorization: 734, outcome: 553, 'reconciliation-reference': 610 });
+// Conservative structural maxima: every legal action is a subset, because
+// native display/time checks can only refuse these bounds, never enlarge them.
+const wrapperBounds = data.preparedWrapperBounds.records;
+assert.deepEqual(wrapperBounds.map(v => v.id), ['approve', 'reject', 'adopt', 'edit', 'off', 'on', 'resume', 'webhook']);
+const boundSizes = { action: 0, challenge: 0, stage: 0, wrapper: 0 };
+for (const v of wrapperBounds) {
+  const action = v.action, r = v.record, challenge = r.challenge;
+  exact(action, 'v requestId principal account soul operation parameters');
+  assert.equal(action.v, 1); uuid(action.requestId); assert.equal(action.account.length, 64);
+  assert(operations.includes(action.operation));
+  const p = action.parameters;
+  if (['approve', 'reject'].includes(v.id)) exact(p, 'proposalId expectedRevision reason');
+  else if (v.id === 'adopt') exact(p, 'stagingId packageDigest expectedRevision reason');
+  else if (v.id === 'edit') exact(p, 'stagingId packageDigest expectedRevision reason apply');
+  else if (v.id === 'resume') exact(p, 'mode policy');
+  else if (v.id === 'webhook') exact(p, 'mode stagingId configurationDigest host');
+  else exact(p, 'mode');
+  if (Object.hasOwn(p, 'reason')) {
+    assert.equal(p.reason, '"'.repeat(500)); assert.equal(Buffer.byteLength(JSON.stringify(p.reason)), 1002);
+  }
+  if (v.id === 'edit') assert.equal(p.apply, false); // Five bytes rather than true's four.
+  if (v.id === 'resume') assert.equal(p.policy, 'workspace'); // Same nine-byte bound as read-only.
+  if (v.id === 'webhook') assert.equal(p.host.length, 253);
+  exact(r, 'v challenge stage'); assert.equal(r.v, 1);
+  exact(challenge, 'requestId principal account soul operation payloadDigest action nonce acceptedAt preparedAt exp daemonKey daemonEpoch watchId');
+  for (const k of ['requestId', 'principal', 'account', 'soul', 'operation']) assert.equal(challenge[k], action[k]);
+  const actionText = canonical(action), actionBytes = Buffer.byteLength(actionText);
+  assert.equal(challenge.action, Buffer.from(actionText).toString('base64url'));
+  assert.equal(challenge.payloadDigest, createHash('sha256').update(actionText).digest('hex'));
+  assert.equal(challenge.exp, Number.MAX_SAFE_INTEGER); assert.equal(challenge.daemonEpoch, Number.MAX_SAFE_INTEGER);
+  assert.equal(challenge.acceptedAt, Number.MAX_SAFE_INTEGER - 180); assert.equal(challenge.preparedAt, challenge.acceptedAt);
+  if (Object.hasOwn(p, 'stagingId')) {
+    exact(r.stage, 'stagingId kind contentDigest expiresAt');
+    assert.equal(r.stage.stagingId, p.stagingId);
+    assert.equal(r.stage.kind, v.id === 'webhook' ? 'webhook' : 'package');
+    assert.equal(r.stage.contentDigest, p.packageDigest ?? p.configurationDigest);
+    assert.equal(r.stage.expiresAt, Number.MAX_SAFE_INTEGER);
+  } else assert.equal(r.stage, null);
+  const text = canonical(r), challengeBytes = Buffer.byteLength(canonical(challenge)), stageBytes = Buffer.byteLength(canonical(r.stage));
+  assert.equal(text, v.canonicalJson); assert.equal(v.utf8Bytes, Buffer.byteLength(text));
+  assert.equal(v.actionBytes, actionBytes); assert.equal(v.challengeBytes, challengeBytes); assert.equal(v.stageBytes, stageBytes);
+  assert.equal(v.wrapperBytes, v.utf8Bytes - challengeBytes - stageBytes); assert.equal(v.wrapperBytes, 29);
+  assert.equal(v.cap, 32768); assert(v.utf8Bytes <= v.cap);
+  assert.equal(v.sha256, createHash('sha256').update(text).digest('hex'));
+  boundSizes.action = Math.max(boundSizes.action, actionBytes); boundSizes.challenge = Math.max(boundSizes.challenge, challengeBytes);
+  boundSizes.stage = Math.max(boundSizes.stage, stageBytes); boundSizes.wrapper = Math.max(boundSizes.wrapper, v.utf8Bytes);
+}
+assert.deepEqual(boundSizes, { action: 1544, challenge: 2720, stage: 181, wrapper: 2930 });
 const revision = v => match(v, /^sha256:[a-f0-9]{64}$/);
 const sequence = v => { number(v); assert(v <= 9999999999); };
 const head = v => { exact(v, 'seq revision'); sequence(v.seq); revision(v.revision); };
@@ -129,4 +177,4 @@ for (const v of data.reconciliationPairs) {
   for (const [k, length] of Object.entries({ record: recordBytes, preimage: preimageBytes, wrapper, pair: v.utf8Bytes })) pairMaximum[k] = Math.max(pairMaximum[k], length);
 }
 assert.equal(pairIds.size, 6); assert.equal(pairKinds.size, 6); assert.equal(pairMaximum.wrapper, 29);
-console.log(JSON.stringify({ specificationOnly: true, stores: Object.fromEntries(Object.entries(data.stores).map(([k, v]) => [k, v.expected])), administrativeRecords: ids.size, maximum, reconciliationPairs: pairIds.size, pairMaximum }, null, 2));
+console.log(JSON.stringify({ specificationOnly: true, stores: Object.fromEntries(Object.entries(data.stores).map(([k, v]) => [k, v.expected])), administrativeRecords: ids.size, maximum, preparedWrapperBounds: boundSizes, reconciliationPairs: pairIds.size, pairMaximum }, null, 2));
