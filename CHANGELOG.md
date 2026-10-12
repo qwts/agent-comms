@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add process-start `AGENT_COMMS_DIAGNOSTICS=off` to disable built-in broker/client diagnostic sink activity and helper creation, while preserving explicit offline export and canonical security/delivery behavior. Existing instrumentation calls remain; no zero-overhead claim (#164).
 - Add explicit bounded local diagnostic export from a selected file or stdin, with strict private-profile reconstruction, selected time range and qualified coverage metadata. No automatic capture, persistence, credentials or network route is added; optional OTLP and live host consumption remain pending (#164).
 - Private synchronous enrollment guards cover prepare, prepared, authorization and release with fresh bounded native observation, inherited lock ownership and postflush refusal. Compiled observer fixtures exercise 3072 source slots alongside an explicit synthetic signer; installed provenance, signing custody and the daemon public contract remain outstanding. Production construction and readiness stay refused (#77).
 - Add grant-filtered census oldest unacknowledged age and bounded private direct-send, read and acknowledgment completion observations. Admission, mailbox receipt and task completion remain distinct; existing authorization, retention and idempotency are unchanged. Additional-producer numeric overhead remains pending (#164).

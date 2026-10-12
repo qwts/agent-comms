@@ -1,5 +1,8 @@
 # Local broker and client diagnostics
 
+The [producer opt-out](diagnostic-opt-out.md) disables new built-in observations
+without changing explicit offline export or canonical delivery/security behavior.
+
 The broker writes bounded JSON lines to stderr for startup and shutdown outcomes,
 unexpected request-handler
 errors, uncertain storage appends or compaction, and background maintenance

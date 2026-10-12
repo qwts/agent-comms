@@ -136,9 +136,10 @@ artifact; consumers must require complete JSON and a successful output receipt.
 
 Export runs only when explicitly invoked, including offline. It adds no network
 route, collector, SDK dependency, background capture, disk rotation or implicit
-upload. Existing local stderr diagnostics remain enabled by default and have
-no new producer opt-out switch in this slice. The epic's broader opt-out and
-optional OTLP configuration/consent acceptance remains open; absence of this
+upload. Existing local stderr diagnostics remain enabled by default; the
+[producer opt-out](diagnostic-opt-out.md) disables new built-in
+observations without preventing an explicit export of an existing capture.
+Optional OTLP configuration/consent acceptance remains open; absence of this
 command proves only that this export was not requested.
 
 Portable tests cover strict reconstruction, real producer records, time edges,
