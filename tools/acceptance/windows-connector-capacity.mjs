@@ -11,7 +11,7 @@ import { promisify } from 'node:util';
 import { admissionStage, RATES } from './windows-capacity-policy.mjs';
 import { collectSupervisorProbes, createCapacityController, encodingSignature, FIXTURE_PHASES, snapshotCapacityPhases } from './windows-capacity-control.mjs';
 
-import { createCapacityPhaseTiming, timeCapacityRequest } from './windows-capacity-timing.mjs';
+import { capacityTimingMode, capacityTimingProfile, createCapacityPhaseTiming, timeCapacityRequest } from './windows-capacity-timing.mjs';
 
 import { cleanupCapacityRun, retainCapacityFailure } from './windows-capacity-lifecycle.mjs';
 
@@ -65,14 +65,15 @@ function ownedChild(file, args, options) {
   return { child, exited, stdioClosed, terminal: () => terminal };
 }
 
-async function fixture(source) {
+async function fixture(source, timingMode = 'default') {
   // No production imports or descendants until the parent has assigned the job.
   process.send({ id: 0, paused: true });
   const start = await new Promise((resolve) => process.once('message', resolve));
   assert.equal(start.op, 'start');
   fixtureRequestId = start.id;
+  if (timingMode === 'candidate-channel') assert.equal(start.probe, 'channel');
   activeStage = 'fixture-startup';
-  const phaseTiming = start.phaseTimings === true ? createCapacityPhaseTiming() : () => ({});
+  const phaseTiming = start.phaseTimings === true ? createCapacityPhaseTiming(undefined, timingMode) : () => ({});
   const phase = (value, progress) => {
     if (process.connected) process.send({ id: -1, phase: value, ...(progress ?? {}), ...phaseTiming() }, () => {});
   };
@@ -284,12 +285,13 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
   source = realpathSync(source);
   const root = mkdtempSync(path.join(process.env.LOCALAPPDATA, 'agent-comms-capacity-'));
   const shell = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
-  const args = [SELF, '--fixture', source];
+  const timingMode = capacityTimingMode(revision, preflight), timingProfile = capacityTimingProfile(timingMode);
+  const args = [SELF, '--fixture', source, ...(timingMode === 'candidate-channel' ? ['--candidate-channel-timing'] : [])];
   const fixtureOwned = ownedChild(process.execPath, args, { env: environment({
     AGENT_COMMS_SHARED_DIR: path.join(root, 'shared'), AGENT_COMMS_BROKER_STATE_DIR: path.join(root, 'broker'),
     AGENT_COMMS_CLIENT_STATE_DIR: path.join(root, 'client'), AGENT_COMMS_SERVICE_LABEL: `test.capacity.${randomUUID()}`,
   }), stdio: ['ignore', 'ignore', 'pipe', 'ipc'], windowsHide: true });
-  const control = createCapacityController(fixtureOwned, { ipc: true, capturePhaseTimings: revision === 'candidate', classifyFailure: (record) => classifyFixtureFailure(record, checks) });
+  const control = createCapacityController(fixtureOwned, { ipc: true, capturePhaseTimings: revision === 'candidate', timingMode, classifyFailure: (record) => classifyFixtureFailure(record, checks) });
   const supervisorOwned = ownedChild(shell, ['-NoLogo', '-NoProfile', '-NonInteractive', '-File', JOB], {
     env: environment(), stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
   const supervisor = createCapacityController(supervisorOwned, { classifyFailure: supervisorFailure });
@@ -349,7 +351,7 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
     const startFields = { ...(['custody','channel','connector','storage'].includes(preflight) ? { probe: preflight } : {}),
       ...(revision === 'candidate' ? { phaseTimings: true } : {}) };
     const startup = revision === 'candidate'
-      ? await timeCapacityRequest(() => control.request('start', startFields, 90_000), timing => { controlTiming = timing; })
+      ? await timeCapacityRequest(() => control.request('start', startFields, timingProfile.requestDeadlineMs), timing => { controlTiming = timing; }, undefined, timingMode)
       : await control.request('start', startFields, 90_000);
     if (revision === 'candidate') {
       operationPhaseTimings = control.state().phaseTimings;
@@ -409,7 +411,7 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
       skipReason: preflight ? 'preflight-no-offers' : stages.some((stage) => !stage.qualified) ? 'preceding-stage-unqualified' : rates.length < RATES.length ? 'baseline-did-not-reach-higher-stage' : null,
       diagnosticBytes, commitLimitBytes, samples, powershellVersion,
       ...(connectorObservation ? { connectorObservation } : {}),
-      ...(controlTiming ? { controlTiming, phaseTimings: operationPhaseTimings } : {}),
+      ...(controlTiming ? { timingProfile, controlTiming, phaseTimings: operationPhaseTimings } : {}),
       deliveryChecks: ['custody','channel','connector','storage'].includes(preflight) ? 0 : preflight === 'candidate-startup' ? 1 : preflight === 'fault' || preflight === 'forced' ? 1 : 2,
       sampledPeakJobWorkingSetBytes: Math.max(...samples.map((sample) => ['main','relay','diagnostic','compiler'].reduce((sum, kind) => sum + sample[kind].workingSetBytes, 0))),
       accountingScope: 'sampled private-job WorkingSet is not instantaneous peak; job CPU/peak committed bytes include short-lived descendants; observer excluded and separately reported',
@@ -511,7 +513,8 @@ async function main() {
     channelSha256: hash(readFileSync(new URL('./windows-capacity-channel.mjs', import.meta.url))),
     connectorSha256: hash(readFileSync(new URL('./windows-capacity-connector.mjs', import.meta.url))),
     timingSha256: hash(readFileSync(new URL('./windows-capacity-timing.mjs', import.meta.url))),
-    ...(candidateOnly ? { timingScope: 'parent start-request duration and independent child relative fixed-phase observations; reporting cap120s, request deadline90s unchanged; observational, not performance acceptance' } : {}),
+    ...(candidateOnly ? { timingProfile: capacityTimingProfile(candidateChannel ? 'candidate-channel' : 'default'),
+      timingScope: 'parent start-request duration and independent child relative fixed-phase observations; explicit trusted-mode deadline/reporting cap; observational, not performance acceptance' } : {}),
     storageSha256: hash(readFileSync(new URL('./windows-capacity-storage.mjs', import.meta.url))),
     correctedStartupSha256: hash(readFileSync(new URL('./windows-corrected-startup.mjs', import.meta.url))),
     archives: Object.fromEntries(Object.entries(archives).map(([key, { source, ...value }]) => [key, value])), runs: [] };
@@ -543,7 +546,10 @@ try {
       if (op !== 'stop') { process.exitCode = 1; process.disconnect(); return; }
       process.send({ id, ok: true, stopped: true }, () => { if (process.connected) process.disconnect(); });
     });
-  } else if (process.argv[2] === '--fixture') await fixture(process.argv[3]); else await main();
+  } else if (process.argv[2] === '--fixture') {
+    assert.ok(process.argv.length === 4 || (process.argv.length === 5 && process.argv[4] === '--candidate-channel-timing'));
+    await fixture(process.argv[3], process.argv[4] === '--candidate-channel-timing' ? 'candidate-channel' : 'default');
+  } else await main();
 } catch (error) {
   // Deliver only the fixed classification before cleanup disconnects IPC.
   if (process.argv[2] === '--fixture' && Number.isSafeInteger(fixtureRequestId) && process.connected) {

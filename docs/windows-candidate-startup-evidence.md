@@ -114,8 +114,14 @@ retained before cleanup; original failure classification and cleanup receipts
 remain separate. No paths, commands, request content or exception text enter
 these observations.
 
-The reporting cap is 120 seconds, separate from the unchanged ninety-second
-request deadline. Out-of-range/nonfinite actual duration is explicitly
+Startup and storage retain their ninety-second request deadline and separate
+120-second reporting cap. Following the [retained channel deadline failure](windows-candidate-channel-evidence.md),
+only the fixed candidate-channel mode selects a finite 180-second request
+deadline and separate 240-second reporting cap. The observed 78.854-second
+prepare plus two ordinary ten-second connector windows exceeds the original
+diagnostic window. This adjusts diagnostic coverage, not a performance budget
+or any production connector timeout. The driver/controller use a closed trusted
+mode selection; reported IPC cannot select or increase either bound. Out-of-range/nonfinite actual duration is explicitly
 unavailable, never clamped; it does not replace an original operation failure.
 A normally successful operation with unavailable timing fails diagnostic
 qualification. Malformed, missing, regressing, arbitrary or excessive IPC timing

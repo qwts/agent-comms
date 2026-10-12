@@ -76,3 +76,15 @@ The next reviewed correction is a finite candidate-channel-only diagnostic
 window with an explicit larger timing cap; other diagnostic budgets and
 production behavior remain separate. No retry, startup, six-case preflight or
 capacity pilot followed this receipt.
+
+
+The revised control selects only the trusted candidate-channel profile:
+180-second request deadline and 240-second timing reporting cap. Startup/storage
+remain ninety/120 seconds; the old/new controls retain their original untimed
+ninety-second requests. No arbitrary dispatch pin, IPC cap, environment/policy
+change or production timeout adjustment is accepted. Numeric timing beyond the
+selected reporting cap remains unavailable rather than clamped, and original
+operation failures survive. Larger allowed timing is observational and cannot
+turn the retained first failure into a pass or establish performance acceptance.
+The revised source requires exact-head/native CI and separate authorization
+before one new run; no completion is implied here.

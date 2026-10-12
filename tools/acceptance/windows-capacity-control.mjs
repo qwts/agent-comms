@@ -1,4 +1,4 @@
-import { CAPACITY_PHASE_LIMIT, validCapacityTiming, validCapacityPhaseTimings } from './windows-capacity-timing.mjs';
+import { capacityTimingProfile, CAPACITY_PHASE_LIMIT, validCapacityTiming, validCapacityPhaseTimings } from './windows-capacity-timing.mjs';
 // Dev-only finite control transport. Failure records never contain child output.
 const PHASES = new Set(['bootstrap-ready','script-entry','compile-supervisor','supervisor-compiled','module-observation','import-utility','utility-imported','serialize-ready','ready-serialized','control-read','parse-control','control-parsed','cim-module-observation','verify-fixture-existence','verify-fixture-parent','verify-fixture-executable','parse-fixture-command','verify-fixture-argument-count','verify-fixture-arguments','convert-fixture-creation','verify-job-limit','cim-module-refused','import-cim','cim-imported','query-fixture','fixture-queried','create-private-job','private-job-assigned','read-control','verify-fixture','assign-private-job','sample-job','sample-ids-read','sample-filter','sample-query','sample-rows','sample-verify','sample-classify','sample-observer','sample-observer-read','sample-reply','sample-replied','query-members','close-job']);
 export const FIXTURE_PHASES = new Set(['storage-imports','storage-broker-construct','storage-broker-constructed','storage-prepare','storage-prepared','storage-log-construct','storage-log-constructed','storage-log-custody','storage-log-custody-checked','storage-replay','storage-replayed','storage-maintain','storage-maintained','storage-ready','fixture-imports','fixture-broker-start','fixture-pair','fixture-approve','fixture-join-first','fixture-join-second','fixture-delivery-send','fixture-delivery-read','fixture-delivery-ack','fixture-delivery-empty','fixture-ready','custody-imports','custody-current-uid','custody-uid-checked','custody-shared','custody-shared-checked','custody-proofs','custody-proofs-checked','custody-state','custody-state-checked','custody-ready','channel-imports','channel-prepare','channel-prepared','channel-stale-main','channel-stale-main-returned','channel-stale-main-checked','channel-stale-admin','channel-stale-admin-returned','channel-stale-admin-checked','channel-ready','connector-imports','connector-create-admin','connector-admin-returned','connector-event-connect','connector-event-error','connector-event-end','connector-event-close','connector-heartbeat','connector-observation-finished','connector-dispose-admin','connector-admin-disposed','connector-observed']);
@@ -13,7 +13,7 @@ export function snapshotCapacityPhases(supervisor, fixture) {
   const supervisorPhase = supervisor.state().phase, fixtureState = fixture?.state(), fixturePhase = fixtureState?.phase;
   return { ...(PHASES.has(supervisorPhase) ? { supervisorPhase } : {}),
     ...(FIXTURE_PHASES.has(fixturePhase) ? { fixturePhase } : {}),
-    ...(validCapacityPhaseTimings(fixtureState?.phaseTimings, FIXTURE_PHASES) ? { phaseTimings: fixtureState.phaseTimings.map(row => ({ ...row })) } : {}),
+    ...(validCapacityPhaseTimings(fixtureState?.phaseTimings, FIXTURE_PHASES, fixtureState?.timingMode ?? 'default') ? { phaseTimings: fixtureState.phaseTimings.map(row => ({ ...row })) } : {}),
     ...(validConnectorProgress(fixtureState?.connectorProgress) ? { connectorProgress: { ...fixtureState.connectorProgress } } : {}) };
 }
 // Diagnostic-only comparison: never used by the production connector.
@@ -47,7 +47,8 @@ export async function collectSupervisorProbes(probe, record, variants = ['superv
     mayContinue = result.ownedTerminalConfirmed === true && result.stdioClosedConfirmed === true;
   }
 }
-export function createCapacityController(owned, { ipc = false, capturePhaseTimings = false, classifyFailure = () => new Error('job-supervisor-failed') } = {}) {
+export function createCapacityController(owned, { ipc = false, capturePhaseTimings = false, timingMode = 'default', classifyFailure = () => new Error('job-supervisor-failed') } = {}) {
+  capacityTimingProfile(timingMode);
   const pending = new Map(); let id = 1, bytes = '', rejected, phase, encoding, moduleObservation, cimModuleObservation, connectorProgress;
   const phaseTimings = []; let previousPhaseElapsed = -1;
   let resolveStartup, rejectStartup;
@@ -70,7 +71,7 @@ export function createCapacityController(owned, { ipc = false, capturePhaseTimin
       let timing;
       if (capturePhaseTimings) {
         timing = Object.hasOwn(record, 'phaseElapsedMs') ? { elapsedMs: record.phaseElapsedMs } : { timingUnavailable: record.phaseTimingUnavailable };
-        if (!validCapacityTiming(timing) || (Object.hasOwn(record, 'phaseElapsedMs') && Object.hasOwn(record, 'phaseTimingUnavailable'))
+        if (!validCapacityTiming(timing, timingMode) || (Object.hasOwn(record, 'phaseElapsedMs') && Object.hasOwn(record, 'phaseTimingUnavailable'))
             || phaseTimings.length >= CAPACITY_PHASE_LIMIT || (timing.elapsedMs !== undefined && timing.elapsedMs < previousPhaseElapsed)) {
           fail('control-invalid'); return;
         }
@@ -120,7 +121,7 @@ export function createCapacityController(owned, { ipc = false, capturePhaseTimin
   owned.exited.then(closed);
   owned.child.stdin?.on('error', closed); owned.child.stdout?.on('error', closed);
   return { startup, state: () => ({ phase: phase ?? null, encoding: encoding ?? null,
-    ...(capturePhaseTimings ? { phaseTimings: phaseTimings.map(row => ({ ...row })) } : {}),
+    ...(capturePhaseTimings ? { timingMode, phaseTimings: phaseTimings.map(row => ({ ...row })) } : {}),
     ...(connectorProgress === undefined ? {} : { connectorProgress: { ...connectorProgress } }),
     ...(moduleObservation === undefined ? {} : { moduleObservation: { ...moduleObservation } }),
     ...(cimModuleObservation === undefined ? {} : { cimModuleObservation: { ...cimModuleObservation } }) }),

@@ -45,8 +45,9 @@ does not establish whole Broker startup, delivery or capacity.
 The manual `candidate-channel` task uses that same approved correction archive
 for actual prepare and both stale APIs, with no Broker.start, storage or load.
 Fixed candidate controls retain bounded parent request duration and relative
-fixed child phase timing; the 120-second reporting cap does not change the
-ninety-second request deadline. Missing/invalid timing cannot qualify a pass.
+fixed child phase timing. Startup/storage retain 90s requests and 120s reporting;
+only candidate-channel selects 180s requests and 240s reporting, from a closed
+trusted mode. Production connector and old/new diagnostic budgets are unchanged. Missing/invalid timing cannot qualify a pass.
 The [first retained channel failure](../../docs/windows-candidate-channel-evidence.md)
 records the actual prepare/main durations and incomplete admin window without
 claiming a stall or capacity. See the [control and timing scope](../../docs/windows-candidate-startup-evidence.md#fixed-source-channel-control-and-timing).

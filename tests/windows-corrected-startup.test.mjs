@@ -44,17 +44,17 @@ for (const [code, probe] of [['broker-probe-failed', undefined], ['CANARY-privat
     mkdirSync(path.join(scratch, 'lib/platform'));
     writeFileSync(path.join(scratch, 'lib/platform/account-isolation.mjs'), 'export function assertLogFile(){}');
     writeFileSync(path.join(scratch, 'lib/platform/local-channel.mjs'), `import {writeFileSync} from 'node:fs';export function prepare(){return 'private'}export async function removeStaleSocket(){throw Object.assign(new Error('CANARY-channel-secret'),{code:${JSON.stringify(code)}})}export function stop(){writeFileSync(${JSON.stringify(cleaned)},'stopped')}`);
-    const child = spawn(process.execPath, [fileURLToPath(new URL('../tools/acceptance/windows-connector-capacity.mjs', import.meta.url)), '--fixture', scratch], { stdio: ['ignore','pipe','pipe','ipc'] });
+    const child = spawn(process.execPath, [fileURLToPath(new URL('../tools/acceptance/windows-connector-capacity.mjs', import.meta.url)), '--fixture', scratch, ...(probe === 'channel' ? ['--candidate-channel-timing'] : [])], { stdio: ['ignore','pipe','pipe','ipc'] });
     let stdout = '', stderr = '', failure;
     child.stdout.on('data', chunk => { stdout += chunk; }); child.stderr.on('data', chunk => { stderr += chunk; });
     const terminal = new Promise((resolve, reject) => { child.once('error', reject); child.once('close', (exitCode, signal) => resolve({ exitCode, signal })); });
     child.on('message', record => { if (record.id === 1) failure = record; });
-    const control = createCapacityController({ child, exited: terminal, terminal: () => child.exitCode !== null }, { ipc: true, capturePhaseTimings: true,
+    const control = createCapacityController({ child, exited: terminal, terminal: () => child.exitCode !== null }, { ipc: true, capturePhaseTimings: true, timingMode: probe === 'channel' ? 'candidate-channel' : 'default',
       classifyFailure: record => classifyFixtureFailure(record, new Set(['operation-failed'])) });
     const timer = setTimeout(() => child.kill(), 5000);
     try {
       assert.equal((await control.startup).paused, true);
-      await assert.rejects(control.request('start', { ...(probe ? { probe } : {}), phaseTimings: true }), error => {
+      await assert.rejects(control.request('start', { ...(probe ? { probe } : {}), phaseTimings: true, timingCapMs: 999_999 }), error => {
         assert.equal(error.message, 'operation-failed');
         assert.equal(error.brokerCode, code !== 'CANARY-private-code' ? code : undefined);
         assert.equal(JSON.stringify(error).includes('CANARY'), false);
