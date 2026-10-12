@@ -168,3 +168,7 @@ originals and exclusively writes separate removal receipts. It does not remove
 archives, logs or other attempts. This command requires its own explicit review;
 archive verification alone is not deletion authority. There is no automatic
 invocation, retry, path discovery, or untrusted-path deletion.
+
+The separately reviewed [fixed-name successor plan](FIXED-NAMES.md) prepares
+one bounded 64 MiB experiment. Its optional `--fixed-names` mode cannot combine
+with comparison or snapshot modes; no execution is implied by source presence.
