@@ -1,0 +1,59 @@
+{
+  "v": 1,
+  "session": 28279,
+  "exitCode": 0,
+  "originalsRetained": true,
+  "aggregateLiveBytes": 203759616,
+  "receipts": [
+    {
+      "aggregateLiveBytes": 203370496,
+      "archive": "/private/tmp/owner-journal-apfs-90f39813-6e22-4ed2-abee-90edfbdec6fa/journal.dmg.gz",
+      "attachmentConfirmedAbsent": true,
+      "compressedAllocatedBytes": 1064960,
+      "compressedBytes": 1063497,
+      "compressedSha256": "3fc965c37596dcb918010dbb803de58a1d3e5fc7055c863b4f6a8ad2b26254cb",
+      "decompressedBytes": 134217728,
+      "decompressedSha256": "33cd8c2a33810128757807de987f4c6cd2571d4e8275d41cecc590f7d54496fc",
+      "image": "/private/tmp/owner-journal-apfs-90f39813-6e22-4ed2-abee-90edfbdec6fa/journal.dmg",
+      "originalBytes": 134217728,
+      "originalIdentity": [
+        16777231,
+        106098202,
+        134217728,
+        262144,
+        1791775441500435404,
+        1791775441500435404
+      ],
+      "originalRemoved": false,
+      "originalSha256": "33cd8c2a33810128757807de987f4c6cd2571d4e8275d41cecc590f7d54496fc",
+      "physicalCapacitySupported": false,
+      "status": "verified",
+      "v": 1
+    },
+    {
+      "aggregateLiveBytes": 203755520,
+      "archive": "/private/tmp/owner-journal-apfs-d2d00fbf-0fa1-4785-bfbf-668d313cbd36/journal.dmg.gz",
+      "attachmentConfirmedAbsent": true,
+      "compressedAllocatedBytes": 380928,
+      "compressedBytes": 379520,
+      "compressedSha256": "1fbd052baa987a973616068cec7c0f3ca49e5cf7cf994af85c3c7531fe1e50e4",
+      "decompressedBytes": 67108864,
+      "decompressedSha256": "724dcf37003b95d7c2e3e983c7ac9bcd681431dde2e92411d78b696098e7e2d6",
+      "image": "/private/tmp/owner-journal-apfs-d2d00fbf-0fa1-4785-bfbf-668d313cbd36/journal.dmg",
+      "originalBytes": 67108864,
+      "originalIdentity": [
+        16777231,
+        106101052,
+        67108864,
+        131072,
+        1791776131980991632,
+        1791776131980991632
+      ],
+      "originalRemoved": false,
+      "originalSha256": "724dcf37003b95d7c2e3e983c7ac9bcd681431dde2e92411d78b696098e7e2d6",
+      "physicalCapacitySupported": false,
+      "status": "verified",
+      "v": 1
+    }
+  ]
+}

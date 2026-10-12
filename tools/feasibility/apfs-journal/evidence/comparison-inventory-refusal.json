@@ -1,0 +1,16 @@
+{
+  "v": 1,
+  "id": "comparison-inventory-refusal",
+  "rawSha256": "a7f821e7e0ab1f528a58b211209e65db51597d2f18c806418df829b7e736c1df",
+  "rawRecordCount": 1,
+  "projection": "Selected owned native/statistics/terminal records; global disk-image inventory and local argument paths omitted.",
+  "physicalCapacitySupported": false,
+  "powerLossTested": false,
+  "records": [
+    {
+      "at": "2026-10-12T03:31:40.943Z",
+      "event": "lab-failed",
+      "code": "lab-parent-scan-ceiling"
+    }
+  ]
+}
