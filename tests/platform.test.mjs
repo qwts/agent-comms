@@ -9,6 +9,7 @@ import { createLocalChannel } from '../lib/platform/local-channel.mjs';
 import { createSecretStore } from '../lib/platform/secret-store.mjs';
 import { createServiceStartup } from '../lib/platform/service-startup.mjs';
 import { createAccountIsolation } from '../lib/platform/account-isolation.mjs';
+import { spawnDiagnosticExportHelper } from '../lib/platform/diagnostic-export-process.mjs';
 import { createDiagnosticStderr } from '../lib/platform/diagnostic-stderr.mjs';
 import * as channel from '../lib/broker/server.mjs';
 import * as startup from '../lib/broker/launchagent.mjs';
@@ -17,6 +18,8 @@ const seams = { 'local-channel': createLocalChannel, 'secret-store': createSecre
   'service-startup': createServiceStartup, 'account-isolation': createAccountIsolation };
 // Durable replacement has one function port; its POSIX and Windows branches
 // and native replacement are exercised in durable-file.test.mjs.
+// Explicit export helper launches share one minimal-environment platform seam;
+// both native branches and hidden-console options are checked below.
 // Diagnostic stderr isolates platform-specific subprocess custody and cleanup;
 // its stream port is exercised below and in diagnostic-process.test.mjs.
 // Disabled admission journal locking is Darwin-only and refuses before any
@@ -26,7 +29,7 @@ const seams = { 'local-channel': createLocalChannel, 'secret-store': createSecre
 // protected producer and physical support remain unavailable on every platform.
 // Explicit compiled receipt fixtures are Darwin-only; this process adapter has
 // no production constructor and refuses unsupported platforms before launch.
-const platformSources = [...Object.keys(seams), 'durable-file', 'diagnostic-stderr', 'owner-journal-lock', 'owner-journal-native', 'owner-decision-readiness', 'owner-enrollment-source', 'owner-receipt-native'];
+const platformSources = [...Object.keys(seams), 'durable-file', 'diagnostic-stderr', 'diagnostic-export-process', 'owner-journal-lock', 'owner-journal-native', 'owner-decision-readiness', 'owner-enrollment-source', 'owner-receipt-native'];
 
 // GeniusBar ADR-0046: every seam has a Windows branch, exercised with fake
 // runners in tests/platform-win32.test.mjs (secret store, service startup)
@@ -131,4 +134,20 @@ test('compatibility exports retain the channel modes and LaunchAgent bytes', () 
   assert.equal(service.renderPlist(options), startup.renderPlist(options));
   assert.equal(service.installOptions({ mode: 'single-account', uid: 501 }).args[1],
     fileURLToPath(new URL('../bin/agent-comms.mjs', import.meta.url)));
+});
+
+
+test('explicit export helper seam hides consoles and strips credentials/preloads on both native branches', () => {
+  for (const platform of ['darwin', 'win32']) {
+    const calls = []; const child = {};
+    assert.equal(spawnDiagnosticExportHelper('file:///fixed-helper.mjs', { platform,
+      env: { SystemRoot: 'C:\\Windows', NODE_OPTIONS: 'CANARY-preload', AGENT_BOT_TOKEN: 'CANARY-token' },
+      run: (...args) => { calls.push(args); return child; } }), child);
+    assert.equal(calls.length, 1);
+    const [executable, args, options] = calls[0];
+    assert.equal(executable, process.execPath); assert.equal(args[0], '--input-type=module');
+    assert.equal(options.windowsHide, true); assert.deepEqual(options.stdio, ['ignore', 'inherit', 'ignore', 'ipc']);
+    assert.deepEqual(options.env, platform === 'win32' ? { SystemRoot: 'C:\\Windows' } : {});
+    assert.ok(!JSON.stringify(calls).includes('CANARY'));
+  }
 });
