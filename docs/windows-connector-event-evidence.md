@@ -82,3 +82,35 @@ source, connector arguments, timers, environment, policy or existing deadlines.
 Timer proximity only suggests an interval; it does not prove causality. Source
 review, full local checks and exact-head native CI precede any separately
 authorized follow-up observation. No startup/preflight/pilot follows here.
+
+
+The [follow-up connector observation](https://github.com/qwts/agent-comms/actions/runs/38229599912)
+passed at signed `036595b754555b8920e8b992b6b10db6fe2617dd`, after
+[exact-head native/overall CI](https://github.com/qwts/agent-comms/actions/runs/38229403340)
+passed. All eight tool source hashes match that commit with Windows checkout
+line endings. The actual old-pin admin connector reported `refused-and-closed`,
+ordered `error` then `close`, nine heartbeats and 10,012ms elapsed. Its fixed
+code/stage are `ECONNREFUSED` and `startup-timeout`; destroyed is true and
+readable/writable-ended are false. This shows the unchanged production
+ten-second timer, error/close events and caller-owned disposal/reply completed
+in this run. It does not establish why the prior run failed or prove a
+production correction. No Broker/listener/EventLog/replay/maintenance, delivery
+or offered-rate stage ran.
+
+The existing private-job sample verified no remaining relay; natural job-empty,
+owned fixture terminal, job closure and scratch removal are confirmed. The
+parent removed its disposable profile/account/stage with zero errors. The
+outer PASS remains diagnostic collection and cleanup success, not Broker.start
+or capacity acceptance. All earlier failures remain unchanged and unresolved
+where no causal evidence exists. Original raw reports are retained:
+
+| Report | SHA256 |
+| --- | --- |
+| [acceptance](../tools/acceptance/evidence/2026-10-12-windows-connector/connector-38229599912/acceptance.json) | `7c7b4cdf13bc3652780a69e506a4c6e7739f74a89a7abaf843135dd27df67020` |
+| [capacity](../tools/acceptance/evidence/2026-10-12-windows-connector/connector-38229599912/capacity/capacity.json) | `95dba3f923cbb2f1ae4ffb84f469b48b66850131b6fedf3498621e72ac147e38` |
+| [partial run](../tools/acceptance/evidence/2026-10-12-windows-connector/connector-38229599912/capacity/partial-run.json) | `411f317bb252272252c2aba2686ac9da9b6d19f4a890c461e3505d1dc705a7c5` |
+
+The downloaded full workflow log SHA256 is
+`f9f54cfd2a763cf2262e5738828bb2d59c9c90058b6537869ba7d2ea79ac77f0`.
+It can be retrieved with `gh run view 38229599912 --log`.
+No startup/preflight/pilot retry follows automatically from this observation.

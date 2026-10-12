@@ -1,0 +1,35 @@
+{
+  "revision": "old",
+  "requestedRates": [],
+  "stages": [],
+  "samples": [
+    {
+      "main": {
+        "workingSetBytes": 43446272,
+        "count": 1,
+        "cpu100ns": 781250
+      },
+      "compiler": {
+        "workingSetBytes": 0,
+        "count": 0,
+        "cpu100ns": 0
+      },
+      "diagnostic": {
+        "workingSetBytes": 0,
+        "count": 0,
+        "cpu100ns": 0
+      },
+      "relay": {
+        "workingSetBytes": 0,
+        "count": 0,
+        "cpu100ns": 0
+      },
+      "jobPeakCommitBytes": 334102528,
+      "jobCpu100ns": 556875000,
+      "observer": {
+        "workingSetBytes": 91881472,
+        "cpu100ns": 4218750
+      }
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+{
+  "v": 1,
+  "scope": "actual-connector-events; prepare/main stale probe then unconsumed admin connector; no Broker, listener, EventLog, replay, maintenance or workload",
+  "storageType": "not-measured",
+  "nodeArchiveSha256": "158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541",
+  "node": "v24.21.0",
+  "nodeExecutableSha256": "ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32",
+  "osRelease": "10.0.26100",
+  "arch": "x64",
+  "logicalCpus": 4,
+  "physicalMemoryBytes": 17174360064,
+  "commitLimitBytes": 2147483648,
+  "runnerSha256": "b1c7804801d573572ec3150ee5013395c315325d23e356071c29a345f9a7dd68",
+  "policySha256": "3f63c0be9bc54bc527c1111d6e4fc3aea4fb7d44f904386ff845d4c5207634f8",
+  "supervisorSha256": "adff4d760d97c212e0b39b52ddf655ceaebe023b79d5e40428803a24db9cc7f8",
+  "controlSha256": "5827ec0b26cb69cf2ad302347685d1eab3cec14f64540a0a206d08bccd47de03",
+  "lifecycleSha256": "7b7d5fa714334b381d5f0e2c7cd4a3bd39b216183519ba6923907aefa0d62358",
+  "custodySha256": "60ec225d64566323a78b55d12cea7dece0c3176091cdf1dc96d116469206998b",
+  "channelSha256": "941eb75322d97e1d67bdb85ee781ee374624b51cc922436f4b3dc844521ee10c",
+  "connectorSha256": "9e3356eedff14a726b2dc4da437e429e876700fbfbb7e17c1578b2a2e367b13a",
+  "archives": {
+    "old": {
+      "pin": "25dfa8362401489503f704c7322ad1314b7e6ddb",
+      "tree": "125c504a11148b2eec922f915683fb32d1366b48",
+      "archiveSha256": "3af858af820e31c315310dc197153eab62d0e7115417ccdbdbb11244eae6ce7e"
+    },
+    "new": {
+      "pin": "e648d71277da72fc50c70ebcbb94c3c8f53c7cf3",
+      "tree": "a3bdaab0a6fa7068b293ab34dea66bba670b4e43",
+      "archiveSha256": "e36eddf8612bf9e65ac4414f1a48c4dc6ff3fcc25d7ca7b6ea87eddbd6f1f352"
+    }
+  },
+  "runs": [
+    {
+      "revision": "old",
+      "preflight": "connector",
+      "stages": [],
+      "deployment": "actual pinned connector lifecycle events; no Broker, listener, EventLog, replay, maintenance or workload",
+      "requestedRates": [],
+      "skippedRates": [
+        1,
+        10,
+        100
+      ],
+      "baselinePermittedRates": [],
+      "skipReason": "preflight-no-offers",
+      "diagnosticBytes": 0,
+      "commitLimitBytes": 2147483648,
+      "samples": [
+        {
+          "main": {
+            "workingSetBytes": 43446272,
+            "count": 1,
+            "cpu100ns": 781250
+          },
+          "compiler": {
+            "workingSetBytes": 0,
+            "count": 0,
+            "cpu100ns": 0
+          },
+          "diagnostic": {
+            "workingSetBytes": 0,
+            "count": 0,
+            "cpu100ns": 0
+          },
+          "relay": {
+            "workingSetBytes": 0,
+            "count": 0,
+            "cpu100ns": 0
+          },
+          "jobPeakCommitBytes": 334102528,
+          "jobCpu100ns": 556875000,
+          "observer": {
+            "workingSetBytes": 91881472,
+            "cpu100ns": 4218750
+          }
+        }
+      ],
+      "powershellVersion": [
+        5,
+        1,
+        26100
+      ],
+      "connectorObservation": {
+        "outcome": "refused-and-closed",
+        "events": [
+          "error",
+          "close"
+        ],
+        "heartbeatCount": 9,
+        "elapsedMs": 10012,
+        "errorCode": "ECONNREFUSED",
+        "errorStage": "startup-timeout",
+        "destroyed": true,
+        "readableEnded": false,
+        "writableEnded": false
+      },
+      "deliveryChecks": 0,
+      "sampledPeakJobWorkingSetBytes": 43446272,
+      "accountingScope": "sampled private-job WorkingSet is not instantaneous peak; job CPU/peak committed bytes include short-lived descendants; observer excluded and separately reported",
+      "ownedTerminalConfirmed": true,
+      "cleanup": {
+        "jobEmptyConfirmed": true,
+        "scratchRemoved": true,
+        "naturalJobEmptyConfirmed": true,
+        "id": 4,
+        "ok": true,
+        "peakJobCommitBytes": 334102528,
+        "finalJobCpu100ns": 556875000,
+        "closed": true
+      }
+    }
+  ],
+  "status": "passed",
+  "standardUser": {
+    "profileLoaded": true,
+    "sessionId": 2,
+    "interactiveTaskGate": "not-reached",
+    "status": "passed",
+    "administrator": false
+  },
+  "bootstrapCleanup": {
+    "removed": true,
+    "errors": []
+  }
+}
