@@ -29,16 +29,21 @@ test('candidate failure receipt retains the scoped revision and known code while
   assert.equal(retainCapacityFailure({ stage: 'production-startup', check: 'operation-failed', brokerCode: 'CANARY-private-code' }, {}, {}).brokerCode, undefined);
 });
 
-for (const code of ['broker-probe-failed', 'CANARY-private-code']) {
-  test(`actual fixture IPC reports ${code === 'broker-probe-failed' ? 'known refusal' : 'unknown failure'} and still performs owned cleanup`, async () => {
+for (const [code, probe] of [['broker-probe-failed', undefined], ['CANARY-private-code', undefined], ['storage-failed', 'storage']]) {
+  test(`actual fixture IPC reports ${probe === 'storage' ? 'storage failure' : code === 'broker-probe-failed' ? 'known refusal' : 'unknown failure'} and still performs owned cleanup`, async () => {
     // Harness regression only: the manual acceptance mode always verifies and
     // imports the pinned production archive. This stub makes failure deterministic.
     const scratch = mkdtempSync(path.join(os.tmpdir(), 'comms-candidate-ipc-'));
     const cleaned = path.join(scratch, 'cleaned');
     mkdirSync(path.join(scratch, 'lib'));
-    writeFileSync(path.join(scratch, 'lib/broker.mjs'), `import {writeFileSync} from 'node:fs';export class Broker{async start(){throw Object.assign(new Error('CANARY-body-source-secret'),{code:${JSON.stringify(code)},cause:new Error('CANARY-cause')})}async stop(){writeFileSync(${JSON.stringify(cleaned)},'stopped')}}`);
+    writeFileSync(path.join(scratch, 'lib/broker.mjs'), `import {writeFileSync} from 'node:fs';export class Broker{async start(){throw Object.assign(new Error('CANARY-body-source-secret'),{code:${JSON.stringify(code)},cause:new Error('CANARY-cause')})}maintain(){throw Object.assign(new Error('CANARY-storage-secret'),{code:${JSON.stringify(code)}})}async stop(){writeFileSync(${JSON.stringify(cleaned)},'stopped')}}`);
     writeFileSync(path.join(scratch, 'lib/client.mjs'), 'export const unused = true;');
     writeFileSync(path.join(scratch, 'lib/paths.mjs'), 'export function brokerPaths(){return {}};export function clientPaths(){return {}};');
+    writeFileSync(path.join(scratch, 'lib/state.mjs'), 'export class EventLog{constructor(){this.file="private"}replay(){return {seq:0}}}');
+    writeFileSync(path.join(scratch, 'lib/retention.mjs'), 'export function nextExpiry(){return Infinity}');
+    mkdirSync(path.join(scratch, 'lib/platform'));
+    writeFileSync(path.join(scratch, 'lib/platform/account-isolation.mjs'), 'export function assertLogFile(){}');
+    writeFileSync(path.join(scratch, 'lib/platform/local-channel.mjs'), 'export function prepare(){return "private"}');
     const child = spawn(process.execPath, [fileURLToPath(new URL('../tools/acceptance/windows-connector-capacity.mjs', import.meta.url)), '--fixture', scratch], { stdio: ['ignore','pipe','pipe','ipc'] });
     let stdout = '', stderr = '', failure;
     child.stdout.on('data', chunk => { stdout += chunk; }); child.stderr.on('data', chunk => { stderr += chunk; });
@@ -49,16 +54,17 @@ for (const code of ['broker-probe-failed', 'CANARY-private-code']) {
     const timer = setTimeout(() => child.kill(), 5000);
     try {
       assert.equal((await control.startup).paused, true);
-      await assert.rejects(control.request('start'), error => {
+      await assert.rejects(control.request('start', probe ? { probe } : {}), error => {
         assert.equal(error.message, 'operation-failed');
-        assert.equal(error.brokerCode, code === 'broker-probe-failed' ? code : undefined);
+        assert.equal(error.brokerCode, code !== 'CANARY-private-code' ? code : undefined);
         assert.equal(JSON.stringify(error).includes('CANARY'), false);
         return true;
       });
       assert.deepEqual(await terminal, { exitCode: 1, signal: null });
       assert.equal(readFileSync(cleaned, 'utf8'), 'stopped');
       assert.deepEqual(failure, { id: 1, ok: false, failure: { stage: 'fixture-startup', check: 'operation-failed',
-        ...(code === 'broker-probe-failed' ? { brokerCode: code } : {}) } });
+        ...(code !== 'CANARY-private-code' ? { brokerCode: code } : {}) } });
+      assert.equal(control.state().phase, probe === 'storage' ? 'storage-maintain' : 'fixture-broker-start');
       assert.equal(stdout, ''); assert.equal(stderr, ''); assert.equal(JSON.stringify(failure).includes('CANARY'), false);
     } finally { clearTimeout(timer); if (child.exitCode === null && child.signalCode === null) child.kill(); rmSync(scratch, { recursive: true, force: true }); }
   });

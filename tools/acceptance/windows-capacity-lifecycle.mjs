@@ -56,6 +56,6 @@ export function retainCapacityFailure(original, { revision, preflight, fixturePh
     ...(original.supervisorPhase ? { supervisorPhase: original.supervisorPhase } : {}),
     ...(validConnectorProgress(original.connectorProgress) ? { connectorProgress: { ...original.connectorProgress } } : {}),
     ...(revision === 'old' || revision === 'new' || revision === 'candidate' ? { revision } : {}),
-    ...(preflight === 'normal' || preflight === 'fault' || preflight === 'forced' || preflight === 'custody' || preflight === 'candidate-startup' ? { preflight } : {}),
+    ...(preflight === 'normal' || preflight === 'fault' || preflight === 'forced' || preflight === 'custody' || preflight === 'storage' || preflight === 'candidate-startup' ? { preflight } : {}),
     ...(fixturePhase ? { fixturePhase } : {}), ownedCleanup };
 }

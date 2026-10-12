@@ -58,3 +58,36 @@ replacement for append/compaction through the actual PowerShell helper. Those
 storage calls were excluded from previous custody/channel controls. This is a
 source-level untested seam, not evidence of a particular failing call,
 PowerShell cause or remedy. Corrected native startup and capacity remain open.
+
+
+## Proposed fixed-source storage-prefix control
+
+The separate manual `candidate-storage` control loads the same hardcoded,
+verified correction archive and creates a real production Broker instance.
+It registers actual Broker.stop cleanup before actual channel prepare can
+acquire a lock. Fixed phases bracket Broker construction, prepare, EventLog
+construction, assertLogFile, replay and public maintain with compact enabled.
+It requires an empty replay (sequence zero and next expiry Infinity), matching
+the constructor's private expiry to the actual fresh startup state; this is
+not an emulation of arbitrary recovered Broker state. All implementations,
+paths, storage and maintenance defaults come from the unmodified candidate.
+
+The fixture still pauses before production imports until private-job attachment.
+The startup request retains ninety seconds, the same memory/process/profile
+guards and original failure plus owned cleanup reporting. Production nested
+PowerShell/compiler descendants belong to that private job. The production
+Windows durable replacement helper's configured thirty-second spawnSync timeout
+is unchanged and does not itself prove helper/descendant exit or stdio closure.
+No child command, policy, environment, deadline or implementation is replaced.
+The report separately records this lifetime-observation limit, the storage
+diagnostic module hash and the verified production archive hash; transient
+descendants remain included in cumulative job accounting.
+
+The control omits Broker.start, stale probes, listeners, A2A startup, delivery
+and rate offers. It cannot establish complete Broker startup or capacity.
+Focused stub tests verify sequence, fresh-state refusal, fixed phase privacy
+and cleanup registration at every boundary; real child/controller IPC verifies
+correlated maintenance failure survives channel close without raw error data.
+Native CI exercises those mechanics; only a separately authorized manual
+standard-user run can test the actual candidate storage APIs. No result is
+claimed before that run.

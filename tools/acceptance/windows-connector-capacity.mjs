@@ -13,6 +13,7 @@ import { collectSupervisorProbes, createCapacityController, encodingSignature, F
 
 import { cleanupCapacityRun, retainCapacityFailure } from './windows-capacity-lifecycle.mjs';
 
+import { probePinnedStorage } from './windows-capacity-storage.mjs';
 import { probePinnedCustody } from './windows-capacity-custody.mjs';
 import { probePinnedChannel } from './windows-capacity-channel.mjs';
 import { probePinnedConnector, validConnectorObservation } from './windows-capacity-connector.mjs';
@@ -73,10 +74,10 @@ async function fixture(source) {
     if (process.connected) process.send({ id: -1, phase: value, ...(progress ?? {}) }, () => {});
   };
   const load = (name) => import(pathToFileURL(path.join(source, name)).href);
-  if (['channel','connector'].includes(start.probe)) {
+  if (['channel','connector','storage'].includes(start.probe)) {
     let cleanup = async () => {};
     fixtureCleanup = async () => { await cleanup(); if (process.connected) process.disconnect(); };
-    const ready = await (start.probe === 'connector' ? probePinnedConnector : probePinnedChannel)(load, phase, (dispose) => { cleanup = dispose; });
+    const ready = await (start.probe === 'storage' ? probePinnedStorage : start.probe === 'connector' ? probePinnedConnector : probePinnedChannel)(load, phase, (dispose) => { cleanup = dispose; });
     process.send({ id: start.id, ok: true, ...ready });
     process.once('message', async ({ id, op }) => {
       try {
@@ -341,16 +342,16 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
       compilerExecutables: ['Framework', 'Framework64'].map((name) => path.join(process.env.SystemRoot, 'Microsoft.NET', name, 'v4.0.30319', 'csc.exe')),
       compilerTemp: realpathSync(process.env.TEMP) }, Math.max(1, 15_000 - (performance.now() - attachStarted)));
     attached = true; powershellVersion = attachment.powershellVersion;
-    activeStage = preflight === 'connector' ? 'actual-connector-events' : preflight === 'channel' ? 'channel-prepare-and-stale-probes' : preflight === 'custody' ? 'custody-api' : 'production-startup';
-    const startup = await control.request('start', ['custody','channel','connector'].includes(preflight) ? { probe: preflight } : {}, 90_000);
+    activeStage = preflight === 'storage' ? 'candidate-storage-prefix' : preflight === 'connector' ? 'actual-connector-events' : preflight === 'channel' ? 'channel-prepare-and-stale-probes' : preflight === 'custody' ? 'custody-api' : 'production-startup';
+    const startup = await control.request('start', ['custody','channel','connector','storage'].includes(preflight) ? { probe: preflight } : {}, 90_000);
     assert.equal(startup.ready, true);
-    assert.equal(preflight === 'connector' ? startup.startupConnectorChecks : preflight === 'channel' ? startup.startupChannelChecks : preflight === 'custody' ? startup.startupCustodyChecks : startup.startupDeliveryChecks, ['channel','connector'].includes(preflight) ? 3 : preflight === 'custody' ? 4 : 1);
+    assert.equal(preflight === 'storage' ? startup.startupStorageChecks : preflight === 'connector' ? startup.startupConnectorChecks : preflight === 'channel' ? startup.startupChannelChecks : preflight === 'custody' ? startup.startupCustodyChecks : startup.startupDeliveryChecks, preflight === 'storage' ? 6 : ['channel','connector'].includes(preflight) ? 3 : preflight === 'custody' ? 4 : 1);
     if (preflight === 'connector') { assert.equal(validConnectorObservation(startup.connectorObservation), true); connectorObservation = startup.connectorObservation; }
     activeStage = 'post-startup-process-check';
     await noRelays();
     sampler = setInterval(sample, 1000);
-    if (['custody','channel','connector','candidate-startup'].includes(preflight)) {
-      activeStage = preflight === 'candidate-startup' ? 'candidate-startup-stop' : preflight === 'connector' ? 'connector-stop' : preflight === 'channel' ? 'channel-stop' : 'custody-stop';
+    if (['custody','channel','connector','storage','candidate-startup'].includes(preflight)) {
+      activeStage = preflight === 'storage' ? 'candidate-storage-stop' : preflight === 'candidate-startup' ? 'candidate-startup-stop' : preflight === 'connector' ? 'connector-stop' : preflight === 'channel' ? 'channel-stop' : 'custody-stop';
       clearInterval(sampler); if (sampling) await sampling;
       await control.request('stop', {}, 15_000);
       const result = await deadline(fixtureOwned.exited, 5000, 'natural-exit-unconfirmed');
@@ -391,13 +392,13 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
     if (sampleFailure && preflight !== 'forced' && preflight !== 'fault') throw sampleFailure;
     assert.equal(outputFailure, false, 'diagnostic-output-invalid');
     return { revision, preflight: preflight || null, stages,
-      deployment: preflight === 'connector' ? 'actual pinned connector lifecycle events; no Broker, listener, EventLog, replay, maintenance or workload' : preflight === 'channel' ? 'channel-prepare-and-stale-probes; no Broker, listener, EventLog, replay, maintenance or workload' : preflight === 'custody' ? 'actual pinned account custody API only; no Broker or connector' : 'one embedded production Broker/client; Identification PowerShell connector',
+      deployment: preflight === 'storage' ? 'actual corrected-source fresh Broker storage prefix; no Broker.start, stale probes, listeners, A2A startup or delivery' : preflight === 'connector' ? 'actual pinned connector lifecycle events; no Broker, listener, EventLog, replay, maintenance or workload' : preflight === 'channel' ? 'channel-prepare-and-stale-probes; no Broker, listener, EventLog, replay, maintenance or workload' : preflight === 'custody' ? 'actual pinned account custody API only; no Broker or connector' : 'one embedded production Broker/client; Identification PowerShell connector',
       requestedRates: rates, skippedRates: RATES.filter((rate) => !stages.some((stage) => stage.offeredRate === rate)),
       baselinePermittedRates: rates,
       skipReason: preflight ? 'preflight-no-offers' : stages.some((stage) => !stage.qualified) ? 'preceding-stage-unqualified' : rates.length < RATES.length ? 'baseline-did-not-reach-higher-stage' : null,
       diagnosticBytes, commitLimitBytes, samples, powershellVersion,
       ...(connectorObservation ? { connectorObservation } : {}),
-      deliveryChecks: ['custody','channel','connector'].includes(preflight) ? 0 : preflight === 'candidate-startup' ? 1 : preflight === 'fault' || preflight === 'forced' ? 1 : 2,
+      deliveryChecks: ['custody','channel','connector','storage'].includes(preflight) ? 0 : preflight === 'candidate-startup' ? 1 : preflight === 'fault' || preflight === 'forced' ? 1 : 2,
       sampledPeakJobWorkingSetBytes: Math.max(...samples.map((sample) => ['main','relay','diagnostic','compiler'].reduce((sum, kind) => sum + sample[kind].workingSetBytes, 0))),
       accountingScope: 'sampled private-job WorkingSet is not instantaneous peak; job CPU/peak committed bytes include short-lived descendants; observer excluded and separately reported',
       ownedTerminalConfirmed: fixtureOwned.terminal(), cleanup: cleanupReceipt };
@@ -429,8 +430,10 @@ async function main() {
   const components = JSON.parse(readFileSync(new URL('../../tests/fixtures/windows-host-components.json', import.meta.url)));
   assert.equal(process.version, `v${components.node.version}`);
   assert.equal(process.env.AGENT_COMMS_NODE_ARCHIVE_SHA256, components.node.sha256['win-x64']);
+  const candidateStorage = process.argv[2] === '--candidate-storage';
   const candidateStartup = process.argv[2] === '--candidate';
-  if (candidateStartup) { assert.equal(process.argv.length, 6); assert.equal(process.argv[4], '--output'); }
+  const candidateOnly = candidateStartup || candidateStorage;
+  if (candidateOnly) { assert.equal(process.argv.length, 6); assert.equal(process.argv[4], '--output'); }
   else {
     assert.equal(process.argv[2], '--old'); assert.equal(process.argv[4], '--new'); assert.equal(process.argv[6], '--output');
     assert.ok(process.argv.length === 8 || (process.argv.length === 9 && ['--preflight','--supervisor-preflight','--attach-preflight','--sample-preflight','--startup-preflight','--custody-preflight','--channel-preflight','--connector-preflight'].includes(process.argv[8])));
@@ -440,7 +443,7 @@ async function main() {
   const custodyOnly = process.argv[8] === '--custody-preflight';
   const channelOnly = process.argv[8] === '--channel-preflight';
   const connectorOnly = process.argv[8] === '--connector-preflight';
-  output = path.resolve(process.argv[candidateStartup ? 5 : 7]); mkdirSync(output);
+  output = path.resolve(process.argv[candidateOnly ? 5 : 7]); mkdirSync(output);
   if (['--supervisor-preflight','--attach-preflight','--sample-preflight'].includes(process.argv[8])) {
     const result = { v: 1, scope: process.argv[8] === '--sample-preflight' ? 'standard-user sanitized-environment paused-fixture observer sample only; no production imports or workload' : process.argv[8] === '--attach-preflight' ? 'standard-user sanitized-environment paused-fixture attach only; no production imports or workload' : 'standard-user sanitized-environment supervisor control only; no production workload',
       node: process.version, runnerSha256: hash(readFileSync(SELF)), supervisorSha256: hash(readFileSync(JOB)),
@@ -469,18 +472,19 @@ async function main() {
   const commitLimitBytes = Math.min(2 * 1024 ** 3, Math.floor(os.totalmem() / 4));
   if (commitLimitBytes < 512 * 1024 ** 2 || os.freemem() < commitLimitBytes + 512 * 1024 ** 2) throw new Error('memory-headroom-insufficient');
   const archives = {};
-  for (const [revision, cwd] of candidateStartup ? [['candidate', process.argv[3]]] : [['old', process.argv[3]], ['new', process.argv[5]]]) {
+  for (const [revision, cwd] of candidateOnly ? [['candidate', process.argv[3]]] : [['old', process.argv[3]], ['new', process.argv[5]]]) {
     const pin = revision === 'candidate' ? CORRECTED_STARTUP_SOURCE.pin : PINS[revision];
     activeStage = 'archive-source';
     const { stdout: tree } = await exec('git.exe', ['rev-parse', `${pin}^{tree}`], { cwd, encoding: 'utf8', windowsHide: true });
     const { stdout: bytes } = await exec('git.exe', ['archive', '--format=tar', pin], { cwd, encoding: 'buffer', maxBuffer: 32 * 1024 * 1024, windowsHide: true });
-    if (candidateStartup) verifyCorrectedStartupSource(tree.trim(), hash(bytes));
+    if (candidateOnly) verifyCorrectedStartupSource(tree.trim(), hash(bytes));
     const archive = path.join(output, `${revision}.tar`), source = path.join(output, revision);
     writeFileSync(archive, bytes); mkdirSync(source);
     await exec('tar.exe', ['-xf', archive, '-C', source], { windowsHide: true });
     archives[revision] = { source, pin, tree: tree.trim(), archiveSha256: hash(bytes) };
   }
-  const result = { v: 1, scope: candidateStartup ? 'hosted standard-user exact corrected-source Broker startup, one delivery and disposal only; no offered-rate stages, capacity comparison, desktop or host acceptance' : connectorOnly ? 'actual-connector-events; prepare/main stale probe then unconsumed admin connector; no Broker, listener, EventLog, replay, maintenance or workload' : channelOnly ? 'channel-prepare-and-stale-probes; actual pinned default channel; no Broker, listener, EventLog, replay, maintenance or workload' : custodyOnly ? 'hosted standard-user Windows pinned custody API only; no Broker or connector or offered-rate stages' : startupOnly ? 'hosted standard-user Windows old-pin production startup and disposal only; no offered-rate stages or capacity acceptance' : 'hosted standard-user Windows finite capacity pilot; no benchmark, desktop, host or 100/s support acceptance',
+  const result = { v: 1, scope: candidateStorage ? 'hosted standard-user exact corrected-source fresh storage prefix only; actual prepare, EventLog custody/replay and compacting maintenance; no Broker.start, stale probes, listeners, delivery or offered rates' : candidateStartup ? 'hosted standard-user exact corrected-source Broker startup, one delivery and disposal only; no offered-rate stages, capacity comparison, desktop or host acceptance' : connectorOnly ? 'actual-connector-events; prepare/main stale probe then unconsumed admin connector; no Broker, listener, EventLog, replay, maintenance or workload' : channelOnly ? 'channel-prepare-and-stale-probes; actual pinned default channel; no Broker, listener, EventLog, replay, maintenance or workload' : custodyOnly ? 'hosted standard-user Windows pinned custody API only; no Broker or connector or offered-rate stages' : startupOnly ? 'hosted standard-user Windows old-pin production startup and disposal only; no offered-rate stages or capacity acceptance' : 'hosted standard-user Windows finite capacity pilot; no benchmark, desktop, host or 100/s support acceptance',
+    ...(candidateStorage ? { storageHelperLifetime: 'actual production subprocesses belong to private job; configured timeout is not exit proof; no individual helper terminal observation' } : {}),
     storageType: 'not-measured', nodeArchiveSha256: components.node.sha256['win-x64'],
     node: process.version, nodeExecutableSha256: hash(readFileSync(process.execPath)),
     osRelease: os.release(), arch: process.arch, logicalCpus: os.availableParallelism(), physicalMemoryBytes: os.totalmem(), commitLimitBytes,
@@ -490,12 +494,14 @@ async function main() {
     custodySha256: hash(readFileSync(new URL('./windows-capacity-custody.mjs', import.meta.url))),
     channelSha256: hash(readFileSync(new URL('./windows-capacity-channel.mjs', import.meta.url))),
     connectorSha256: hash(readFileSync(new URL('./windows-capacity-connector.mjs', import.meta.url))),
+    storageSha256: hash(readFileSync(new URL('./windows-capacity-storage.mjs', import.meta.url))),
     correctedStartupSha256: hash(readFileSync(new URL('./windows-corrected-startup.mjs', import.meta.url))),
     archives: Object.fromEntries(Object.entries(archives).map(([key, { source, ...value }]) => [key, value])), runs: [] };
   const persist = () => writeFileSync(path.join(output, 'capacity.json'), `${JSON.stringify(result, null, 2)}\n`);
   persist();
-  for (const revision of candidateStartup ? ['candidate'] : startupOnly || custodyOnly || channelOnly || connectorOnly ? ['old'] : ['old', 'new']) {
-    if (candidateStartup) { result.runs.push(await run(archives[revision].source, revision, [], 'candidate-startup', commitLimitBytes)); persist(); }
+  for (const revision of candidateOnly ? ['candidate'] : startupOnly || custodyOnly || channelOnly || connectorOnly ? ['old'] : ['old', 'new']) {
+    if (candidateStorage) { result.runs.push(await run(archives[revision].source, revision, [], 'storage', commitLimitBytes)); persist(); }
+    else if (candidateStartup) { result.runs.push(await run(archives[revision].source, revision, [], 'candidate-startup', commitLimitBytes)); persist(); }
     else if (connectorOnly) { result.runs.push(await run(archives[revision].source, revision, [], 'connector', commitLimitBytes)); persist(); }
     else if (channelOnly) { result.runs.push(await run(archives[revision].source, revision, [], 'channel', commitLimitBytes)); persist(); }
     else if (custodyOnly) { result.runs.push(await run(archives[revision].source, revision, [], 'custody', commitLimitBytes)); persist(); }
@@ -507,8 +513,8 @@ async function main() {
       result.runs.push(await run(archives[revision].source, revision, rates, false, commitLimitBytes)); persist();
     }
   }
-  result.status = candidateStartup || preflight || startupOnly || custodyOnly || channelOnly || connectorOnly || result.runs.every((entry) => entry.stages.length === 3 && entry.stages.every((stage) => stage.qualified)) ? 'passed' : 'capacity-not-qualified';
-  persist(); process.stdout.write(`${JSON.stringify({ status: result.status, candidateStartup, preflight, startupOnly, custodyOnly, channelOnly, connectorOnly, runs: result.runs.length })}\n`);
+  result.status = candidateOnly || preflight || startupOnly || custodyOnly || channelOnly || connectorOnly || result.runs.every((entry) => entry.stages.length === 3 && entry.stages.every((stage) => stage.qualified)) ? 'passed' : 'capacity-not-qualified';
+  persist(); process.stdout.write(`${JSON.stringify({ status: result.status, candidateStartup, candidateStorage, preflight, startupOnly, custodyOnly, channelOnly, connectorOnly, runs: result.runs.length })}\n`);
   if (result.status !== 'passed') process.exitCode = 1;
 }
 try {
