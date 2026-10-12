@@ -215,7 +215,7 @@ for (const mode of ['capture', 'blocked', 'throwing', 'callback-error']) {
       const persisted = readFileSync(broker.log.file, 'utf8');
       await assert.rejects(call(paths, { ...credential, secret: SECRET }, request), { code: 'unauthenticated' });
       assert.equal(readFileSync(broker.log.file, 'utf8'), persisted, 'permission refusal must not write state');
-      assert.equal(output.lines.length, 0, 'expected refusals are not implementation diagnostics');
+      assert.ok(output.lines.every((line) => JSON.parse(line).event === 'broker.started'), 'expected refusals add no implementation diagnostics');
 
       const now = broker.now;
       broker.now = () => { throw sensitiveError(); };
@@ -247,7 +247,7 @@ for (const mode of ['capture', 'blocked', 'throwing', 'callback-error']) {
       if (mode === 'capture') {
         await flushed(sink);
         assert.deepEqual(safeLines(output.lines).map((record) => [record.event, record.code]), [
-          ['broker.request-failure', 'internal'], ['broker.storage-failure', 'storage-failed'],
+          ['broker.started', 'ready'], ['broker.request-failure', 'internal'], ['broker.storage-failure', 'storage-failed'],
         ]);
       }
     }, { brokerOptions: { mode: 'single-account', now: () => 1000, diagnostic } });

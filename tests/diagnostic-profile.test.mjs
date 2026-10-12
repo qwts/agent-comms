@@ -31,6 +31,12 @@ test('local producer emits the reviewed exact profile subset and every finite br
   const { stream, lines, sink } = capture();
   t.after(() => stream.emit('close'));
   const fixtures = [
+    ['broker-started', 'broker.started', 'broker.lifecycle', 'startup', 'ready', 'succeeded'],
+    ['broker-start-failed', 'broker.start-failed', 'broker.lifecycle', 'startup', 'startup-failed', 'failed'],
+    ['broker-stopped', 'broker.stopped', 'broker.lifecycle', 'shutdown', 'stopped', 'succeeded'],
+    ['broker-stop-failed', 'broker.stop-failed', 'broker.lifecycle', 'shutdown', 'shutdown-failed', 'failed'],
+    ['transport-ready', 'transport.ready', 'transport.watch', 'ready', 'ready', 'succeeded'],
+    ['transport-reconnected', 'transport.reconnected', 'transport.watch', 'reconnect', 'ready', 'succeeded'],
     ['request-internal', 'broker.request-failure', 'broker.request', 'handler', 'internal', 'failed'],
     ['storage-append', 'broker.storage-failure', 'broker.storage', 'append', 'storage-failed', 'recovery-required'],
     ['storage-compact', 'broker.storage-failure', 'broker.storage', 'compact', 'storage-failed', 'recovery-required'],
