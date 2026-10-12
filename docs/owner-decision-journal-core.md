@@ -1,12 +1,12 @@
 # Disabled broker journal admission core
 
-`lib/owner-decision-journal.mjs` is an internal, disabled implementation of only
-the admission prefix in the [proposed journal contract](owner-decision-journal-capacity.md).
-No broker route, capability discovery or daemon adapter imports it. It does not
+`lib/owner-decision-journal.mjs` is an internal disabled implementation of the
+[proposed journal](owner-decision-journal-capacity.md), unconsumed by routes,
+capability discovery or daemon adapters. It does not
 reserve physical write capacity, authorize an operation or claim R1–R4 acceptance.
 The default mode remains admission-only. Trusted fixed-v1 lifecycle mode now
-adds the [typed storage graph](owner-decision-journal-lifecycle.md); observation
-replacement and live coordinator composition remain prerequisites.
+adds the [typed storage graph](owner-decision-journal-lifecycle.md) and bounded
+observation recovery. Live coordinator composition remains a prerequisite.
 
 ## Supported storage findings
 
@@ -62,7 +62,8 @@ No multi-file atomicity, mutation retry or missing-marker effect proof is claime
 
 The fixed-name experiment implements the [proposed frame and slot set](owner-decision-journal-fixed-slots.md).
 Its pure frame codec checks fixed cap/EOF, raw magic, primitives,
-broker-role context/payload/frame digests, sequence 1 and padding. It reports snapshotted empty/uncommitted/committed integrity. The store separately
+broker-role context/payload/frame digests, bounded observation generation
+(immutable slots exactly 1) and padding. It reports snapshotted empty/uncommitted/committed integrity. The store separately
 validates exact action/acceptance schemas and namespace/request/digest binding.
 
 After charging and flushing the request directory, the disabled initializer
@@ -87,14 +88,13 @@ frame, schema and exact byte/inode stamp before recording success. Interrupted
 recovery never resumes or forwards automatically. An orphan remains fully
 charged and permanently spent; recovery cannot complete or rewrite it.
 
-The volatile flush cache is instance-scoped and bounded by retained IDs. Every
-operation still acquires the kernel lock and rereads the complete graph. Stamps
+The instance-local flush cache is bounded by retained IDs. Every operation
+locks and rereads the complete graph. Stamps
 include every slot's device/inode, EOF, times and exact frame hash; changed
 identity/bytes invalidates them. Reopening requires recovery again. Corruption, unsafe ownership/link/EOF, unknown names or any nonzero
 unsupported lifecycle/scratch slot refuses; corruption/unsupported phase also
-poisons that instance until reopen. No older success image is selected. Deleting
-or shortening a blank slot leaves a spent orphan, never a recreated file. Cache
-maintenance retires no durable IDs or evidence.
+poisons that instance until reopen. Deleting
+or shortening a blank slot leaves a spent orphan, never a recreated file. No durable ID/evidence retirement occurs.
 
 Storage errors retain the prefix and require reopen. A partial trailer write
 can already equal its complete bytes when the unwritten suffix is zeros; visible
@@ -102,7 +102,8 @@ validity proves no final flush. Recovery requires its own successful flush.
 The Node fsync caveat below precludes power-loss or unconditional-write claims.
 In the default admission-only mode all later lifecycle slots must remain zero.
 The trusted lifecycle mode validates every supported typed prefix. Nonzero
-scratch and observation replacement/recovery remain unsupported.
+scratch and observation replacement/recovery require trusted lifecycle mode,
+which implements the [broker observation amendment](owner-decision-journal-observation.md).
 
 ## Darwin boundary and remaining prerequisites
 
@@ -125,7 +126,7 @@ establish power-loss durability, all Darwin filesystem support or actual macOS
 fall back to weaker operations; see the
 [pinned libuv implementation](https://github.com/libuv/libuv/blob/v1.52.1/src/unix/fs.c#L158).
 
-Physical reservation and filesystem eligibility remain explicit prerequisites:
+Physical reservation/eligibility remain prerequisites:
 Node's public fs API has no persistent all-or-nothing preallocation operation.
 Free-space queries, sparse truncation and a separate reservoir file do not prove
 future exclusive-slot capacity. A reviewed native strategy must account for

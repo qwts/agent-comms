@@ -2,8 +2,8 @@
 
 This proposed [fixed-slot amendment](owner-decision-journal-fixed-slots.md)
 applies only to the broker; daemon scratch-pending, sequence-1 framing is
-unchanged. No runtime changes; authority/physical flags remain false. Joint
-producer review precedes publication or code changes.
+unchanged. Disabled; authority/physical flags stay false. See the
+[joint review receipt](owner-decision-journal-lifecycle.md#joint-observation-review).
 
 ## Exact bounds and typed context
 

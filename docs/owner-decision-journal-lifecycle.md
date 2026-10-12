@@ -56,14 +56,19 @@ flush/readback sequence; there is no link, rename, truncate or new phase file.
 - `recordAuthorization(requestId,{presenceBytes,receiptBytes,authorizationBytes})` accepts only prepared. It verifies complete proof against the trusted current clock, then flushes p1, d1 and authorization in that order. A leftover incomplete proof refuses reissuance/resumption.
 - `recordRelease(requestId,releaseBytes)` accepts only authorized and checks the retained proof against the trusted current clock. It stores the exact release record but returns no mayApply field or effect permit.
 - `recordOutcome(requestId,outcomeBytes)` records one immutable legal outcome. Cancelled/expired cannot follow authorization; applied/indeterminate require release. Broker-origin applied and post-release inferred refusal are forbidden.
-- `recordObservation(requestId,referenceBytes)` records the first immutable indeterminate reference. A changed observation conflicts; bounded replacement and scratch recovery remain a prerequisite.
-- `recordResolution(requestId,referenceBytes)` resolves only indeterminate with an immutable applied/refused reference. Authenticated daemon evidence lookup/validation is a future coordinator obligation; an echoed evidence digest is not custody proof.
+- `recordObservation(requestId,referenceBytes)` publishes an indeterminate reference through the [bounded retained-mirror protocol](owner-decision-journal-observation.md), incrementing only its storage generation. Quarantine or pending candidates refuse replacement; maximum generation refuses new bytes before writes.
+- `recoverObservation(requestId)` explicitly copies only a validated pending scratch candidate after base `recover`. It never retries an effect. Quarantine refuses copying; valid terminal resolution permanently freezes copying/replacement.
+- `recordResolution(requestId,referenceBytes)` resolves indeterminate with an immutable applied/refused reference, independently of observation contents. Quarantined D/S bytes remain unchanged. Authenticated daemon evidence validation remains a coordinator obligation; an echoed digest is not custody proof.
 
 Success is `{requestId,state,duplicate,authorizationSupported:false,
-physicalAllocationSupported:false}`. Exact duplicate bytes return the current
+physicalAllocationSupported:false}`. Observation methods also return generation
+(integer for settled D, otherwise null). Exact duplicate bytes return the current
 stored state, including a later terminal state; they never rewind, redeliver or
-reissue proof. Conflicting bytes refuse. `read` copies the retained slots and
+reissue proof. An identical settled observation after terminal is a read-only
+duplicate; it does not copy, flush or replace D/S. Conflicting bytes refuse. `read` copies the retained slots and
 reports stored state separately from admission-visible/admission-complete.
+`read.observation` reports empty/settled/pending/quarantined with a generation
+only for settled D; pending/quarantined D is omitted from copied logical slots.
 `inspect` includes stored state. Neither status operation writes or flushes.
 
 Every reopen starts without flush evidence. A complete visible graph refuses
@@ -71,7 +76,9 @@ transition/duplicate acknowledgement until explicit `recover` flushes all eleven
 inodes and directories and revalidates all names, schemas, bytes and identities.
 A changed inode or exact frame invalidates the cache. A valid partial p1/d1
 prefix can be recovered for inspection, but cannot resume authorization. Torn,
-unknown, inconsistent or unsupported records refuse; no older image is used.
+unknown, inconsistent or unsupported immutable records refuse; no older image
+is used. Only exact observation D/S content failures quarantine. Custody/EOF/
+name errors and immutable graph/signature failures remain strict store failures.
 An I/O failure retains the prefix, poisons the instance and requires reopen.
 
 ## Remaining coordinator and native boundary
@@ -94,9 +101,9 @@ The future route must return the existing non-disclosing unavailable result for
 unknown/unauthorized requests before exposing storage findings.
 
 Ordinary Node writes/fsync and all-zero initialization remain disabled test
-mechanics. The reviewed native allocator/full-flush bridge, filesystem eligibility,
-physical allocation and metadata guarantees, real macOS 13 runtime verification,
-observation replacement and live composition are still required. No physical
+mechanics. The disabled native bridge requests allocation/full flush without
+claiming physical support. Filesystem eligibility, allocation/metadata guarantees,
+real macOS 13 runtime verification and live composition remain required. No physical
 support option, production namespace bootstrap or daemon-state access is added.
 
 ## Validation
@@ -108,3 +115,15 @@ malformed candidate refusal before writes, expired live proofs, publication
 SIGKILL points, EIO/ENOSPC/EDQUOT flush failures, full-graph recovery and inode/
 byte invalidation. Child output/lifetimes/cleanup are bounded. These tests prove
 process-interruption behavior on the test host, not power-loss durability.
+Observation recovery recognizes the specified prefixes; it does not establish
+that arbitrary corruption arose from an interrupted publication.
+
+## Joint observation review
+
+Peer645 agreed the broker-only contract SHA-256
+`8b6485afb6c7b76a66b6451cb8cb439d7409a668ff16de8d55a9a264d05dc7b5`
+on 2026-10-12 in receipt487, message
+`msg_3af719d7-b036-432d-89a3-0e7ad12f7fff`, relayed under the verified root
+identity. This covers bounded generations, structural-header recovery guard,
+invalid-scratch retention and independent terminal validation. Daemon codec/
+scratch-pending behavior stays unchanged; it is not a daemon implementation claim.

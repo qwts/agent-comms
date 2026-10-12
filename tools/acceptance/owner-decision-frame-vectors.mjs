@@ -52,7 +52,7 @@ export function checkOwnerDecisionFrameVectors() {
     if (v.role === 'broker') {
       assert.deepEqual(encodeOwnerJournalFrame(payload, options), frame);
       assert.deepEqual(decodeOwnerJournalFrame(frame, options), { kind: 'committed', slot: v.slot,
-        payload, sha256: v.frameSha256 }); brokerPositive++;
+        payload, sha256: v.frameSha256, ...(v.slot === 'observation-reference' ? { generation: 1 } : {}) }); brokerPositive++;
     } else {
       // Every broker slot is tried: shared names/IDs/caps cannot cross roles.
       for (const { slot } of OWNER_JOURNAL_FIXED_SLOTS) {
