@@ -12,6 +12,49 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 
+// Per-invocation fixed diagnostics; never exception messages, paths or identities.
+public sealed class DesktopJobStartCleanup {
+    public string Stage {get;internal set;} public bool Succeeded {get;internal set;}
+}
+public sealed class DesktopJobStartRecord {
+    public string FailureStage {get;private set;} public string ExceptionType {get;private set;}
+    public int? HResult {get;private set;} public int? Win32Error {get;private set;}
+    public string CleanupFailureStage {get;private set;} public string CleanupExceptionType {get;private set;}
+    public int? CleanupHResult {get;private set;} public int? CleanupWin32Error {get;private set;}
+    public bool ProcessCreated {get;internal set;} public bool MembershipConfirmed {get;internal set;}
+    public bool ResumeAttempted {get;internal set;} public bool ResumeConfirmed {get;internal set;}
+    public uint? ResumeResult {get;internal set;} public bool? ProcessTerminal {get;internal set;}
+    public bool CleanupUncertain {get;internal set;}
+    public bool? TerminateJobAccepted {get;internal set;} public bool? TerminateProcessAccepted {get;internal set;}
+    public bool? TerminationFallbackTerminal {get;internal set;}
+    internal Exception FirstCleanupError;
+    readonly List<DesktopJobStartCleanup> steps=new List<DesktopJobStartCleanup>();
+    public DesktopJobStartCleanup[] CleanupSteps {get{return steps.ToArray();}}
+    internal void Failure(string stage,Exception error) {
+        if(FailureStage!=null)return;
+        FailureStage=stage;ExceptionType=error.GetType().FullName;HResult=error.HResult;
+        var native=error as DesktopJobNativeFailure;if(native!=null)Win32Error=native.Error;
+    }
+    internal void CleanupFailure(Exception error) { Failure("final-cleanup",FirstCleanupError??error); }
+    internal void Cleanup(string stage,Exception error) {
+        if(steps.Count<32)steps.Add(new DesktopJobStartCleanup {Stage=stage,Succeeded=error==null});
+        else CleanupUncertain=true;
+        if(error==null)return;
+        CleanupUncertain=true;
+        if(CleanupFailureStage!=null)return;
+        FirstCleanupError=error;CleanupFailureStage=stage;CleanupExceptionType=error.GetType().FullName;CleanupHResult=error.HResult;
+        var native=error as DesktopJobNativeFailure;if(native!=null)CleanupWin32Error=native.Error;
+    }
+}
+sealed class DesktopJobNativeFailure : Exception {
+    internal readonly int Error;
+    internal DesktopJobNativeFailure(int error):base("desktop-job-refused"){Error=error;}
+}
+public sealed class DesktopJobStartFailure : Exception {
+    public DesktopJobStartRecord Diagnostic {get;private set;}
+    internal DesktopJobStartFailure(DesktopJobStartRecord record):base("desktop-job-refused"){Diagnostic=record;}
+}
+
 public sealed class DesktopOwnedJob : IDisposable {
     const uint SYNCHRONIZE=0x00100000, WAIT_OBJECT_0=0, WAIT_TIMEOUT=258;
     const uint CREATE_SUSPENDED=4, CREATE_UNICODE_ENVIRONMENT=0x400,
@@ -74,9 +117,16 @@ public sealed class DesktopOwnedJob : IDisposable {
     public ulong CommitLimitBytes { get; private set; }
     static Exception Refusal() { return new Exception("desktop-job-refused"); }
     static void Close(ref IntPtr handle) { if(handle!=IntPtr.Zero) { IntPtr saved=handle; handle=IntPtr.Zero; if(!CloseHandle(saved)) throw Refusal(); } }
+    // Call immediately after a SetLastError-enabled native failure only.
+    static Exception NativeRefusal() { int error=Marshal.GetLastWin32Error(); return new DesktopJobNativeFailure(error); }
+    static void RequireNative(bool result) { if(!result)throw NativeRefusal(); }
+    static void Observe(DesktopJobStartRecord record,string stage,Action action) {
+        try {action();if(record!=null)record.Cleanup(stage,null);}
+        catch(Exception error){if(record!=null)record.Cleanup(stage,error);throw;}
+    }
     static void ChildPipe(out IntPtr read,out IntPtr write) {
         var attributes=new SECURITY_ATTRIBUTES { length=Marshal.SizeOf(typeof(SECURITY_ATTRIBUTES)),inherit=true };
-        if(!CreatePipe(out read,out write,ref attributes,4096)) throw Refusal();
+        if(!CreatePipe(out read,out write,ref attributes,4096)) throw NativeRefusal();
     }
     static string Quote(string value) {
         // Both arguments are fixed file paths, not caller command fragments.
@@ -84,36 +134,49 @@ public sealed class DesktopOwnedJob : IDisposable {
         return "\""+value+"\"";
     }
     public static DesktopOwnedJob Start(string executable,string runner,string cwd,IDictionary environment,ulong commitLimitBytes) {
-        if(commitLimitBytes<536870912||commitLimitBytes>2147483648) throw Refusal();
         var owned=new DesktopOwnedJob(); owned.CommitLimitBytes=commitLimitBytes;
         IntPtr inputRead=IntPtr.Zero,inputWrite=IntPtr.Zero,outputRead=IntPtr.Zero,outputWrite=IntPtr.Zero,errorRead=IntPtr.Zero,errorWrite=IntPtr.Zero;
         IntPtr attributes=IntPtr.Zero,handleList=IntPtr.Zero,jobList=IntPtr.Zero,block=IntPtr.Zero,thread=IntPtr.Zero;
         bool initialized=false,success=false;
+        var diagnostic=new DesktopJobStartRecord(); string stage="validate-limit";
         try {
+            if(commitLimitBytes<536870912||commitLimitBytes>2147483648) throw Refusal();
             // Null security attributes create a NONINHERITABLE, unnamed handle.
             // This wrapper holds the only job handle; it is absent from child whitelist.
-            owned.job=CreateJobObject(IntPtr.Zero,null); if(owned.job==IntPtr.Zero) throw Refusal();
-            if(!SetHandleInformation(owned.job,1,0)) throw Refusal();
-            var limits=new EXTENDED_LIMIT(); limits.basic.flags=0x2208; // KILL_ON_JOB_CLOSE | JOB_MEMORY | ACTIVE_PROCESS
+            stage="create-job"; owned.job=CreateJobObject(IntPtr.Zero,null); if(owned.job==IntPtr.Zero) throw NativeRefusal();
+            stage="job-noninheritable"; RequireNative(SetHandleInformation(owned.job,1,0));
+            stage="set-job-limits"; var limits=new EXTENDED_LIMIT(); limits.basic.flags=0x2208; // KILL_ON_JOB_CLOSE | JOB_MEMORY | ACTIVE_PROCESS
             limits.basic.active=128; limits.jobMemory=new UIntPtr(commitLimitBytes);
             IntPtr data=Marshal.AllocHGlobal(Marshal.SizeOf(typeof(EXTENDED_LIMIT)));
-            try { Marshal.StructureToPtr(limits,data,false); if(!SetInformationJobObject(owned.job,9,data,(uint)Marshal.SizeOf(typeof(EXTENDED_LIMIT)))) throw Refusal(); }
-            finally { Marshal.FreeHGlobal(data); }
-            ChildPipe(out inputRead,out inputWrite); ChildPipe(out outputRead,out outputWrite); ChildPipe(out errorRead,out errorWrite);
-            if(!SetHandleInformation(inputWrite,1,0)||!SetHandleInformation(outputRead,1,0)||!SetHandleInformation(errorRead,1,0)) throw Refusal();
-            UIntPtr attributeBytes=UIntPtr.Zero;
-            InitializeProcThreadAttributeList(IntPtr.Zero,2,0,ref attributeBytes);
-            if(attributeBytes==UIntPtr.Zero||attributeBytes.ToUInt64()>65536) throw Refusal();
+            try { Marshal.StructureToPtr(limits,data,false); if(!SetInformationJobObject(owned.job,9,data,(uint)Marshal.SizeOf(typeof(EXTENDED_LIMIT)))) throw NativeRefusal(); }
+            catch(Exception error) { diagnostic.Failure(stage,error); throw; }
+            finally {
+                try { Observe(diagnostic,"free-limit-buffer",()=>Marshal.FreeHGlobal(data)); }
+                catch(Exception error) { diagnostic.CleanupFailure(error); throw; }
+            }
+            stage="pipe-input"; ChildPipe(out inputRead,out inputWrite);
+            stage="pipe-output"; ChildPipe(out outputRead,out outputWrite);
+            stage="pipe-error"; ChildPipe(out errorRead,out errorWrite);
+            stage="parent-input-noninheritable"; RequireNative(SetHandleInformation(inputWrite,1,0));
+            stage="parent-output-noninheritable"; RequireNative(SetHandleInformation(outputRead,1,0));
+            stage="parent-error-noninheritable"; RequireNative(SetHandleInformation(errorRead,1,0));
+            stage="attribute-size"; UIntPtr attributeBytes=UIntPtr.Zero;
+            bool sized=InitializeProcThreadAttributeList(IntPtr.Zero,2,0,ref attributeBytes);
+            int? sizeError=sized?null:(int?)Marshal.GetLastWin32Error();
+            // The sizing call normally returns false/INSUFFICIENT_BUFFER.
+            if(attributeBytes==UIntPtr.Zero||attributeBytes.ToUInt64()>65536) {
+                if(sizeError.HasValue)throw new DesktopJobNativeFailure(sizeError.Value);throw Refusal();
+            }
             attributes=Marshal.AllocHGlobal((int)attributeBytes.ToUInt64());
-            if(!InitializeProcThreadAttributeList(attributes,2,0,ref attributeBytes)) throw Refusal(); initialized=true;
-            handleList=Marshal.AllocHGlobal(IntPtr.Size*3);
+            stage="attribute-init"; if(!InitializeProcThreadAttributeList(attributes,2,0,ref attributeBytes)) throw NativeRefusal(); initialized=true;
+            stage="attribute-stdio"; handleList=Marshal.AllocHGlobal(IntPtr.Size*3);
             Marshal.WriteIntPtr(handleList,0,inputRead); Marshal.WriteIntPtr(handleList,IntPtr.Size,outputWrite); Marshal.WriteIntPtr(handleList,IntPtr.Size*2,errorWrite);
-            if(!UpdateProcThreadAttribute(attributes,0,new IntPtr(HANDLE_LIST),handleList,new UIntPtr((uint)(IntPtr.Size*3)),IntPtr.Zero,IntPtr.Zero)) throw Refusal();
+            if(!UpdateProcThreadAttribute(attributes,0,new IntPtr(HANDLE_LIST),handleList,new UIntPtr((uint)(IntPtr.Size*3)),IntPtr.Zero,IntPtr.Zero)) throw NativeRefusal();
             // Atomic creation in the job removes the parent-death gap between
             // CreateProcess and AssignProcessToJobObject. No uncontained suspended child.
-            jobList=Marshal.AllocHGlobal(IntPtr.Size); Marshal.WriteIntPtr(jobList,owned.job);
-            if(!UpdateProcThreadAttribute(attributes,0,new IntPtr(JOB_LIST),jobList,new UIntPtr((uint)IntPtr.Size),IntPtr.Zero,IntPtr.Zero)) throw Refusal();
-            var entries=new SortedDictionary<string,string>(StringComparer.OrdinalIgnoreCase);
+            stage="attribute-job"; jobList=Marshal.AllocHGlobal(IntPtr.Size); Marshal.WriteIntPtr(jobList,owned.job);
+            if(!UpdateProcThreadAttribute(attributes,0,new IntPtr(JOB_LIST),jobList,new UIntPtr((uint)IntPtr.Size),IntPtr.Zero,IntPtr.Zero)) throw NativeRefusal();
+            stage="environment"; var entries=new SortedDictionary<string,string>(StringComparer.OrdinalIgnoreCase);
             foreach(DictionaryEntry entry in environment) {
                 string key=(string)entry.Key,value=(string)entry.Value;
                 if(String.IsNullOrEmpty(key)||key.IndexOfAny(new char[]{'=', (char)0})>=0||value==null||value.IndexOf((char)0)>=0) throw Refusal();
@@ -123,24 +186,31 @@ public sealed class DesktopOwnedJob : IDisposable {
             if(env.Length>32767) throw Refusal(); block=Marshal.StringToHGlobalUni(env.ToString());
             var startup=new STARTUPINFOEX(); startup.startup.cb=Marshal.SizeOf(typeof(STARTUPINFOEX)); startup.attributes=attributes;
             startup.startup.flags=STARTF_USESTDHANDLES; startup.startup.input=inputRead; startup.startup.output=outputWrite; startup.startup.error=errorWrite;
-            PROCESS_INFORMATION info;
+            stage="create-suspended"; PROCESS_INFORMATION info;
             if(!CreateProcess(executable,new StringBuilder(Quote(executable)+" "+Quote(runner)+" --desktop-owned"),IntPtr.Zero,IntPtr.Zero,true,
-                CREATE_SUSPENDED|CREATE_UNICODE_ENVIRONMENT|EXTENDED_STARTUPINFO_PRESENT|CREATE_NO_WINDOW,block,cwd,ref startup,out info)) throw Refusal();
-            owned.process=info.process; thread=info.thread; owned.ProcessId=info.pid;
-            bool inJob; if(!IsProcessInJob(owned.process,owned.job,out inJob)||!inJob) throw Refusal();
+                CREATE_SUSPENDED|CREATE_UNICODE_ENVIRONMENT|EXTENDED_STARTUPINFO_PRESENT|CREATE_NO_WINDOW,block,cwd,ref startup,out info)) throw NativeRefusal();
+            owned.process=info.process; thread=info.thread; owned.ProcessId=info.pid; diagnostic.ProcessCreated=true;
+            stage="verify-membership"; bool inJob; RequireNative(IsProcessInJob(owned.process,owned.job,out inJob)); if(!inJob)throw Refusal(); diagnostic.MembershipConfirmed=true;
             owned.AssignedBeforeResume=true;
-            Close(ref inputRead); Close(ref outputWrite); Close(ref errorWrite);
-            owned.inputHandle=new SafeFileHandle(inputWrite,true); inputWrite=IntPtr.Zero;
-            owned.outputHandle=new SafeFileHandle(outputRead,true); outputRead=IntPtr.Zero;
-            owned.errorHandle=new SafeFileHandle(errorRead,true); errorRead=IntPtr.Zero;
-            owned.Input=new FileStream(owned.inputHandle,FileAccess.Write,4096,false);
-            owned.Output=new FileStream(owned.outputHandle,FileAccess.Read,4096,false);
-            owned.Error=new FileStream(owned.errorHandle,FileAccess.Read,4096,false);
+            stage="child-input-close"; Close(ref inputRead); stage="child-output-close"; Close(ref outputWrite); stage="child-error-close"; Close(ref errorWrite);
+            stage="safe-input"; owned.inputHandle=new SafeFileHandle(inputWrite,true); inputWrite=IntPtr.Zero;
+            stage="safe-output"; owned.outputHandle=new SafeFileHandle(outputRead,true); outputRead=IntPtr.Zero;
+            stage="safe-error"; owned.errorHandle=new SafeFileHandle(errorRead,true); errorRead=IntPtr.Zero;
+            stage="stream-input"; owned.Input=new FileStream(owned.inputHandle,FileAccess.Write,4096,false);
+            stage="stream-output"; owned.Output=new FileStream(owned.outputHandle,FileAccess.Read,4096,false);
+            stage="stream-error"; owned.Error=new FileStream(owned.errorHandle,FileAccess.Read,4096,false);
 #if DESKTOP_JOB_PROOF
-            if(BeforeResumeProof!=null) BeforeResumeProof(owned);
+            stage="proof-before-resume"; if(BeforeResumeProof!=null) BeforeResumeProof(owned);
 #endif
-            if(ResumeThread(thread)!=1) throw Refusal(); Close(ref thread);
+            stage="resume"; diagnostic.ResumeAttempted=true;
+            uint resumed=ResumeThread(thread); int? resumeError=resumed==0xffffffff? (int?)Marshal.GetLastWin32Error():null;
+            diagnostic.ResumeResult=resumed;
+            if(resumeError.HasValue)throw new DesktopJobNativeFailure(resumeError.Value);
+            if(resumed!=1)throw Refusal(); diagnostic.ResumeConfirmed=true;
+            stage="thread-close"; Close(ref thread);
             success=true; return owned;
+        } catch(Exception error) {
+            diagnostic.Failure(stage,error); throw new DesktopJobStartFailure(diagnostic);
         } finally {
             var grace=Stopwatch.StartNew();
             Exception cleanup=null;
@@ -148,24 +218,36 @@ public sealed class DesktopOwnedJob : IDisposable {
             if(!success) {
                 // Attempt every owned cleanup even if one operation is unknown.
                 // Never resume a refused assignment or silently succeed on close.
-                if(owned.job!=IntPtr.Zero) attempt(()=>{ if(!TerminateJobObject(owned.job,1)) throw Refusal(); });
+                if(owned.job!=IntPtr.Zero) attempt(()=>Observe(diagnostic,"terminate-job",()=>{ bool accepted=TerminateJobObject(owned.job,1); int? error=accepted?null:(int?)Marshal.GetLastWin32Error(); diagnostic.TerminateJobAccepted=accepted; if(!accepted)throw new DesktopJobNativeFailure(error.Value); }));
                 if(owned.process!=IntPtr.Zero) {
-                    attempt(()=>{ if(!TerminateProcess(owned.process,1)&&WaitForSingleObject(owned.process,0)!=WAIT_OBJECT_0) throw Refusal(); });
-                    attempt(()=>{ int remaining=(int)Math.Max(0,CleanupGraceMs-grace.ElapsedMilliseconds); if(!owned.WaitForExit(remaining)) throw Refusal(); });
+                    attempt(()=>Observe(diagnostic,"terminate-process",()=>{
+                        bool accepted=TerminateProcess(owned.process,1); int? error=accepted?null:(int?)Marshal.GetLastWin32Error();
+                        diagnostic.TerminateProcessAccepted=accepted;
+                        if(!accepted) { diagnostic.TerminationFallbackTerminal=WaitForSingleObject(owned.process,0)==WAIT_OBJECT_0; if(diagnostic.TerminationFallbackTerminal!=true)throw new DesktopJobNativeFailure(error.Value); }
+                    }));
+                    attempt(()=>Observe(diagnostic,"wait-process",()=>{ int remaining=(int)Math.Max(0,CleanupGraceMs-grace.ElapsedMilliseconds); diagnostic.ProcessTerminal=owned.WaitForExit(remaining); if(diagnostic.ProcessTerminal!=true) throw Refusal(); }));
                 }
-                attempt(()=>owned.Dispose());
+                attempt(()=>owned.Dispose(diagnostic));
             }
-            attempt(()=>Close(ref thread)); attempt(()=>Close(ref inputRead)); attempt(()=>Close(ref inputWrite));
-            attempt(()=>Close(ref outputRead)); attempt(()=>Close(ref outputWrite)); attempt(()=>Close(ref errorRead)); attempt(()=>Close(ref errorWrite));
-            if(initialized) DeleteProcThreadAttributeList(attributes);
-            if(attributes!=IntPtr.Zero) Marshal.FreeHGlobal(attributes); if(handleList!=IntPtr.Zero) Marshal.FreeHGlobal(handleList); if(jobList!=IntPtr.Zero) Marshal.FreeHGlobal(jobList); if(block!=IntPtr.Zero) Marshal.FreeHGlobal(block);
+            if(thread!=IntPtr.Zero)attempt(()=>Observe(diagnostic,"close-thread",()=>Close(ref thread)));
+            if(inputRead!=IntPtr.Zero)attempt(()=>Observe(diagnostic,"close-input-read",()=>Close(ref inputRead)));
+            if(inputWrite!=IntPtr.Zero)attempt(()=>Observe(diagnostic,"close-input-write",()=>Close(ref inputWrite)));
+            if(outputRead!=IntPtr.Zero)attempt(()=>Observe(diagnostic,"close-output-read",()=>Close(ref outputRead)));
+            if(outputWrite!=IntPtr.Zero)attempt(()=>Observe(diagnostic,"close-output-write",()=>Close(ref outputWrite)));
+            if(errorRead!=IntPtr.Zero)attempt(()=>Observe(diagnostic,"close-error-read",()=>Close(ref errorRead)));
+            if(errorWrite!=IntPtr.Zero)attempt(()=>Observe(diagnostic,"close-error-write",()=>Close(ref errorWrite)));
+            if(initialized)attempt(()=>Observe(diagnostic,"delete-attributes",()=>DeleteProcThreadAttributeList(attributes)));
+            if(attributes!=IntPtr.Zero)attempt(()=>Observe(diagnostic,"free-attributes",()=>Marshal.FreeHGlobal(attributes)));
+            if(handleList!=IntPtr.Zero)attempt(()=>Observe(diagnostic,"free-handle-list",()=>Marshal.FreeHGlobal(handleList)));
+            if(jobList!=IntPtr.Zero)attempt(()=>Observe(diagnostic,"free-job-list",()=>Marshal.FreeHGlobal(jobList)));
+            if(block!=IntPtr.Zero)attempt(()=>Observe(diagnostic,"free-environment",()=>Marshal.FreeHGlobal(block)));
             if(cleanup!=null) {
                 if(success) {
-                    attempt(()=>owned.Terminate());
-                    attempt(()=>{ int remaining=(int)Math.Max(0,CleanupGraceMs-grace.ElapsedMilliseconds); if(!owned.WaitForExit(remaining)) throw Refusal(); });
-                    attempt(()=>owned.Dispose());
+                    attempt(()=>Observe(diagnostic,"terminate-job",()=>{ bool accepted=TerminateJobObject(owned.job,1); int? error=accepted?null:(int?)Marshal.GetLastWin32Error(); diagnostic.TerminateJobAccepted=accepted; if(!accepted)throw new DesktopJobNativeFailure(error.Value); }));
+                    attempt(()=>Observe(diagnostic,"wait-process",()=>{ int remaining=(int)Math.Max(0,CleanupGraceMs-grace.ElapsedMilliseconds); diagnostic.ProcessTerminal=owned.WaitForExit(remaining); if(diagnostic.ProcessTerminal!=true) throw Refusal(); }));
+                    attempt(()=>owned.Dispose(diagnostic));
                 }
-                throw Refusal();
+                diagnostic.CleanupFailure(cleanup); throw new DesktopJobStartFailure(diagnostic);
             }
         }
     }
@@ -183,12 +265,13 @@ public sealed class DesktopOwnedJob : IDisposable {
     public bool WaitForExit(int milliseconds) {
         if(milliseconds<0||milliseconds>CleanupGraceMs) throw Refusal();
         uint result=WaitForSingleObject(process,(uint)milliseconds);
-        if(result==WAIT_OBJECT_0) return true; if(result==WAIT_TIMEOUT) return false; throw Refusal();
+        if(result==WAIT_OBJECT_0) return true; if(result==WAIT_TIMEOUT) return false; if(result==0xffffffff)throw NativeRefusal(); throw Refusal();
     }
     public int ExitCode { get { uint value; if(!WaitForExit(0)||!GetExitCodeProcess(process,out value)) throw Refusal(); return unchecked((int)value); } }
     public uint ActiveMembers() { ACCOUNTING value; if(!QueryInformationJobObject(job,1,out value,(uint)Marshal.SizeOf(typeof(ACCOUNTING)),IntPtr.Zero)||value.active>128) throw Refusal(); return value.active; }
     public void Terminate() { if(!TerminateJobObject(job,1)) throw Refusal(); }
-    public void Dispose() {
+    public void Dispose() { Dispose(null); }
+    void Dispose(DesktopJobStartRecord diagnostic) {
         // Closing the sole job handle on wrapper death is a kernel containment
         // property, not external terminal evidence. Normal code verifies empty first.
         Exception cleanup=null;
@@ -196,10 +279,11 @@ public sealed class DesktopOwnedJob : IDisposable {
         // Request safe-handle release without FileStream.Dispose/Flush waits.
         // Active IO may defer native release; callers still require actual EOF
         // and terminal proof. Disposal alone never supplies that evidence.
-        if(inputHandle!=null) attempt(()=>inputHandle.Dispose());
-        if(outputHandle!=null) attempt(()=>outputHandle.Dispose());
-        if(errorHandle!=null) attempt(()=>errorHandle.Dispose());
-        attempt(()=>Close(ref process)); attempt(()=>Close(ref job));
+        if(inputHandle!=null) attempt(()=>Observe(diagnostic,"dispose-input-safe",()=>inputHandle.Dispose()));
+        if(outputHandle!=null) attempt(()=>Observe(diagnostic,"dispose-output-safe",()=>outputHandle.Dispose()));
+        if(errorHandle!=null) attempt(()=>Observe(diagnostic,"dispose-error-safe",()=>errorHandle.Dispose()));
+        if(process!=IntPtr.Zero)attempt(()=>Observe(diagnostic,"close-process",()=>Close(ref process)));
+        if(job!=IntPtr.Zero)attempt(()=>Observe(diagnostic,"close-job",()=>Close(ref job)));
         if(cleanup!=null) throw Refusal();
     }
 }

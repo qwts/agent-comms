@@ -80,6 +80,32 @@ must refuse before cloning or marker issuance. Five Node CI marker refusals
 must precede output/workload. This establishes negative parity, not positive
 profile or disposable-account acceptance.
 
+## Start failure diagnostics
+
+A refused `DesktopOwnedJob.Start` preserves its first fixed stage, exception type,
+HResult and immediately captured error from SetLastError-enabled native calls.
+Cleanup has separate first-failure fields and at most 32 fixed operation results;
+later cleanup does not replace the original failure. Attribute sizing retains its
+expected false/required-size behavior. No exception message, path, environment,
+command or process identity is serialized.
+
+A bounded projector compares actual type identity in the compiled helper assembly
+and admits only fixed stages and
+primitive field types. Missing diagnostics, including argument-binding failures,
+produce `start-diagnostic-unavailable`. The protected-path checkpoint has an
+8192-byte UTF-8 bound. Start failure still exits 1 with cleanup uncertainty.
+
+Process terminality comes only from the existing retained-handle wait. Requests,
+safe-handle disposal and successful raw closes do not imply job emptiness or pipe
+EOF; those observations remain explicitly unavailable on this path. Allocation
+release exceptions are recorded and all remaining cleanup attempts still run.
+The existing five-second startup cleanup clock and all launch guards remain.
+Inert record tests cover first-failure latching, independent cleanup failure,
+later cleanup results, cleanup-only failure, native-before-buffer cleanup latching, same-fullname forged
+assembly refusal, foreign-type refusal and an invalid
+limit that refuses before native calls. These new tests remain unexecuted on
+Windows; syntax/source review establishes no new native cleanup evidence.
+
 ## Remaining native matrix
 
 | Case | Required evidence |
