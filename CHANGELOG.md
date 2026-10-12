@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Disabled connected asynchronous receipt signing retains a durable presence intent before signing, verifies private candidates with a fresh clock, and requires one-use journal completion before dispatch. Bounded invocation lifetime, cancellation/revocation/restart tests and an operation-specific native contract advance integration without activating protected custody or physical support (#77).
 
 ### Fixed
+- Avoid detail allocation and rate-clock work after terminal diagnostic destination failure, while retaining bounded drops for recognized observations. This does not establish the cause of the failed-helper p95 result or performance acceptance (#164).
 - Preserve the Windows connector's closed local refusal stage through generic client error wrapping as nonenumerable internal metadata. Unknown/accessor and remote-response fields are excluded; public errors, authentication and deadlines remain unchanged (#164).
 - Preserve the first client result or error before best-effort disposal, so a synchronous disposal throw or later close/error cannot replace it. Disposal attempts do not establish helper or descendant exit (#164).
 

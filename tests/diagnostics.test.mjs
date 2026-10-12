@@ -141,13 +141,45 @@ test('drain alone cannot create concurrent writes before the previous write call
   stream.emit('close');
 });
 
+test('clock-triggered terminal failure cannot enqueue after discard', async () => {
+  for (const event of ['error', 'close']) {
+    const stream = new ControlledStream();
+    let failInClock = false;
+    const sink = createDiagnosticSink(stream, { clock: () => {
+      if (failInClock) {
+        failInClock = false;
+        stream.emit(event, sensitiveError());
+      }
+      return 1000;
+    } });
+    sink.report('request-internal');
+    await tick();
+    assert.equal(stream.lines.length, 1);
+    assert.equal(sink.stats().inFlight, 1);
+    assert.ok(stream.listenerCount(event) > 0, 'terminal listeners must be attached');
+    failInClock = true;
+    sink.report('mailbox-read', 1, 1, 0);
+    assert.deepEqual(sink.stats(), { queued: 0, queuedBytes: 0, inFlight: 0,
+      inFlightBytes: 0, written: 0, dropped: 2, disabled: true });
+    await tick(); await tick();
+    assert.equal(stream.lines.length, 1, 'no post-discard write');
+    assert.equal(sink.stats().queued, 0, 'no retained disabled queue');
+    if (event !== 'close') stream.emit('close');
+  }
+});
+
 test('synchronous and asynchronous stream failures discard finite work and contain later stream errors', async () => {
   for (const mode of ['throw', 'callback', 'event', 'close']) {
     const stream = mode === 'callback'
       ? new Writable({ write(chunk, encoding, callback) { callback(sensitiveError()); } })
       : new ControlledStream();
     if (mode === 'throw') stream.write = () => { throw sensitiveError(); };
-    const sink = createDiagnosticSink(stream);
+    let clockCalls = 0, terminal = false;
+    const sink = createDiagnosticSink(stream, { clock: () => {
+      clockCalls += 1;
+      assert.equal(terminal, false, 'disabled sink must not consult the clock');
+      return clockCalls;
+    } });
     sink.report('request-internal'); sink.report('storage-append');
     await tick();
     if (mode === 'event') stream.emit('error', sensitiveError());
@@ -157,8 +189,29 @@ test('synchronous and asynchronous stream failures discard finite work and conta
     assert.equal(sink.stats().queued, 0, mode);
     assert.equal(sink.stats().inFlight, 0, mode);
     assert.equal(sink.stats().dropped, 2, mode);
+    terminal = true;
+    const callsAtFailure = clockCalls;
+    const linesAtFailure = stream.lines?.length;
+    let inspections = 0;
+    const hostile = new Proxy({}, { get() { inspections += 1; assert.fail('measurement was inspected/coerced'); },
+      ownKeys() { inspections += 1; assert.fail('measurement was enumerated'); } });
     sink.report('request-internal');
-    assert.equal(sink.stats().dropped, 3, mode);
+    sink.report('mailbox-read', 1, 1, 0);
+    sink.report('mailbox-acked', 1, 1, 0);
+    sink.report('transport-retry', undefined, 1, 10);
+    for (const event of ['request-internal', 'mailbox-read', 'mailbox-acked', 'transport-retry']) {
+      sink.report(event, hostile, hostile, hostile);
+    }
+    assert.equal(sink.stats().dropped, 10, mode);
+    for (const event of [hostile, '__proto__', 'unknown', 'diagnostics-dropped', null]) sink.report(event, hostile);
+    assert.equal(sink.stats().dropped, 10, 'unknown and reserved observations remain ignored');
+    assert.equal(inspections, 0, 'contained exceptions must not hide inspection or coercion');
+    await tick(); await tick();
+    assert.equal(clockCalls, callsAtFailure, mode);
+    assert.equal(stream.lines?.length, linesAtFailure, 'no further writes');
+    assert.equal(sink.stats().queued, 0, mode);
+    assert.equal(sink.stats().queuedBytes, 0, mode);
+    assert.equal(sink.stats().inFlight, 0, mode);
     if (stream.listenerCount('error')) assert.doesNotThrow(() => stream.emit('error', sensitiveError()));
     if (mode !== 'close') stream.emit('close');
     assert.equal(stream.listenerCount('error'), 0, mode);

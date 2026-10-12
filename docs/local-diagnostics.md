@@ -2,7 +2,7 @@
 
 See [producer opt-out](diagnostic-opt-out.md) and
 [pairing observations](pairing-diagnostics.md).
-See authenticated [health and recovery](health-and-recovery.md).
+[Health and recovery](health-and-recovery.md).
 
 The broker writes bounded JSON lines to stderr for startup and shutdown outcomes,
 unexpected request-handler
@@ -156,3 +156,5 @@ A synchronous disposal throw or later close/error cannot replace that outcome.
 This is best-effort disposal, not confirmation that a stream, helper or descendant
 has exited; owned-process acceptance tools still need their independent terminal,
 stdio and job cleanup receipts.
+
+See [terminal destination failure](diagnostic-destination-failure.md).
