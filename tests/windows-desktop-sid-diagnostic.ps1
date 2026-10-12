@@ -5,6 +5,7 @@ $ErrorActionPreference='Stop'
 [IO.File]::WriteAllText($Stage,"driver-start`n")
 $global:DesktopSidDiagnosticStage=$Stage
 $lines=[IO.File]::ReadAllLines($Child)
+[IO.File]::AppendAllText($Stage,"source-read`n")
 $anchors=@(
     @{text='$inputs = Get-Content -LiteralPath (Join-Path $PSScriptRoot ''inputs.json'') -Raw | ConvertFrom-Json';stage='input-parse'},
     @{text='    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()';stage='identity'},
@@ -18,7 +19,9 @@ foreach($anchor in $anchors) {
     if($matches.Count -ne 1){throw 'diagnostic-anchor-refused'}
     # Stage comes solely from the fixed table; paths/variables/output never logged.
     $action=[scriptblock]::Create('if(([IO.FileInfo]::new($global:DesktopSidDiagnosticStage)).Length -gt 2000){throw ''diagnostic-stage-bound''};[IO.File]::AppendAllText($global:DesktopSidDiagnosticStage,"'+$anchor.stage+'`n")')
+    [IO.File]::AppendAllText($Stage,("install-"+$anchor.stage+"`n"))
     $null=Set-PSBreakpoint -Script $Child -Line $matches[0] -Action $action
+    [IO.File]::AppendAllText($Stage,("installed-"+$anchor.stage+"`n"))
 }
 [IO.File]::AppendAllText($Stage,"breakpoints-ready`n")
 & $Child

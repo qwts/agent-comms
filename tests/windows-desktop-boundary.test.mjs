@@ -184,10 +184,35 @@ test('diagnostic-only copied SID stage localization', {
     try { ({ bytesRead } = await file.read(bytes, 0, bytes.length, 0)); } finally { await file.close(); }
     if (bytesRead <= 2048) {
       const stages = bytes.subarray(0, bytesRead).toString('utf8').trim().split(/\r?\n/);
-      const allowed = new Set(['driver-start','breakpoints-ready','input-parse','identity','sid-compare','catch','receipt','exit']);
+      const phases = ['input-parse','identity','sid-compare','catch','receipt','exit'];
+      const allowed = new Set(['driver-start','source-read','breakpoints-ready', ...phases,
+        ...phases.map(value => `install-${value}`), ...phases.map(value => `installed-${value}`)]);
       if (stages.length <= 32 && stages.every(value => allowed.has(value))) evidence.stages = stages;
     }
   } catch { /* Unavailable stage evidence never supplies an inferred phase. */ }
   assert.deepEqual(await readFile(copied), original);
+  t.diagnostic(JSON.stringify(evidence));
+});
+
+// Isolate the original child's first cmdlet without debugger instrumentation.
+test('diagnostic-only classic Get-Content primitive', {
+  skip: process.platform !== 'win32', timeout: 30000,
+}, async t => {
+  const root = await scratch(t, 'comms-ci-content-diagnostic-');
+  await writeFile(path.join(root, 'inputs.json'), JSON.stringify({ sid: 'S-1-0-0', mode: 'candidate-compiler' }), { flag: 'wx' });
+  const stage = path.join(root, 'stages.txt');
+  const evidence = { kind: 'diagnostic-only-get-content', acceptanceSubstitute: false, completed: false, owned: null, stages: [] };
+  try {
+    const result = await owned(shell(), [...args('tests/windows-desktop-content-diagnostic.ps1'), '-Root', root], clean(root));
+    evidence.completed = true; evidence.exitCode = result.code;
+  } catch (error) { evidence.owned = error.ownedState ?? null; }
+  try {
+    const file = await open(stage, 'r'); const bytes = Buffer.alloc(257); let bytesRead;
+    try { ({ bytesRead } = await file.read(bytes, 0, bytes.length, 0)); } finally { await file.close(); }
+    if (bytesRead <= 256) {
+      const stages = bytes.subarray(0, bytesRead).toString('utf8').trim().split(/\r?\n/);
+      if (stages.length <= 2 && stages.every(value => ['content-start','content-complete'].includes(value))) evidence.stages = stages;
+    }
+  } catch { /* No inferred progress from unavailable evidence. */ }
   t.diagnostic(JSON.stringify(evidence));
 });
