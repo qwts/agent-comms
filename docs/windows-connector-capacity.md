@@ -117,6 +117,24 @@ uploads no recursive source, credential or state directories. The console
 fallback also records the bounded child bootstrap failure gate and error type.
 Neither failed run establishes startup/cleanup or capacity qualification.
 
+The third preflight
+[38202921658](https://github.com/qwts/agent-comms/actions/runs/38202921658), at
+head `17cdf5a6a2fc34a1c322384acc0b01470bf87099`, retained its report successfully.
+Its [retained report](../tools/acceptance/evidence/2026-10-12-windows-connector/preflight-38202921658-acceptance.json)
+records `clone-child-owned-inputs` / `RemoteException`, a loaded non-admin
+profile, and completed bootstrap cleanup with no errors. Report SHA256 is
+`51ea6de477df90104e344ad9b814615e46d5295fafc6b6576811cbf573b8be9a`;
+full-log SHA256 is
+`8d8937ddd5fbe4669e9ee3929c99ff69fc23314c909758bedcab816e0a59e205`.
+No production fixture or offered workload ran. This is consistent with classic
+PowerShell promoting Git's native stderr under `Stop`, but the failed report
+does not capture Git's exit status. Child clones now minimize informational
+output with `--quiet`, suppress native stderr under a scoped `Continue`
+preference, restore the prior preference, and explicitly reject a nonzero or
+missing native exit status. A classic Windows PowerShell regression exercises
+real native children emitting stderr with exit zero and exit seven, preserving
+actual command failures without treating informational stderr as failure.
+
 After reviewing the exact PR, root dispatches `capacity-preflight` first. It
 checks old/new normal startup and cleanup, an injected startup fault and forced
 job disposal, with no offered capacity workload. Review any failure before

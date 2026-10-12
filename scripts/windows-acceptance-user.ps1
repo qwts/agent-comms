@@ -67,6 +67,7 @@ try {
     $nodeDirectory = Split-Path -Parent $env:AGENT_COMMS_ACCEPTANCE_NODE
     Copy-Item -LiteralPath $nodeDirectory -Destination (Join-Path $stage 'node') -Recurse
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'windows-acceptance-child.ps1') -Destination (Join-Path $stage 'child.ps1')
+    Copy-Item -LiteralPath (Join-Path $repository 'tools/acceptance/windows-native-command.ps1') -Destination (Join-Path $stage 'native-command.ps1')
     $results = Join-Path $stage 'results'
     New-Item -ItemType Directory -Path $results | Out-Null
     Invoke-Checked 'icacls.exe' @($results, '/grant:r', "*${sid}:(OI)(CI)M")

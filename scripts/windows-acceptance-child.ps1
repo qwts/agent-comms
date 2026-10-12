@@ -26,11 +26,11 @@ try {
     $working = Join-Path $local ('agent-comms-ci-' + $inputs.runId)
     New-Item -ItemType Directory -Path $working | Out-Null
     $gate = 'clone-child-owned-inputs'
+    . (Join-Path $PSScriptRoot 'native-command.ps1')
     $names = if ($inputs.mode -eq 'engine') { @('candidate','bot','released') } else { @('candidate','old','new') }
     foreach ($name in $names) {
         $source = Join-Path $PSScriptRoot ($name + '-source')
-        & $inputs.git -c "safe.directory=$source" clone --local --no-hardlinks $source (Join-Path $working $name) 2>$null | Out-Null
-        if ($LASTEXITCODE -ne 0) { throw 'Child-owned fixture clone failed' }
+        Invoke-WindowsAcceptanceNative $inputs.git @('-c', "safe.directory=$source", 'clone', '--quiet', '--local', '--no-hardlinks', $source, (Join-Path $working $name))
     }
     # Pass only the public verified tuple metadata into the clean environment.
     $env:AGENT_COMMS_DISPOSABLE_WINDOWS = '1'
