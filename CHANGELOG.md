@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Broker readers enforce the owner-decision 32 KiB raw-frame and UTF-8 bounds before JSON payload parsing, including escaped and duplicate top-level operation fields. Ordinary comms retains its 128 KiB line limit; production owner authority remains unsupported (#77).
+
 ## [0.5.1] - 2026-10-12
 
 ### Fixed
