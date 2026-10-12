@@ -49,8 +49,13 @@ async function daemon(c, account = c.owner) {
   const next = () => events.length ? Promise.resolve(events.shift()) : new Promise((resolve) => waiters.push(resolve));
   lineReader(socket, (event) => waiters.length ? waiters.shift()(event) : events.push(event), (error) => { throw error; });
   socket.on('connect', () => socket.write(`${JSON.stringify({ v: 1, op: 'account-watch', auth })}\n`));
-  assert.deepEqual(await next(), { event: 'ready' });
-  return { socket, next, events, auth, report: (fields) => rpc(c.paths, { op: 'launch-result', auth, ...fields }) };
+  const ready = await next();
+  assert.deepEqual(Object.keys(ready).sort(), ['daemonEpoch', 'daemonKey', 'event', 'watchId']);
+  assert.equal(ready.event, 'ready');
+  assert.equal(ready.daemonKey, sha256(publicKey.export({ type: 'spki', format: 'der' })));
+  assert.ok(Number.isSafeInteger(ready.daemonEpoch) && ready.daemonEpoch > 0);
+  assert.match(ready.watchId, /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/);
+  return { socket, next, events, auth, ready, report: (fields) => rpc(c.paths, { op: 'launch-result', auth, ...fields }) };
 }
 const options = { brokerOptions: { mode: 'single-account' } };
 const target = (c) => ({ account: c.owner, soul: c.accounts.bob, harness: 'test', name: 'Bob' });
@@ -374,7 +379,9 @@ test('only the target daemon receives a launch and may report it; address grants
     await own.next();
     await assert.rejects(other.report({ requestId: sent.requestId, status: 'failed' }), { code: 'unknown-launch' });
     await own.report({ requestId: sent.requestId, status: 'failed' });
-    assert.deepEqual(events, [{ event: 'ready' }]);
+    assert.equal(events.length, 1);
+    assert.deepEqual(events[0], { ...own.ready, watchId: events[0].watchId });
+    assert.notEqual(events[0].watchId, own.ready.watchId);
     assert.deepEqual(other.events, []);
     // Read-only verification of the implementation's process boundary.
     for (const file of ['../lib/principal-client.mjs', '../lib/broker/launch.mjs']) {
