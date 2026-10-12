@@ -62,7 +62,7 @@ const COMMANDS = [
   { name: 'launch', args: [], flags: ['account', 'soul', 'package', 'harness', 'name', 'comms', 'model', 'brief', 'role', 'parent'] },
   { name: 'principal pair', args: [], flags: ['name'] },
   { name: 'admin principals', args: [], flags: [] },
-  { name: 'admin principal-approve', args: ['CODE'], flags: ['grant'] },
+  { name: 'admin principal-approve', args: ['CODE'], flags: ['grant', 'expected-principal'] },
   { name: 'admin principal-owner-grant', args: ['PRINCIPAL'], flags: ['operations'] },
   { name: 'admin principal-owner-grants', args: ['PRINCIPAL'], flags: ['grants-json', 'grants'] },
   { name: 'admin principal-revoke', args: ['PRINCIPAL'], flags: [] },
@@ -461,6 +461,7 @@ async function run(argv, env) {
       }
       if (sub === 'principal-approve') return print(await admin(paths, {
         op: 'principal-approve', code: rest[0],
+        ...(flags['expected-principal'] === undefined ? {} : { expectedPrincipal: flags['expected-principal'] }),
         grant: flags.grant === undefined ? null : flags.grant.split(',').map((entry) => entry.trim()).filter(Boolean),
       }));
       return print(await admin(paths, { op: 'principal-revoke', principal: rest[0] }));

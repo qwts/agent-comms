@@ -18,7 +18,7 @@ agent-comms principal pair --name ExampleHost
 agent-comms admin principal-approve PRINCIPAL_CODE
 ```
 
-Approval is a separate owner operation, never a client capability. Optional
+[Approval](principal-approval.md) is owner-only. Optional
 `--grant ACCOUNT,AGENT_ID,ACCOUNT/AGENT_ID` on principal approval restricts
 which souls the principal may see and chat with. The default grant covers
 all souls. Pairing saves the broker UID and mode with the principal secret.
