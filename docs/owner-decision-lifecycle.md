@@ -79,8 +79,9 @@ write capacity; refuse admission with `journal-capacity` if unavailable. Never
 evict/reuse accepted IDs or drop unsettled evidence to admit new work. Existing
 status and read-only reconciliation remain available at capacity, using reserved
 write space. Compaction/recovery must preserve those reservations; exhausted
-stage quotas likewise refuse new staging. Journal limits and reservation sizes require reviewed companion evidence/storage
-contracts; this draft claims no capacity support.
+stage quotas likewise refuse new staging. Proposed [capacity](owner-decision-journal-capacity.md) and
+[slot budgets](owner-decision-journal-records.md) remain unsupported until
+backend review, reservation and recovery are implemented.
 
 Detailed settled outcome retention follows the installation's explicit retention
 policy; if details have been compacted, status returns the retained state with

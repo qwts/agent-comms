@@ -1,0 +1,63 @@
+# Owner decisions: proposed journal ordering and recovery
+
+This disabled companion defines ordering for the [bounded slot graph](owner-decision-journal-records.md)
+and [finite reservations](owner-decision-journal-capacity.md). It selects no backend
+and makes no multi-file atomicity or runtime acceptance claim.
+
+## Exact bytes before acknowledgement
+
+Admission is deliberately multi-file, not atomic as a group:
+
+1. Authenticate, authorize and validate the complete bounded original action before creating admission artifacts. Fix the selected binding and original acceptedAt once; never refresh that clock while allocating.
+2. Under the store admission lock, charge a full reservation for a new request directory and durably publish its name before creating other entries. Any surviving directory or partial artifact counts after interruption, even before acceptance. At the broker its name is the UUIDv4 request ID. At the daemon use lowercase SHA-256 of canonical `{namespaceDigest,requestId,v:1}` so the stable namespace/request tuple has one fixed 64-byte name. A repeated orphan key refuses, never starts fresh admission.
+3. Publish and flush the exact canonical original action slot, then publish and flush immutable acceptance referencing its digest and fixed reservation. Only the complete validated durable pair may become preparing or be forwarded. An interrupted prefix stays reserved; restart never automatically forwards even a complete saved pair.
+4. Before daemon preparation acknowledgement, persist its complete context/action pair, immutable typed preparation evidence and exact challenge. Validate their byte/digest/nonce/time/expected-state bindings and separately retained private stage descriptors. No preparation acknowledgement precedes these flushes. A partial prefix cannot stand in for preparation or permit application.
+5. Before the broker exposes prepared status, validate the selected authenticated response, build its exact challenge from saved action/context and durably publish it. Before authorization/delivery, flush complete p1 and d1 slots followed by the spent-nonce authorization marker. Before mayApply:true, durably publish release. Before daemon effect entry, flush the successful check and entered evidence under the required final lock. Completion and terminal reconciliation require their own whole-effect proof and flushes.
+
+Every step rechecks the applicable original deadlines before proceeding. A
+partial graph or leftover proof must not expose an older success that would
+reissue/deliver/release work. Use the existing non-authorizing storage refusal
+when safe state cannot be established; retain indeterminate where an attempt
+may have entered. The exact live check/current-authority requirements remain
+independent of these on-disk order rules.
+
+## Exclusive publication and recovery
+
+Prefer immutable per-request phase/slot records over rewriting a complete state
+image. Serialize admission globally; serialize each request's transitions and
+follow the existing [domain lock order](owner-decision-locking.md). Every
+permission-bearing slot publishes once, exclusively, from the one reserved
+scratch file: write complete bounded bytes and framing, flush, publish without
+replacing an existing destination, flush the directory, then acknowledge or
+forward. Acknowledged acceptance also durably reserves its full budget and ID
+before any preparation event. Exact duplicate input reads saved state and never
+publishes another slot, proof or delivery attempt.
+
+The stored graph must validate all present slots, their original-byte digests,
+namespace/request/target/epoch/watch bindings and legal transitions. A malformed,
+unknown, inconsistent, corrupt or ambiguous newest phase never falls back to an
+older prepared/authorized permission state. It refuses release/effect, preserves
+all material and retains indeterminate where an attempt may have entered.
+Missing completion cannot prove refusal. No record-only recovery infers an
+effect from a preexisting matching value or from absence of a marker.
+
+An orphan scratch file cannot create another scratch allocation on retry. Its
+bounded recovery must inspect it with the immutable graph; unknown contents
+refuse writes and remain for inspection. When exclusive publication used a
+second hard-link entry, identical retained target/scratch bytes may permit
+removing only the redundant scratch entry after required flushes. That cleanup
+never removes the authoritative record or permits redelivery. Backend-specific
+crash points and directory allocation must be reviewed and tested; this graph
+does not claim existing generic file-lock stale-artifact cleanup already meets
+these bounds.
+
+Only the indeterminate observation and its preimage may replace old bytes. Their
+publication needs one bounded atomic association (for example, one framed slot
+containing both records within their combined caps), scratch reservation and
+durable replacement; an implementation cannot expose a mixed digest/preimage.
+Original entered/completed/refused evidence and authoritative linkage remain
+unchanged forever. Terminal resolution likewise atomically binds its record and
+preimage and is published once. No permission-bearing rollback or automatic
+mutation retry is permitted after restart. Current authority, live check,
+receipt deadline and final expected-state lock checks remain independent
+requirements; a valid stored phase is never standalone authorization.
