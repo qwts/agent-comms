@@ -12,13 +12,8 @@ if($Mode -eq 'move-probe') {
     } catch {[Console]::Out.WriteLine('{"v":1,"moved":false}')}
     exit 0
 }
-$repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-. (Join-Path $repo 'tools/acceptance/windows-desktop-root.ps1')
-Initialize-DesktopRootHandle
-$sid=[Security.Principal.WindowsIdentity]::GetCurrent().User
-$everyone=[Security.Principal.SecurityIdentifier]::new('S-1-1-0')
 $cases=[Collections.Generic.List[string]]::new()
-$held=$null;$success=$false
+$held=$null;$success=$false;$stage='initialize-shared-helper';$failure=$null
 function Set-OwnedAcl($Path,$Rights=[Security.AccessControl.FileSystemRights]::FullControl,$Inheritance=[Security.AccessControl.InheritanceFlags]'ContainerInherit,ObjectInherit',$Propagation=[Security.AccessControl.PropagationFlags]::None,$Type=[Security.AccessControl.AccessControlType]::Allow) {
     $acl=[Security.AccessControl.DirectorySecurity]::new()
     $acl.SetOwner($sid);$acl.SetAccessRuleProtection($true,$false)
@@ -26,6 +21,7 @@ function Set-OwnedAcl($Path,$Rights=[Security.AccessControl.FileSystemRights]::F
     Set-Acl -LiteralPath $Path -AclObject $acl
 }
 function Expect-Refusal($Name,[scriptblock]$Action) {
+    $script:stage=$Name
     $refused=$false
     try {& $Action} catch {$refused=$true}
     if(-not $refused){throw 'boundary-refusal-missing'}
@@ -56,24 +52,39 @@ function Move-Probe($Path) {
     }
 }
 try {
+    $repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
+    . (Join-Path $repo 'tools/acceptance/windows-desktop-root.ps1')
+    Initialize-DesktopRootHandle
+    $sid=[Security.Principal.WindowsIdentity]::GetCurrent().User
+    $everyone=[Security.Principal.SecurityIdentifier]::new('S-1-1-0')
+    $stage='validate-scratch'
     $base=[IO.Path]::GetFullPath($Root)
     if(-not [IO.Directory]::Exists($base) -or (((Get-Item -LiteralPath $base -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0)){throw 'scratch-refused'}
+    $stage='create-sibling-sentinel'
     $sentinel=Join-Path $base 'sibling-sentinel.txt';[IO.File]::WriteAllText($sentinel,'desktop-boundary-sibling-canary')
+    $stage='hash-sibling-sentinel'
     $beforeHash=(Get-FileHash -LiteralPath $sentinel -Algorithm SHA256).Hash
+    $stage='read-sibling-acl'
     $sections=[Security.AccessControl.AccessControlSections]'Access,Owner,Group'
     $beforeAcl=(Get-Acl -LiteralPath $sentinel).GetSecurityDescriptorSddlForm($sections)
+    $stage='create-owned-directories'
     $parent=Join-Path $base 'owned-parent';$leaf=Join-Path $parent 'leaf'
     $null=New-Item -ItemType Directory -Path $parent
     $null=New-Item -ItemType Directory -Path $leaf
+    $stage='set-exact-owned-acl'
     Set-OwnedAcl $leaf
+    $stage='open-held-chain'
     $held=Open-DesktopHeldChain $leaf
+    $stage='assert-exact-owned-acl'
     Assert-DesktopRootAcl $leaf $sid;$cases.Add('exact-acl-and-held-chain')
     Expect-Refusal 'relative-root-placement' {Open-DesktopRootChain 'relative'}
     Expect-Refusal 'oversized-root-placement' {Open-DesktopRootChain ('C:\'+('x'*241))}
     $local=[Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData)
     Expect-Refusal 'wrong-root-basename' {Open-DesktopRootChain (Join-Path $local 'not-desktop-root')}
     Expect-Refusal 'wrong-root-anchor' {Open-DesktopRootChain (Join-Path $base ('agent-comms-desktop-'+[Guid]::NewGuid().ToString('N')))}
+    $stage='held-leaf-rename'
     if(Move-Probe $leaf){throw 'held-leaf-renamed'};$cases.Add('held-leaf-rename-refused')
+    $stage='held-ancestor-rename'
     if(Move-Probe $parent){throw 'held-ancestor-renamed'};$cases.Add('held-ancestor-rename-refused')
     Expect-Refusal 'held-leaf-delete-refused' {[IO.Directory]::Delete($leaf)}
     foreach($handle in $held){$handle.Dispose()};$held=$null
@@ -105,13 +116,16 @@ try {
     Expect-Refusal 'fresh-acl-change-refused' {Assert-DesktopRootAcl $leaf $sid}
     Set-OwnedAcl $leaf
     foreach($handle in $held){$handle.Dispose()};$held=$null
+    $stage='create-junction-target'
     $target=Join-Path $base 'junction-target';$null=New-Item -ItemType Directory -Path $target
+    $stage='root-junction'
     $junction=Join-Path $base 'owned-junction';$null=New-Item -ItemType Junction -Path $junction -Target $target
     $refused=$false;try{$held=Open-DesktopHeldChain $junction}catch{$refused=$true}
     if($held){foreach($handle in $held){$handle.Dispose()};$held=$null}
     if(-not $refused){throw 'root-junction-accepted'};$cases.Add('root-junction')
     if(-not (Move-Probe $junction)){throw 'failed-junction-still-held'}
     [IO.Directory]::Move($junction+'-moved',$junction);$cases.Add('root-junction-failure-releases-handle')
+    $stage='ancestor-junction'
     $nested=Join-Path $junction 'nested';$null=New-Item -ItemType Directory -Path $nested
     $refused=$false
     try{$held=Open-DesktopHeldChain $nested}catch{$refused=$true}
@@ -119,18 +133,20 @@ try {
     if(-not $refused){throw 'ancestor-junction-accepted'};$cases.Add('ancestor-junction')
     # Rename after failure proves the successfully opened leaf handle released.
     [IO.Directory]::Move($nested,$nested+'-moved');$cases.Add('partial-chain-failure-releases-leaf')
+    $stage='file-not-directory'
     $file=Join-Path $base 'not-directory';[IO.File]::WriteAllText($file,'inert')
     $refused=$false;try{$held=Open-DesktopHeldChain $file}catch{$refused=$true}
     if($held){foreach($handle in $held){$handle.Dispose()};$held=$null}
     if(-not $refused){throw 'file-accepted-as-directory'};$cases.Add('file-not-directory')
     [IO.File]::Move($file,$file+'-moved');$cases.Add('file-failure-releases-handle')
+    $stage='verify-sibling'
     if((Get-FileHash -LiteralPath $sentinel -Algorithm SHA256).Hash -cne $beforeHash -or (Get-Acl -LiteralPath $sentinel).GetSecurityDescriptorSddlForm($sections) -cne $beforeAcl){throw 'sibling-changed'}
     $cases.Add('sibling-content-and-acl-unchanged');$success=$true
-} catch {$success=$false}
+} catch {$success=$false;$failure=@{stage=$stage;exceptionType=$_.Exception.GetType().FullName;hresult=$_.Exception.HResult}}
 finally {
-    if($held){foreach($handle in $held){try{$handle.Dispose()}catch{$success=$false}}}
+    if($held){foreach($handle in $held){try{$handle.Dispose()}catch{$success=$false;$failure=@{stage='close-held-chain';exceptionType=$_.Exception.GetType().FullName;hresult=$_.Exception.HResult}}}}
     # Deliberately retain all owned scratch, including safe junction targets.
-    $json=@{v=1;status=$(if($success){'passed'}else{'failed'});cases=$cases.ToArray();rootRetained=$true;profileAttested=$false;downloadInvoked=$false}|ConvertTo-Json -Depth 3 -Compress
+    $json=@{v=1;status=$(if($success){'passed'}else{'failed'});cases=$cases.ToArray();failure=$failure;rootRetained=$true;profileAttested=$false;downloadInvoked=$false}|ConvertTo-Json -Depth 3 -Compress
     $bytes=[Text.Encoding]::UTF8.GetBytes($json);if($bytes.Length -gt 4096){throw 'boundary-receipt-bound'}
     $receipt=[IO.File]::Open((Join-Path $Root 'filesystem.json'),[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
     try{$receipt.Write($bytes,0,$bytes.Length)}finally{$receipt.Dispose()}

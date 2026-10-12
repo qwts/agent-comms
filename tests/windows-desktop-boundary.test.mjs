@@ -1,7 +1,7 @@
 // SOURCE CANDIDATE: inert tests only. No account/profile bootstrap or download.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { mkdtemp, mkdir, readFile, writeFile, readdir } from 'node:fs/promises';
+import { mkdtemp, mkdir, open, readFile, writeFile, readdir } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -51,11 +51,29 @@ test('desktop shared native filesystem/ACL checks use owned scratch and preserve
 }, async t => {
   const root = await scratch(t, 'comms-desktop-boundary-');
   const result = await owned(shell(), [...args('tests/windows-desktop-filesystem-native.ps1'), '-Root', root], clean(root), 150000);
+  if (result.code !== 0) {
+    let detail = { kind: 'filesystem-receipt-unavailable', stderrPresent: result.stderr.length > 0 };
+    try {
+      const file = await open(path.join(root, 'filesystem.json'), 'r');
+      const evidence = Buffer.alloc(4097);
+      let bytesRead;
+      try { ({ bytesRead } = await file.read(evidence, 0, evidence.length, 0)); } finally { await file.close(); }
+      if (bytesRead <= 4096) {
+        const record = JSON.parse(evidence.subarray(0, bytesRead).toString('utf8'));
+        const token = value => typeof value === 'string' && /^[A-Za-z0-9_.-]{1,128}$/.test(value) ? value : 'invalid';
+        detail = { kind: 'filesystem-native-failed', stage: token(record.failure?.stage),
+          exceptionType: token(record.failure?.exceptionType),
+          hresult: Number.isSafeInteger(record.failure?.hresult) ? record.failure.hresult : null,
+          completedCases: Array.isArray(record.cases) && record.cases.length <= 32 ? record.cases.map(token) : [] };
+      }
+    } catch { /* Missing or invalid evidence remains a fixed refusal. */ }
+    assert.fail(JSON.stringify(detail));
+  }
   assert.equal(result.code, 0);
   const bytes = await readFile(path.join(root, 'filesystem.json')); assert.ok(bytes.length <= 4096);
   const receipt = JSON.parse(bytes.toString('utf8'));
-  assert.deepEqual(Object.keys(receipt).sort(), ['cases','downloadInvoked','profileAttested','rootRetained','status','v'].sort());
-  assert.equal(receipt.v, 1); assert.equal(receipt.status, 'passed');
+  assert.deepEqual(Object.keys(receipt).sort(), ['cases','failure','downloadInvoked','profileAttested','rootRetained','status','v'].sort());
+  assert.equal(receipt.v, 1); assert.equal(receipt.status, 'passed'); assert.equal(receipt.failure, null);
   assert.equal(receipt.rootRetained, true); assert.equal(receipt.profileAttested, false); assert.equal(receipt.downloadInvoked, false);
   assert.deepEqual(receipt.cases, ['exact-acl-and-held-chain','relative-root-placement','oversized-root-placement','wrong-root-basename','wrong-root-anchor','held-leaf-rename-refused','held-ancestor-rename-refused',
     'held-leaf-delete-refused','released-leaf-rename-works','released-ancestor-rename-works','wrong-expected-owner',
