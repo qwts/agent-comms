@@ -23,6 +23,7 @@ import { probePinnedStorage } from './windows-capacity-storage.mjs';
 import { probePinnedCustody } from './windows-capacity-custody.mjs';
 import { probePinnedChannel } from './windows-capacity-channel.mjs';
 import { probePinnedConnector, validConnectorObservation } from './windows-capacity-connector.mjs';
+import { readOwnedDesktopContext, isOwnedDesktopContext } from './windows-desktop-context.mjs';
 import { CORRECTED_STARTUP_SOURCE, verifyCorrectedStartupSource, boundedBrokerCode, classifyFixtureFailure } from './windows-corrected-startup.mjs';
 
 const exec = promisify(execFile), SELF = fileURLToPath(import.meta.url);
@@ -31,6 +32,9 @@ const PINS = { old: '25dfa8362401489503f704c7322ad1314b7e6ddb', new: 'e648d71277
 const CANARY = 'CANARY-windows-capacity-body-secret';
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+let desktopContext;
+const scratchParent = () => desktopContext?.root ?? process.env.LOCALAPPDATA;
+const childTemp = () => desktopContext?.temp ?? process.env.TEMP;
 let output, activeStage = 'arguments', fixtureCleanup, fixtureRequestId;
 const supervisorPhases = new Set(['script-entry','compile-supervisor','supervisor-compiled','module-observation','import-utility','utility-imported','serialize-ready','ready-serialized','control-read','parse-control','control-parsed','cim-module-observation','verify-fixture-existence','verify-fixture-parent','verify-fixture-executable','parse-fixture-command','verify-fixture-argument-count','verify-fixture-arguments','convert-fixture-creation','verify-job-limit','cim-module-refused','import-cim','cim-imported','query-fixture','fixture-queried','create-private-job','private-job-assigned','read-control','verify-fixture','assign-private-job','sample-job','sample-ids-read','sample-filter','sample-query','sample-rows','sample-verify','sample-classify','sample-observer','sample-observer-read','sample-reply','sample-replied','query-members','close-job']);
 const checks = new Set(['fixture-terminal', 'fixture-deadline', 'control-deadline', 'control-closed',
@@ -62,7 +66,7 @@ function environment(extra = {}) {
   const allowed = new Set(['path', 'systemroot', 'windir', 'comspec', 'userprofile', 'localappdata', 'appdata',
     'temp', 'tmp', 'username', 'userdomain', 'userdnsdomain', 'processor_architecture', 'programdata',
     'programfiles', 'programfiles(x86)', 'commonprogramfiles', 'commonprogramfiles(x86)']);
-  return { ...Object.fromEntries(Object.entries(process.env).filter(([key]) => allowed.has(key.toLowerCase()))), ...extra };
+  return { ...Object.fromEntries(Object.entries(process.env).filter(([key]) => allowed.has(key.toLowerCase()))), ...(desktopContext ? { TEMP: desktopContext.temp, TMP: desktopContext.temp } : {}), ...extra };
 }
 function ownedChild(file, args, options) {
   const child = spawn(file, args, options);
@@ -242,7 +246,7 @@ async function supervisorProbe(variant) {
       activeStage = 'supervisor-only-attach';
       const attachment = await control.request('attach', { pid: paused.child.pid, parentPid: process.pid,
         nodeExecutable: realpathSync(process.execPath), shellExecutable: shell, fixtureArgs,
-        relayArgs: [], diagnosticArgs: [], compilerExecutables: [], compilerTemp: realpathSync(process.env.TEMP),
+        relayArgs: [], diagnosticArgs: [], compilerExecutables: [], compilerTemp: realpathSync(childTemp()),
         commitLimitBytes: Math.min(2 * 1024 ** 3, Math.floor(os.totalmem() / 4)) }, remaining(started + 15_000, 15_000));
       assert.equal(attachment.attached, true); evidence.attached = true;
       if (sampleOnly) {
@@ -312,7 +316,7 @@ async function supervisorProbe(variant) {
   }
 }
 async function compilerProbe(source, variant, commitLimitBytes) {
-  const root = mkdtempSync(path.join(process.env.LOCALAPPDATA, 'agent-comms-compiler-'));
+  const root = mkdtempSync(path.join(scratchParent(), 'agent-comms-compiler-'));
   const shell = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
   const args = [SELF, '--compiler-fixture', source, variant];
   let fixture, control, supervisor, job;
@@ -359,7 +363,7 @@ async function compilerProbe(source, variant, commitLimitBytes) {
       nodeExecutable: realpathSync(process.execPath), shellExecutable: shell, fixtureArgs: args,
       relayArgs: compilerControlArgs(prefix, variant), diagnosticArgs: [], commitLimitBytes,
       compilerExecutables: ['Framework','Framework64'].map(name => path.join(process.env.SystemRoot,'Microsoft.NET',name,'v4.0.30319','csc.exe')),
-      compilerTemp: realpathSync(process.env.TEMP) },15_000);
+      compilerTemp: realpathSync(childTemp()) },15_000);
     assert.equal(result.attached,true); attached = true;
     activeStage = 'derived-compiler-control';
     const started = control.request('start',{},COMPILER_DEADLINE_MS + 15_000);
@@ -389,7 +393,7 @@ async function compilerProbe(source, variant, commitLimitBytes) {
 
 async function run(source, revision, rates, preflight, commitLimitBytes) {
   source = realpathSync(source);
-  const root = mkdtempSync(path.join(process.env.LOCALAPPDATA, 'agent-comms-capacity-'));
+  const root = mkdtempSync(path.join(scratchParent(), 'agent-comms-capacity-'));
   const shell = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
   const timingMode = capacityTimingMode(revision, preflight), timingProfile = capacityTimingProfile(timingMode);
   const args = [SELF, '--fixture', source, ...(timingMode === 'candidate-channel' ? ['--candidate-channel-timing'] : timingMode === 'candidate-startup' ? ['--candidate-startup-timing'] : [])];
@@ -451,7 +455,7 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
     const attachment = await supervisor.request('attach', { pid: fixtureOwned.child.pid, parentPid: process.pid, nodeExecutable: realpathSync(process.execPath),
       shellExecutable: shell, fixtureArgs: args, ...productionArguments(source), commitLimitBytes,
       compilerExecutables: ['Framework', 'Framework64'].map((name) => path.join(process.env.SystemRoot, 'Microsoft.NET', name, 'v4.0.30319', 'csc.exe')),
-      compilerTemp: realpathSync(process.env.TEMP) }, Math.max(1, 15_000 - (performance.now() - attachStarted)));
+      compilerTemp: realpathSync(childTemp()) }, Math.max(1, 15_000 - (performance.now() - attachStarted)));
     attached = true; powershellVersion = attachment.powershellVersion;
     activeStage = preflight === 'storage' ? 'candidate-storage-prefix' : preflight === 'connector' ? 'actual-connector-events' : preflight === 'channel' ? 'channel-prepare-and-stale-probes' : preflight === 'custody' ? 'custody-api' : 'production-startup';
     const startFields = { ...(['custody','channel','connector','storage'].includes(preflight) ? { probe: preflight } : {}),
@@ -546,31 +550,38 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
   }
 }
 
-async function main() {
+async function main(context) {
+  if (context !== undefined) {
+    assert.equal(isOwnedDesktopContext(context), true);
+    desktopContext = context;
+  }
   assert.equal(process.platform, 'win32');
-  assert.equal(process.env.AGENT_COMMS_CAPACITY_PROFILE_VERIFIED, '1');
-  assert.equal(process.env.AGENT_COMMS_DISPOSABLE_WINDOWS, '1');
+  if (!desktopContext) {
+    assert.equal(process.env.AGENT_COMMS_CAPACITY_PROFILE_VERIFIED, '1');
+    assert.equal(process.env.AGENT_COMMS_DISPOSABLE_WINDOWS, '1');
+  }
   const components = JSON.parse(readFileSync(new URL('../../tests/fixtures/windows-host-components.json', import.meta.url)));
   assert.equal(process.version, `v${components.node.version}`);
-  assert.equal(process.env.AGENT_COMMS_NODE_ARCHIVE_SHA256, components.node.sha256['win-x64']);
-  const candidateCompiler = process.argv[2] === '--candidate-compiler';
-  const candidateChannel = process.argv[2] === '--candidate-channel';
-  const candidateStorage = process.argv[2] === '--candidate-storage';
-  const candidateStartup = process.argv[2] === '--candidate';
+  assert.equal(desktopContext?.nodeArchiveSha256 ?? process.env.AGENT_COMMS_NODE_ARCHIVE_SHA256, components.node.sha256['win-x64']);
+  const args = desktopContext ? [process.execPath, SELF, desktopContext.task === 'candidate-compiler' ? '--candidate-compiler' : '--candidate', path.resolve(fileURLToPath(new URL('../../', import.meta.url))), '--output', path.join(desktopContext.root, 'results')] : process.argv;
+  const candidateCompiler = args[2] === '--candidate-compiler';
+  const candidateChannel = args[2] === '--candidate-channel';
+  const candidateStorage = args[2] === '--candidate-storage';
+  const candidateStartup = args[2] === '--candidate';
   const candidateOnly = candidateStartup || candidateStorage || candidateChannel || candidateCompiler;
-  if (candidateOnly) { assert.equal(process.argv.length, 6); assert.equal(process.argv[4], '--output'); }
+  if (candidateOnly) { assert.equal(args.length, 6); assert.equal(args[4], '--output'); }
   else {
-    assert.equal(process.argv[2], '--old'); assert.equal(process.argv[4], '--new'); assert.equal(process.argv[6], '--output');
-    assert.ok(process.argv.length === 8 || (process.argv.length === 9 && ['--preflight','--supervisor-preflight','--attach-preflight','--sample-preflight','--startup-preflight','--custody-preflight','--channel-preflight','--connector-preflight'].includes(process.argv[8])));
+    assert.equal(args[2], '--old'); assert.equal(args[4], '--new'); assert.equal(args[6], '--output');
+    assert.ok(args.length === 8 || (args.length === 9 && ['--preflight','--supervisor-preflight','--attach-preflight','--sample-preflight','--startup-preflight','--custody-preflight','--channel-preflight','--connector-preflight'].includes(args[8])));
   }
-  const preflight = process.argv[8] === '--preflight';
-  const startupOnly = process.argv[8] === '--startup-preflight';
-  const custodyOnly = process.argv[8] === '--custody-preflight';
-  const channelOnly = process.argv[8] === '--channel-preflight';
-  const connectorOnly = process.argv[8] === '--connector-preflight';
-  output = path.resolve(process.argv[candidateOnly ? 5 : 7]); mkdirSync(output);
-  if (['--supervisor-preflight','--attach-preflight','--sample-preflight'].includes(process.argv[8])) {
-    const result = { v: 1, scope: process.argv[8] === '--sample-preflight' ? 'standard-user sanitized-environment paused-fixture observer sample only; no production imports or workload' : process.argv[8] === '--attach-preflight' ? 'standard-user sanitized-environment paused-fixture attach only; no production imports or workload' : 'standard-user sanitized-environment supervisor control only; no production workload',
+  const preflight = args[8] === '--preflight';
+  const startupOnly = args[8] === '--startup-preflight';
+  const custodyOnly = args[8] === '--custody-preflight';
+  const channelOnly = args[8] === '--channel-preflight';
+  const connectorOnly = args[8] === '--connector-preflight';
+  output = path.resolve(args[candidateOnly ? 5 : 7]); mkdirSync(output);
+  if (['--supervisor-preflight','--attach-preflight','--sample-preflight'].includes(args[8])) {
+    const result = { v: 1, scope: args[8] === '--sample-preflight' ? 'standard-user sanitized-environment paused-fixture observer sample only; no production imports or workload' : args[8] === '--attach-preflight' ? 'standard-user sanitized-environment paused-fixture attach only; no production imports or workload' : 'standard-user sanitized-environment supervisor control only; no production workload',
       node: process.version, runnerSha256: hash(readFileSync(SELF)), supervisorSha256: hash(readFileSync(JOB)),
       controlSha256: hash(readFileSync(new URL('./windows-capacity-control.mjs', import.meta.url))),
     lifecycleSha256: hash(readFileSync(new URL('./windows-capacity-lifecycle.mjs', import.meta.url))),
@@ -589,7 +600,7 @@ async function main() {
     }, (receipt) => {
       result.runs.push(receipt); persist();
       if (receipt.status === 'not-run') firstFailure ??= { error: new Error('job-exit-unconfirmed'), stage: 'supervisor-probe-cleanup' };
-    }, [process.argv[8] === '--sample-preflight' ? 'supervisor-sample' : process.argv[8] === '--attach-preflight' ? 'supervisor-attach' : 'supervisor-script']);
+    }, [args[8] === '--sample-preflight' ? 'supervisor-sample' : args[8] === '--attach-preflight' ? 'supervisor-attach' : 'supervisor-script']);
     result.status = firstFailure ? 'failed' : 'passed'; persist();
     if (firstFailure) { activeStage = firstFailure.stage; throw firstFailure.error; }
     process.stdout.write('{"status":"passed","supervisorOnly":true,"workloadRun":false}\n'); return;
@@ -597,7 +608,7 @@ async function main() {
   const commitLimitBytes = Math.min(2 * 1024 ** 3, Math.floor(os.totalmem() / 4));
   if (commitLimitBytes < 512 * 1024 ** 2 || os.freemem() < commitLimitBytes + 512 * 1024 ** 2) throw new Error('memory-headroom-insufficient');
   const archives = {};
-  for (const [revision, cwd] of candidateOnly ? [['candidate', process.argv[3]]] : [['old', process.argv[3]], ['new', process.argv[5]]]) {
+  for (const [revision, cwd] of candidateOnly ? [['candidate', args[3]]] : [['old', args[3]], ['new', args[5]]]) {
     const pin = revision === 'candidate' ? CORRECTED_STARTUP_SOURCE.pin : PINS[revision];
     activeStage = 'archive-source';
     const { stdout: tree } = await exec('git.exe', ['rev-parse', `${pin}^{tree}`], { cwd, encoding: 'utf8', windowsHide: true });
@@ -613,8 +624,8 @@ async function main() {
     archives[revision] = { source, pin, tree: tree.trim(), archiveSha256: hash(bytes) };
   }
   if (candidateCompiler) {
-    const result = {v:1,compilerOnly:true,scope:'derived exact fixed worker compiler controls; implicit-explicit-explicit-implicit; no broker, pipe connection or workload',
-      node:process.version,nodeArchiveSha256:process.env.AGENT_COMMS_NODE_ARCHIVE_SHA256,
+    const result = {v:1,...(desktopContext ? {executionKind:'desktop-current-user',desktopProfile:desktopContext.profile} : {}),compilerOnly:true,scope:'derived exact fixed worker compiler controls; implicit-explicit-explicit-implicit; no broker, pipe connection or workload',
+      node:process.version,nodeArchiveSha256:desktopContext?.nodeArchiveSha256 ?? process.env.AGENT_COMMS_NODE_ARCHIVE_SHA256,
       nodeExecutableSha256:hash(readFileSync(process.execPath)),runnerSha256:hash(readFileSync(SELF)),
       compilerSha256:hash(readFileSync(new URL('./windows-capacity-compiler.mjs',import.meta.url))),
       classificationSha256:hash(readFileSync(new URL('./windows-capacity-classification.mjs',import.meta.url))),
@@ -630,7 +641,7 @@ async function main() {
     if(result.status!=='passed') process.exitCode=1;
     return;
   }
-  const result = { v: 1, scope: candidateChannel ? 'hosted standard-user exact corrected-source channel-prepare-and-stale-probes only; actual default channel; no Broker.start, EventLog, replay, maintenance, listeners, delivery or offered rates' : candidateStorage ? 'hosted standard-user exact corrected-source fresh storage prefix only; actual prepare, EventLog custody/replay and compacting maintenance; no Broker.start, stale probes, listeners, delivery or offered rates' : candidateStartup ? 'hosted standard-user exact corrected-source Broker startup, one delivery and disposal only; no offered-rate stages, capacity comparison, desktop or host acceptance' : connectorOnly ? 'actual-connector-events; prepare/main stale probe then unconsumed admin connector; no Broker, listener, EventLog, replay, maintenance or workload' : channelOnly ? 'channel-prepare-and-stale-probes; actual pinned default channel; no Broker, listener, EventLog, replay, maintenance or workload' : custodyOnly ? 'hosted standard-user Windows pinned custody API only; no Broker or connector or offered-rate stages' : startupOnly ? 'hosted standard-user Windows old-pin production startup and disposal only; no offered-rate stages or capacity acceptance' : 'hosted standard-user Windows finite capacity pilot; no benchmark, desktop, host or 100/s support acceptance',
+  const result = { v: 1, ...(desktopContext ? { executionKind: 'desktop-current-user', desktopProfile: desktopContext.profile } : {}), scope: desktopContext ? 'current standard-user desktop exact corrected-source Broker startup, one delivery and disposal only; no offered-rate or installed-host acceptance' : candidateChannel ? 'hosted standard-user exact corrected-source channel-prepare-and-stale-probes only; actual default channel; no Broker.start, EventLog, replay, maintenance, listeners, delivery or offered rates' : candidateStorage ? 'hosted standard-user exact corrected-source fresh storage prefix only; actual prepare, EventLog custody/replay and compacting maintenance; no Broker.start, stale probes, listeners, delivery or offered rates' : candidateStartup ? 'hosted standard-user exact corrected-source Broker startup, one delivery and disposal only; no offered-rate stages, capacity comparison, desktop or host acceptance' : connectorOnly ? 'actual-connector-events; prepare/main stale probe then unconsumed admin connector; no Broker, listener, EventLog, replay, maintenance or workload' : channelOnly ? 'channel-prepare-and-stale-probes; actual pinned default channel; no Broker, listener, EventLog, replay, maintenance or workload' : custodyOnly ? 'hosted standard-user Windows pinned custody API only; no Broker or connector or offered-rate stages' : startupOnly ? 'hosted standard-user Windows old-pin production startup and disposal only; no offered-rate stages or capacity acceptance' : 'hosted standard-user Windows finite capacity pilot; no benchmark, desktop, host or 100/s support acceptance',
     ...(candidateStorage ? { storageHelperLifetime: 'actual production subprocesses belong to private job; configured timeout is not exit proof; no individual helper terminal observation' } : {}),
     storageType: 'not-measured', nodeArchiveSha256: components.node.sha256['win-x64'],
     node: process.version, nodeExecutableSha256: hash(readFileSync(process.execPath)),
@@ -681,6 +692,8 @@ try {
   } else if (process.argv[2] === '--fixture') {
     assert.ok(process.argv.length === 4 || (process.argv.length === 5 && ['--candidate-channel-timing','--candidate-startup-timing'].includes(process.argv[4])));
     await fixture(process.argv[3], process.argv[4] === '--candidate-channel-timing' ? 'candidate-channel' : process.argv[4] === '--candidate-startup-timing' ? 'candidate-startup' : 'default');
+  } else if (process.argv.length === 3 && process.argv[2] === '--desktop-owned') {
+    await main(await readOwnedDesktopContext(process.stdin));
   } else await main();
 } catch (error) {
   // Deliver only the fixed classification before cleanup disconnects IPC.
