@@ -17,17 +17,18 @@ const clean = root => Object.fromEntries([
 ]);
 async function owned(file, args, env, deadlineMs = 15000) {
   const child = spawn(file, args, { env, cwd: repo, windowsHide: true, stdio: ['ignore','pipe','pipe'] });
-  let terminal = false, bytes = 0, overflow = false;
+  let terminal = false, bytes = 0, overflow = false, eof = false, processExit = null, processExited = false, spawnError = false, failure;
+  const state = { terminal: false, eof: false, exitCode: null, killRequested: false, cleanupTerminal: false, cleanupEof: false, processExited: false, spawnError: false, killAccepted: null };
   const chunks = { stdout: [], stderr: [] };
   for (const name of Object.keys(chunks)) child[name].on('data', part => {
     bytes += part.length;
     if (bytes > 32768) { overflow = true; child.kill(); } else chunks[name].push(part);
   });
   const exited = new Promise(resolve => {
-    child.once('exit', code => { terminal = true; resolve(code); });
-    child.once('error', () => { terminal = true; resolve(null); });
+    child.once('exit', code => { terminal = true; processExited = true; processExit = code; resolve(code); });
+    child.once('error', () => { terminal = true; spawnError = true; resolve(null); });
   });
-  const closed = new Promise(resolve => child.once('close', resolve));
+  const closed = new Promise(resolve => child.once('close', code => { eof = true; resolve(code); }));
   async function within(promise, ms) {
     let timer;
     try { return await Promise.race([promise, new Promise((_, reject) => {
@@ -38,9 +39,15 @@ async function owned(file, args, env, deadlineMs = 15000) {
     const code = await within(exited, deadlineMs); await within(closed, 5000);
     assert.equal(overflow, false);
     return { code, stdout: Buffer.concat(chunks.stdout), stderr: Buffer.concat(chunks.stderr) };
+  } catch (error) {
+    failure = error; error.ownedState = state;
+    state.terminal = terminal; state.eof = eof; state.exitCode = processExit;
+    throw error;
   } finally {
-    if (!terminal) child.kill();
-    await within(exited, 5000); await within(closed, 5000);
+    if (!terminal) { state.killRequested = true; try { state.killAccepted = child.kill(); } catch { state.killAccepted = false; } }
+    try { await within(exited, 5000); await within(closed, 5000); }
+    catch (error) { if (!failure) { error.ownedState = state; throw error; } }
+    finally { state.cleanupTerminal = processExited; state.cleanupEof = eof; state.processExited = processExited; state.spawnError = spawnError; }
   }
 }
 const args = script => ['-NoLogo','-NoProfile','-NonInteractive','-File',path.join(repo, script)];
@@ -64,7 +71,12 @@ test('desktop shared native filesystem/ACL checks use owned scratch and preserve
         const record = JSON.parse(evidence.subarray(0, bytesRead).toString('utf8'));
         const token = value => typeof value === 'string' && /^[A-Za-z0-9_.-]{1,128}$/.test(value) ? value : 'invalid';
         detail = { kind: 'filesystem-native-failed', stage: token(record.failure?.stage),
-          exceptionType: token(record.failure?.exceptionType),
+          exceptionType: token(record.failure?.exceptionType), code: token(record.failure?.code),
+          probe: record.probe && typeof record.probe === 'object' ? Object.fromEntries(
+            ['substage','terminal','eof','exitCode','stdoutLength','stderrLength','moved','killRequested','cleanupTerminal'].map(key => {
+              const value = record.probe[key];
+              return [key, key === 'substage' ? token(value) : value === null || typeof value === 'boolean' || Number.isSafeInteger(value) ? value : null];
+            })) : null,
           hresult: Number.isSafeInteger(record.failure?.hresult) ? record.failure.hresult : null,
           completedCases: Array.isArray(record.cases) && record.cases.length <= 32 ? record.cases.map(token) : [] };
       }
@@ -74,7 +86,7 @@ test('desktop shared native filesystem/ACL checks use owned scratch and preserve
   assert.equal(result.code, 0);
   const bytes = await readFile(path.join(root, 'filesystem.json')); assert.ok(bytes.length <= 4096);
   const receipt = JSON.parse(bytes.toString('utf8'));
-  assert.deepEqual(Object.keys(receipt).sort(), ['cases','failure','downloadInvoked','profileAttested','rootRetained','status','v'].sort());
+  assert.deepEqual(Object.keys(receipt).sort(), ['cases','failure','probe','downloadInvoked','profileAttested','rootRetained','status','v'].sort());
   assert.equal(receipt.v, 1); assert.equal(receipt.status, 'passed'); assert.equal(receipt.failure, null);
   assert.equal(receipt.rootRetained, true); assert.equal(receipt.profileAttested, false); assert.equal(receipt.downloadInvoked, false);
   assert.deepEqual(receipt.cases, ['exact-acl-and-held-chain','relative-root-placement','oversized-root-placement','wrong-root-basename','wrong-root-anchor','held-leaf-rename-refused','held-ancestor-rename-refused',
@@ -125,7 +137,22 @@ test('unchanged CI child refuses mismatched SID before cloning or marker issuanc
   const original = await readFile(path.join(repo, 'scripts/windows-acceptance-child.ps1'));
   const copied = path.join(root, 'child.ps1'); await writeFile(copied, original, { flag: 'wx' });
   await writeFile(path.join(root, 'inputs.json'), JSON.stringify({ sid: 'S-1-0-0', mode: 'candidate-compiler' }), { flag: 'wx' });
-  const result = await owned(shell(), ['-NoLogo','-NoProfile','-NonInteractive','-File',copied], clean(root));
+  let result;
+  try { result = await owned(shell(), ['-NoLogo','-NoProfile','-NonInteractive','-File',copied], clean(root)); }
+  catch (error) {
+    const evidence = { kind: 'ci-child-terminal-unconfirmed', owned: error.ownedState ?? null, receipt: 'unavailable' };
+    try {
+      const file = await open(path.join(root, 'results/bootstrap.json'), 'r');
+      const bytes = Buffer.alloc(4097); let bytesRead;
+      try { ({ bytesRead } = await file.read(bytes, 0, bytes.length, 0)); } finally { await file.close(); }
+      if (bytesRead <= 4096) {
+        const record = JSON.parse(bytes.subarray(0, bytesRead).toString('utf8').replace(/^\uFEFF/, ''));
+        evidence.receipt = { failed: record.status === 'failed', profileTokenGate: record.failure?.gate === 'validate-profile-token',
+          interactiveNotReached: record.interactiveTaskGate === 'not-reached' };
+      }
+    } catch { /* Never infer receipt absence or cleanup from unavailable evidence. */ }
+    assert.fail(JSON.stringify(evidence));
+  }
   assert.equal(result.code, 1); assert.deepEqual(await readFile(copied), original);
   const text = (await readFile(path.join(root, 'results/bootstrap.json'), 'utf8')).replace(/^\uFEFF/, '');
   const receipt = JSON.parse(text);

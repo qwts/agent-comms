@@ -13,7 +13,7 @@ if($Mode -eq 'move-probe') {
     exit 0
 }
 $cases=[Collections.Generic.List[string]]::new()
-$held=$null;$success=$false;$stage='initialize-shared-helper';$failure=$null
+$held=$null;$success=$false;$stage='initialize-shared-helper';$failure=$null;$probeState=$null
 function Set-OwnedAcl($Path,$Rights=[Security.AccessControl.FileSystemRights]::FullControl,$Inheritance=[Security.AccessControl.InheritanceFlags]'ContainerInherit,ObjectInherit',$Propagation=[Security.AccessControl.PropagationFlags]::None,$Type=[Security.AccessControl.AccessControlType]::Allow) {
     $acl=[Security.AccessControl.DirectorySecurity]::new()
     $acl.SetOwner($sid);$acl.SetAccessRuleProtection($true,$false)
@@ -27,7 +27,14 @@ function Expect-Refusal($Name,[scriptblock]$Action) {
     if(-not $refused){throw 'boundary-refusal-missing'}
     $cases.Add($Name)
 }
+function Get-FixedFailure($Record) {
+    $known=@('probe-path-refused','probe-terminal-unconfirmed','probe-eof-unconfirmed','probe-output-refused','probe-record-refused','held-leaf-renamed','held-ancestor-renamed','boundary-refusal-missing')
+    $code='native-operation-failed'
+    if($known -ccontains $Record.Exception.Message){$code=$Record.Exception.Message}
+    return @{stage=$stage;code=$code;exceptionType=$Record.Exception.GetType().FullName;hresult=$Record.Exception.HResult}
+}
 function Move-Probe($Path) {
+    $script:probeState=@{substage='validate-path';terminal=$false;eof=$false;exitCode=$null;stdoutLength=$null;stderrLength=$null;moved=$null;killRequested=$false;cleanupTerminal=$false}
     $shell=Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe'
     foreach($value in @($PSCommandPath,$Root,$Path)){if($value.Contains('"')){throw 'probe-path-refused'}}
     $info=[Diagnostics.ProcessStartInfo]::new();$info.FileName=$shell;$info.UseShellExecute=$false;$info.CreateNoWindow=$true
@@ -35,20 +42,28 @@ function Move-Probe($Path) {
     $info.Arguments='-NoLogo -NoProfile -NonInteractive -File "'+$PSCommandPath+'" -Root "'+$Root+'" -Mode move-probe -Probe "'+$Path+'"'
     $child=$null;$terminal=$false
     try {
+        $script:probeState.substage='start-process'
         $child=[Diagnostics.Process]::Start($info)
         $stdout=$child.StandardOutput.ReadToEndAsync();$stderr=$child.StandardError.ReadToEndAsync()
-        $terminal=$child.WaitForExit(10000)
+        $script:probeState.substage='wait-terminal'
+        $terminal=$child.WaitForExit(10000);$script:probeState.terminal=$terminal
+        if($terminal){$script:probeState.exitCode=$child.ExitCode}
         if(-not $terminal){throw 'probe-terminal-unconfirmed'}
+        $script:probeState.substage='wait-eof'
         $clock=[Diagnostics.Stopwatch]::StartNew()
         while((-not $stdout.IsCompleted -or -not $stderr.IsCompleted) -and $clock.ElapsedMilliseconds -lt 1000){[Threading.Thread]::Sleep(10)}
         if(-not $stdout.IsCompleted -or -not $stderr.IsCompleted){throw 'probe-eof-unconfirmed'}
+        $script:probeState.eof=$true;$script:probeState.substage='validate-output'
         $out=$stdout.GetAwaiter().GetResult();$err=$stderr.GetAwaiter().GetResult()
+        $script:probeState.stdoutLength=$out.Length;$script:probeState.stderrLength=$err.Length
         if($child.ExitCode -ne 0 -or $out.Length -gt 256 -or $err.Length -ne 0){throw 'probe-output-refused'}
+        $script:probeState.substage='decode-record'
         $record=$out|ConvertFrom-Json
         if($record.v -ne 1 -or $record.moved -isnot [bool]){throw 'probe-record-refused'}
+        $script:probeState.moved=$record.moved;$script:probeState.substage='record-complete'
         return $record.moved
     } finally {
-        if($child){if(-not $terminal){try{$child.Kill();$terminal=$child.WaitForExit(1000)}catch{}};$child.Dispose()}
+        if($child){if(-not $terminal){try{$script:probeState.killRequested=$true;$child.Kill();$terminal=$child.WaitForExit(1000)}catch{}};$script:probeState.cleanupTerminal=$terminal;$child.Dispose()}
     }
 }
 try {
@@ -142,11 +157,11 @@ try {
     $stage='verify-sibling'
     if((Get-FileHash -LiteralPath $sentinel -Algorithm SHA256).Hash -cne $beforeHash -or (Get-Acl -LiteralPath $sentinel).GetSecurityDescriptorSddlForm($sections) -cne $beforeAcl){throw 'sibling-changed'}
     $cases.Add('sibling-content-and-acl-unchanged');$success=$true
-} catch {$success=$false;$failure=@{stage=$stage;exceptionType=$_.Exception.GetType().FullName;hresult=$_.Exception.HResult}}
+} catch {$success=$false;$failure=Get-FixedFailure $_}
 finally {
     if($held){foreach($handle in $held){try{$handle.Dispose()}catch{$success=$false;$failure=@{stage='close-held-chain';exceptionType=$_.Exception.GetType().FullName;hresult=$_.Exception.HResult}}}}
     # Deliberately retain all owned scratch, including safe junction targets.
-    $json=@{v=1;status=$(if($success){'passed'}else{'failed'});cases=$cases.ToArray();failure=$failure;rootRetained=$true;profileAttested=$false;downloadInvoked=$false}|ConvertTo-Json -Depth 3 -Compress
+    $json=@{v=1;status=$(if($success){'passed'}else{'failed'});cases=$cases.ToArray();failure=$failure;probe=$probeState;rootRetained=$true;profileAttested=$false;downloadInvoked=$false}|ConvertTo-Json -Depth 3 -Compress
     $bytes=[Text.Encoding]::UTF8.GetBytes($json);if($bytes.Length -gt 4096){throw 'boundary-receipt-bound'}
     $receipt=[IO.File]::Open((Join-Path $Root 'filesystem.json'),[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
     try{$receipt.Write($bytes,0,$bytes.Length)}finally{$receipt.Dispose()}
