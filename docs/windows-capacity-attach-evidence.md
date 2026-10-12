@@ -119,3 +119,32 @@ module directory. Literal phases bracket import before the same query.
 Environment, policy, process checks, deadlines, memory limits, runtime pins
 and production connector are unchanged. Native CI must pass before one
 reviewed attach probe; no further full preflight or pilot is inferred.
+
+
+The exact-import [native CI 38216634217](https://github.com/qwts/agent-comms/actions/runs/38216634217)
+passed at `f5e5df86dfecb0025851f89f8b53a4544258ef6d`, including the actual
+paused-fixture attachment control. The single authorized [standard-user
+attach-only run 38216824014](https://github.com/qwts/agent-comms/actions/runs/38216824014)
+then passed in 1,612 ms at that same head. The fixture passed the unchanged
+identity checks and joined the private job; natural job emptiness was confirmed.
+Fixture and supervisor both exited naturally with code zero, and both owned
+terminal and stdio closures were confirmed. No EOF or forced termination was
+requested, stderr was empty, and the bootstrap removed profile/account/stage
+with no cleanup errors. No production code was imported and no production
+workload or scratch was created. Original CRLF reports:
+
+- [Acceptance](../tools/acceptance/evidence/2026-10-12-windows-connector/attach-38216824014/acceptance.json):
+  `5c81cafa7181cd99e696db641f770d458e9db023a8d06f858597b7d8829f117e`.
+- [Capacity](../tools/acceptance/evidence/2026-10-12-windows-connector/attach-38216824014/capacity/capacity.json):
+  `886c68931aab257c5138b9e301c54be1cf27d4cf5c758d62e11f7ab944a9a780`.
+- Full run log: `bda1436160aa28274514747d3571f59cb913de182712e6735610030636fa8d1b`.
+
+The three source hashes in these receipts match the exact signed runner,
+supervisor and controller after Windows checkout line-ending conversion.
+Explicit import completes the attach control that previously stalled in the
+first CIM query interval under the same sanitized environment. This establishes
+that bounded control with the explicit import; it does not establish the
+underlying implicit-module-loading mechanism or production connector readiness.
+All failed receipts remain retained unchanged. The six production preflight
+cases remain outstanding; no capacity rate or numeric budget is qualified.
+Further preflight requires a separate reviewed result checkpoint and dispatch.
