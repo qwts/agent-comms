@@ -42,7 +42,9 @@ from this agent-comms release; these receipts are not blanket Windows support.
   inboxes, wake choices and finite storage.
 - [Principal client API](docs/principal-client.md): embed owner census and chat.
 - [Owner-decision proposal](docs/owner-decisions.md): proposed security contract;
-  [evidence and conformance](docs/owner-decision-conformance.md). No runtime authorization.
+  [evidence and conformance](docs/owner-decision-conformance.md), and
+  [private daemon evidence admission](docs/owner-decision-daemon-evidence-admission.md).
+  No runtime authorization.
 - [Windows](docs/windows.md): released `win32` platform branches and their
   current end-to-end limits.
 - [AGENTS.md](AGENTS.md): agent context for working in this repository.

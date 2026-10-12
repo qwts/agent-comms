@@ -1,0 +1,2099 @@
+{
+  "status": "synthetic-conformance-only-not-daemon-v2-output",
+  "sourceSha256": "ff7385f661bb0b0bbc2b36f94634ba1fd1ebcc359dce130149db8a21257e2410",
+  "actionSourceSha256": "70706e7327b90f8649b0b1f8baa7b59d2e4e8f6f1f33b674dc8472cb7eb951ac",
+  "linkedWriterCommit": "13ab9a7878d4a0826162400986c21ccb7ca88d0c",
+  "pairContractCommit": "36a6ecde5a8a49d80d32895a120fb272e412ab2f",
+  "cases": [
+    {
+      "id": "approve",
+      "preparationId": "approve-preparation",
+      "enteredId": "approve-entered",
+      "linkedEventJson": "{\"schemaVersion\":1,\"kind\":\"revision\",\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"parentRevision\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"author\":\"soul\",\"reason\":\"Reviewed\",\"proposalId\":\"00000000-0000-4000-8000-000000000003\",\"approval\":\"user\",\"approvedBy\":\"user\",\"approvalReason\":\"Reviewed\",\"authorization\":{\"method\":\"owner-decision\"},\"ownerDecision\":{\"requestId\":\"00000000-0000-4000-8000-000000000101\",\"payloadDigest\":\"19879f0a16933f3a7ff67a40aa53dba5395b5192ac9691da9ebed78891ce1e87\",\"receiptDigest\":\"3645f954f5f5c1216defa47c4e46dd1de6b70a7ebbb2650f5ce45eabaea65fbd\",\"effectId\":\"22222222-2222-4222-8222-000000000001\",\"preparationDigest\":\"18cb063cc69a864c5928f46cc1a553df8ee1ec100667c8c5b1d89c6939069c27\"},\"at\":\"2033-05-18T03:33:30.000Z\"}\n",
+      "completed": {
+        "record": {
+          "v": 1,
+          "kind": "effect",
+          "requestId": "00000000-0000-4000-8000-000000000101",
+          "payloadDigest": "19879f0a16933f3a7ff67a40aa53dba5395b5192ac9691da9ebed78891ce1e87",
+          "preparationDigest": "18cb063cc69a864c5928f46cc1a553df8ee1ec100667c8c5b1d89c6939069c27",
+          "receiptDigest": "3645f954f5f5c1216defa47c4e46dd1de6b70a7ebbb2650f5ce45eabaea65fbd",
+          "effectId": "22222222-2222-4222-8222-000000000001",
+          "at": 2000000010,
+          "phase": "completed",
+          "detail": {
+            "kind": "revision",
+            "journalSeq": 11,
+            "journalRecordDigest": "5de1486224306c648734c3fc7e467704853da2f8db5fd737df5da27ba19c6e09",
+            "beforeRevision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "afterRevision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "proposalId": "00000000-0000-4000-8000-000000000003",
+            "working": null
+          }
+        },
+        "canonicalJson": "{\"at\":2000000010,\"detail\":{\"afterRevision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"beforeRevision\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"journalRecordDigest\":\"5de1486224306c648734c3fc7e467704853da2f8db5fd737df5da27ba19c6e09\",\"journalSeq\":11,\"kind\":\"revision\",\"proposalId\":\"00000000-0000-4000-8000-000000000003\",\"working\":null},\"effectId\":\"22222222-2222-4222-8222-000000000001\",\"kind\":\"effect\",\"payloadDigest\":\"19879f0a16933f3a7ff67a40aa53dba5395b5192ac9691da9ebed78891ce1e87\",\"phase\":\"completed\",\"preparationDigest\":\"18cb063cc69a864c5928f46cc1a553df8ee1ec100667c8c5b1d89c6939069c27\",\"receiptDigest\":\"3645f954f5f5c1216defa47c4e46dd1de6b70a7ebbb2650f5ce45eabaea65fbd\",\"requestId\":\"00000000-0000-4000-8000-000000000101\",\"v\":1}",
+        "sha256": "753abef061801e0ba02ee32c3def9dfd19125241f8bd75ea2f020b9c52ae63bf",
+        "utf8Bytes": 795
+      },
+      "refused": {
+        "record": {
+          "v": 1,
+          "kind": "effect",
+          "requestId": "00000000-0000-4000-8000-000000000101",
+          "payloadDigest": "19879f0a16933f3a7ff67a40aa53dba5395b5192ac9691da9ebed78891ce1e87",
+          "preparationDigest": "18cb063cc69a864c5928f46cc1a553df8ee1ec100667c8c5b1d89c6939069c27",
+          "receiptDigest": "3645f954f5f5c1216defa47c4e46dd1de6b70a7ebbb2650f5ce45eabaea65fbd",
+          "effectId": "22222222-2222-4222-8222-000000000001",
+          "phase": "refused",
+          "at": 2000000010,
+          "detail": {
+            "code": "expected-state-changed"
+          }
+        },
+        "canonicalJson": "{\"at\":2000000010,\"detail\":{\"code\":\"expected-state-changed\"},\"effectId\":\"22222222-2222-4222-8222-000000000001\",\"kind\":\"effect\",\"payloadDigest\":\"19879f0a16933f3a7ff67a40aa53dba5395b5192ac9691da9ebed78891ce1e87\",\"phase\":\"refused\",\"preparationDigest\":\"18cb063cc69a864c5928f46cc1a553df8ee1ec100667c8c5b1d89c6939069c27\",\"receiptDigest\":\"3645f954f5f5c1216defa47c4e46dd1de6b70a7ebbb2650f5ce45eabaea65fbd\",\"requestId\":\"00000000-0000-4000-8000-000000000101\",\"v\":1}",
+        "sha256": "d4216d97acf8f28fd1cb405afcbd773f1b74d9e09f8a26e8835798b1c9d99b12",
+        "utf8Bytes": 454
+      },
+      "pairs": [
+        {
+          "finding": "applied",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "head": {
+                "seq": 11,
+                "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              },
+              "proposal": null,
+              "working": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000101",
+              "payloadDigest": "19879f0a16933f3a7ff67a40aa53dba5395b5192ac9691da9ebed78891ce1e87",
+              "effectId": "22222222-2222-4222-8222-000000000001",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "applied",
+              "basisDigest": "753abef061801e0ba02ee32c3def9dfd19125241f8bd75ea2f020b9c52ae63bf",
+              "observedDigest": "25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":\"753abef061801e0ba02ee32c3def9dfd19125241f8bd75ea2f020b9c52ae63bf\",\"effectId\":\"22222222-2222-4222-8222-000000000001\",\"finding\":\"applied\",\"kind\":\"reconciliation\",\"observedDigest\":\"25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"19879f0a16933f3a7ff67a40aa53dba5395b5192ac9691da9ebed78891ce1e87\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000101\",\"v\":1},\"v\":1}",
+          "sha256": "a39b457c9150f22f7b9bda7336829f017506f08b41a3d7d12700d8d9592c47f1",
+          "utf8Bytes": 859
+        },
+        {
+          "finding": "refused",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "head": {
+                "seq": 11,
+                "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              },
+              "proposal": null,
+              "working": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000101",
+              "payloadDigest": "19879f0a16933f3a7ff67a40aa53dba5395b5192ac9691da9ebed78891ce1e87",
+              "effectId": "22222222-2222-4222-8222-000000000001",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "refused",
+              "basisDigest": "d4216d97acf8f28fd1cb405afcbd773f1b74d9e09f8a26e8835798b1c9d99b12",
+              "observedDigest": "25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":\"d4216d97acf8f28fd1cb405afcbd773f1b74d9e09f8a26e8835798b1c9d99b12\",\"effectId\":\"22222222-2222-4222-8222-000000000001\",\"finding\":\"refused\",\"kind\":\"reconciliation\",\"observedDigest\":\"25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"19879f0a16933f3a7ff67a40aa53dba5395b5192ac9691da9ebed78891ce1e87\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000101\",\"v\":1},\"v\":1}",
+          "sha256": "6a35545fc9395485fed68f7cf98bf29da00dd720cf3a2cbdabaf2f4477343256",
+          "utf8Bytes": 859
+        },
+        {
+          "finding": "indeterminate",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "head": {
+                "seq": 11,
+                "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              },
+              "proposal": null,
+              "working": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000101",
+              "payloadDigest": "19879f0a16933f3a7ff67a40aa53dba5395b5192ac9691da9ebed78891ce1e87",
+              "effectId": "22222222-2222-4222-8222-000000000001",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "indeterminate",
+              "basisDigest": null,
+              "observedDigest": "25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":null,\"effectId\":\"22222222-2222-4222-8222-000000000001\",\"finding\":\"indeterminate\",\"kind\":\"reconciliation\",\"observedDigest\":\"25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"19879f0a16933f3a7ff67a40aa53dba5395b5192ac9691da9ebed78891ce1e87\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000101\",\"v\":1},\"v\":1}",
+          "sha256": "e72777f3ade8757be66987bdc0776a1f94227aebc472057483aa12d9e0c88161",
+          "utf8Bytes": 803
+        }
+      ],
+      "noPreparation": {
+        "record": {
+          "v": 1,
+          "preimage": {
+            "v": 1,
+            "head": {
+              "seq": 11,
+              "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            },
+            "proposal": null,
+            "working": null
+          },
+          "record": {
+            "v": 1,
+            "kind": "reconciliation",
+            "requestId": "00000000-0000-4000-8000-000000000101",
+            "payloadDigest": "19879f0a16933f3a7ff67a40aa53dba5395b5192ac9691da9ebed78891ce1e87",
+            "effectId": null,
+            "auditId": "11111111-1111-4111-8111-111111111111",
+            "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "originalDaemonEpoch": 1,
+            "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "reportingDaemonEpoch": 2,
+            "at": 2000000020,
+            "finding": "indeterminate",
+            "basisDigest": null,
+            "observedDigest": "25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba"
+          }
+        },
+        "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":null,\"effectId\":null,\"finding\":\"indeterminate\",\"kind\":\"reconciliation\",\"observedDigest\":\"25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"19879f0a16933f3a7ff67a40aa53dba5395b5192ac9691da9ebed78891ce1e87\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000101\",\"v\":1},\"v\":1}",
+        "sha256": "179553e7dc77ea0e697fd53c2337d3e3b8007ca0b0d473725203aa9412662437",
+        "utf8Bytes": 769
+      }
+    },
+    {
+      "id": "reject",
+      "preparationId": "reject-preparation",
+      "enteredId": "reject-entered",
+      "linkedEventJson": "{\"schemaVersion\":1,\"kind\":\"decision\",\"proposalId\":\"00000000-0000-4000-8000-000000000003\",\"author\":\"user\",\"reason\":\"Needs work\",\"authorization\":{\"method\":\"owner-decision\"},\"ownerDecision\":{\"requestId\":\"00000000-0000-4000-8000-000000000102\",\"payloadDigest\":\"2351e8fd1e719217984d2a44ed0c8a8e8824d45a678e4460017ac6753ebdea06\",\"receiptDigest\":\"fe280e5aeae17e69320cee4909395ede8292b619c455574269728808ef929469\",\"effectId\":\"22222222-2222-4222-8222-000000000002\",\"preparationDigest\":\"ce02c997ff4245fc5156bda7fa0ab9b48447ee00fbf9c7943acfdaa17360e2c9\"},\"at\":\"2033-05-18T03:33:30.000Z\"}\n",
+      "completed": {
+        "record": {
+          "v": 1,
+          "kind": "effect",
+          "requestId": "00000000-0000-4000-8000-000000000102",
+          "payloadDigest": "2351e8fd1e719217984d2a44ed0c8a8e8824d45a678e4460017ac6753ebdea06",
+          "preparationDigest": "ce02c997ff4245fc5156bda7fa0ab9b48447ee00fbf9c7943acfdaa17360e2c9",
+          "receiptDigest": "fe280e5aeae17e69320cee4909395ede8292b619c455574269728808ef929469",
+          "effectId": "22222222-2222-4222-8222-000000000002",
+          "at": 2000000010,
+          "phase": "completed",
+          "detail": {
+            "kind": "revision",
+            "journalSeq": 11,
+            "journalRecordDigest": "57aac5570a86e3cda8f391dc988e85819279c3dfea3e056b4047eabddf7482c2",
+            "beforeRevision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "afterRevision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "proposalId": "00000000-0000-4000-8000-000000000003",
+            "working": null
+          }
+        },
+        "canonicalJson": "{\"at\":2000000010,\"detail\":{\"afterRevision\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"beforeRevision\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"journalRecordDigest\":\"57aac5570a86e3cda8f391dc988e85819279c3dfea3e056b4047eabddf7482c2\",\"journalSeq\":11,\"kind\":\"revision\",\"proposalId\":\"00000000-0000-4000-8000-000000000003\",\"working\":null},\"effectId\":\"22222222-2222-4222-8222-000000000002\",\"kind\":\"effect\",\"payloadDigest\":\"2351e8fd1e719217984d2a44ed0c8a8e8824d45a678e4460017ac6753ebdea06\",\"phase\":\"completed\",\"preparationDigest\":\"ce02c997ff4245fc5156bda7fa0ab9b48447ee00fbf9c7943acfdaa17360e2c9\",\"receiptDigest\":\"fe280e5aeae17e69320cee4909395ede8292b619c455574269728808ef929469\",\"requestId\":\"00000000-0000-4000-8000-000000000102\",\"v\":1}",
+        "sha256": "a1fa029e6abf1a1c510959cd171f0b00194e1889f83c5e70a621bd968e73cc14",
+        "utf8Bytes": 795
+      },
+      "refused": {
+        "record": {
+          "v": 1,
+          "kind": "effect",
+          "requestId": "00000000-0000-4000-8000-000000000102",
+          "payloadDigest": "2351e8fd1e719217984d2a44ed0c8a8e8824d45a678e4460017ac6753ebdea06",
+          "preparationDigest": "ce02c997ff4245fc5156bda7fa0ab9b48447ee00fbf9c7943acfdaa17360e2c9",
+          "receiptDigest": "fe280e5aeae17e69320cee4909395ede8292b619c455574269728808ef929469",
+          "effectId": "22222222-2222-4222-8222-000000000002",
+          "phase": "refused",
+          "at": 2000000010,
+          "detail": {
+            "code": "expected-state-changed"
+          }
+        },
+        "canonicalJson": "{\"at\":2000000010,\"detail\":{\"code\":\"expected-state-changed\"},\"effectId\":\"22222222-2222-4222-8222-000000000002\",\"kind\":\"effect\",\"payloadDigest\":\"2351e8fd1e719217984d2a44ed0c8a8e8824d45a678e4460017ac6753ebdea06\",\"phase\":\"refused\",\"preparationDigest\":\"ce02c997ff4245fc5156bda7fa0ab9b48447ee00fbf9c7943acfdaa17360e2c9\",\"receiptDigest\":\"fe280e5aeae17e69320cee4909395ede8292b619c455574269728808ef929469\",\"requestId\":\"00000000-0000-4000-8000-000000000102\",\"v\":1}",
+        "sha256": "553c130e4708e539233f8fd78f909bbe6b7163ca3b38d76fadf80aaedba9e1b8",
+        "utf8Bytes": 454
+      },
+      "pairs": [
+        {
+          "finding": "applied",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "head": {
+                "seq": 11,
+                "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "proposal": null,
+              "working": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000102",
+              "payloadDigest": "2351e8fd1e719217984d2a44ed0c8a8e8824d45a678e4460017ac6753ebdea06",
+              "effectId": "22222222-2222-4222-8222-000000000002",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "applied",
+              "basisDigest": "a1fa029e6abf1a1c510959cd171f0b00194e1889f83c5e70a621bd968e73cc14",
+              "observedDigest": "501b5d8815d1bea23d89fb390f4eb51a4c20355334b8f3b436f16025f10ad2c4"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":\"a1fa029e6abf1a1c510959cd171f0b00194e1889f83c5e70a621bd968e73cc14\",\"effectId\":\"22222222-2222-4222-8222-000000000002\",\"finding\":\"applied\",\"kind\":\"reconciliation\",\"observedDigest\":\"501b5d8815d1bea23d89fb390f4eb51a4c20355334b8f3b436f16025f10ad2c4\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"2351e8fd1e719217984d2a44ed0c8a8e8824d45a678e4460017ac6753ebdea06\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000102\",\"v\":1},\"v\":1}",
+          "sha256": "a71dc008633fe74a9ff4c1dcc5f324fd2cb978b4e36df5225f9dd44f2a44f2bb",
+          "utf8Bytes": 859
+        },
+        {
+          "finding": "refused",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "head": {
+                "seq": 11,
+                "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "proposal": null,
+              "working": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000102",
+              "payloadDigest": "2351e8fd1e719217984d2a44ed0c8a8e8824d45a678e4460017ac6753ebdea06",
+              "effectId": "22222222-2222-4222-8222-000000000002",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "refused",
+              "basisDigest": "553c130e4708e539233f8fd78f909bbe6b7163ca3b38d76fadf80aaedba9e1b8",
+              "observedDigest": "501b5d8815d1bea23d89fb390f4eb51a4c20355334b8f3b436f16025f10ad2c4"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":\"553c130e4708e539233f8fd78f909bbe6b7163ca3b38d76fadf80aaedba9e1b8\",\"effectId\":\"22222222-2222-4222-8222-000000000002\",\"finding\":\"refused\",\"kind\":\"reconciliation\",\"observedDigest\":\"501b5d8815d1bea23d89fb390f4eb51a4c20355334b8f3b436f16025f10ad2c4\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"2351e8fd1e719217984d2a44ed0c8a8e8824d45a678e4460017ac6753ebdea06\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000102\",\"v\":1},\"v\":1}",
+          "sha256": "e18c4a7c56d102a52402ef90ce04a96308bbcf62e27627dff30086f48e5d1a45",
+          "utf8Bytes": 859
+        },
+        {
+          "finding": "indeterminate",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "head": {
+                "seq": 11,
+                "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+              },
+              "proposal": null,
+              "working": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000102",
+              "payloadDigest": "2351e8fd1e719217984d2a44ed0c8a8e8824d45a678e4460017ac6753ebdea06",
+              "effectId": "22222222-2222-4222-8222-000000000002",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "indeterminate",
+              "basisDigest": null,
+              "observedDigest": "501b5d8815d1bea23d89fb390f4eb51a4c20355334b8f3b436f16025f10ad2c4"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":null,\"effectId\":\"22222222-2222-4222-8222-000000000002\",\"finding\":\"indeterminate\",\"kind\":\"reconciliation\",\"observedDigest\":\"501b5d8815d1bea23d89fb390f4eb51a4c20355334b8f3b436f16025f10ad2c4\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"2351e8fd1e719217984d2a44ed0c8a8e8824d45a678e4460017ac6753ebdea06\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000102\",\"v\":1},\"v\":1}",
+          "sha256": "79695e493b575f35c483cf36de17b9cd24afde5b2a8cad16a56cc86607fdcdd8",
+          "utf8Bytes": 803
+        }
+      ],
+      "noPreparation": {
+        "record": {
+          "v": 1,
+          "preimage": {
+            "v": 1,
+            "head": {
+              "seq": 11,
+              "revision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "proposal": null,
+            "working": null
+          },
+          "record": {
+            "v": 1,
+            "kind": "reconciliation",
+            "requestId": "00000000-0000-4000-8000-000000000102",
+            "payloadDigest": "2351e8fd1e719217984d2a44ed0c8a8e8824d45a678e4460017ac6753ebdea06",
+            "effectId": null,
+            "auditId": "11111111-1111-4111-8111-111111111111",
+            "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "originalDaemonEpoch": 1,
+            "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "reportingDaemonEpoch": 2,
+            "at": 2000000020,
+            "finding": "indeterminate",
+            "basisDigest": null,
+            "observedDigest": "501b5d8815d1bea23d89fb390f4eb51a4c20355334b8f3b436f16025f10ad2c4"
+          }
+        },
+        "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":null,\"effectId\":null,\"finding\":\"indeterminate\",\"kind\":\"reconciliation\",\"observedDigest\":\"501b5d8815d1bea23d89fb390f4eb51a4c20355334b8f3b436f16025f10ad2c4\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"2351e8fd1e719217984d2a44ed0c8a8e8824d45a678e4460017ac6753ebdea06\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000102\",\"v\":1},\"v\":1}",
+        "sha256": "91da0367b345f5f4dbad36c1f4ca093378ff55c0a7a07bf3dbf1e5ed2293e6eb",
+        "utf8Bytes": 769
+      }
+    },
+    {
+      "id": "adopt",
+      "preparationId": "adopt-preparation",
+      "enteredId": "adopt-entered",
+      "linkedEventJson": "{\"schemaVersion\":1,\"kind\":\"revision\",\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"parentRevision\":null,\"author\":\"user\",\"reason\":\"Initial package\",\"authorization\":{\"method\":\"owner-decision\"},\"ownerDecision\":{\"requestId\":\"00000000-0000-4000-8000-000000000103\",\"payloadDigest\":\"ab6db07428679262aa12c294a69988a60766e0f75ec8600b50ccc27a5fb8f855\",\"receiptDigest\":\"51785693f6ef24aed8c2058e652b07ac6b0a82b7489a9b7fefda25a333f1110a\",\"effectId\":\"22222222-2222-4222-8222-000000000003\",\"preparationDigest\":\"444618a8d5a4b1b2c15d63699c074582851cedb56bf91b0f61b2212547cff2ba\"},\"at\":\"2033-05-18T03:33:30.000Z\"}\n",
+      "completed": {
+        "record": {
+          "v": 1,
+          "kind": "effect",
+          "requestId": "00000000-0000-4000-8000-000000000103",
+          "payloadDigest": "ab6db07428679262aa12c294a69988a60766e0f75ec8600b50ccc27a5fb8f855",
+          "preparationDigest": "444618a8d5a4b1b2c15d63699c074582851cedb56bf91b0f61b2212547cff2ba",
+          "receiptDigest": "51785693f6ef24aed8c2058e652b07ac6b0a82b7489a9b7fefda25a333f1110a",
+          "effectId": "22222222-2222-4222-8222-000000000003",
+          "at": 2000000010,
+          "phase": "completed",
+          "detail": {
+            "kind": "revision",
+            "journalSeq": 11,
+            "journalRecordDigest": "d66236f11e420de897ad6107c86241f289bd13f6fccd5426ff5deec998cc7290",
+            "beforeRevision": null,
+            "afterRevision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "proposalId": null,
+            "working": null
+          }
+        },
+        "canonicalJson": "{\"at\":2000000010,\"detail\":{\"afterRevision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"beforeRevision\":null,\"journalRecordDigest\":\"d66236f11e420de897ad6107c86241f289bd13f6fccd5426ff5deec998cc7290\",\"journalSeq\":11,\"kind\":\"revision\",\"proposalId\":null,\"working\":null},\"effectId\":\"22222222-2222-4222-8222-000000000003\",\"kind\":\"effect\",\"payloadDigest\":\"ab6db07428679262aa12c294a69988a60766e0f75ec8600b50ccc27a5fb8f855\",\"phase\":\"completed\",\"preparationDigest\":\"444618a8d5a4b1b2c15d63699c074582851cedb56bf91b0f61b2212547cff2ba\",\"receiptDigest\":\"51785693f6ef24aed8c2058e652b07ac6b0a82b7489a9b7fefda25a333f1110a\",\"requestId\":\"00000000-0000-4000-8000-000000000103\",\"v\":1}",
+        "sha256": "224194d2a5418bbfca74ad88c4a1bc3b2863aaa4803893dde41b3b04fb8e7fc6",
+        "utf8Bytes": 692
+      },
+      "refused": {
+        "record": {
+          "v": 1,
+          "kind": "effect",
+          "requestId": "00000000-0000-4000-8000-000000000103",
+          "payloadDigest": "ab6db07428679262aa12c294a69988a60766e0f75ec8600b50ccc27a5fb8f855",
+          "preparationDigest": "444618a8d5a4b1b2c15d63699c074582851cedb56bf91b0f61b2212547cff2ba",
+          "receiptDigest": "51785693f6ef24aed8c2058e652b07ac6b0a82b7489a9b7fefda25a333f1110a",
+          "effectId": "22222222-2222-4222-8222-000000000003",
+          "phase": "refused",
+          "at": 2000000010,
+          "detail": {
+            "code": "expected-state-changed"
+          }
+        },
+        "canonicalJson": "{\"at\":2000000010,\"detail\":{\"code\":\"expected-state-changed\"},\"effectId\":\"22222222-2222-4222-8222-000000000003\",\"kind\":\"effect\",\"payloadDigest\":\"ab6db07428679262aa12c294a69988a60766e0f75ec8600b50ccc27a5fb8f855\",\"phase\":\"refused\",\"preparationDigest\":\"444618a8d5a4b1b2c15d63699c074582851cedb56bf91b0f61b2212547cff2ba\",\"receiptDigest\":\"51785693f6ef24aed8c2058e652b07ac6b0a82b7489a9b7fefda25a333f1110a\",\"requestId\":\"00000000-0000-4000-8000-000000000103\",\"v\":1}",
+        "sha256": "d4c45300ab7ef8cb86a517a2f1fa85c2c71b057e6d5f5c6b0ea7ab111560860e",
+        "utf8Bytes": 454
+      },
+      "pairs": [
+        {
+          "finding": "applied",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "head": {
+                "seq": 11,
+                "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              },
+              "proposal": null,
+              "working": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000103",
+              "payloadDigest": "ab6db07428679262aa12c294a69988a60766e0f75ec8600b50ccc27a5fb8f855",
+              "effectId": "22222222-2222-4222-8222-000000000003",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "applied",
+              "basisDigest": "224194d2a5418bbfca74ad88c4a1bc3b2863aaa4803893dde41b3b04fb8e7fc6",
+              "observedDigest": "25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":\"224194d2a5418bbfca74ad88c4a1bc3b2863aaa4803893dde41b3b04fb8e7fc6\",\"effectId\":\"22222222-2222-4222-8222-000000000003\",\"finding\":\"applied\",\"kind\":\"reconciliation\",\"observedDigest\":\"25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"ab6db07428679262aa12c294a69988a60766e0f75ec8600b50ccc27a5fb8f855\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000103\",\"v\":1},\"v\":1}",
+          "sha256": "73342114108eedde8abdaa95abf1f96e9a590dddab6ea47c5ebef8ea94f8d5c2",
+          "utf8Bytes": 859
+        },
+        {
+          "finding": "refused",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "head": {
+                "seq": 11,
+                "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              },
+              "proposal": null,
+              "working": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000103",
+              "payloadDigest": "ab6db07428679262aa12c294a69988a60766e0f75ec8600b50ccc27a5fb8f855",
+              "effectId": "22222222-2222-4222-8222-000000000003",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "refused",
+              "basisDigest": "d4c45300ab7ef8cb86a517a2f1fa85c2c71b057e6d5f5c6b0ea7ab111560860e",
+              "observedDigest": "25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":\"d4c45300ab7ef8cb86a517a2f1fa85c2c71b057e6d5f5c6b0ea7ab111560860e\",\"effectId\":\"22222222-2222-4222-8222-000000000003\",\"finding\":\"refused\",\"kind\":\"reconciliation\",\"observedDigest\":\"25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"ab6db07428679262aa12c294a69988a60766e0f75ec8600b50ccc27a5fb8f855\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000103\",\"v\":1},\"v\":1}",
+          "sha256": "0d494ff3256fa26f87cfcd522ca2d9dbc8845315005e0e1b198288a1ecfb1332",
+          "utf8Bytes": 859
+        },
+        {
+          "finding": "indeterminate",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "head": {
+                "seq": 11,
+                "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              },
+              "proposal": null,
+              "working": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000103",
+              "payloadDigest": "ab6db07428679262aa12c294a69988a60766e0f75ec8600b50ccc27a5fb8f855",
+              "effectId": "22222222-2222-4222-8222-000000000003",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "indeterminate",
+              "basisDigest": null,
+              "observedDigest": "25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":null,\"effectId\":\"22222222-2222-4222-8222-000000000003\",\"finding\":\"indeterminate\",\"kind\":\"reconciliation\",\"observedDigest\":\"25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"ab6db07428679262aa12c294a69988a60766e0f75ec8600b50ccc27a5fb8f855\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000103\",\"v\":1},\"v\":1}",
+          "sha256": "16368449882ad04a89db4a51b5c2902bedd3da8202cf24118fb188b375b69866",
+          "utf8Bytes": 803
+        }
+      ],
+      "noPreparation": {
+        "record": {
+          "v": 1,
+          "preimage": {
+            "v": 1,
+            "head": {
+              "seq": 11,
+              "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            },
+            "proposal": null,
+            "working": null
+          },
+          "record": {
+            "v": 1,
+            "kind": "reconciliation",
+            "requestId": "00000000-0000-4000-8000-000000000103",
+            "payloadDigest": "ab6db07428679262aa12c294a69988a60766e0f75ec8600b50ccc27a5fb8f855",
+            "effectId": null,
+            "auditId": "11111111-1111-4111-8111-111111111111",
+            "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "originalDaemonEpoch": 1,
+            "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "reportingDaemonEpoch": 2,
+            "at": 2000000020,
+            "finding": "indeterminate",
+            "basisDigest": null,
+            "observedDigest": "25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba"
+          }
+        },
+        "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":null,\"effectId\":null,\"finding\":\"indeterminate\",\"kind\":\"reconciliation\",\"observedDigest\":\"25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"ab6db07428679262aa12c294a69988a60766e0f75ec8600b50ccc27a5fb8f855\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000103\",\"v\":1},\"v\":1}",
+        "sha256": "7059c6e02f4bf3bd9cdd83a533913664d6a1945f3f2c4783d05a6503e650732b",
+        "utf8Bytes": 769
+      }
+    },
+    {
+      "id": "edit-apply",
+      "preparationId": "edit-apply-preparation",
+      "enteredId": "edit-apply-entered",
+      "linkedEventJson": "{\"schemaVersion\":1,\"kind\":\"revision\",\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"parentRevision\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"author\":\"user\",\"reason\":\"Update instructions\",\"authorization\":{\"method\":\"owner-decision\"},\"ownerDecision\":{\"requestId\":\"00000000-0000-4000-8000-000000000104\",\"payloadDigest\":\"0bc89a270276891f59ced95af57f5554a6116ddf4f50902c6dc2bf9dd1b27e7e\",\"receiptDigest\":\"8d564e093e36eebaf86f67b2f15922a22a5a325b6eab152facf700f01fa26f0e\",\"effectId\":\"22222222-2222-4222-8222-000000000004\",\"preparationDigest\":\"3a4a4a99f1a8d5c653ddd6ae8d52d47d2b3a97600191fad6cf9184df060937ce\"},\"at\":\"2033-05-18T03:33:30.000Z\"}\n",
+      "completed": {
+        "record": {
+          "v": 1,
+          "kind": "effect",
+          "requestId": "00000000-0000-4000-8000-000000000104",
+          "payloadDigest": "0bc89a270276891f59ced95af57f5554a6116ddf4f50902c6dc2bf9dd1b27e7e",
+          "preparationDigest": "3a4a4a99f1a8d5c653ddd6ae8d52d47d2b3a97600191fad6cf9184df060937ce",
+          "receiptDigest": "8d564e093e36eebaf86f67b2f15922a22a5a325b6eab152facf700f01fa26f0e",
+          "effectId": "22222222-2222-4222-8222-000000000004",
+          "at": 2000000010,
+          "phase": "completed",
+          "detail": {
+            "kind": "revision",
+            "journalSeq": 11,
+            "journalRecordDigest": "db4265651dafeb422a6707b4263d0b0e6b90138009a28b401af8af4e9850e613",
+            "beforeRevision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "afterRevision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "proposalId": null,
+            "working": {
+              "rootDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "inventoryDigest": "9999999999999999999999999999999999999999999999999999999999999999"
+            }
+          }
+        },
+        "canonicalJson": "{\"at\":2000000010,\"detail\":{\"afterRevision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"beforeRevision\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"journalRecordDigest\":\"db4265651dafeb422a6707b4263d0b0e6b90138009a28b401af8af4e9850e613\",\"journalSeq\":11,\"kind\":\"revision\",\"proposalId\":null,\"working\":{\"inventoryDigest\":\"9999999999999999999999999999999999999999999999999999999999999999\",\"rootDigest\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\"}},\"effectId\":\"22222222-2222-4222-8222-000000000004\",\"kind\":\"effect\",\"payloadDigest\":\"0bc89a270276891f59ced95af57f5554a6116ddf4f50902c6dc2bf9dd1b27e7e\",\"phase\":\"completed\",\"preparationDigest\":\"3a4a4a99f1a8d5c653ddd6ae8d52d47d2b3a97600191fad6cf9184df060937ce\",\"receiptDigest\":\"8d564e093e36eebaf86f67b2f15922a22a5a325b6eab152facf700f01fa26f0e\",\"requestId\":\"00000000-0000-4000-8000-000000000104\",\"v\":1}",
+        "sha256": "df12c604224b8ab52b30baecbda66457978711fa14af330465aa3694b0ff1b74",
+        "utf8Bytes": 923
+      },
+      "refused": {
+        "record": {
+          "v": 1,
+          "kind": "effect",
+          "requestId": "00000000-0000-4000-8000-000000000104",
+          "payloadDigest": "0bc89a270276891f59ced95af57f5554a6116ddf4f50902c6dc2bf9dd1b27e7e",
+          "preparationDigest": "3a4a4a99f1a8d5c653ddd6ae8d52d47d2b3a97600191fad6cf9184df060937ce",
+          "receiptDigest": "8d564e093e36eebaf86f67b2f15922a22a5a325b6eab152facf700f01fa26f0e",
+          "effectId": "22222222-2222-4222-8222-000000000004",
+          "phase": "refused",
+          "at": 2000000010,
+          "detail": {
+            "code": "expected-state-changed"
+          }
+        },
+        "canonicalJson": "{\"at\":2000000010,\"detail\":{\"code\":\"expected-state-changed\"},\"effectId\":\"22222222-2222-4222-8222-000000000004\",\"kind\":\"effect\",\"payloadDigest\":\"0bc89a270276891f59ced95af57f5554a6116ddf4f50902c6dc2bf9dd1b27e7e\",\"phase\":\"refused\",\"preparationDigest\":\"3a4a4a99f1a8d5c653ddd6ae8d52d47d2b3a97600191fad6cf9184df060937ce\",\"receiptDigest\":\"8d564e093e36eebaf86f67b2f15922a22a5a325b6eab152facf700f01fa26f0e\",\"requestId\":\"00000000-0000-4000-8000-000000000104\",\"v\":1}",
+        "sha256": "b0bb4a133d5ea732d450d4aa229baff5516792508e2442d1d028fdd26f6b4c01",
+        "utf8Bytes": 454
+      },
+      "pairs": [
+        {
+          "finding": "applied",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "head": {
+                "seq": 11,
+                "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              },
+              "proposal": null,
+              "working": {
+                "rootDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "inventoryDigest": "9999999999999999999999999999999999999999999999999999999999999999"
+              }
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000104",
+              "payloadDigest": "0bc89a270276891f59ced95af57f5554a6116ddf4f50902c6dc2bf9dd1b27e7e",
+              "effectId": "22222222-2222-4222-8222-000000000004",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "applied",
+              "basisDigest": "df12c604224b8ab52b30baecbda66457978711fa14af330465aa3694b0ff1b74",
+              "observedDigest": "247f0aa7fee149db11bbdd1d8ba2ed8f1d15436df8455e9da89029ded26a0690"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":{\"inventoryDigest\":\"9999999999999999999999999999999999999999999999999999999999999999\",\"rootDigest\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\"}},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":\"df12c604224b8ab52b30baecbda66457978711fa14af330465aa3694b0ff1b74\",\"effectId\":\"22222222-2222-4222-8222-000000000004\",\"finding\":\"applied\",\"kind\":\"reconciliation\",\"observedDigest\":\"247f0aa7fee149db11bbdd1d8ba2ed8f1d15436df8455e9da89029ded26a0690\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"0bc89a270276891f59ced95af57f5554a6116ddf4f50902c6dc2bf9dd1b27e7e\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000104\",\"v\":1},\"v\":1}",
+          "sha256": "4a68704dce130cef8d27eb0f703d8f869404bc809a57d9b19ece47eabb605e73",
+          "utf8Bytes": 1021
+        },
+        {
+          "finding": "refused",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "head": {
+                "seq": 11,
+                "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              },
+              "proposal": null,
+              "working": {
+                "rootDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "inventoryDigest": "9999999999999999999999999999999999999999999999999999999999999999"
+              }
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000104",
+              "payloadDigest": "0bc89a270276891f59ced95af57f5554a6116ddf4f50902c6dc2bf9dd1b27e7e",
+              "effectId": "22222222-2222-4222-8222-000000000004",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "refused",
+              "basisDigest": "b0bb4a133d5ea732d450d4aa229baff5516792508e2442d1d028fdd26f6b4c01",
+              "observedDigest": "247f0aa7fee149db11bbdd1d8ba2ed8f1d15436df8455e9da89029ded26a0690"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":{\"inventoryDigest\":\"9999999999999999999999999999999999999999999999999999999999999999\",\"rootDigest\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\"}},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":\"b0bb4a133d5ea732d450d4aa229baff5516792508e2442d1d028fdd26f6b4c01\",\"effectId\":\"22222222-2222-4222-8222-000000000004\",\"finding\":\"refused\",\"kind\":\"reconciliation\",\"observedDigest\":\"247f0aa7fee149db11bbdd1d8ba2ed8f1d15436df8455e9da89029ded26a0690\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"0bc89a270276891f59ced95af57f5554a6116ddf4f50902c6dc2bf9dd1b27e7e\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000104\",\"v\":1},\"v\":1}",
+          "sha256": "0a118a3706eff34c490a2d2d23b29924a4c748d15c7640ab75db2a6100217f18",
+          "utf8Bytes": 1021
+        },
+        {
+          "finding": "indeterminate",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "head": {
+                "seq": 11,
+                "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              },
+              "proposal": null,
+              "working": {
+                "rootDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                "inventoryDigest": "9999999999999999999999999999999999999999999999999999999999999999"
+              }
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000104",
+              "payloadDigest": "0bc89a270276891f59ced95af57f5554a6116ddf4f50902c6dc2bf9dd1b27e7e",
+              "effectId": "22222222-2222-4222-8222-000000000004",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "indeterminate",
+              "basisDigest": null,
+              "observedDigest": "247f0aa7fee149db11bbdd1d8ba2ed8f1d15436df8455e9da89029ded26a0690"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":{\"inventoryDigest\":\"9999999999999999999999999999999999999999999999999999999999999999\",\"rootDigest\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\"}},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":null,\"effectId\":\"22222222-2222-4222-8222-000000000004\",\"finding\":\"indeterminate\",\"kind\":\"reconciliation\",\"observedDigest\":\"247f0aa7fee149db11bbdd1d8ba2ed8f1d15436df8455e9da89029ded26a0690\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"0bc89a270276891f59ced95af57f5554a6116ddf4f50902c6dc2bf9dd1b27e7e\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000104\",\"v\":1},\"v\":1}",
+          "sha256": "46fb82ae2f087c26c2d3aca18065975aa46dfc5259eb2b8e0410d477ab3d347b",
+          "utf8Bytes": 965
+        }
+      ],
+      "noPreparation": {
+        "record": {
+          "v": 1,
+          "preimage": {
+            "v": 1,
+            "head": {
+              "seq": 11,
+              "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            },
+            "proposal": null,
+            "working": {
+              "rootDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "inventoryDigest": "9999999999999999999999999999999999999999999999999999999999999999"
+            }
+          },
+          "record": {
+            "v": 1,
+            "kind": "reconciliation",
+            "requestId": "00000000-0000-4000-8000-000000000104",
+            "payloadDigest": "0bc89a270276891f59ced95af57f5554a6116ddf4f50902c6dc2bf9dd1b27e7e",
+            "effectId": null,
+            "auditId": "11111111-1111-4111-8111-111111111111",
+            "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "originalDaemonEpoch": 1,
+            "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "reportingDaemonEpoch": 2,
+            "at": 2000000020,
+            "finding": "indeterminate",
+            "basisDigest": null,
+            "observedDigest": "247f0aa7fee149db11bbdd1d8ba2ed8f1d15436df8455e9da89029ded26a0690"
+          }
+        },
+        "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":{\"inventoryDigest\":\"9999999999999999999999999999999999999999999999999999999999999999\",\"rootDigest\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\"}},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":null,\"effectId\":null,\"finding\":\"indeterminate\",\"kind\":\"reconciliation\",\"observedDigest\":\"247f0aa7fee149db11bbdd1d8ba2ed8f1d15436df8455e9da89029ded26a0690\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"0bc89a270276891f59ced95af57f5554a6116ddf4f50902c6dc2bf9dd1b27e7e\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000104\",\"v\":1},\"v\":1}",
+        "sha256": "adf2de98acbf7aacd41a2990a92bdf3cbf08c27b881d6cd47cb64ae807dff4cb",
+        "utf8Bytes": 931
+      }
+    },
+    {
+      "id": "edit-record",
+      "preparationId": "edit-record-preparation",
+      "enteredId": "edit-record-entered",
+      "linkedEventJson": "{\"schemaVersion\":1,\"kind\":\"revision\",\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"parentRevision\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"author\":\"user\",\"reason\":\"Record only\",\"authorization\":{\"method\":\"owner-decision\"},\"ownerDecision\":{\"requestId\":\"00000000-0000-4000-8000-000000000105\",\"payloadDigest\":\"8ca1789562a2ddc14b5e47afc91f1ccccd4d86a8c8eeebb0063b2576ec452d88\",\"receiptDigest\":\"b38b2f05a159899444428e127dd4d5976ac2b0517f4e68bcbc359622692ecf3b\",\"effectId\":\"22222222-2222-4222-8222-000000000005\",\"preparationDigest\":\"d1e4f7685109d5b66750efa9f2339619a4c9524470cf6a190c343fcb3dda681f\"},\"at\":\"2033-05-18T03:33:30.000Z\"}\n",
+      "completed": {
+        "record": {
+          "v": 1,
+          "kind": "effect",
+          "requestId": "00000000-0000-4000-8000-000000000105",
+          "payloadDigest": "8ca1789562a2ddc14b5e47afc91f1ccccd4d86a8c8eeebb0063b2576ec452d88",
+          "preparationDigest": "d1e4f7685109d5b66750efa9f2339619a4c9524470cf6a190c343fcb3dda681f",
+          "receiptDigest": "b38b2f05a159899444428e127dd4d5976ac2b0517f4e68bcbc359622692ecf3b",
+          "effectId": "22222222-2222-4222-8222-000000000005",
+          "at": 2000000010,
+          "phase": "completed",
+          "detail": {
+            "kind": "revision",
+            "journalSeq": 11,
+            "journalRecordDigest": "660ef892ab14a7f0585d15644f5b9312ac2a76b45db7fd4871cd04f3754bc837",
+            "beforeRevision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "afterRevision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "proposalId": null,
+            "working": null
+          }
+        },
+        "canonicalJson": "{\"at\":2000000010,\"detail\":{\"afterRevision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"beforeRevision\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"journalRecordDigest\":\"660ef892ab14a7f0585d15644f5b9312ac2a76b45db7fd4871cd04f3754bc837\",\"journalSeq\":11,\"kind\":\"revision\",\"proposalId\":null,\"working\":null},\"effectId\":\"22222222-2222-4222-8222-000000000005\",\"kind\":\"effect\",\"payloadDigest\":\"8ca1789562a2ddc14b5e47afc91f1ccccd4d86a8c8eeebb0063b2576ec452d88\",\"phase\":\"completed\",\"preparationDigest\":\"d1e4f7685109d5b66750efa9f2339619a4c9524470cf6a190c343fcb3dda681f\",\"receiptDigest\":\"b38b2f05a159899444428e127dd4d5976ac2b0517f4e68bcbc359622692ecf3b\",\"requestId\":\"00000000-0000-4000-8000-000000000105\",\"v\":1}",
+        "sha256": "52ef94ebb66bc8ae8123783dfc6d6cb971e3bda7a0e28de5b976c48eb8486f67",
+        "utf8Bytes": 761
+      },
+      "refused": {
+        "record": {
+          "v": 1,
+          "kind": "effect",
+          "requestId": "00000000-0000-4000-8000-000000000105",
+          "payloadDigest": "8ca1789562a2ddc14b5e47afc91f1ccccd4d86a8c8eeebb0063b2576ec452d88",
+          "preparationDigest": "d1e4f7685109d5b66750efa9f2339619a4c9524470cf6a190c343fcb3dda681f",
+          "receiptDigest": "b38b2f05a159899444428e127dd4d5976ac2b0517f4e68bcbc359622692ecf3b",
+          "effectId": "22222222-2222-4222-8222-000000000005",
+          "phase": "refused",
+          "at": 2000000010,
+          "detail": {
+            "code": "expected-state-changed"
+          }
+        },
+        "canonicalJson": "{\"at\":2000000010,\"detail\":{\"code\":\"expected-state-changed\"},\"effectId\":\"22222222-2222-4222-8222-000000000005\",\"kind\":\"effect\",\"payloadDigest\":\"8ca1789562a2ddc14b5e47afc91f1ccccd4d86a8c8eeebb0063b2576ec452d88\",\"phase\":\"refused\",\"preparationDigest\":\"d1e4f7685109d5b66750efa9f2339619a4c9524470cf6a190c343fcb3dda681f\",\"receiptDigest\":\"b38b2f05a159899444428e127dd4d5976ac2b0517f4e68bcbc359622692ecf3b\",\"requestId\":\"00000000-0000-4000-8000-000000000105\",\"v\":1}",
+        "sha256": "feb981b874fb7f8c0a2128085e169ad55ed1257d5b1dae95d07adfe15a6acf42",
+        "utf8Bytes": 454
+      },
+      "pairs": [
+        {
+          "finding": "applied",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "head": {
+                "seq": 11,
+                "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              },
+              "proposal": null,
+              "working": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000105",
+              "payloadDigest": "8ca1789562a2ddc14b5e47afc91f1ccccd4d86a8c8eeebb0063b2576ec452d88",
+              "effectId": "22222222-2222-4222-8222-000000000005",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "applied",
+              "basisDigest": "52ef94ebb66bc8ae8123783dfc6d6cb971e3bda7a0e28de5b976c48eb8486f67",
+              "observedDigest": "25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":\"52ef94ebb66bc8ae8123783dfc6d6cb971e3bda7a0e28de5b976c48eb8486f67\",\"effectId\":\"22222222-2222-4222-8222-000000000005\",\"finding\":\"applied\",\"kind\":\"reconciliation\",\"observedDigest\":\"25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"8ca1789562a2ddc14b5e47afc91f1ccccd4d86a8c8eeebb0063b2576ec452d88\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000105\",\"v\":1},\"v\":1}",
+          "sha256": "d6f6db480f0a20cb140a8800988f98d03cacd9b84b9bf352e8f57752304c489c",
+          "utf8Bytes": 859
+        },
+        {
+          "finding": "refused",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "head": {
+                "seq": 11,
+                "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              },
+              "proposal": null,
+              "working": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000105",
+              "payloadDigest": "8ca1789562a2ddc14b5e47afc91f1ccccd4d86a8c8eeebb0063b2576ec452d88",
+              "effectId": "22222222-2222-4222-8222-000000000005",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "refused",
+              "basisDigest": "feb981b874fb7f8c0a2128085e169ad55ed1257d5b1dae95d07adfe15a6acf42",
+              "observedDigest": "25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":\"feb981b874fb7f8c0a2128085e169ad55ed1257d5b1dae95d07adfe15a6acf42\",\"effectId\":\"22222222-2222-4222-8222-000000000005\",\"finding\":\"refused\",\"kind\":\"reconciliation\",\"observedDigest\":\"25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"8ca1789562a2ddc14b5e47afc91f1ccccd4d86a8c8eeebb0063b2576ec452d88\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000105\",\"v\":1},\"v\":1}",
+          "sha256": "663ead862da22ca8ddb80fdd4c78b1b55dd6194a7258131bd77e11d50cc7ba81",
+          "utf8Bytes": 859
+        },
+        {
+          "finding": "indeterminate",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "head": {
+                "seq": 11,
+                "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              },
+              "proposal": null,
+              "working": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000105",
+              "payloadDigest": "8ca1789562a2ddc14b5e47afc91f1ccccd4d86a8c8eeebb0063b2576ec452d88",
+              "effectId": "22222222-2222-4222-8222-000000000005",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "indeterminate",
+              "basisDigest": null,
+              "observedDigest": "25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":null,\"effectId\":\"22222222-2222-4222-8222-000000000005\",\"finding\":\"indeterminate\",\"kind\":\"reconciliation\",\"observedDigest\":\"25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"8ca1789562a2ddc14b5e47afc91f1ccccd4d86a8c8eeebb0063b2576ec452d88\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000105\",\"v\":1},\"v\":1}",
+          "sha256": "87dd79e0b5f347ae9350ef530f8fac2e3fbbb01ef81641f2a3bca112d05e4716",
+          "utf8Bytes": 803
+        }
+      ],
+      "noPreparation": {
+        "record": {
+          "v": 1,
+          "preimage": {
+            "v": 1,
+            "head": {
+              "seq": 11,
+              "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            },
+            "proposal": null,
+            "working": null
+          },
+          "record": {
+            "v": 1,
+            "kind": "reconciliation",
+            "requestId": "00000000-0000-4000-8000-000000000105",
+            "payloadDigest": "8ca1789562a2ddc14b5e47afc91f1ccccd4d86a8c8eeebb0063b2576ec452d88",
+            "effectId": null,
+            "auditId": "11111111-1111-4111-8111-111111111111",
+            "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "originalDaemonEpoch": 1,
+            "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "reportingDaemonEpoch": 2,
+            "at": 2000000020,
+            "finding": "indeterminate",
+            "basisDigest": null,
+            "observedDigest": "25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba"
+          }
+        },
+        "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":null,\"effectId\":null,\"finding\":\"indeterminate\",\"kind\":\"reconciliation\",\"observedDigest\":\"25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"8ca1789562a2ddc14b5e47afc91f1ccccd4d86a8c8eeebb0063b2576ec452d88\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000105\",\"v\":1},\"v\":1}",
+        "sha256": "31ca4f42ef554b6cc3b4cae8243ca87c7b96dc4293c6af43efe3bd29a07a2f8d",
+        "utf8Bytes": 769
+      }
+    },
+    {
+      "id": "wake-on",
+      "preparationId": "wake-on-preparation",
+      "enteredId": "wake-on-entered",
+      "linkedEventJson": null,
+      "completed": {
+        "record": {
+          "v": 1,
+          "kind": "effect",
+          "requestId": "00000000-0000-4000-8000-000000000106",
+          "payloadDigest": "2009310ad5b0062e874d7564e9d76497fa78be122bd9c70fb849a6e7af753998",
+          "preparationDigest": "1cd4c0c66c9b21aa794d2abff8e9f550f1bd5521a606a3dcea1fb4b0f8994028",
+          "receiptDigest": "7633e509c0a7d5e88fb7679baa48ba03ac144b8c34795c7bd2db74d5beef5438",
+          "effectId": "22222222-2222-4222-8222-000000000006",
+          "at": 2000000010,
+          "phase": "completed",
+          "detail": {
+            "kind": "cold-wake",
+            "beforeDigest": "baf1ee307a45bef21b041fa56eba8638ae6fd60727a6b53ee3d698a90d57424b",
+            "afterDigest": "15718b82a6e24c45332cab3181f1cb84f5584b2a6cfb8677771e136f01284b60",
+            "settingsDigest": "b1acf1e08205135e29ab5e0cc2d48ceffb9bef63a6309295b2a9976f2890ed81",
+            "webhookDigest": null
+          }
+        },
+        "canonicalJson": "{\"at\":2000000010,\"detail\":{\"afterDigest\":\"15718b82a6e24c45332cab3181f1cb84f5584b2a6cfb8677771e136f01284b60\",\"beforeDigest\":\"baf1ee307a45bef21b041fa56eba8638ae6fd60727a6b53ee3d698a90d57424b\",\"kind\":\"cold-wake\",\"settingsDigest\":\"b1acf1e08205135e29ab5e0cc2d48ceffb9bef63a6309295b2a9976f2890ed81\",\"webhookDigest\":null},\"effectId\":\"22222222-2222-4222-8222-000000000006\",\"kind\":\"effect\",\"payloadDigest\":\"2009310ad5b0062e874d7564e9d76497fa78be122bd9c70fb849a6e7af753998\",\"phase\":\"completed\",\"preparationDigest\":\"1cd4c0c66c9b21aa794d2abff8e9f550f1bd5521a606a3dcea1fb4b0f8994028\",\"receiptDigest\":\"7633e509c0a7d5e88fb7679baa48ba03ac144b8c34795c7bd2db74d5beef5438\",\"requestId\":\"00000000-0000-4000-8000-000000000106\",\"v\":1}",
+        "sha256": "4e159063ab0856c705ee58cff2e377d1d5e8dc6fedf3fd4e5af3da634aff481e",
+        "utf8Bytes": 711
+      },
+      "refused": {
+        "record": {
+          "v": 1,
+          "kind": "effect",
+          "requestId": "00000000-0000-4000-8000-000000000106",
+          "payloadDigest": "2009310ad5b0062e874d7564e9d76497fa78be122bd9c70fb849a6e7af753998",
+          "preparationDigest": "1cd4c0c66c9b21aa794d2abff8e9f550f1bd5521a606a3dcea1fb4b0f8994028",
+          "receiptDigest": "7633e509c0a7d5e88fb7679baa48ba03ac144b8c34795c7bd2db74d5beef5438",
+          "effectId": "22222222-2222-4222-8222-000000000006",
+          "phase": "refused",
+          "at": 2000000010,
+          "detail": {
+            "code": "expected-state-changed"
+          }
+        },
+        "canonicalJson": "{\"at\":2000000010,\"detail\":{\"code\":\"expected-state-changed\"},\"effectId\":\"22222222-2222-4222-8222-000000000006\",\"kind\":\"effect\",\"payloadDigest\":\"2009310ad5b0062e874d7564e9d76497fa78be122bd9c70fb849a6e7af753998\",\"phase\":\"refused\",\"preparationDigest\":\"1cd4c0c66c9b21aa794d2abff8e9f550f1bd5521a606a3dcea1fb4b0f8994028\",\"receiptDigest\":\"7633e509c0a7d5e88fb7679baa48ba03ac144b8c34795c7bd2db74d5beef5438\",\"requestId\":\"00000000-0000-4000-8000-000000000106\",\"v\":1}",
+        "sha256": "5c37f9dabd6a7d12d7ecae5b380bfa5deeef09ab63819ea3385c549e8a82a621",
+        "utf8Bytes": 454
+      },
+      "pairs": [
+        {
+          "finding": "applied",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "setting": {
+                "mode": "on"
+              },
+              "webhookDigest": null,
+              "resume": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000106",
+              "payloadDigest": "2009310ad5b0062e874d7564e9d76497fa78be122bd9c70fb849a6e7af753998",
+              "effectId": "22222222-2222-4222-8222-000000000006",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "applied",
+              "basisDigest": "4e159063ab0856c705ee58cff2e377d1d5e8dc6fedf3fd4e5af3da634aff481e",
+              "observedDigest": "15718b82a6e24c45332cab3181f1cb84f5584b2a6cfb8677771e136f01284b60"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"resume\":null,\"setting\":{\"mode\":\"on\"},\"v\":1,\"webhookDigest\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":\"4e159063ab0856c705ee58cff2e377d1d5e8dc6fedf3fd4e5af3da634aff481e\",\"effectId\":\"22222222-2222-4222-8222-000000000006\",\"finding\":\"applied\",\"kind\":\"reconciliation\",\"observedDigest\":\"15718b82a6e24c45332cab3181f1cb84f5584b2a6cfb8677771e136f01284b60\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"2009310ad5b0062e874d7564e9d76497fa78be122bd9c70fb849a6e7af753998\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000106\",\"v\":1},\"v\":1}",
+          "sha256": "1cd87f0135d163050cf3037ef14e06a064be220c4623b739fad4e660ec24e475",
+          "utf8Bytes": 784
+        },
+        {
+          "finding": "refused",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "setting": {
+                "mode": "on"
+              },
+              "webhookDigest": null,
+              "resume": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000106",
+              "payloadDigest": "2009310ad5b0062e874d7564e9d76497fa78be122bd9c70fb849a6e7af753998",
+              "effectId": "22222222-2222-4222-8222-000000000006",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "refused",
+              "basisDigest": "5c37f9dabd6a7d12d7ecae5b380bfa5deeef09ab63819ea3385c549e8a82a621",
+              "observedDigest": "15718b82a6e24c45332cab3181f1cb84f5584b2a6cfb8677771e136f01284b60"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"resume\":null,\"setting\":{\"mode\":\"on\"},\"v\":1,\"webhookDigest\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":\"5c37f9dabd6a7d12d7ecae5b380bfa5deeef09ab63819ea3385c549e8a82a621\",\"effectId\":\"22222222-2222-4222-8222-000000000006\",\"finding\":\"refused\",\"kind\":\"reconciliation\",\"observedDigest\":\"15718b82a6e24c45332cab3181f1cb84f5584b2a6cfb8677771e136f01284b60\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"2009310ad5b0062e874d7564e9d76497fa78be122bd9c70fb849a6e7af753998\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000106\",\"v\":1},\"v\":1}",
+          "sha256": "d750a2cd77ebe8b81a61e948c24885a729f9bbac5bb9f32e6bad71bba19d1548",
+          "utf8Bytes": 784
+        },
+        {
+          "finding": "indeterminate",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "setting": {
+                "mode": "on"
+              },
+              "webhookDigest": null,
+              "resume": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000106",
+              "payloadDigest": "2009310ad5b0062e874d7564e9d76497fa78be122bd9c70fb849a6e7af753998",
+              "effectId": "22222222-2222-4222-8222-000000000006",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "indeterminate",
+              "basisDigest": null,
+              "observedDigest": "15718b82a6e24c45332cab3181f1cb84f5584b2a6cfb8677771e136f01284b60"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"resume\":null,\"setting\":{\"mode\":\"on\"},\"v\":1,\"webhookDigest\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":null,\"effectId\":\"22222222-2222-4222-8222-000000000006\",\"finding\":\"indeterminate\",\"kind\":\"reconciliation\",\"observedDigest\":\"15718b82a6e24c45332cab3181f1cb84f5584b2a6cfb8677771e136f01284b60\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"2009310ad5b0062e874d7564e9d76497fa78be122bd9c70fb849a6e7af753998\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000106\",\"v\":1},\"v\":1}",
+          "sha256": "dad640b8799f80fcc4c90c673214417f2fa1cb5b8a4ff99ae7fd3db2078ccc9c",
+          "utf8Bytes": 728
+        }
+      ],
+      "noPreparation": {
+        "record": {
+          "v": 1,
+          "preimage": {
+            "v": 1,
+            "setting": {
+              "mode": "on"
+            },
+            "webhookDigest": null,
+            "resume": null
+          },
+          "record": {
+            "v": 1,
+            "kind": "reconciliation",
+            "requestId": "00000000-0000-4000-8000-000000000106",
+            "payloadDigest": "2009310ad5b0062e874d7564e9d76497fa78be122bd9c70fb849a6e7af753998",
+            "effectId": null,
+            "auditId": "11111111-1111-4111-8111-111111111111",
+            "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "originalDaemonEpoch": 1,
+            "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "reportingDaemonEpoch": 2,
+            "at": 2000000020,
+            "finding": "indeterminate",
+            "basisDigest": null,
+            "observedDigest": "15718b82a6e24c45332cab3181f1cb84f5584b2a6cfb8677771e136f01284b60"
+          }
+        },
+        "canonicalJson": "{\"preimage\":{\"resume\":null,\"setting\":{\"mode\":\"on\"},\"v\":1,\"webhookDigest\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":null,\"effectId\":null,\"finding\":\"indeterminate\",\"kind\":\"reconciliation\",\"observedDigest\":\"15718b82a6e24c45332cab3181f1cb84f5584b2a6cfb8677771e136f01284b60\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"2009310ad5b0062e874d7564e9d76497fa78be122bd9c70fb849a6e7af753998\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000106\",\"v\":1},\"v\":1}",
+        "sha256": "eab864da1be8368814dfdc2f66864aac5301f81d5c47cf124972725d7354bdbe",
+        "utf8Bytes": 694
+      }
+    },
+    {
+      "id": "wake-off",
+      "preparationId": "wake-off-preparation",
+      "enteredId": "wake-off-entered",
+      "linkedEventJson": null,
+      "completed": {
+        "record": {
+          "v": 1,
+          "kind": "effect",
+          "requestId": "00000000-0000-4000-8000-000000000107",
+          "payloadDigest": "61eaefb44443bfff1cd6b19bb2edc60c15810d539f875d43a114478099a8e6d9",
+          "preparationDigest": "2ac3cf04cded613064ed4f3ab044f81a05491b6c77a7d434aed8a53efa21efdb",
+          "receiptDigest": "1b6b93cd7ad9ae49f75499685d0d21aad9f91b54d8baea669b483ff2a47f6f28",
+          "effectId": "22222222-2222-4222-8222-000000000007",
+          "at": 2000000010,
+          "phase": "completed",
+          "detail": {
+            "kind": "cold-wake",
+            "beforeDigest": "baf1ee307a45bef21b041fa56eba8638ae6fd60727a6b53ee3d698a90d57424b",
+            "afterDigest": "1ccb625870d0738a7cd112116a795f5ee9262fc457721460597c2dd85c4925d5",
+            "settingsDigest": "3441e615dae483ce51c1e79025f8208baa2970defcbe7e8a736dc7d073beb784",
+            "webhookDigest": null
+          }
+        },
+        "canonicalJson": "{\"at\":2000000010,\"detail\":{\"afterDigest\":\"1ccb625870d0738a7cd112116a795f5ee9262fc457721460597c2dd85c4925d5\",\"beforeDigest\":\"baf1ee307a45bef21b041fa56eba8638ae6fd60727a6b53ee3d698a90d57424b\",\"kind\":\"cold-wake\",\"settingsDigest\":\"3441e615dae483ce51c1e79025f8208baa2970defcbe7e8a736dc7d073beb784\",\"webhookDigest\":null},\"effectId\":\"22222222-2222-4222-8222-000000000007\",\"kind\":\"effect\",\"payloadDigest\":\"61eaefb44443bfff1cd6b19bb2edc60c15810d539f875d43a114478099a8e6d9\",\"phase\":\"completed\",\"preparationDigest\":\"2ac3cf04cded613064ed4f3ab044f81a05491b6c77a7d434aed8a53efa21efdb\",\"receiptDigest\":\"1b6b93cd7ad9ae49f75499685d0d21aad9f91b54d8baea669b483ff2a47f6f28\",\"requestId\":\"00000000-0000-4000-8000-000000000107\",\"v\":1}",
+        "sha256": "813ce6d8eb44d107afd21343d984c17dc977ffff756c5f8d3d5d861df54792a3",
+        "utf8Bytes": 711
+      },
+      "refused": {
+        "record": {
+          "v": 1,
+          "kind": "effect",
+          "requestId": "00000000-0000-4000-8000-000000000107",
+          "payloadDigest": "61eaefb44443bfff1cd6b19bb2edc60c15810d539f875d43a114478099a8e6d9",
+          "preparationDigest": "2ac3cf04cded613064ed4f3ab044f81a05491b6c77a7d434aed8a53efa21efdb",
+          "receiptDigest": "1b6b93cd7ad9ae49f75499685d0d21aad9f91b54d8baea669b483ff2a47f6f28",
+          "effectId": "22222222-2222-4222-8222-000000000007",
+          "phase": "refused",
+          "at": 2000000010,
+          "detail": {
+            "code": "expected-state-changed"
+          }
+        },
+        "canonicalJson": "{\"at\":2000000010,\"detail\":{\"code\":\"expected-state-changed\"},\"effectId\":\"22222222-2222-4222-8222-000000000007\",\"kind\":\"effect\",\"payloadDigest\":\"61eaefb44443bfff1cd6b19bb2edc60c15810d539f875d43a114478099a8e6d9\",\"phase\":\"refused\",\"preparationDigest\":\"2ac3cf04cded613064ed4f3ab044f81a05491b6c77a7d434aed8a53efa21efdb\",\"receiptDigest\":\"1b6b93cd7ad9ae49f75499685d0d21aad9f91b54d8baea669b483ff2a47f6f28\",\"requestId\":\"00000000-0000-4000-8000-000000000107\",\"v\":1}",
+        "sha256": "8ad01fa3ddd417c4984fe6a46e28483d3f013d54a86bce6d205f597b113b93b7",
+        "utf8Bytes": 454
+      },
+      "pairs": [
+        {
+          "finding": "applied",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "setting": {
+                "mode": "off"
+              },
+              "webhookDigest": null,
+              "resume": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000107",
+              "payloadDigest": "61eaefb44443bfff1cd6b19bb2edc60c15810d539f875d43a114478099a8e6d9",
+              "effectId": "22222222-2222-4222-8222-000000000007",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "applied",
+              "basisDigest": "813ce6d8eb44d107afd21343d984c17dc977ffff756c5f8d3d5d861df54792a3",
+              "observedDigest": "1ccb625870d0738a7cd112116a795f5ee9262fc457721460597c2dd85c4925d5"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"resume\":null,\"setting\":{\"mode\":\"off\"},\"v\":1,\"webhookDigest\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":\"813ce6d8eb44d107afd21343d984c17dc977ffff756c5f8d3d5d861df54792a3\",\"effectId\":\"22222222-2222-4222-8222-000000000007\",\"finding\":\"applied\",\"kind\":\"reconciliation\",\"observedDigest\":\"1ccb625870d0738a7cd112116a795f5ee9262fc457721460597c2dd85c4925d5\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"61eaefb44443bfff1cd6b19bb2edc60c15810d539f875d43a114478099a8e6d9\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000107\",\"v\":1},\"v\":1}",
+          "sha256": "4c92e2926264be90ec34ee89fba9ebc65f2ad2fe7b8a97078cc5bdb8b2c44c49",
+          "utf8Bytes": 785
+        },
+        {
+          "finding": "refused",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "setting": {
+                "mode": "off"
+              },
+              "webhookDigest": null,
+              "resume": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000107",
+              "payloadDigest": "61eaefb44443bfff1cd6b19bb2edc60c15810d539f875d43a114478099a8e6d9",
+              "effectId": "22222222-2222-4222-8222-000000000007",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "refused",
+              "basisDigest": "8ad01fa3ddd417c4984fe6a46e28483d3f013d54a86bce6d205f597b113b93b7",
+              "observedDigest": "1ccb625870d0738a7cd112116a795f5ee9262fc457721460597c2dd85c4925d5"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"resume\":null,\"setting\":{\"mode\":\"off\"},\"v\":1,\"webhookDigest\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":\"8ad01fa3ddd417c4984fe6a46e28483d3f013d54a86bce6d205f597b113b93b7\",\"effectId\":\"22222222-2222-4222-8222-000000000007\",\"finding\":\"refused\",\"kind\":\"reconciliation\",\"observedDigest\":\"1ccb625870d0738a7cd112116a795f5ee9262fc457721460597c2dd85c4925d5\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"61eaefb44443bfff1cd6b19bb2edc60c15810d539f875d43a114478099a8e6d9\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000107\",\"v\":1},\"v\":1}",
+          "sha256": "82251d90e1f5c6c4cf89d39ff08621e46538562b500d7be45c78c5d822fe5bc1",
+          "utf8Bytes": 785
+        },
+        {
+          "finding": "indeterminate",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "setting": {
+                "mode": "off"
+              },
+              "webhookDigest": null,
+              "resume": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000107",
+              "payloadDigest": "61eaefb44443bfff1cd6b19bb2edc60c15810d539f875d43a114478099a8e6d9",
+              "effectId": "22222222-2222-4222-8222-000000000007",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "indeterminate",
+              "basisDigest": null,
+              "observedDigest": "1ccb625870d0738a7cd112116a795f5ee9262fc457721460597c2dd85c4925d5"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"resume\":null,\"setting\":{\"mode\":\"off\"},\"v\":1,\"webhookDigest\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":null,\"effectId\":\"22222222-2222-4222-8222-000000000007\",\"finding\":\"indeterminate\",\"kind\":\"reconciliation\",\"observedDigest\":\"1ccb625870d0738a7cd112116a795f5ee9262fc457721460597c2dd85c4925d5\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"61eaefb44443bfff1cd6b19bb2edc60c15810d539f875d43a114478099a8e6d9\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000107\",\"v\":1},\"v\":1}",
+          "sha256": "f3ea7c6b4bb0d09a7a16ec6b9c263412be1ff2efb4db6e003d05ad38588c2aca",
+          "utf8Bytes": 729
+        }
+      ],
+      "noPreparation": {
+        "record": {
+          "v": 1,
+          "preimage": {
+            "v": 1,
+            "setting": {
+              "mode": "off"
+            },
+            "webhookDigest": null,
+            "resume": null
+          },
+          "record": {
+            "v": 1,
+            "kind": "reconciliation",
+            "requestId": "00000000-0000-4000-8000-000000000107",
+            "payloadDigest": "61eaefb44443bfff1cd6b19bb2edc60c15810d539f875d43a114478099a8e6d9",
+            "effectId": null,
+            "auditId": "11111111-1111-4111-8111-111111111111",
+            "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "originalDaemonEpoch": 1,
+            "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "reportingDaemonEpoch": 2,
+            "at": 2000000020,
+            "finding": "indeterminate",
+            "basisDigest": null,
+            "observedDigest": "1ccb625870d0738a7cd112116a795f5ee9262fc457721460597c2dd85c4925d5"
+          }
+        },
+        "canonicalJson": "{\"preimage\":{\"resume\":null,\"setting\":{\"mode\":\"off\"},\"v\":1,\"webhookDigest\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":null,\"effectId\":null,\"finding\":\"indeterminate\",\"kind\":\"reconciliation\",\"observedDigest\":\"1ccb625870d0738a7cd112116a795f5ee9262fc457721460597c2dd85c4925d5\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"61eaefb44443bfff1cd6b19bb2edc60c15810d539f875d43a114478099a8e6d9\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000107\",\"v\":1},\"v\":1}",
+        "sha256": "43c6788b03dbb8e32cbabc3cc4ab77824b8e63b4589b9704d36d60bc1234cf16",
+        "utf8Bytes": 695
+      }
+    },
+    {
+      "id": "wake-resume-read-only",
+      "preparationId": "wake-resume-read-only-preparation",
+      "enteredId": "wake-resume-read-only-entered",
+      "linkedEventJson": null,
+      "completed": {
+        "record": {
+          "v": 1,
+          "kind": "effect",
+          "requestId": "00000000-0000-4000-8000-000000000108",
+          "payloadDigest": "3b207eb256c7d293ebef06f9f8513015225da1340719b717540b53c5edaad836",
+          "preparationDigest": "94351a6a6f66da5fe5596246b3d002f657a938033ae52f9c81c93bf5058c533b",
+          "receiptDigest": "1e522b4da6f3010180c2549b7d57224699e404a9979a8547958bdf5a49965dba",
+          "effectId": "22222222-2222-4222-8222-000000000008",
+          "at": 2000000010,
+          "phase": "completed",
+          "detail": {
+            "kind": "cold-wake",
+            "beforeDigest": "5c9020b3af06eede456b994615ecd732fe1842323ee9b7bbeb0ae5e32a750017",
+            "afterDigest": "9644abaffded9ca22e986f16525c2ebfee97fbb58eb0cf69bb33a8f133310c6f",
+            "settingsDigest": "23263266b716c1627b7a1771673712f0e8f579457a2403b6378c6768567ca43a",
+            "webhookDigest": null
+          }
+        },
+        "canonicalJson": "{\"at\":2000000010,\"detail\":{\"afterDigest\":\"9644abaffded9ca22e986f16525c2ebfee97fbb58eb0cf69bb33a8f133310c6f\",\"beforeDigest\":\"5c9020b3af06eede456b994615ecd732fe1842323ee9b7bbeb0ae5e32a750017\",\"kind\":\"cold-wake\",\"settingsDigest\":\"23263266b716c1627b7a1771673712f0e8f579457a2403b6378c6768567ca43a\",\"webhookDigest\":null},\"effectId\":\"22222222-2222-4222-8222-000000000008\",\"kind\":\"effect\",\"payloadDigest\":\"3b207eb256c7d293ebef06f9f8513015225da1340719b717540b53c5edaad836\",\"phase\":\"completed\",\"preparationDigest\":\"94351a6a6f66da5fe5596246b3d002f657a938033ae52f9c81c93bf5058c533b\",\"receiptDigest\":\"1e522b4da6f3010180c2549b7d57224699e404a9979a8547958bdf5a49965dba\",\"requestId\":\"00000000-0000-4000-8000-000000000108\",\"v\":1}",
+        "sha256": "db85490f8b762762b69662340ceb1aead7c01fad2ad1f4f8defbc5f57a1d432d",
+        "utf8Bytes": 711
+      },
+      "refused": {
+        "record": {
+          "v": 1,
+          "kind": "effect",
+          "requestId": "00000000-0000-4000-8000-000000000108",
+          "payloadDigest": "3b207eb256c7d293ebef06f9f8513015225da1340719b717540b53c5edaad836",
+          "preparationDigest": "94351a6a6f66da5fe5596246b3d002f657a938033ae52f9c81c93bf5058c533b",
+          "receiptDigest": "1e522b4da6f3010180c2549b7d57224699e404a9979a8547958bdf5a49965dba",
+          "effectId": "22222222-2222-4222-8222-000000000008",
+          "phase": "refused",
+          "at": 2000000010,
+          "detail": {
+            "code": "expected-state-changed"
+          }
+        },
+        "canonicalJson": "{\"at\":2000000010,\"detail\":{\"code\":\"expected-state-changed\"},\"effectId\":\"22222222-2222-4222-8222-000000000008\",\"kind\":\"effect\",\"payloadDigest\":\"3b207eb256c7d293ebef06f9f8513015225da1340719b717540b53c5edaad836\",\"phase\":\"refused\",\"preparationDigest\":\"94351a6a6f66da5fe5596246b3d002f657a938033ae52f9c81c93bf5058c533b\",\"receiptDigest\":\"1e522b4da6f3010180c2549b7d57224699e404a9979a8547958bdf5a49965dba\",\"requestId\":\"00000000-0000-4000-8000-000000000108\",\"v\":1}",
+        "sha256": "08bf31314a8bdb05a90cf03c946af71c89dfcfc4639960bcce8dc00955bc9531",
+        "utf8Bytes": 454
+      },
+      "pairs": [
+        {
+          "finding": "applied",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "setting": {
+                "mode": "resume",
+                "policy": "read-only"
+              },
+              "webhookDigest": null,
+              "resume": {
+                "harness": "codex",
+                "sessionDigest": "4444444444444444444444444444444444444444444444444444444444444444",
+                "toolHomeDigest": "5555555555555555555555555555555555555555555555555555555555555555",
+                "destinationDigest": "6666666666666666666666666666666666666666666666666666666666666666"
+              }
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000108",
+              "payloadDigest": "3b207eb256c7d293ebef06f9f8513015225da1340719b717540b53c5edaad836",
+              "effectId": "22222222-2222-4222-8222-000000000008",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "applied",
+              "basisDigest": "db85490f8b762762b69662340ceb1aead7c01fad2ad1f4f8defbc5f57a1d432d",
+              "observedDigest": "9644abaffded9ca22e986f16525c2ebfee97fbb58eb0cf69bb33a8f133310c6f"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"resume\":{\"destinationDigest\":\"6666666666666666666666666666666666666666666666666666666666666666\",\"harness\":\"codex\",\"sessionDigest\":\"4444444444444444444444444444444444444444444444444444444444444444\",\"toolHomeDigest\":\"5555555555555555555555555555555555555555555555555555555555555555\"},\"setting\":{\"mode\":\"resume\",\"policy\":\"read-only\"},\"v\":1,\"webhookDigest\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":\"db85490f8b762762b69662340ceb1aead7c01fad2ad1f4f8defbc5f57a1d432d\",\"effectId\":\"22222222-2222-4222-8222-000000000008\",\"finding\":\"applied\",\"kind\":\"reconciliation\",\"observedDigest\":\"9644abaffded9ca22e986f16525c2ebfee97fbb58eb0cf69bb33a8f133310c6f\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"3b207eb256c7d293ebef06f9f8513015225da1340719b717540b53c5edaad836\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000108\",\"v\":1},\"v\":1}",
+          "sha256": "b928d69f671e174440737676d46c15b90dc63736b3778827eca6abfb9d5bac6b",
+          "utf8Bytes": 1078
+        },
+        {
+          "finding": "refused",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "setting": {
+                "mode": "resume",
+                "policy": "read-only"
+              },
+              "webhookDigest": null,
+              "resume": {
+                "harness": "codex",
+                "sessionDigest": "4444444444444444444444444444444444444444444444444444444444444444",
+                "toolHomeDigest": "5555555555555555555555555555555555555555555555555555555555555555",
+                "destinationDigest": "6666666666666666666666666666666666666666666666666666666666666666"
+              }
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000108",
+              "payloadDigest": "3b207eb256c7d293ebef06f9f8513015225da1340719b717540b53c5edaad836",
+              "effectId": "22222222-2222-4222-8222-000000000008",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "refused",
+              "basisDigest": "08bf31314a8bdb05a90cf03c946af71c89dfcfc4639960bcce8dc00955bc9531",
+              "observedDigest": "9644abaffded9ca22e986f16525c2ebfee97fbb58eb0cf69bb33a8f133310c6f"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"resume\":{\"destinationDigest\":\"6666666666666666666666666666666666666666666666666666666666666666\",\"harness\":\"codex\",\"sessionDigest\":\"4444444444444444444444444444444444444444444444444444444444444444\",\"toolHomeDigest\":\"5555555555555555555555555555555555555555555555555555555555555555\"},\"setting\":{\"mode\":\"resume\",\"policy\":\"read-only\"},\"v\":1,\"webhookDigest\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":\"08bf31314a8bdb05a90cf03c946af71c89dfcfc4639960bcce8dc00955bc9531\",\"effectId\":\"22222222-2222-4222-8222-000000000008\",\"finding\":\"refused\",\"kind\":\"reconciliation\",\"observedDigest\":\"9644abaffded9ca22e986f16525c2ebfee97fbb58eb0cf69bb33a8f133310c6f\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"3b207eb256c7d293ebef06f9f8513015225da1340719b717540b53c5edaad836\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000108\",\"v\":1},\"v\":1}",
+          "sha256": "e83635a18af8baffc0a66561c4125ce46d91a6a15dd57097c77d22b10f1554c2",
+          "utf8Bytes": 1078
+        },
+        {
+          "finding": "indeterminate",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "setting": {
+                "mode": "resume",
+                "policy": "read-only"
+              },
+              "webhookDigest": null,
+              "resume": {
+                "harness": "codex",
+                "sessionDigest": "4444444444444444444444444444444444444444444444444444444444444444",
+                "toolHomeDigest": "5555555555555555555555555555555555555555555555555555555555555555",
+                "destinationDigest": "6666666666666666666666666666666666666666666666666666666666666666"
+              }
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000108",
+              "payloadDigest": "3b207eb256c7d293ebef06f9f8513015225da1340719b717540b53c5edaad836",
+              "effectId": "22222222-2222-4222-8222-000000000008",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "indeterminate",
+              "basisDigest": null,
+              "observedDigest": "9644abaffded9ca22e986f16525c2ebfee97fbb58eb0cf69bb33a8f133310c6f"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"resume\":{\"destinationDigest\":\"6666666666666666666666666666666666666666666666666666666666666666\",\"harness\":\"codex\",\"sessionDigest\":\"4444444444444444444444444444444444444444444444444444444444444444\",\"toolHomeDigest\":\"5555555555555555555555555555555555555555555555555555555555555555\"},\"setting\":{\"mode\":\"resume\",\"policy\":\"read-only\"},\"v\":1,\"webhookDigest\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":null,\"effectId\":\"22222222-2222-4222-8222-000000000008\",\"finding\":\"indeterminate\",\"kind\":\"reconciliation\",\"observedDigest\":\"9644abaffded9ca22e986f16525c2ebfee97fbb58eb0cf69bb33a8f133310c6f\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"3b207eb256c7d293ebef06f9f8513015225da1340719b717540b53c5edaad836\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000108\",\"v\":1},\"v\":1}",
+          "sha256": "8440553d2e1d6844221c3979decd307f0fc4d6a61b70fe4eda73fdbedfd040d3",
+          "utf8Bytes": 1022
+        }
+      ],
+      "noPreparation": {
+        "record": {
+          "v": 1,
+          "preimage": {
+            "v": 1,
+            "setting": {
+              "mode": "resume",
+              "policy": "read-only"
+            },
+            "webhookDigest": null,
+            "resume": {
+              "harness": "codex",
+              "sessionDigest": "4444444444444444444444444444444444444444444444444444444444444444",
+              "toolHomeDigest": "5555555555555555555555555555555555555555555555555555555555555555",
+              "destinationDigest": "6666666666666666666666666666666666666666666666666666666666666666"
+            }
+          },
+          "record": {
+            "v": 1,
+            "kind": "reconciliation",
+            "requestId": "00000000-0000-4000-8000-000000000108",
+            "payloadDigest": "3b207eb256c7d293ebef06f9f8513015225da1340719b717540b53c5edaad836",
+            "effectId": null,
+            "auditId": "11111111-1111-4111-8111-111111111111",
+            "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "originalDaemonEpoch": 1,
+            "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "reportingDaemonEpoch": 2,
+            "at": 2000000020,
+            "finding": "indeterminate",
+            "basisDigest": null,
+            "observedDigest": "9644abaffded9ca22e986f16525c2ebfee97fbb58eb0cf69bb33a8f133310c6f"
+          }
+        },
+        "canonicalJson": "{\"preimage\":{\"resume\":{\"destinationDigest\":\"6666666666666666666666666666666666666666666666666666666666666666\",\"harness\":\"codex\",\"sessionDigest\":\"4444444444444444444444444444444444444444444444444444444444444444\",\"toolHomeDigest\":\"5555555555555555555555555555555555555555555555555555555555555555\"},\"setting\":{\"mode\":\"resume\",\"policy\":\"read-only\"},\"v\":1,\"webhookDigest\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":null,\"effectId\":null,\"finding\":\"indeterminate\",\"kind\":\"reconciliation\",\"observedDigest\":\"9644abaffded9ca22e986f16525c2ebfee97fbb58eb0cf69bb33a8f133310c6f\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"3b207eb256c7d293ebef06f9f8513015225da1340719b717540b53c5edaad836\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000108\",\"v\":1},\"v\":1}",
+        "sha256": "4e5b361303e97fb142e096b29422635dcac250879aef3cfadae4fca0ae206ae4",
+        "utf8Bytes": 988
+      }
+    },
+    {
+      "id": "wake-resume-workspace",
+      "preparationId": "wake-resume-workspace-preparation",
+      "enteredId": "wake-resume-workspace-entered",
+      "linkedEventJson": null,
+      "completed": {
+        "record": {
+          "v": 1,
+          "kind": "effect",
+          "requestId": "00000000-0000-4000-8000-000000000109",
+          "payloadDigest": "d0b44f8dc7ffb82644677623cb9cb4bde10e168d17971bcaa0b0ecaaa55007e4",
+          "preparationDigest": "9aeb42388b707ae57ba350a5730984c71a878ea746b77186f59382419b7c26e8",
+          "receiptDigest": "ac3aebde851554423f68f9bf3e4d1f65513e1836e32d89a177f2d2c8733920c9",
+          "effectId": "22222222-2222-4222-8222-000000000009",
+          "at": 2000000010,
+          "phase": "completed",
+          "detail": {
+            "kind": "cold-wake",
+            "beforeDigest": "5c9020b3af06eede456b994615ecd732fe1842323ee9b7bbeb0ae5e32a750017",
+            "afterDigest": "048aca0610e4d89111d8588631b836ae65e9fafc82ec2bb92aed53a5af84c7e5",
+            "settingsDigest": "f86a5099ee703b57ababc700d6602b8abe6e59cfa3a6e59eb8bd5201650d36e9",
+            "webhookDigest": null
+          }
+        },
+        "canonicalJson": "{\"at\":2000000010,\"detail\":{\"afterDigest\":\"048aca0610e4d89111d8588631b836ae65e9fafc82ec2bb92aed53a5af84c7e5\",\"beforeDigest\":\"5c9020b3af06eede456b994615ecd732fe1842323ee9b7bbeb0ae5e32a750017\",\"kind\":\"cold-wake\",\"settingsDigest\":\"f86a5099ee703b57ababc700d6602b8abe6e59cfa3a6e59eb8bd5201650d36e9\",\"webhookDigest\":null},\"effectId\":\"22222222-2222-4222-8222-000000000009\",\"kind\":\"effect\",\"payloadDigest\":\"d0b44f8dc7ffb82644677623cb9cb4bde10e168d17971bcaa0b0ecaaa55007e4\",\"phase\":\"completed\",\"preparationDigest\":\"9aeb42388b707ae57ba350a5730984c71a878ea746b77186f59382419b7c26e8\",\"receiptDigest\":\"ac3aebde851554423f68f9bf3e4d1f65513e1836e32d89a177f2d2c8733920c9\",\"requestId\":\"00000000-0000-4000-8000-000000000109\",\"v\":1}",
+        "sha256": "ee6a144023a5a4e1a0dc84b5824d740a59d9109ff8c1c3cedb8bdabb48a461c1",
+        "utf8Bytes": 711
+      },
+      "refused": {
+        "record": {
+          "v": 1,
+          "kind": "effect",
+          "requestId": "00000000-0000-4000-8000-000000000109",
+          "payloadDigest": "d0b44f8dc7ffb82644677623cb9cb4bde10e168d17971bcaa0b0ecaaa55007e4",
+          "preparationDigest": "9aeb42388b707ae57ba350a5730984c71a878ea746b77186f59382419b7c26e8",
+          "receiptDigest": "ac3aebde851554423f68f9bf3e4d1f65513e1836e32d89a177f2d2c8733920c9",
+          "effectId": "22222222-2222-4222-8222-000000000009",
+          "phase": "refused",
+          "at": 2000000010,
+          "detail": {
+            "code": "expected-state-changed"
+          }
+        },
+        "canonicalJson": "{\"at\":2000000010,\"detail\":{\"code\":\"expected-state-changed\"},\"effectId\":\"22222222-2222-4222-8222-000000000009\",\"kind\":\"effect\",\"payloadDigest\":\"d0b44f8dc7ffb82644677623cb9cb4bde10e168d17971bcaa0b0ecaaa55007e4\",\"phase\":\"refused\",\"preparationDigest\":\"9aeb42388b707ae57ba350a5730984c71a878ea746b77186f59382419b7c26e8\",\"receiptDigest\":\"ac3aebde851554423f68f9bf3e4d1f65513e1836e32d89a177f2d2c8733920c9\",\"requestId\":\"00000000-0000-4000-8000-000000000109\",\"v\":1}",
+        "sha256": "063274ed6d9a60b7a13dbd3273d08aba54b6e7ca404e18d494653f1306ec2d9c",
+        "utf8Bytes": 454
+      },
+      "pairs": [
+        {
+          "finding": "applied",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "setting": {
+                "mode": "resume",
+                "policy": "workspace"
+              },
+              "webhookDigest": null,
+              "resume": {
+                "harness": "codex",
+                "sessionDigest": "4444444444444444444444444444444444444444444444444444444444444444",
+                "toolHomeDigest": "5555555555555555555555555555555555555555555555555555555555555555",
+                "destinationDigest": "6666666666666666666666666666666666666666666666666666666666666666"
+              }
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000109",
+              "payloadDigest": "d0b44f8dc7ffb82644677623cb9cb4bde10e168d17971bcaa0b0ecaaa55007e4",
+              "effectId": "22222222-2222-4222-8222-000000000009",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "applied",
+              "basisDigest": "ee6a144023a5a4e1a0dc84b5824d740a59d9109ff8c1c3cedb8bdabb48a461c1",
+              "observedDigest": "048aca0610e4d89111d8588631b836ae65e9fafc82ec2bb92aed53a5af84c7e5"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"resume\":{\"destinationDigest\":\"6666666666666666666666666666666666666666666666666666666666666666\",\"harness\":\"codex\",\"sessionDigest\":\"4444444444444444444444444444444444444444444444444444444444444444\",\"toolHomeDigest\":\"5555555555555555555555555555555555555555555555555555555555555555\"},\"setting\":{\"mode\":\"resume\",\"policy\":\"workspace\"},\"v\":1,\"webhookDigest\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":\"ee6a144023a5a4e1a0dc84b5824d740a59d9109ff8c1c3cedb8bdabb48a461c1\",\"effectId\":\"22222222-2222-4222-8222-000000000009\",\"finding\":\"applied\",\"kind\":\"reconciliation\",\"observedDigest\":\"048aca0610e4d89111d8588631b836ae65e9fafc82ec2bb92aed53a5af84c7e5\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"d0b44f8dc7ffb82644677623cb9cb4bde10e168d17971bcaa0b0ecaaa55007e4\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000109\",\"v\":1},\"v\":1}",
+          "sha256": "67ff3e359baf6800013d6ec253be99f969f4214c7a2121922504d97b11b69f7a",
+          "utf8Bytes": 1078
+        },
+        {
+          "finding": "refused",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "setting": {
+                "mode": "resume",
+                "policy": "workspace"
+              },
+              "webhookDigest": null,
+              "resume": {
+                "harness": "codex",
+                "sessionDigest": "4444444444444444444444444444444444444444444444444444444444444444",
+                "toolHomeDigest": "5555555555555555555555555555555555555555555555555555555555555555",
+                "destinationDigest": "6666666666666666666666666666666666666666666666666666666666666666"
+              }
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000109",
+              "payloadDigest": "d0b44f8dc7ffb82644677623cb9cb4bde10e168d17971bcaa0b0ecaaa55007e4",
+              "effectId": "22222222-2222-4222-8222-000000000009",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "refused",
+              "basisDigest": "063274ed6d9a60b7a13dbd3273d08aba54b6e7ca404e18d494653f1306ec2d9c",
+              "observedDigest": "048aca0610e4d89111d8588631b836ae65e9fafc82ec2bb92aed53a5af84c7e5"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"resume\":{\"destinationDigest\":\"6666666666666666666666666666666666666666666666666666666666666666\",\"harness\":\"codex\",\"sessionDigest\":\"4444444444444444444444444444444444444444444444444444444444444444\",\"toolHomeDigest\":\"5555555555555555555555555555555555555555555555555555555555555555\"},\"setting\":{\"mode\":\"resume\",\"policy\":\"workspace\"},\"v\":1,\"webhookDigest\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":\"063274ed6d9a60b7a13dbd3273d08aba54b6e7ca404e18d494653f1306ec2d9c\",\"effectId\":\"22222222-2222-4222-8222-000000000009\",\"finding\":\"refused\",\"kind\":\"reconciliation\",\"observedDigest\":\"048aca0610e4d89111d8588631b836ae65e9fafc82ec2bb92aed53a5af84c7e5\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"d0b44f8dc7ffb82644677623cb9cb4bde10e168d17971bcaa0b0ecaaa55007e4\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000109\",\"v\":1},\"v\":1}",
+          "sha256": "12f6dd5047f3284d59c11b63e43cd3cd1f59c8fea7f0fd38860a111274e8e404",
+          "utf8Bytes": 1078
+        },
+        {
+          "finding": "indeterminate",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "setting": {
+                "mode": "resume",
+                "policy": "workspace"
+              },
+              "webhookDigest": null,
+              "resume": {
+                "harness": "codex",
+                "sessionDigest": "4444444444444444444444444444444444444444444444444444444444444444",
+                "toolHomeDigest": "5555555555555555555555555555555555555555555555555555555555555555",
+                "destinationDigest": "6666666666666666666666666666666666666666666666666666666666666666"
+              }
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000109",
+              "payloadDigest": "d0b44f8dc7ffb82644677623cb9cb4bde10e168d17971bcaa0b0ecaaa55007e4",
+              "effectId": "22222222-2222-4222-8222-000000000009",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "indeterminate",
+              "basisDigest": null,
+              "observedDigest": "048aca0610e4d89111d8588631b836ae65e9fafc82ec2bb92aed53a5af84c7e5"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"resume\":{\"destinationDigest\":\"6666666666666666666666666666666666666666666666666666666666666666\",\"harness\":\"codex\",\"sessionDigest\":\"4444444444444444444444444444444444444444444444444444444444444444\",\"toolHomeDigest\":\"5555555555555555555555555555555555555555555555555555555555555555\"},\"setting\":{\"mode\":\"resume\",\"policy\":\"workspace\"},\"v\":1,\"webhookDigest\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":null,\"effectId\":\"22222222-2222-4222-8222-000000000009\",\"finding\":\"indeterminate\",\"kind\":\"reconciliation\",\"observedDigest\":\"048aca0610e4d89111d8588631b836ae65e9fafc82ec2bb92aed53a5af84c7e5\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"d0b44f8dc7ffb82644677623cb9cb4bde10e168d17971bcaa0b0ecaaa55007e4\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000109\",\"v\":1},\"v\":1}",
+          "sha256": "09dd316450d62a5e7e8b5c8fb304f529e5325b5b3fedde2d4be99fa26f912f54",
+          "utf8Bytes": 1022
+        }
+      ],
+      "noPreparation": {
+        "record": {
+          "v": 1,
+          "preimage": {
+            "v": 1,
+            "setting": {
+              "mode": "resume",
+              "policy": "workspace"
+            },
+            "webhookDigest": null,
+            "resume": {
+              "harness": "codex",
+              "sessionDigest": "4444444444444444444444444444444444444444444444444444444444444444",
+              "toolHomeDigest": "5555555555555555555555555555555555555555555555555555555555555555",
+              "destinationDigest": "6666666666666666666666666666666666666666666666666666666666666666"
+            }
+          },
+          "record": {
+            "v": 1,
+            "kind": "reconciliation",
+            "requestId": "00000000-0000-4000-8000-000000000109",
+            "payloadDigest": "d0b44f8dc7ffb82644677623cb9cb4bde10e168d17971bcaa0b0ecaaa55007e4",
+            "effectId": null,
+            "auditId": "11111111-1111-4111-8111-111111111111",
+            "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "originalDaemonEpoch": 1,
+            "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "reportingDaemonEpoch": 2,
+            "at": 2000000020,
+            "finding": "indeterminate",
+            "basisDigest": null,
+            "observedDigest": "048aca0610e4d89111d8588631b836ae65e9fafc82ec2bb92aed53a5af84c7e5"
+          }
+        },
+        "canonicalJson": "{\"preimage\":{\"resume\":{\"destinationDigest\":\"6666666666666666666666666666666666666666666666666666666666666666\",\"harness\":\"codex\",\"sessionDigest\":\"4444444444444444444444444444444444444444444444444444444444444444\",\"toolHomeDigest\":\"5555555555555555555555555555555555555555555555555555555555555555\"},\"setting\":{\"mode\":\"resume\",\"policy\":\"workspace\"},\"v\":1,\"webhookDigest\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":null,\"effectId\":null,\"finding\":\"indeterminate\",\"kind\":\"reconciliation\",\"observedDigest\":\"048aca0610e4d89111d8588631b836ae65e9fafc82ec2bb92aed53a5af84c7e5\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"d0b44f8dc7ffb82644677623cb9cb4bde10e168d17971bcaa0b0ecaaa55007e4\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000109\",\"v\":1},\"v\":1}",
+        "sha256": "581d596faa44f9c306d48e846b3c8ef1dffca830854c8603070d42fcbed47e29",
+        "utf8Bytes": 988
+      }
+    },
+    {
+      "id": "wake-webhook",
+      "preparationId": "wake-webhook-preparation",
+      "enteredId": "wake-webhook-entered",
+      "linkedEventJson": null,
+      "completed": {
+        "record": {
+          "v": 1,
+          "kind": "effect",
+          "requestId": "00000000-0000-4000-8000-000000000110",
+          "payloadDigest": "f7d408cd9ab2cc7377990aeb520250213ebb6166ba637df7bc04019d0284ac90",
+          "preparationDigest": "5b2bcc1a10748cfbfc6bdd591f361c4d12e967bea5d728b00d029d96e04c156d",
+          "receiptDigest": "c93f2616e360f4d0d519d4717de7ec7e6b752b02c1a167e792864b96f490375f",
+          "effectId": "22222222-2222-4222-8222-000000000010",
+          "at": 2000000010,
+          "phase": "completed",
+          "detail": {
+            "kind": "cold-wake",
+            "beforeDigest": "baf1ee307a45bef21b041fa56eba8638ae6fd60727a6b53ee3d698a90d57424b",
+            "afterDigest": "b33147dc01928f50c592b863f9e1b2e208c4579bde61e24410e82cb78f5ca106",
+            "settingsDigest": "5ae396f9873b537def8817630787a86ccc48f9103c45106ab0f90a323bb2d657",
+            "webhookDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+          }
+        },
+        "canonicalJson": "{\"at\":2000000010,\"detail\":{\"afterDigest\":\"b33147dc01928f50c592b863f9e1b2e208c4579bde61e24410e82cb78f5ca106\",\"beforeDigest\":\"baf1ee307a45bef21b041fa56eba8638ae6fd60727a6b53ee3d698a90d57424b\",\"kind\":\"cold-wake\",\"settingsDigest\":\"5ae396f9873b537def8817630787a86ccc48f9103c45106ab0f90a323bb2d657\",\"webhookDigest\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\"},\"effectId\":\"22222222-2222-4222-8222-000000000010\",\"kind\":\"effect\",\"payloadDigest\":\"f7d408cd9ab2cc7377990aeb520250213ebb6166ba637df7bc04019d0284ac90\",\"phase\":\"completed\",\"preparationDigest\":\"5b2bcc1a10748cfbfc6bdd591f361c4d12e967bea5d728b00d029d96e04c156d\",\"receiptDigest\":\"c93f2616e360f4d0d519d4717de7ec7e6b752b02c1a167e792864b96f490375f\",\"requestId\":\"00000000-0000-4000-8000-000000000110\",\"v\":1}",
+        "sha256": "89c7c64fdc178e80a45f8f165c0eab40efc233d7a8f600ec6764ce53e8d5f681",
+        "utf8Bytes": 773
+      },
+      "refused": {
+        "record": {
+          "v": 1,
+          "kind": "effect",
+          "requestId": "00000000-0000-4000-8000-000000000110",
+          "payloadDigest": "f7d408cd9ab2cc7377990aeb520250213ebb6166ba637df7bc04019d0284ac90",
+          "preparationDigest": "5b2bcc1a10748cfbfc6bdd591f361c4d12e967bea5d728b00d029d96e04c156d",
+          "receiptDigest": "c93f2616e360f4d0d519d4717de7ec7e6b752b02c1a167e792864b96f490375f",
+          "effectId": "22222222-2222-4222-8222-000000000010",
+          "phase": "refused",
+          "at": 2000000010,
+          "detail": {
+            "code": "expected-state-changed"
+          }
+        },
+        "canonicalJson": "{\"at\":2000000010,\"detail\":{\"code\":\"expected-state-changed\"},\"effectId\":\"22222222-2222-4222-8222-000000000010\",\"kind\":\"effect\",\"payloadDigest\":\"f7d408cd9ab2cc7377990aeb520250213ebb6166ba637df7bc04019d0284ac90\",\"phase\":\"refused\",\"preparationDigest\":\"5b2bcc1a10748cfbfc6bdd591f361c4d12e967bea5d728b00d029d96e04c156d\",\"receiptDigest\":\"c93f2616e360f4d0d519d4717de7ec7e6b752b02c1a167e792864b96f490375f\",\"requestId\":\"00000000-0000-4000-8000-000000000110\",\"v\":1}",
+        "sha256": "cebbe78338d2b4dfebe6d9b58bdaefa448010c0d9285b9381d9fa8afb2ee346d",
+        "utf8Bytes": 454
+      },
+      "pairs": [
+        {
+          "finding": "applied",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "setting": {
+                "mode": "webhook"
+              },
+              "webhookDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "resume": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000110",
+              "payloadDigest": "f7d408cd9ab2cc7377990aeb520250213ebb6166ba637df7bc04019d0284ac90",
+              "effectId": "22222222-2222-4222-8222-000000000010",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "applied",
+              "basisDigest": "89c7c64fdc178e80a45f8f165c0eab40efc233d7a8f600ec6764ce53e8d5f681",
+              "observedDigest": "b33147dc01928f50c592b863f9e1b2e208c4579bde61e24410e82cb78f5ca106"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"resume\":null,\"setting\":{\"mode\":\"webhook\"},\"v\":1,\"webhookDigest\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\"},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":\"89c7c64fdc178e80a45f8f165c0eab40efc233d7a8f600ec6764ce53e8d5f681\",\"effectId\":\"22222222-2222-4222-8222-000000000010\",\"finding\":\"applied\",\"kind\":\"reconciliation\",\"observedDigest\":\"b33147dc01928f50c592b863f9e1b2e208c4579bde61e24410e82cb78f5ca106\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"f7d408cd9ab2cc7377990aeb520250213ebb6166ba637df7bc04019d0284ac90\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000110\",\"v\":1},\"v\":1}",
+          "sha256": "ab4b048c24f223f178f15fc347cfbaf2026b22e0df81d69c82579fe515b33f13",
+          "utf8Bytes": 851
+        },
+        {
+          "finding": "refused",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "setting": {
+                "mode": "webhook"
+              },
+              "webhookDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "resume": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000110",
+              "payloadDigest": "f7d408cd9ab2cc7377990aeb520250213ebb6166ba637df7bc04019d0284ac90",
+              "effectId": "22222222-2222-4222-8222-000000000010",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "refused",
+              "basisDigest": "cebbe78338d2b4dfebe6d9b58bdaefa448010c0d9285b9381d9fa8afb2ee346d",
+              "observedDigest": "b33147dc01928f50c592b863f9e1b2e208c4579bde61e24410e82cb78f5ca106"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"resume\":null,\"setting\":{\"mode\":\"webhook\"},\"v\":1,\"webhookDigest\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\"},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":\"cebbe78338d2b4dfebe6d9b58bdaefa448010c0d9285b9381d9fa8afb2ee346d\",\"effectId\":\"22222222-2222-4222-8222-000000000010\",\"finding\":\"refused\",\"kind\":\"reconciliation\",\"observedDigest\":\"b33147dc01928f50c592b863f9e1b2e208c4579bde61e24410e82cb78f5ca106\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"f7d408cd9ab2cc7377990aeb520250213ebb6166ba637df7bc04019d0284ac90\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000110\",\"v\":1},\"v\":1}",
+          "sha256": "fdb3f2399a8e2170656e4eb29fb4b0bedcb821e1f8faef9b1b57c65b0d4579c5",
+          "utf8Bytes": 851
+        },
+        {
+          "finding": "indeterminate",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "setting": {
+                "mode": "webhook"
+              },
+              "webhookDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "resume": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000110",
+              "payloadDigest": "f7d408cd9ab2cc7377990aeb520250213ebb6166ba637df7bc04019d0284ac90",
+              "effectId": "22222222-2222-4222-8222-000000000010",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "indeterminate",
+              "basisDigest": null,
+              "observedDigest": "b33147dc01928f50c592b863f9e1b2e208c4579bde61e24410e82cb78f5ca106"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"resume\":null,\"setting\":{\"mode\":\"webhook\"},\"v\":1,\"webhookDigest\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\"},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":null,\"effectId\":\"22222222-2222-4222-8222-000000000010\",\"finding\":\"indeterminate\",\"kind\":\"reconciliation\",\"observedDigest\":\"b33147dc01928f50c592b863f9e1b2e208c4579bde61e24410e82cb78f5ca106\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"f7d408cd9ab2cc7377990aeb520250213ebb6166ba637df7bc04019d0284ac90\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000110\",\"v\":1},\"v\":1}",
+          "sha256": "6a0b511cb4494ddbbca1b032f5081e7d73f8bfccc79a02ab3ec9e40ca1d176e0",
+          "utf8Bytes": 795
+        }
+      ],
+      "noPreparation": {
+        "record": {
+          "v": 1,
+          "preimage": {
+            "v": 1,
+            "setting": {
+              "mode": "webhook"
+            },
+            "webhookDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "resume": null
+          },
+          "record": {
+            "v": 1,
+            "kind": "reconciliation",
+            "requestId": "00000000-0000-4000-8000-000000000110",
+            "payloadDigest": "f7d408cd9ab2cc7377990aeb520250213ebb6166ba637df7bc04019d0284ac90",
+            "effectId": null,
+            "auditId": "11111111-1111-4111-8111-111111111111",
+            "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "originalDaemonEpoch": 1,
+            "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "reportingDaemonEpoch": 2,
+            "at": 2000000020,
+            "finding": "indeterminate",
+            "basisDigest": null,
+            "observedDigest": "b33147dc01928f50c592b863f9e1b2e208c4579bde61e24410e82cb78f5ca106"
+          }
+        },
+        "canonicalJson": "{\"preimage\":{\"resume\":null,\"setting\":{\"mode\":\"webhook\"},\"v\":1,\"webhookDigest\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\"},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":null,\"effectId\":null,\"finding\":\"indeterminate\",\"kind\":\"reconciliation\",\"observedDigest\":\"b33147dc01928f50c592b863f9e1b2e208c4579bde61e24410e82cb78f5ca106\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"f7d408cd9ab2cc7377990aeb520250213ebb6166ba637df7bc04019d0284ac90\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000110\",\"v\":1},\"v\":1}",
+        "sha256": "fd396af42044130b76d57f893e18a52984f09138f1a0321cac61110a05e86601",
+        "utf8Bytes": 761
+      }
+    },
+    {
+      "id": "quoted-unicode",
+      "preparationId": "quoted-unicode-preparation",
+      "enteredId": "quoted-unicode-entered",
+      "linkedEventJson": "{\"schemaVersion\":1,\"kind\":\"revision\",\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"parentRevision\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"author\":\"soul\",\"reason\":\"Say \\\"yes\\\"; keep \\\\ and café 😀\",\"proposalId\":\"00000000-0000-4000-8000-000000000003\",\"approval\":\"user\",\"approvedBy\":\"user\",\"approvalReason\":\"Say \\\"yes\\\"; keep \\\\ and café 😀\",\"authorization\":{\"method\":\"owner-decision\"},\"ownerDecision\":{\"requestId\":\"00000000-0000-4000-8000-000000000111\",\"payloadDigest\":\"80fec5adbd7986bd94adc31f362fc5fd80b5eacbad33b32b2c76675b747b4ce0\",\"receiptDigest\":\"6c0970f7eb0df09eeb867b1b63d3ad2349ddf22a11a3eeec272d0339ba8fec1f\",\"effectId\":\"22222222-2222-4222-8222-000000000011\",\"preparationDigest\":\"7e803e4f8413335782570d636075b0d9142d79c8e8018220a51e1de43082cc2b\"},\"at\":\"2033-05-18T03:33:30.000Z\"}\n",
+      "completed": {
+        "record": {
+          "v": 1,
+          "kind": "effect",
+          "requestId": "00000000-0000-4000-8000-000000000111",
+          "payloadDigest": "80fec5adbd7986bd94adc31f362fc5fd80b5eacbad33b32b2c76675b747b4ce0",
+          "preparationDigest": "7e803e4f8413335782570d636075b0d9142d79c8e8018220a51e1de43082cc2b",
+          "receiptDigest": "6c0970f7eb0df09eeb867b1b63d3ad2349ddf22a11a3eeec272d0339ba8fec1f",
+          "effectId": "22222222-2222-4222-8222-000000000011",
+          "at": 2000000010,
+          "phase": "completed",
+          "detail": {
+            "kind": "revision",
+            "journalSeq": 11,
+            "journalRecordDigest": "266793057648dd944ffeadab89a3951105dc47af70340f8aa5a9fd1c38d73485",
+            "beforeRevision": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "afterRevision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "proposalId": "00000000-0000-4000-8000-000000000003",
+            "working": null
+          }
+        },
+        "canonicalJson": "{\"at\":2000000010,\"detail\":{\"afterRevision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"beforeRevision\":\"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"journalRecordDigest\":\"266793057648dd944ffeadab89a3951105dc47af70340f8aa5a9fd1c38d73485\",\"journalSeq\":11,\"kind\":\"revision\",\"proposalId\":\"00000000-0000-4000-8000-000000000003\",\"working\":null},\"effectId\":\"22222222-2222-4222-8222-000000000011\",\"kind\":\"effect\",\"payloadDigest\":\"80fec5adbd7986bd94adc31f362fc5fd80b5eacbad33b32b2c76675b747b4ce0\",\"phase\":\"completed\",\"preparationDigest\":\"7e803e4f8413335782570d636075b0d9142d79c8e8018220a51e1de43082cc2b\",\"receiptDigest\":\"6c0970f7eb0df09eeb867b1b63d3ad2349ddf22a11a3eeec272d0339ba8fec1f\",\"requestId\":\"00000000-0000-4000-8000-000000000111\",\"v\":1}",
+        "sha256": "344cb6778003b49e5a76e25c3d385183cf2d5f7f7653d2698ab048011bcdf91b",
+        "utf8Bytes": 795
+      },
+      "refused": {
+        "record": {
+          "v": 1,
+          "kind": "effect",
+          "requestId": "00000000-0000-4000-8000-000000000111",
+          "payloadDigest": "80fec5adbd7986bd94adc31f362fc5fd80b5eacbad33b32b2c76675b747b4ce0",
+          "preparationDigest": "7e803e4f8413335782570d636075b0d9142d79c8e8018220a51e1de43082cc2b",
+          "receiptDigest": "6c0970f7eb0df09eeb867b1b63d3ad2349ddf22a11a3eeec272d0339ba8fec1f",
+          "effectId": "22222222-2222-4222-8222-000000000011",
+          "phase": "refused",
+          "at": 2000000010,
+          "detail": {
+            "code": "expected-state-changed"
+          }
+        },
+        "canonicalJson": "{\"at\":2000000010,\"detail\":{\"code\":\"expected-state-changed\"},\"effectId\":\"22222222-2222-4222-8222-000000000011\",\"kind\":\"effect\",\"payloadDigest\":\"80fec5adbd7986bd94adc31f362fc5fd80b5eacbad33b32b2c76675b747b4ce0\",\"phase\":\"refused\",\"preparationDigest\":\"7e803e4f8413335782570d636075b0d9142d79c8e8018220a51e1de43082cc2b\",\"receiptDigest\":\"6c0970f7eb0df09eeb867b1b63d3ad2349ddf22a11a3eeec272d0339ba8fec1f\",\"requestId\":\"00000000-0000-4000-8000-000000000111\",\"v\":1}",
+        "sha256": "04166dc75264f491c2e2acc94b1139397931e521881d4ac82f2ee55c22478cf2",
+        "utf8Bytes": 454
+      },
+      "pairs": [
+        {
+          "finding": "applied",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "head": {
+                "seq": 11,
+                "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              },
+              "proposal": null,
+              "working": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000111",
+              "payloadDigest": "80fec5adbd7986bd94adc31f362fc5fd80b5eacbad33b32b2c76675b747b4ce0",
+              "effectId": "22222222-2222-4222-8222-000000000011",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "applied",
+              "basisDigest": "344cb6778003b49e5a76e25c3d385183cf2d5f7f7653d2698ab048011bcdf91b",
+              "observedDigest": "25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":\"344cb6778003b49e5a76e25c3d385183cf2d5f7f7653d2698ab048011bcdf91b\",\"effectId\":\"22222222-2222-4222-8222-000000000011\",\"finding\":\"applied\",\"kind\":\"reconciliation\",\"observedDigest\":\"25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"80fec5adbd7986bd94adc31f362fc5fd80b5eacbad33b32b2c76675b747b4ce0\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000111\",\"v\":1},\"v\":1}",
+          "sha256": "90db1abd3f45e51532c00c5271684db832adf609b559cf87233c42c971718454",
+          "utf8Bytes": 859
+        },
+        {
+          "finding": "refused",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "head": {
+                "seq": 11,
+                "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              },
+              "proposal": null,
+              "working": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000111",
+              "payloadDigest": "80fec5adbd7986bd94adc31f362fc5fd80b5eacbad33b32b2c76675b747b4ce0",
+              "effectId": "22222222-2222-4222-8222-000000000011",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "refused",
+              "basisDigest": "04166dc75264f491c2e2acc94b1139397931e521881d4ac82f2ee55c22478cf2",
+              "observedDigest": "25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":\"04166dc75264f491c2e2acc94b1139397931e521881d4ac82f2ee55c22478cf2\",\"effectId\":\"22222222-2222-4222-8222-000000000011\",\"finding\":\"refused\",\"kind\":\"reconciliation\",\"observedDigest\":\"25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"80fec5adbd7986bd94adc31f362fc5fd80b5eacbad33b32b2c76675b747b4ce0\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000111\",\"v\":1},\"v\":1}",
+          "sha256": "66574983fa591d171e840e0c3e1bc04b4ffe55b6532066d7452ac97d42e0c821",
+          "utf8Bytes": 859
+        },
+        {
+          "finding": "indeterminate",
+          "record": {
+            "v": 1,
+            "preimage": {
+              "v": 1,
+              "head": {
+                "seq": 11,
+                "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+              },
+              "proposal": null,
+              "working": null
+            },
+            "record": {
+              "v": 1,
+              "kind": "reconciliation",
+              "requestId": "00000000-0000-4000-8000-000000000111",
+              "payloadDigest": "80fec5adbd7986bd94adc31f362fc5fd80b5eacbad33b32b2c76675b747b4ce0",
+              "effectId": "22222222-2222-4222-8222-000000000011",
+              "auditId": "11111111-1111-4111-8111-111111111111",
+              "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "originalDaemonEpoch": 1,
+              "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "reportingDaemonEpoch": 2,
+              "at": 2000000020,
+              "finding": "indeterminate",
+              "basisDigest": null,
+              "observedDigest": "25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba"
+            }
+          },
+          "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":null,\"effectId\":\"22222222-2222-4222-8222-000000000011\",\"finding\":\"indeterminate\",\"kind\":\"reconciliation\",\"observedDigest\":\"25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"80fec5adbd7986bd94adc31f362fc5fd80b5eacbad33b32b2c76675b747b4ce0\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000111\",\"v\":1},\"v\":1}",
+          "sha256": "e247d643e8fdd6488507bd3f07eb4bf3f0fe53559d1ee0f055816c560c4e4a75",
+          "utf8Bytes": 803
+        }
+      ],
+      "noPreparation": {
+        "record": {
+          "v": 1,
+          "preimage": {
+            "v": 1,
+            "head": {
+              "seq": 11,
+              "revision": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            },
+            "proposal": null,
+            "working": null
+          },
+          "record": {
+            "v": 1,
+            "kind": "reconciliation",
+            "requestId": "00000000-0000-4000-8000-000000000111",
+            "payloadDigest": "80fec5adbd7986bd94adc31f362fc5fd80b5eacbad33b32b2c76675b747b4ce0",
+            "effectId": null,
+            "auditId": "11111111-1111-4111-8111-111111111111",
+            "originalDaemonKey": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "originalDaemonEpoch": 1,
+            "reportingDaemonKey": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "reportingDaemonEpoch": 2,
+            "at": 2000000020,
+            "finding": "indeterminate",
+            "basisDigest": null,
+            "observedDigest": "25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba"
+          }
+        },
+        "canonicalJson": "{\"preimage\":{\"head\":{\"revision\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"seq\":11},\"proposal\":null,\"v\":1,\"working\":null},\"record\":{\"at\":2000000020,\"auditId\":\"11111111-1111-4111-8111-111111111111\",\"basisDigest\":null,\"effectId\":null,\"finding\":\"indeterminate\",\"kind\":\"reconciliation\",\"observedDigest\":\"25d433554619c332065863293feade977e6322b03a18c8093511fa8ae0efe1ba\",\"originalDaemonEpoch\":1,\"originalDaemonKey\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"payloadDigest\":\"80fec5adbd7986bd94adc31f362fc5fd80b5eacbad33b32b2c76675b747b4ce0\",\"reportingDaemonEpoch\":2,\"reportingDaemonKey\":\"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\",\"requestId\":\"00000000-0000-4000-8000-000000000111\",\"v\":1},\"v\":1}",
+        "sha256": "33ed75d9f7ee44fad1a6f04a4615ee866ba1db59c39775403f7ae5eb07472118",
+        "utf8Bytes": 769
+      }
+    }
+  ]
+}
