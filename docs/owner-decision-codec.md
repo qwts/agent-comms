@@ -40,11 +40,31 @@ including the authenticated stage descriptor when the action uses staging. Copyi
 options from the challenge being checked would defeat binding. The result is
 ordinary decoded data, not proof of that custody or an authorization capability.
 
+The disabled `lib/owner-decision-proof.mjs` composes those checks with the
+bot-owned p1 verifier. It binds receipt identity, action digest and nonce to the
+saved challenge, checks the enrolled presence key fingerprint and complete p1
+token digest, and caps receipt expiry at both preparation and presence expiry.
+This disabled composition also requires `p1.iat >= max(0, preparedAt - 30)`,
+`d1.iat >= max(0, preparedAt - 30)` and `d1.iat >= max(0, p1.iat - 30)`.
+These proposed issuance-order bounds allow the existing 30-second clock skew
+without extending expiry or changing the standalone bot-owned p1 verifier.
+Its trusted public keys and saved context must come from independently checked
+custody. It returns only presence timestamps, not arbitrary p1 extension fields.
+
+The public verifier closure is vendored byte-for-byte from agent-bot commit
+`c5f8399c8832dea323c156fd71270ea4786182df`, under that repository's explicit
+external-consumption contract. `lib/vendor/agent-bot-presence/source.json`
+records the source commit and SHA-256 of both modules and the retained MIT
+license. To update it, review the upstream public contract, reproduce each file
+with `git show <reviewed-commit>:<source-path>`, verify its SHA-256 against the
+manifest, and run the shared-vector parity and full repository tests. Local
+semantic patches and globally installed runtime lookup are unsupported.
+
 ## Explicit remaining checks
 
 A valid result is **not authorization to mutate**. Callers must still verify
-the separate bot-owned p1 presence proof, enrolled presence custody, durable original
-action/challenge custody, receipt-to-challenge and presence expiry caps, current
+enrolled presence custody, durable original
+action/challenge custody, current
 watch/daemon epoch validity, current grants and revocation, durable single-use release,
 final locked state and effect evidence. None of those adapters is supplied by
 this codec. No arbitrary verification callback substitutes for them.
@@ -59,14 +79,16 @@ Existing p1 semantics remain owned by agent-bot.
 Run the focused checks with supported Node:
 
 ```sh
-node --test tests/owner-decision-canonical.test.mjs tests/owner-decision-codec.test.mjs tests/owner-decision-challenge.test.mjs
+node --test tests/owner-decision-canonical.test.mjs tests/owner-decision-codec.test.mjs tests/owner-decision-challenge.test.mjs tests/owner-decision-proof.test.mjs
 ```
 
 Tests consume the shared action/receipt and malformed-byte fixtures, display
 boundaries, signed invalid schemas, independent key mismatch, time equality,
 UTF-8/scalar errors, intrinsic byte bounds and adversarial typed-array subclasses.
 Challenge tests cover saved-binding mismatches, exact deadline minima, skew,
-staging expiry and sanitized failures. These checks establish pure parsing,
+staging expiry and sanitized failures. Proof tests cover signed mismatches,
+complete-token binding, exact expiry caps, pinned source hashes and shared p1
+parity, including existing noncanonical JSON and extension-field behavior. These checks establish pure parsing,
 signature and binding behavior, not live native custody,
 broker/daemon interoperability or R1–R4 acceptance. The
 [conformance matrix](owner-decision-conformance.md) retains those requirements.
