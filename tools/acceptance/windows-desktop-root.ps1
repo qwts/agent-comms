@@ -78,7 +78,10 @@ public static class DesktopRootHandle {
    }
   }
  }
- public static SafeFileHandle Open(string p) { var h=CreateFile(p,0x80,3,IntPtr.Zero,3,0x02200000,IntPtr.Zero); if(h.IsInvalid) throw new Exception("desktop-root-refused"); return h; }
+ const uint FILE_LIST_DIRECTORY=0x1, FILE_READ_ATTRIBUTES=0x80;
+ // Attribute-only opens do not enforce sharing exclusion. Directory-list access
+ // makes the held handle deny delete/rename while preserving read/write sharing.
+ public static SafeFileHandle Open(string p) { var h=CreateFile(p,FILE_LIST_DIRECTORY|FILE_READ_ATTRIBUTES,3,IntPtr.Zero,3,0x02200000,IntPtr.Zero); if(h.IsInvalid) throw new Exception("desktop-root-refused"); return h; }
 }
 '@
     }

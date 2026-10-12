@@ -18,10 +18,11 @@ const clean = root => Object.fromEntries([
 async function owned(file, args, env, deadlineMs = 15000) {
   const child = spawn(file, args, { env, cwd: repo, windowsHide: true, stdio: ['ignore','pipe','pipe'] });
   let terminal = false, bytes = 0, overflow = false, eof = false, processExit = null, processExited = false, spawnError = false, failure;
-  const state = { terminal: false, eof: false, exitCode: null, killRequested: false, cleanupTerminal: false, cleanupEof: false, processExited: false, spawnError: false, killAccepted: null };
+  const state = { terminal: false, eof: false, exitCode: null, killRequested: false, cleanupTerminal: false, cleanupEof: false, processExited: false, spawnError: false, killAccepted: null, stdoutBytes: 0, stderrBytes: 0, cleanupStdoutBytes: 0, cleanupStderrBytes: 0 };
   const chunks = { stdout: [], stderr: [] };
+  const byteCounts = { stdout: 0, stderr: 0 };
   for (const name of Object.keys(chunks)) child[name].on('data', part => {
-    bytes += part.length;
+    bytes += part.length; byteCounts[name] += part.length;
     if (bytes > 32768) { overflow = true; child.kill(); } else chunks[name].push(part);
   });
   const exited = new Promise(resolve => {
@@ -42,12 +43,13 @@ async function owned(file, args, env, deadlineMs = 15000) {
   } catch (error) {
     failure = error; error.ownedState = state;
     state.terminal = terminal; state.eof = eof; state.exitCode = processExit;
+    state.stdoutBytes = byteCounts.stdout; state.stderrBytes = byteCounts.stderr;
     throw error;
   } finally {
     if (!terminal) { state.killRequested = true; try { state.killAccepted = child.kill(); } catch { state.killAccepted = false; } }
     try { await within(exited, 5000); await within(closed, 5000); }
     catch (error) { if (!failure) { error.ownedState = state; throw error; } }
-    finally { state.cleanupTerminal = processExited; state.cleanupEof = eof; state.processExited = processExited; state.spawnError = spawnError; }
+    finally { state.cleanupTerminal = processExited; state.cleanupEof = eof; state.processExited = processExited; state.spawnError = spawnError; state.cleanupStdoutBytes = byteCounts.stdout; state.cleanupStderrBytes = byteCounts.stderr; }
   }
 }
 const args = script => ['-NoLogo','-NoProfile','-NonInteractive','-File',path.join(repo, script)];
