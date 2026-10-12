@@ -32,13 +32,36 @@ public static class DesktopRootHandle {
   var request=(HttpWebRequest)WebRequest.Create("https://nodejs.org/dist/v"+version+"/node-v"+version+"-win-x64.zip");
   request.AllowAutoRedirect=false; request.AutomaticDecompression=DecompressionMethods.None;
   request.Timeout=NodeArchiveDeadlineMs; request.ReadWriteTimeout=NodeArchiveDeadlineMs;
-  SafeFileHandle file=null; FileStream output=null; HttpWebResponse response=null; Stream input=null; bool success=false;
   using(var cancel=new CancellationTokenSource(NodeArchiveDeadlineMs))
   using(cancel.Token.Register(()=>{ try { request.Abort(); } catch { } })) {
+   return await TransferNodeArchive(async ()=>new ArchiveResponse((HttpWebResponse)await request.GetResponseAsync().ConfigureAwait(false)),
+    ()=>request.Abort(),destination,cancel.Token).ConfigureAwait(false);
+  }
+ }
+ // Both builds use this transfer/ownership/cleanup implementation. Normal callers
+ // can acquire responses only through the fixed HTTPS request above.
+ sealed class ArchiveResponse {
+  readonly HttpWebResponse native; readonly Stream supplied;
+  public readonly int StatusCode; public readonly long ContentLength; public readonly string ContentEncoding;
+  public ArchiveResponse(HttpWebResponse response) { native=response; supplied=null; StatusCode=(int)response.StatusCode; ContentLength=response.ContentLength; ContentEncoding=response.ContentEncoding; }
+#if DESKTOP_DOWNLOAD_PROOF
+  public ArchiveResponse(Stream stream,long length,int status,string encoding) { native=null; supplied=stream; ContentLength=length; StatusCode=status; ContentEncoding=encoding; }
+#endif
+  public Stream GetResponseStream() { return native!=null?native.GetResponseStream():supplied; }
+  public void Close() { if(native!=null) native.Close(); else if(supplied!=null) supplied.Dispose(); }
+ }
+#if DESKTOP_DOWNLOAD_PROOF
+ // Present only in an independently compiled proof type; never in normal tooling.
+ public static Task<string> ProveNodeArchive(Stream stream,long length,int status,string encoding,string destination,CancellationToken token) {
+  return TransferNodeArchive(()=>Task.FromResult(new ArchiveResponse(stream,length,status,encoding)),()=>{},destination,token);
+ }
+#endif
+ static async Task<string> TransferNodeArchive(Func<Task<ArchiveResponse>> acquire,Action abort,string destination,CancellationToken token) {
+  SafeFileHandle file=null; FileStream output=null; ArchiveResponse response=null; Stream input=null; bool success=false;
    try {
-    response=(HttpWebResponse)await request.GetResponseAsync().ConfigureAwait(false);
-    cancel.Token.ThrowIfCancellationRequested();
-    if(response.StatusCode!=HttpStatusCode.OK||response.ContentLength>NodeArchiveByteCap||response.ContentLength==0
+    response=await acquire().ConfigureAwait(false);
+    token.ThrowIfCancellationRequested();
+    if(response.StatusCode!=200||response.ContentLength>NodeArchiveByteCap||response.ContentLength< -1||response.ContentLength==0
       ||(!String.IsNullOrEmpty(response.ContentEncoding)&&!String.Equals(response.ContentEncoding,"identity",StringComparison.OrdinalIgnoreCase))) throw new Exception("desktop-node-refused");
     // CREATE_NEW, no sharing, and DELETE access. The sole owned handle permits
     // handle-based failed-download deletion without a close/name replacement race.
@@ -48,24 +71,24 @@ public static class DesktopRootHandle {
     input=response.GetResponseStream(); if(input==null) throw new Exception("desktop-node-refused");
     byte[] bytes=new byte[65536]; long total=0;
     for(;;) {
-     cancel.Token.ThrowIfCancellationRequested();
+     token.ThrowIfCancellationRequested();
      // At most one byte beyond the remaining cap may be read to detect overflow;
      // no over-cap byte is written and no full response is buffered.
      int count=(int)Math.Min(bytes.Length,NodeArchiveByteCap-total+1);
-     int read=await input.ReadAsync(bytes,0,count,cancel.Token).ConfigureAwait(false);
-     cancel.Token.ThrowIfCancellationRequested();
+     int read=await input.ReadAsync(bytes,0,count,token).ConfigureAwait(false);
+     token.ThrowIfCancellationRequested();
      if(read==0) break;
      if(total>NodeArchiveByteCap-read) throw new Exception("desktop-node-refused");
-     await output.WriteAsync(bytes,0,read,cancel.Token).ConfigureAwait(false); total+=read;
+     await output.WriteAsync(bytes,0,read,token).ConfigureAwait(false); total+=read;
     }
     if(total==0||(response.ContentLength>=0&&total!=response.ContentLength)) throw new Exception("desktop-node-refused");
-    await output.FlushAsync(cancel.Token).ConfigureAwait(false); output.Position=0;
+    await output.FlushAsync(token).ConfigureAwait(false); output.Position=0;
     string digest; using(var hash=SHA256.Create()) { digest=BitConverter.ToString(hash.ComputeHash(output)).Replace("-","").ToLowerInvariant(); }
-    cancel.Token.ThrowIfCancellationRequested(); success=true; return digest;
+    token.ThrowIfCancellationRequested(); success=true; return digest;
    } finally {
     bool cleanupFailed=false;
     // Abort cancels outstanding request work; no detached downloader is spawned.
-    try { request.Abort(); } catch { cleanupFailed=true; }
+    try { abort(); } catch { cleanupFailed=true; }
     if(input!=null) { try { input.Dispose(); } catch { cleanupFailed=true; } }
     if(response!=null) { try { response.Close(); } catch { cleanupFailed=true; } }
     if(!success&&file!=null&&!file.IsInvalid&&!file.IsClosed) {
@@ -76,7 +99,6 @@ public static class DesktopRootHandle {
     if(file!=null) { try { file.Dispose(); } catch { cleanupFailed=true; } }
     if(cleanupFailed) throw new Exception("desktop-node-cleanup-unconfirmed");
    }
-  }
  }
  const uint FILE_LIST_DIRECTORY=0x1, FILE_READ_ATTRIBUTES=0x80;
  // Attribute-only opens do not enforce sharing exclusion. Directory-list access

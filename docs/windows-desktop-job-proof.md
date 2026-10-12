@@ -95,22 +95,35 @@ profile or disposable-account acceptance.
 
 ## Download gates
 
-No downloader adapter is added in this batch. Deterministic tests need a reviewed
-compile-time-only adapter around the same bounded stream/header/output logic,
-never a normal URL selector. Cover declared length above cap, absent length with
-overflow, mismatched lengths, zero/truncation, redirects, encoding and stalled
-reads. Exact-cap bytes must hash correctly; the next byte refuses before write.
-Cover exclusive-create collision, cancellation during read/write and handle-based
-deletion/close failure. Keep the fixed HTTPS origin, checksum, 128MiB cap and
-60-second budget; no DNS, proxy or certificate changes. A later fixed-origin
-positive download must retain exact pinned bytes and cleanup evidence.
+The shared production transfer/cleanup implementation has a separately compiled
+`DESKTOP_DOWNLOAD_PROOF` entrypoint. Normal compilation must expose no proof
+entrypoint; a native reflection assertion enforces this. No environment, frame or
+URL selector enables it. The production adapter keeps its fixed HTTPS origin,
+checksum pins, 128MiB cap and 60-second cancellation timer. Response lengths below
+`-1` now refuse explicitly; only `-1` means unknown length.
+
+The deterministic native owner supplies generated streams and metadata, while
+using real exclusive CREATE_NEW output, same-handle hashing and failed-file
+deletion. Cases cover status/encoding/length refusal, empty/short/long bodies,
+read failure, unknown-length overflow, exact-cap success and unchanged collision
+and sibling content/ACL. Hash/content verification streams fixed-size chunks;
+no archive-sized array is allocated. The existing owner bounds process lifetime,
+stdio and actual terminal/EOF evidence; scratch remains retained.
+
+These cases remain unexecuted for this revision. They do not prove actual
+HttpWebRequest Abort or native close success. Cancellation barriers, stalled
+reads and injected deletion/close failures remain separate gates; no cleanup
+failure adapter is included. A later fixed-origin positive download must retain
+exact pinned bytes and cleanup evidence. No DNS, proxy or certificate changes
+are permitted.
 
 ## Evidence limits
 
-Local portable validation ran two context tests successfully; seventeen Windows
-tests skipped. PowerShell parsing, native compilation and all Windows execution
-remain pending. Source review or a future inert pass cannot establish real
-standard-user token/profile attestation, actual compiler/startup success,
-delivery, capacity, installed-host readiness or production deadline acceptance.
-The inert tooling can enter the existing Windows CI lane independently of those
-later gates; it must not be represented as already passing them.
+For this downloader revision, portable validation passed eighteen tests and
+skipped seventeen Windows tests. Syntax-only PowerShell parsing passed; its C#
+compilation and Windows execution remain pending. This does not replace prior
+containment evidence or establish real standard-user token/profile attestation,
+actual compiler/startup success, delivery, capacity, installed-host readiness or
+production deadline acceptance. New inert cases can enter the existing Windows
+CI lane independently of those later gates and must not be represented as
+already passing them.
