@@ -104,9 +104,11 @@ test('classic supervisor exchanges bounded control records with stdin still open
 test('classic supervisor refuses an unexpected built-in module home without JSON autoload', { skip: process.platform !== 'win32' }, async () => {
   const shell = path.join(process.env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe');
   const script = fileURLToPath(new URL('../tools/acceptance/windows-capacity-job.ps1', import.meta.url));
-  const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !['systemroot','psmodulepath'].includes(key.toLowerCase())));
-  env.SystemRoot = 'X:\\CANARY-nonexistent-system-root';
-  const child = spawn(shell, ['-NoLogo','-NoProfile','-NonInteractive','-File',script], { env, stdio: ['pipe','pipe','pipe'], windowsHide: true });
+  // Keep the shell/CLR bootstrap environment intact; change only the script's
+  // expected-home input after startup, in this disposable child process.
+  const env = { ...process.env, AGENT_COMMS_TEST_SUPERVISOR: script };
+  const command = `[Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"bootstrap-ready"}');[Console]::Out.Flush();$env:SystemRoot='X:\\CANARY-nonexistent-system-root';& $env:AGENT_COMMS_TEST_SUPERVISOR;exit $LASTEXITCODE`;
+  const child = spawn(shell, ['-NoLogo','-NoProfile','-NonInteractive','-Command',command], { env, stdio: ['pipe','pipe','pipe'], windowsHide: true });
   let terminal = false, stderrBytes = 0;
   const exited = new Promise((resolve) => {
     child.once('error', () => { terminal = true; resolve({ code: null }); });

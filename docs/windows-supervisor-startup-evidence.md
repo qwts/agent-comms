@@ -119,3 +119,18 @@ readiness and 29-second lifetime bounds; it does not repeat the evidenced
 implicit failure. This is observer setup, not a change to either pinned
 production connector or runtime. A supervisor pass must precede six-case
 preflight; capacity remains unqualified until those actual controls pass.
+
+Native [CI 38210948202](https://github.com/qwts/agent-comms/actions/runs/38210948202)
+at `c3521e3861bf29c1d158c8340abb4b5a3560d153` passed all four normal
+controls, including the preloaded supervisor's live duplex exchange. Its new
+negative-home regression failed before script refusal: changing `SystemRoot`
+in the process bootstrap environment caused the owned shell to close in
+73 ms. That stimulus did not test the supervisor's refusal path. The failed
+step log is retained with SHA256
+`102a870fab04764f6459dbd68c6e71a5672414f965583ab42bd98fdaefcc2b7c`.
+The corrected regression starts the exact real shell with its unchanged
+bootstrap environment, emits a literal bootstrap marker, then changes only
+the disposable child's expected-home input immediately before invoking the
+actual supervisor script. It still requires the fixed refusal, natural exit
+one, zero stderr and confirmed stdio close; it changes no production policy
+or environment and does not qualify the standard-user supervisor or workload.
