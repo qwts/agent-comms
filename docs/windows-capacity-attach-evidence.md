@@ -24,8 +24,9 @@ Original Windows CRLF reports remain unchanged:
 The old markers cannot distinguish control reading/parsing, the first CIM
 query/module autoload, or private job assignment. `Get-CimInstance` is the
 first attach cmdlet outside the already loaded Utility module; CIM autoload
-is a lead, not an established cause. No module import, environment, policy,
-production code, connector or runtime pin is changed to bypass this failure.
+is a lead, not an established cause. The first attach-only source preserved
+module loading, environment, policy, production code, connector and runtime
+pins to isolate this failure.
 
 The separate manual `capacity-attach` task starts one real owned paused Node
 fixture and the actual supervisor under the same sanitized standard-user
@@ -35,7 +36,8 @@ or credential scratch. Its fifteen-second startup/attach deadline and
 control read/JSON parsing, the first CIM query, identity verification and job
 creation/assignment. A .NET-only observation records whether the exact classic
 CimCmdlets manifest exists; no paths, PIDs or command lines enter its report.
-CIM remains implicitly loaded so the actual failing interval can be observed.
+The first attach-only probe kept CIM implicitly loaded to observe the failing
+interval; the explicit-import discriminant preserves the same checks.
 
 On success, the existing executable/parent/command/creation checks must pass
 before job assignment. The paused fixture stops through private IPC without
@@ -86,6 +88,34 @@ type via `[uint64]`. The numeric comparisons, memory cap, process checks and
 time tolerance remain unchanged. The real classic-shell regression must
 confirm the old alias refuses, the supported cast produces `System.UInt64`,
 and both memory boundaries pass while adjacent values refuse. The actual
-fixture attach regression remains required; native validation is pending.
+fixture attach regression and numeric boundary regression passed in
+[native CI 38215385693](https://github.com/qwts/agent-comms/actions/runs/38215385693)
+at `11872eebb8b2505f19fd254d8960326a17853397`.
 This corrects a demonstrated classic-shell incompatibility, not the earlier
 standard-user attach deadline or production connector behavior.
+
+The subsequent [standard-user attach-only run 38215559599](https://github.com/qwts/agent-comms/actions/runs/38215559599)
+at that exact head failed the shared fifteen-second attach deadline at
+`query-fixture`. Control read/JSON parsing completed; Utility home/manifest
+and CimCmdlets manifest were present. No production code was imported. Both
+paused fixture and supervisor required owned-handle forced termination; their
+terminal and stdio closure were confirmed. Total duration was 20,049 ms, with
+zero stderr. No job-empty receipt was obtained, and the bootstrap correctly
+retained profile/account/stage (`removed=false`). Original CRLF hashes:
+
+- [Acceptance](../tools/acceptance/evidence/2026-10-12-windows-connector/attach-38215559599/acceptance.json):
+  `fd5b261082a92ad445782bad06467b897b74076336ae3a5a339388db5512a7fd`.
+- [Capacity](../tools/acceptance/evidence/2026-10-12-windows-connector/attach-38215559599/capacity/capacity.json):
+  `9ef08bc77e634e8f047cc8999ba68ada00588ed955ecb39cfa1e614adb4b66eb`.
+- [Failure](../tools/acceptance/evidence/2026-10-12-windows-connector/attach-38215559599/capacity/failure.json):
+  `4e0f6b7b83530488e936b77c16d20a88b3bae3a869f19c77c1d11eae0d501adf`.
+- Full run log: `3d631f27a1cf87fcbe90385aef49e3c2366573888a37c2ffa9e2e999610363f1`.
+
+The first `Get-CimInstance` interval timed out; this does not distinguish
+implicit module loading from the query itself. The next attach-only
+discriminant imports only the exact classic `PSHOME` built-in CimCmdlets
+manifest, refusing unexpected home, absent manifest or path outside that
+module directory. Literal phases bracket import before the same query.
+Environment, policy, process checks, deadlines, memory limits, runtime pins
+and production connector are unchanged. Native CI must pass before one
+reviewed attach probe; no further full preflight or pilot is inferred.

@@ -136,7 +136,7 @@ test('default supervisor diagnostic runs one full script without repeating faile
 
 test('attach phase boundaries and CIM observations remain fixed metadata with no command or path leakage', async () => {
   const owned = transport(), control = createCapacityController(owned);
-  for (const phase of ['control-read','parse-control','control-parsed','verify-fixture','verify-fixture-existence','verify-fixture-parent','verify-fixture-executable','parse-fixture-command','verify-fixture-argument-count','verify-fixture-arguments','convert-fixture-creation','verify-job-limit','query-fixture','fixture-queried','create-private-job','assign-private-job','private-job-assigned']) {
+  for (const phase of ['control-read','parse-control','control-parsed','verify-fixture','verify-fixture-existence','verify-fixture-parent','verify-fixture-executable','parse-fixture-command','verify-fixture-argument-count','verify-fixture-arguments','convert-fixture-creation','verify-job-limit','cim-module-refused','import-cim','cim-imported','query-fixture','fixture-queried','create-private-job','assign-private-job','private-job-assigned']) {
     owned.child.stdout.write(JSON.stringify({ id: -1, phase }) + '\n');
     assert.equal(control.state().phase, phase);
   }

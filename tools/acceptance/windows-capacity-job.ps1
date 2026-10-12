@@ -213,6 +213,17 @@ public static class CapacityJob {
             $cimManifest = [IO.Path]::Combine($PSHOME, 'Modules\CimCmdlets\CimCmdlets.psd1')
             $cimPresent = [IO.File]::Exists($cimManifest)
             [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"cim-module-observation","manifestPresent":' + $cimPresent.ToString().ToLowerInvariant() + '}'); [Console]::Out.Flush()
+            $cimContained = [IO.Path]::GetFullPath($cimManifest).StartsWith([IO.Path]::GetFullPath($PSHOME).TrimEnd('\') + '\Modules\CimCmdlets\', [StringComparison]::OrdinalIgnoreCase)
+            if (-not $expected -or -not $cimPresent -or -not $cimContained) {
+                $phase = 'cim-module-refused'
+                [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"cim-module-refused"}'); [Console]::Out.Flush()
+                throw 'invalid-built-in-cim'
+            }
+            $phase = 'import-cim'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"import-cim"}'); [Console]::Out.Flush()
+            Import-Module -Name $cimManifest -ErrorAction Stop
+            $phase = 'cim-imported'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"cim-imported"}'); [Console]::Out.Flush()
             $phase = 'query-fixture'
             [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"query-fixture"}'); [Console]::Out.Flush()
             $main = Get-CimInstance Win32_Process -Filter "ProcessId=$fixtureId" -OperationTimeoutSec 2
