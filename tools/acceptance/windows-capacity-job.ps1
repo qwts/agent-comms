@@ -17,10 +17,8 @@ function Reply($Value) {
 
 try {
     if (-not $ValidateOnly) { Reply @{id=-1;ok=$true;phase=$phase} }
-    $phase = 'policy-query'
-    $executionPolicy = [string](Get-ExecutionPolicy)
     $phase = 'compile-supervisor'
-    if (-not $ValidateOnly) { Reply @{id=-1;ok=$true;phase=$phase;executionPolicy=$executionPolicy} }
+    if (-not $ValidateOnly) { Reply @{id=-1;ok=$true;phase=$phase} }
     Add-Type -TypeDefinition @'
 using System;
 using System.Collections.Generic;

@@ -1,5 +1,5 @@
 // Dev-only finite control transport. Failure records never contain child output.
-const PHASES = new Set(['script-entry','policy-query','compile-supervisor','read-control','verify-fixture','assign-private-job','sample-job','query-members','close-job']);
+const PHASES = new Set(['script-entry','compile-supervisor','read-control','verify-fixture','assign-private-job','sample-job','query-members','close-job']);
 export function encodingSignature(chunk) {
   if (chunk[0] === 0xff && chunk[1] === 0xfe) return 'utf16le-bom';
   if (chunk[0] === 0xfe && chunk[1] === 0xff) return 'utf16be-bom';
@@ -9,7 +9,7 @@ export function encodingSignature(chunk) {
   return chunk.subarray(0, 16).every((byte) => byte < 128) ? 'ascii-compatible' : 'other';
 }
 export function createCapacityController(owned, { ipc = false, classifyFailure = () => new Error('job-supervisor-failed') } = {}) {
-  const pending = new Map(); let id = 1, bytes = '', rejected, phase, encoding, policy;
+  const pending = new Map(); let id = 1, bytes = '', rejected, phase, encoding;
   let resolveStartup, rejectStartup;
   const startup = new Promise((resolve, reject) => { resolveStartup = resolve; rejectStartup = reject; });
   startup.catch(() => {}); // A startup failure may precede the parent's await.
@@ -25,7 +25,6 @@ export function createCapacityController(owned, { ipc = false, classifyFailure =
     if (record.id === -1 && !ipc) {
       if (!PHASES.has(record.phase)) { fail('control-invalid'); return; }
       phase = record.phase;
-      if (['Restricted','AllSigned','RemoteSigned','Unrestricted','Bypass','Undefined'].includes(record.executionPolicy)) policy = record.executionPolicy;
     } else if (record.id === 0) resolveStartup(record);
     else pending.get(record.id)?.resolve(record);
   }
@@ -42,7 +41,7 @@ export function createCapacityController(owned, { ipc = false, classifyFailure =
   });
   owned.exited.then(closed);
   owned.child.stdin?.on('error', closed); owned.child.stdout?.on('error', closed);
-  return { startup, state: () => ({ phase: phase ?? null, encoding: encoding ?? null, executionPolicy: policy ?? null }),
+  return { startup, state: () => ({ phase: phase ?? null, encoding: encoding ?? null }),
     async request(op, fields = {}, timeout = 5000) {
       if (rejected) throw rejected;
       if (owned.terminal()) throw new Error('control-closed');

@@ -117,8 +117,19 @@ and `PSModulePath`, with no explicit execution-policy argument. The parent
 standard-user shell uses `-ExecutionPolicy Bypass`; this difference is recorded
 without changing policy speculatively. The separate `capacity-supervisor`
 manual task probes this exact environment/command with no production imports.
-It reports fixed script-entry/precompile phases, an allowlisted execution-policy
-enum if reached, stdout/stderr encoding signatures and a capped stderr byte
+It reports fixed script-entry/precompile phases, stdout/stderr encoding
+signatures and a capped stderr byte
 count, never raw output. Framing and output-bound errors now reject startup and
 pending control requests immediately; they cannot masquerade as a readiness
 deadline. The fifteen-second startup budget is unchanged.
+
+The first CI run of the probe change,
+[38205980317](https://github.com/qwts/agent-comms/actions/runs/38205980317),
+failed the native duplex test at `policy-query` before compilation, at head
+`1387e781d62806e0e1a28934e2e620dd0af0b171`. Its failed-step log hash is
+`6b698fcbd5d3cc7ab8fc87cc75b8e7c596251808b225f51d1f3bfacacfc6a604`.
+The optional `Get-ExecutionPolicy` query had become a startup requirement and
+is removed; the probe explicitly records `executionPolicyObservation` as
+`not-queried`. No execution-policy or process-environment change is made.
+The inherited module-path explanation remains unconfirmed. This CI failure
+does not explain the earlier standard-user deadline.

@@ -51,7 +51,6 @@ test('classic supervisor exchanges bounded control records with stdin still open
   try {
     assert.deepEqual(await record(0), { id: 0, ok: true, phase: 'ready' });
     assert.deepEqual([...phases].sort(), ['compile-supervisor','script-entry']);
-    assert.ok(['Restricted','AllSigned','RemoteSigned','Unrestricted','Bypass','Undefined'].includes(records.get(-1).executionPolicy));
     child.stdin.write('{"id":1,"op":"close"}\n');
     // Do not send EOF: this checks the same live duplex control path as attach.
     const closed = await record(1);

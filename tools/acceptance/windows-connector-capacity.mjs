@@ -18,7 +18,7 @@ const CANARY = 'CANARY-windows-capacity-body-secret';
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 let output, activeStage = 'arguments', fixtureCleanup;
-const supervisorPhases = new Set(['script-entry','policy-query','compile-supervisor','read-control','verify-fixture','assign-private-job','sample-job','query-members','close-job']);
+const supervisorPhases = new Set(['script-entry','compile-supervisor','read-control','verify-fixture','assign-private-job','sample-job','query-members','close-job']);
 const checks = new Set(['fixture-terminal', 'fixture-deadline', 'control-deadline', 'control-closed',
   'control-output-bound', 'control-invalid', 'job-supervisor-failed', 'natural-exit-unconfirmed',
   'relay-exit-unconfirmed', 'scratch-retained', 'job-exit-unconfirmed', 'diagnostic-output-invalid',
@@ -117,6 +117,7 @@ async function supervisorProbe() {
     env: cleanEnvironment, stdio: ['pipe','pipe','pipe'], windowsHide: true });
   const control = createCapacityController(owned, { classifyFailure: supervisorFailure });
   const evidence = { runType: 'supervisor-only-no-workload', productionImported: false,
+    executionPolicyObservation: 'not-queried',
     environmentParity: { inheritedExecutionPolicy: Object.keys(cleanEnvironment).some((key) => key.toLowerCase() === 'psexecutionpolicypreference'),
       inheritedModulePath: Object.keys(cleanEnvironment).some((key) => key.toLowerCase() === 'psmodulepath'), explicitExecutionPolicyArgument: false },
     stderrBytes: 0, stderrByteCountCapped: false, stderrEncoding: null, control: null, ownedTerminalConfirmed: false };

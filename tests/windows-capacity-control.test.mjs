@@ -28,9 +28,9 @@ test('bounded supervisor output rejects startup and an already pending request',
 test('valid fixed phases remain bounded metadata and do not prematurely resolve readiness', async () => {
   const owned = transport(), control = createCapacityController(owned);
   let ready = false; control.startup.then(() => { ready = true; });
-  owned.child.stdout.write('{"id":-1,"phase":"compile-supervisor","executionPolicy":"Restricted"}\n');
+  owned.child.stdout.write('{"id":-1,"phase":"compile-supervisor"}\n');
   await Promise.resolve(); assert.equal(ready, false);
-  assert.deepEqual(control.state(), { phase: 'compile-supervisor', encoding: 'ascii-compatible', executionPolicy: 'Restricted' });
+  assert.deepEqual(control.state(), { phase: 'compile-supervisor', encoding: 'ascii-compatible' });
   owned.child.stdout.write('{"id":0,"ok":true,"phase":"ready"}\n');
   assert.equal((await control.startup).phase, 'ready');
   owned.close();
