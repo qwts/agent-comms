@@ -83,7 +83,7 @@ test('helper does not inherit NODE_OPTIONS or a secret-bearing environment', (t)
   `], { timeout: 3000, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.stdout, '');
-  assert.equal(JSON.parse(result.stderr).event, 'request-internal');
+  assert.equal(JSON.parse(result.stderr).event, 'broker.request-failure');
   assert.ok(!result.stderr.includes('CANARY'));
 });
 
@@ -225,7 +225,10 @@ for (const mode of ['unread-stderr', 'stopped-helper']) {
     if (mode === 'stopped-helper') process.kill(helper, 'SIGSTOP');
     let previous = stats.written;
     let stalledChecks = 0;
-    for (let attempt = 0; attempt < 100; attempt += 1) {
+    // The production rate cap is 100 events/s. Allow a finite ten-second
+    // fill window so the test still proves an actually blocked destination,
+    // rather than disabling the cap or mistaking rate drops for backpressure.
+    for (let attempt = 0; attempt < 500; attempt += 1) {
       await delay(20); stats = await send(child, 'stats');
       stalledChecks = stats.inFlight && stats.queued === 64 && stats.written === previous ? stalledChecks + 1 : 0;
       if (stats.disabled || stalledChecks >= 5) break;

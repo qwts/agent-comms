@@ -1,4 +1,66 @@
-# State format compatibility acceptance
+# Opt-in local acceptance tools
+
+## Diagnostic resource and latency budgets
+
+The standalone diagnostic probe uses fresh single-account broker processes and
+synthetic credentials/messages. It compares reporting disabled/enabled for
+healthy, deliberately failed, and unread stderr destinations. Each process runs
+100 requests per second for 60 seconds, followed by a 10-second burst of 1000
+diagnostic reports per second while real requests continue at 100 per second.
+The six sequential runs take about seven minutes. Coordinate a quiet interval
+with other sessions before measuring; concurrent suites invalidate a clean
+paired latency claim. This is excluded from default `npm test` and runtime imports.
+
+On macOS with a supported Node executable, run explicitly:
+
+```sh
+node tools/acceptance/local-diagnostics.mjs > /tmp/comms-diagnostic-budgets.json
+```
+
+To select named destination pairs, use `--modes healthy,failed`. The diagnostic
+counterbalanced run is separate and takes about five minutes:
+
+```sh
+node tools/acceptance/local-diagnostics.mjs --counterbalanced healthy > /tmp/comms-diagnostic-counterbalanced.json
+```
+
+This runs disabled/enabled/enabled/disabled with fresh processes. Both opposite
+order pairs retain their individual pass/fail results under the same thresholds;
+a passing average cannot cancel a failing pair. Each phase also reports fixed
+100-request windows of latency and driver scheduling lateness, diagnostic
+write/drop snapshots and sampled main/helper CPU deltas. These windows follow
+the planned 100/s schedule rather than wall-clock bins if the driver falls
+behind. Quantiles are computed after timing stops. Driver lateness and CPU can
+help locate variation but do not establish its cause.
+
+The baseline disables reporting in the same instrumented broker. It retains
+request timing reads, so it does not measure their overhead against an older
+source revision. One asynchronous `ps` invocation samples only the owned broker
+and its known helper; PID, parent PID and executable must match. Main/helper
+RSS and CPU are reported separately and their simultaneous RSS sum is compared
+with the disabled baseline. Helper warmup is included before deliberate failure.
+The failed destination must stay disabled without respawn. The unread destination
+must reach a real queue plateau and stalled in-flight write.
+
+The report includes both phases, latency/throughput deltas, finite queue peaks,
+cumulative drops, synthetic outcome checks, and natural broker exit without
+surviving helpers. It contains no credentials, message bodies, paths or stable
+identity IDs. macOS accounting evidence does not certify Linux, native Windows
+budgets, packaged host integration or the remainder of #164.
+
+The bounded startup-failure and owned-child cleanup probe is separate:
+
+```sh
+node tools/acceptance/local-diagnostics.mjs --cleanup-check
+```
+
+On failure, cleanup signals a helper only while its owned parent is live and
+identity still matches, then awaits the owned broker's terminal exit. If exit or
+helper cleanup cannot be confirmed, disposable `ac-diag-budget-*` scratch is
+retained for manual review; the original failure and cleanup failures stay
+separate in the internal aggregate. No raw failure stack is printed.
+
+## State format compatibility acceptance
 
 This opt-in harness tests actual source revisions on disposable state. It covers
 the released v0.3.16 event-log reader, PR #141 checkpoint version 1, and PR #145

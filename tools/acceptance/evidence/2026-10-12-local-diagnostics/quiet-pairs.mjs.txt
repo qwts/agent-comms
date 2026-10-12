@@ -1,0 +1,344 @@
+// Explicit, bounded POSIX acceptance run. Not imported by runtime or unit CI.
+import assert from 'node:assert/strict';
+import { execFile, execFileSync, spawn } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
+import { mkdtempSync, realpathSync, rmSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { performance } from 'node:perf_hooks';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
+
+import { Broker } from '../../lib/broker.mjs';
+import { admin, call } from '../../lib/client.mjs';
+import { createDiagnosticSink, DIAGNOSTIC_LIMITS } from '../../lib/diagnostics.mjs';
+import { brokerPaths } from '../../lib/paths.mjs';
+import { createDiagnosticStderr } from '../../lib/platform/diagnostic-stderr.mjs';
+import { pairAccount } from '../../tests/helpers/broker.mjs';
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const MODES = ['healthy', 'failed', 'unread'];
+const NO_DIAGNOSTIC = () => {};
+const OPTIONS = { diagnostic: NO_DIAGNOSTIC, timeoutMs: 1000 };
+const execFileAsync = promisify(execFile);
+const EXECUTABLE = realpathSync(process.execPath);
+
+async function deadline(promise, ms, code) {
+  let timer;
+  try { return await Promise.race([promise, new Promise((resolve, reject) => { timer = setTimeout(() => reject(new Error(code)), ms); })]); }
+  finally { clearTimeout(timer); }
+}
+
+async function fixture(mode, enabled) {
+  assert.ok(process.send && MODES.includes(mode));
+  const output = createDiagnosticStderr();
+  const sink = createDiagnosticSink(output);
+  const broker = await new Broker({ paths: brokerPaths(), mode: 'single-account', diagnostic: enabled ? sink.report : NO_DIAGNOSTIC }).start();
+  let reports = 0;
+  let burstTimer;
+  if (enabled) {
+    broker.reportDiagnostic('request-internal');
+    for (let i = 0; i < 200 && !sink.stats().written; i += 1) await sleep(10);
+    assert.equal(sink.stats().written, 1);
+  }
+  const initialHelper = output.pid;
+  const stats = () => ({ ...sink.stats(), helper: output.pid, initialHelper, reports });
+  process.on('message', async ({ id, command }) => {
+    try {
+      if (command === 'burst') {
+        const start = performance.now();
+        const next = () => {
+          for (let i = 0; i < 10; i += 1) { broker.reportDiagnostic('request-internal'); reports += 1; }
+          if (reports < 10_000) burstTimer = setTimeout(next, Math.max(0, start + reports - performance.now()));
+        };
+        next();
+      } else if (command === 'fail-helper') {
+        assert.ok(enabled && mode === 'failed');
+        process.kill(output.pid, 'SIGKILL');
+        for (let i = 0; i < 200 && !sink.stats().disabled; i += 1) await sleep(10);
+        assert.equal(sink.stats().disabled, true);
+      } else if (command === 'storage-failure') {
+        broker.log.io = { ...broker.log.io, fsyncSync() { throw new Error('synthetic acceptance storage failure'); } };
+      } else if (command === 'stop') {
+        clearTimeout(burstTimer);
+        await broker.stop();
+        process.send({ id, ...stats() }, () => process.disconnect());
+        return;
+      }
+      process.send({ id, ...stats() });
+    } catch { process.exitCode = 1; process.disconnect(); }
+  });
+  process.send({ id: 0, ...stats() });
+}
+
+// ps output is accepted only for the child we own and its known helper, with
+// matching parent and executable. No process inventory or environment is read.
+function accounting(pid, parentPid) {
+  let row;
+  try { row = execFileSync('ps', ['-o', 'pid=,ppid=,rss=,time=,comm=', '-p', String(pid)], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 1000 }); }
+  catch { return null; }
+  return parseAccounting(row, pid, parentPid);
+}
+
+function parseAccounting(row, pid, parentPid) {
+  const match = row.trim().match(/^(\d+)\s+(\d+)\s+(\d+)\s+(\S+)\s+(.+)$/);
+  if (!match) return null;
+  assert.equal(Number(match[1]), pid);
+  assert.equal(Number(match[2]), parentPid);
+  assert.equal(realpathSync(match[5]), EXECUTABLE);
+  const time = match[4].split(':').map(Number);
+  assert.ok(time.length >= 2 && time.length <= 3 && time.every(Number.isFinite));
+  return { rssKiB: Number(match[3]), cpuSeconds: time.reduce((sum, value) => sum * 60 + value, 0) };
+}
+
+async function accountingPair(mainPid, helperPid) {
+  // Exactly one asynchronous ps invocation in both paired modes. The observer
+  // must not synchronously block the client whose latency it is measuring.
+  const { stdout } = await execFileAsync('ps', ['-o', 'pid=,ppid=,rss=,time=,comm=', '-p', helperPid ? `${mainPid},${helperPid}` : String(mainPid)],
+    { encoding: 'utf8', timeout: 1000, maxBuffer: 4096 });
+  let main = null, writer = null;
+  for (const row of stdout.trim().split('\n')) {
+    const pid = Number(row.trim().split(/\s+/, 1)[0]);
+    assert.ok(pid === mainPid || pid === helperPid);
+    if (pid === mainPid) main = parseAccounting(row, mainPid, process.pid);
+    else writer = parseAccounting(row, helperPid, mainPid);
+  }
+  return { main, writer };
+}
+
+function quantile(samples, fraction) {
+  const sorted = [...samples].sort((a, b) => a - b);
+  return sorted[Math.ceil(sorted.length * fraction) - 1];
+}
+
+async function run(mode, enabled, { missingExecutable = false, earlyFailure = false } = {}) {
+  const root = mkdtempSync(path.join(os.tmpdir(), 'ac-diag-budget-'));
+  const env = { PATH: process.env.PATH, AGENT_COMMS_SHARED_DIR: path.join(root, 'shared'), AGENT_COMMS_BROKER_STATE_DIR: path.join(root, 'broker') };
+  const paths = brokerPaths(env);
+  const child = spawn(missingExecutable ? path.join(root, 'missing-node') : process.execPath,
+    [fileURLToPath(import.meta.url), '--fixture', mode, String(enabled)], { env, stdio: ['ignore', 'ignore', 'pipe', 'ipc'] });
+  let terminalObserved = false;
+  const exited = new Promise((resolve) => {
+    child.once('error', () => {
+      if (!child.pid) { terminalObserved = true; resolve([null, null]); }
+    });
+    child.once('exit', (code, signal) => { terminalObserved = true; resolve([code, signal]); });
+  });
+  // An unread destination must actually remain unread throughout the run.
+  if (mode !== 'unread') child.stderr.on('data', () => {});
+  const pending = new Map();
+  let requestId = 1;
+  let helper;
+  let sampler;
+  let samplingError;
+  let latestStats;
+  let originalFailure;
+  const resources = [];
+  const ready = new Promise((resolve) => {
+    child.on('message', (message) => {
+      if (message.id === 0) { latestStats = message; resolve(message); return; }
+      pending.get(message.id)?.(message);
+    });
+  });
+  async function command(command) {
+    const id = requestId++;
+    const response = new Promise((resolve) => pending.set(id, resolve));
+    try {
+      child.send({ id, command });
+      return await deadline(response, 2000, 'fixture-command-deadline');
+    } finally { pending.delete(id); }
+  }
+  try {
+    await deadline(Promise.race([ready, exited.then(() => { throw new Error('fixture-start-failed'); })]), 5000, 'fixture-start-deadline');
+    helper = latestStats.helper;
+    if (earlyFailure) throw new Error('synthetic-acceptance-failure');
+    const paired = await pairAccount(paths, os.userInfo().username, process.getuid());
+    await admin(paths, { op: 'approve', code: paired.code }, OPTIONS);
+    const credential = paired.credential;
+    const alice = `agent_${randomUUID()}`, bob = `agent_${randomUUID()}`;
+    const request = (body, auth = credential) => call(paths, auth, body, OPTIONS);
+    for (const agentId of [alice, bob]) await request({ op: 'join', agentId });
+    async function delivery(key) {
+      const sent = await request({ op: 'send', agentId: alice, to: bob, body: 'synthetic budget fixture', key });
+      const read = await request({ op: 'read', agentId: bob });
+      assert.equal(read.messages[0].id, sent.messageId);
+      await request({ op: 'ack', agentId: bob, ids: [sent.messageId] });
+      assert.equal((await request({ op: 'read', agentId: bob })).messages.length, 0);
+    }
+    await delivery('before');
+    let sampling = false;
+    async function sample() {
+      if (sampling) return;
+      sampling = true;
+      try {
+        latestStats = await command('stats');
+        assert.equal(latestStats.helper, helper, 'failed helper must never respawn');
+        const { main, writer } = await accountingPair(child.pid, helper);
+        assert.ok(main, 'owned broker accounting must remain available');
+        if (enabled && !latestStats.disabled) assert.ok(writer, 'owned helper accounting must remain available');
+        resources.push({ mainRssKiB: main.rssKiB, helperRssKiB: writer?.rssKiB ?? 0,
+          mainCpuSeconds: main.cpuSeconds, helperCpuSeconds: writer?.cpuSeconds ?? 0,
+          queued: latestStats.queued, queuedBytes: latestStats.queuedBytes, inFlight: latestStats.inFlight,
+          inFlightBytes: latestStats.inFlightBytes, written: latestStats.written, dropped: latestStats.dropped });
+      } catch (error) { samplingError = error; }
+      finally { sampling = false; }
+    }
+    await sample();
+    if (enabled && mode === 'failed') {
+      latestStats = await command('fail-helper');
+      assert.equal(latestStats.disabled, true);
+    }
+    sampler = setInterval(sample, 1000);
+    const phases = [];
+    const outcomes = { success: 0, refusal: 0 };
+    for (const seconds of [60, 10]) {
+      if (seconds === 10) await command('burst');
+      const start = performance.now();
+      const latencies = [];
+      for (let i = 0; i < seconds * 100; i += 1) {
+        await sleep(Math.max(0, start + i * 10 - performance.now()));
+        const began = performance.now();
+        if (i % 100 === 99) {
+          await assert.rejects(request({ op: 'read', agentId: bob }, { ...credential, secret: 'synthetic-wrong-secret' }), { code: 'unauthenticated' });
+          outcomes.refusal += 1;
+        } else {
+          assert.equal((await request({ op: 'read', agentId: bob })).messages.length, 0);
+          outcomes.success += 1;
+        }
+        latencies.push(performance.now() - began);
+        if (samplingError) throw samplingError;
+        if (enabled && mode === 'failed') assert.equal(latestStats.disabled, true);
+      }
+      await sleep(Math.max(0, start + seconds * 1000 - performance.now()));
+      const elapsedMs = performance.now() - start;
+      phases.push({ seconds, completed: latencies.length, elapsedMs, throughput: latencies.length * 1000 / elapsedMs,
+        p95Ms: quantile(latencies, 0.95), p99Ms: quantile(latencies, 0.99) });
+    }
+    clearInterval(sampler);
+    while (sampling) await sleep(10);
+    await sample();
+    if (samplingError) throw samplingError;
+    latestStats = await command('stats');
+    assert.equal(latestStats.reports, 10_000);
+    assert.equal(latestStats.helper, helper);
+    if (enabled && mode === 'unread') {
+      const tail = resources.slice(-5);
+      assert.ok(tail.length === 5 && tail.every((row) => row.inFlight === 1 && row.queued === 64));
+      assert.equal(new Set(tail.map((row) => row.written)).size, 1, 'unread pipe must really stall the helper');
+    }
+    await delivery('after');
+    await command('storage-failure');
+    for (const key of ['uncertain', 'poisoned']) await assert.rejects(request({ op: 'send', agentId: alice, to: bob, body: 'synthetic budget fixture', key }), { code: 'storage-failed' });
+    const stopAt = performance.now();
+    await command('stop');
+    const exit = await deadline(exited, 2000, 'natural-shutdown-deadline');
+    const shutdownMs = performance.now() - stopAt;
+    assert.deepEqual(exit, [0, null]);
+    if (helper) {
+      let alive = true;
+      for (let i = 0; i < 100 && alive; i += 1) {
+        try { process.kill(helper, 0); await sleep(10); }
+        catch (error) { if (error.code === 'ESRCH') alive = false; else throw error; }
+      }
+      assert.equal(alive, false, 'helper must not survive broker exit');
+      helper = null;
+    }
+    for (const row of resources) {
+      assert.ok(row.queued <= DIAGNOSTIC_LIMITS.events && row.queuedBytes <= DIAGNOSTIC_LIMITS.bytes);
+      assert.ok(row.inFlight <= 1 && row.inFlightBytes <= DIAGNOSTIC_LIMITS.eventBytes);
+    }
+    const peak = (field) => Math.max(...resources.map((row) => row[field]));
+    return { mode, enabled, phases, outcomes, deliveryChecks: 2, storageRefusals: 2, shutdownMs,
+      samples: resources.length, peakMainRssKiB: peak('mainRssKiB'), peakHelperRssKiB: peak('helperRssKiB'),
+      peakTotalRssKiB: Math.max(...resources.map((row) => row.mainRssKiB + row.helperRssKiB)),
+      mainCpuSeconds: peak('mainCpuSeconds'), helperCpuSeconds: peak('helperCpuSeconds'),
+      maxQueued: peak('queued'), maxQueuedBytes: peak('queuedBytes'), dropped: latestStats.dropped,
+      tail: resources.slice(-5) };
+  } catch (error) {
+    originalFailure = error;
+    throw error;
+  } finally {
+    clearInterval(sampler);
+    const cleanupFailures = [];
+    // On abnormal failure, target a helper only while its owned parent is
+    // alive and ps still proves its PID/PPID/executable. Never signal a raw
+    // stale helper PID after the parent has exited.
+    if (!terminalObserved) {
+      let ownedMain;
+      try { ownedMain = accounting(child.pid, process.pid); }
+      catch { cleanupFailures.push(new Error('broker-identity-unconfirmed')); }
+      if (ownedMain) {
+        if (helper) {
+          try {
+            if (accounting(helper, child.pid)) process.kill(helper, 'SIGKILL');
+          } catch (error) { if (error.code !== 'ESRCH') cleanupFailures.push(new Error('helper-identity-or-cleanup-failed')); }
+        }
+        try { child.kill('SIGKILL'); }
+        catch { cleanupFailures.push(new Error('broker-cleanup-signal-failed')); }
+      }
+      try { await deadline(exited, 2000, 'broker-exit-unconfirmed'); }
+      catch (error) { cleanupFailures.push(error); }
+    }
+    if (terminalObserved && helper) {
+      let alive = true;
+      for (let i = 0; i < 100 && alive; i += 1) {
+        try { process.kill(helper, 0); await sleep(10); }
+        catch (error) { if (error.code === 'ESRCH') alive = false; else break; }
+      }
+      if (alive) cleanupFailures.push(new Error('helper-exit-unconfirmed'));
+    }
+    if (terminalObserved && !cleanupFailures.length) {
+      try { rmSync(root, { recursive: true, force: true }); }
+      catch { cleanupFailures.push(new Error('scratch-cleanup-failed')); }
+    } else if (!terminalObserved && !cleanupFailures.length) cleanupFailures.push(new Error('broker-exit-unconfirmed'));
+    if (cleanupFailures.length) {
+      const failure = new AggregateError([...(originalFailure ? [originalFailure] : []), ...cleanupFailures], 'acceptance-cleanup-failed');
+      failure.cleanupFailures = cleanupFailures.length;
+      failure.scratchRetained = true;
+      throw failure;
+    }
+  }
+}
+
+async function main(modes = MODES) {
+  assert.equal(process.platform, 'darwin', 'This accounting parser is measured on macOS only; Linux and Windows need native evidence');
+  const pairs = [];
+  for (const mode of modes) {
+    process.stderr.write(`Measuring ${mode}: disabled then enabled, 70 seconds each.\n`);
+    const disabled = await run(mode, false);
+    const enabled = await run(mode, true);
+    assert.deepEqual(disabled.outcomes, enabled.outcomes);
+    const deltas = enabled.phases.map((phase, i) => ({ p95Ms: phase.p95Ms - disabled.phases[i].p95Ms,
+      p99Ms: phase.p99Ms - disabled.phases[i].p99Ms, throughputRatio: phase.throughput / disabled.phases[i].throughput }));
+    const additionalRssKiB = enabled.peakTotalRssKiB - disabled.peakTotalRssKiB;
+    pairs.push({ mode, disabled, enabled, deltas, additionalRssKiB,
+      passes: deltas.every((delta) => delta.p95Ms <= 2 && delta.p99Ms <= 5 && delta.throughputRatio >= 0.98)
+        && additionalRssKiB <= 64 * 1024 && enabled.shutdownMs <= 2000 });
+  }
+  process.stdout.write(`${JSON.stringify({ v: 1, platform: process.platform, arch: process.arch, osRelease: os.release(),
+    node: process.version, logicalCpus: os.availableParallelism(), workload: '100 requests/s60s then1000 diagnostic reports/s10s with100 requests/s',
+    baseline: 'same instrumentation with reporting disabled; request clock reads remain enabled',
+    limits: DIAGNOSTIC_LIMITS, pairs }, null, 2)}\n`);
+  if (pairs.some((pair) => !pair.passes)) process.exitCode = 1;
+}
+
+try {
+  if (process.argv[2] === '--fixture') await fixture(process.argv[3], process.argv[4] === 'true');
+  else if (process.argv[2] === '--cleanup-check') {
+    for (const fault of [{ missingExecutable: true }, { earlyFailure: true }]) {
+      await assert.rejects(run('healthy', true, fault), (error) => !(error instanceof AggregateError));
+    }
+    process.stdout.write('Acceptance startup-failure and owned-child cleanup checks passed.\n');
+  }
+  else if (process.argv.length === 2) await main();
+  else if (process.argv[2] === '--modes' && process.argv.length === 4) {
+    const modes = process.argv[3].split(',');
+    assert.ok(modes.length >= 1 && modes.length <= 3 && new Set(modes).size === modes.length && modes.every((mode) => MODES.includes(mode)));
+    await main(modes);
+  } else throw new Error('unsupported-acceptance-arguments');
+} catch (error) {
+  process.stderr.write(`${JSON.stringify({ status: 'failed', check: error instanceof AggregateError ? 'acceptance-cleanup-failed' : 'acceptance-check-failed',
+    originalFailurePreserved: error instanceof AggregateError && error.errors.length > error.cleanupFailures,
+    cleanupFailures: error.cleanupFailures ?? 0, scratchRetained: error.scratchRetained === true })}\n`);
+  process.exitCode = 1;
+}

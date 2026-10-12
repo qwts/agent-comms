@@ -1,27 +1,52 @@
-# Local broker failure diagnostics
+# Local broker and client diagnostics
 
 The broker writes bounded JSON lines to stderr for unexpected request-handler
 errors, uncertain storage appends or compaction, and background maintenance
-failures. CLI stdout and the durable `events.jsonl` format are unchanged.
+failures. The client records local custody/proof refusals, unreachable channels,
+request deadlines and scheduled watch retries. CLI stdout and the durable
+`events.jsonl` format are unchanged.
 Expected permission and validation refusals keep their existing public error
 codes and do not produce these internal-error records.
 
-Each line contains only `component`, `buildVersion`, a fixed `event` name,
-a locally generated `eventId`, `stage`, stable `code`, and `outcome`.
-`buildVersion` comes from packaged metadata, or is `unknown` when that metadata
-is unavailable. The diagnostic event ID identifies this observation only; it
-does not identify a message, soul, or cross-process operation and grants no
-authority. No Error objects, causes, stacks, request fields, arbitrary messages,
-paths, bodies, or credentials are serialized.
+The private stderr format adopts a local subset of the proposed
+[ENG-0085 profile](https://github.com/qwts/qwts-agent-sop/blob/fc470c9244ae8018d24df217a03ce29f9bdfcc0e/docs/reference/diagnostic-profile-v1.md).
+The [proposal PR](https://github.com/qwts/qwts-agent-sop/pull/87) and
+[exact merged-main CI](https://github.com/qwts/qwts-agent-sop/actions/runs/38190389433)
+record the shared review baseline; joint cross-repository adoption remains open.
+Each line contains `v: 1`, `component`, `buildVersion`, `buildSource`, a fixed
+`event` name, locally generated `eventId` and `sessionId`, `operation`, `stage`,
+stable `code`, `outcome` and `observedAtUnixMs`. Components are
+`agent-comms-broker` and `agent-comms-client`. `buildVersion` comes from running
+package metadata with `buildSource: running`; unavailable or invalid metadata
+produces null with `buildSource: unknown`. Optional `durationMs` measures a
+local stage using a monotonic clock, rounded down; absent means unmeasured.
 
-| Event | Stage | Code | Outcome |
-| --- | --- | --- | --- |
-| `request-internal` | `request` | `internal` | `failed` |
-| `storage-append` | `append` | `storage-failed` | `recovery-required` |
-| `storage-compact` | `compact` | `storage-failed` | `recovery-required` |
-| `maintenance-internal` | `maintenance` | `internal` | `failed` |
-| `maintenance-storage` | `maintenance` | `storage-failed` | `recovery-required` |
-| `diagnostics-dropped` | `diagnostics` | `diagnostics-dropped` | `dropped` |
+An event ID identifies one observation; the random session ID joins observations
+in one process lifetime. Neither identifies a message, soul, installation or
+cross-process operation or grants authority. This slice emits no context or
+links and does not accept peer diagnostic IDs. No Error objects, causes, stacks,
+request fields, arbitrary messages, paths, bodies or credentials are serialized.
+
+| Event | Operation | Stage | Code | Outcome |
+| --- | --- | --- | --- | --- |
+| `broker.request-failure` | `broker.request` | `handler` | `internal` | `failed` |
+| `broker.storage-failure` | `broker.storage` | `append` or `compact` | `storage-failed` | `recovery-required` |
+| `broker.maintenance-failure` | `broker.maintenance` | `maintenance` | `internal` | `failed` |
+| `broker.maintenance-storage` | `broker.maintenance` | `maintenance` | `storage-failed` | `recovery-required` |
+| `transport.unreachable` | `transport.connect` | `connect` | `broker-unreachable` | `failed` |
+| `transport.timeout` | `transport.request` | `deadline` | `broker-timeout` | `failed` |
+| `transport.untrusted` | `transport.connect` | `custody` or `proof` | `broker-untrusted` | `refused` |
+| `transport.retry` | `transport.watch` | `backoff` | `retry-scheduled` | `succeeded` |
+| `diagnostics.dropped` | `diagnostics` | `queue` | `diagnostics-dropped` | `dropped` |
+
+`transport.retry` has exact `details: { attempt, delayMs }`. Attempt counts
+scheduled retries since the last ready event and saturates at
+`Number.MAX_SAFE_INTEGER`; delay is the existing 250–10000 ms backoff.
+Its outcome confirms scheduling only, not reconnection, delivery or task
+completion. Retry observations omit duration because the wait has not occurred.
+Client deadlines and lost channels measure elapsed local time to detection;
+they do not measure broker work. Remote reply error codes never create local
+transport-failure observations, and explicit cancellation is not a failure.
 
 A `storage-failed` result still requires stopping the broker, correcting the
 storage problem and restarting to recover before retrying. Diagnostics are
@@ -30,7 +55,8 @@ security receipts remain authoritative through their existing interfaces.
 
 ## Resource and failure limits
 
-One process shares a pending queue of at most 64 records and 32 KiB, plus one
+Broker and client in one process share a pending queue of at most 64 records
+and 32 KiB, plus one
 in-flight record. Each complete line is at most 512 UTF-8 bytes. Reporting
 enqueues bounded data and defers the stream write outside the request handler.
 The production sink starts at most one isolated helper process on its first
@@ -40,9 +66,15 @@ It inherits no account credentials or Node preload configuration, writes no
 stdout, and has no broker authority. A stalled stderr destination cannot block
 the broker event loop. Injected stream sinks must both complete their write
 callback and drain before another record is written.
-New observations are dropped when the queue is full. After the stream recovers,
-`diagnostics-dropped` reports a cumulative `droppedCount`, saturated at
-`Number.MAX_SAFE_INTEGER`.
+New observations are dropped when the queue is full. A monotonic token bucket
+also limits records to 100 per second with burst 64. After progress resumes,
+`diagnostics.dropped` reports exact `details: { droppedCount }`, saturated at
+`Number.MAX_SAFE_INTEGER`, at most once per second across the process. Two fixed
+component counters keep broker and client drops distinct; rotating summaries
+report the component whose observations were dropped, including pending records
+discarded after a writer failure.
+Summaries do not recursively enter the queue or consume event-rate tokens;
+their own interval and single in-flight bound apply. Timers are unreferenced.
 
 A throwing, closed or errored sink disables that diagnostic sink and discards
 its pending work. It does not end or destroy stderr, retry indefinitely, or
@@ -56,9 +88,18 @@ diagnostic writer, not a second account service or identity store.
 
 The broker adds no diagnostic files, retention policy, rotation, network
 listener or exporter. A supervisor may capture stderr under its own existing
-policy. This local event format is a private first slice of
+policy. This local event format is a private partial implementation of
 [#164](https://github.com/qwts/agent-comms/issues/164), under accepted
 [ADR-0007](decisions/ADR-0007-observability-and-geniusbar.md) and
 [ADR-0002](decisions/ADR-0002-messaging-plane-on-the-agent-bot-daemon.md).
-Shared trace propagation, lifecycle metrics, health extensions, inspection,
-optional reporting and cross-repository contracts remain open work.
+Shared trace propagation, broader lifecycle metrics, health extensions,
+inspection, optional reporting and cross-repository contracts remain open work.
+The profile and client custody tests run in the native Windows lane; existing
+portable helper lifecycle tests retain Windows natural-exit evidence. Real
+socket/client canary and unread-stderr delivery fixtures run on POSIX. This
+slice does not claim packaged host integration or complete numeric acceptance.
+[Local paired evidence](local-diagnostics-performance.md) records independently
+passing reporting/helper comparisons, a retained healthy p99 failure, exact
+provenance and baseline limitations. Total instrumentation overhead against a
+pre-change runtime and native Windows numeric budgets remain outstanding in
+[#164](https://github.com/qwts/agent-comms/issues/164).
