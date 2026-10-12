@@ -2,9 +2,10 @@
 
 The internal [coordinator](../lib/broker/owner-decisions.mjs) connects the real
 broker pairing, scoped grants, selected account watch, fixed lifecycle journal
-and [receipt issuer](owner-decision-receipt-issuer.md). No Broker route imports
-it. Its constructor refuses production use; only an explicitly selected trusted
-synthetic fixture can construct it. All reported capability flags remain false.
+and [receipt issuer](owner-decision-receipt-issuer.md). Actual Broker ingress now
+imports a separate refusing production factory. Only an explicitly selected trusted
+synthetic fixture can construct the working composition. All authority and
+physical capability flags remain false.
 This is integration source and fixture evidence, not native custody, physical
 reservation support or completed #77 acceptance.
 
@@ -113,5 +114,49 @@ binding and the actual fixed journal in disposable private directories. Only
 socket sinks, key enrollment and daemon target-resolution claims are synthetic.
 They cover all shared operations, revocation, cancellation, epoch/watch changes,
 result idempotence, reopen recovery and failures at publication boundaries.
-No native provider, physical capacity, route activation, production rate/queue
-policy, staging upload or live cross-repository acceptance is claimed.
+No native provider, physical capacity, authority activation, staging upload or
+live cross-repository acceptance is claimed.
+
+## Actual broker ingress
+
+The private [ingress](../lib/broker/owner-ingress.mjs) is wired into Broker's
+dispatcher before ordinary daemon routing. It maps exactly the seven owner
+operations to their existing coordinator methods and authenticates the required
+presented principal or daemon credential kind before checking readiness. It
+cannot use the synthetic constructor. Unknown and foreign request IDs remain
+indistinguishable while the production provider is unavailable; no journal is
+created and no owner event is sent.
+
+The line reader supplies privately attested original Buffer frame size,
+including LF and CR when present. Owner ingress requires at most 32768 bytes,
+including whitespace and escaped JSON; a request field cannot forge that
+metadata. A trusted UTF-8 validity flag rejects malformed owner frames before
+authentication or reconstruction; ordinary JSON parsing retains its existing
+replacement behavior. Already decoded streams cannot attest original bytes. Ordinary comms
+retains its existing 128 KiB line limit and JSON behavior. These owner routes
+are reachable refusals, not an enabled owner capability.
+
+The shared generic envelope JSON parser still accepts up to its existing
+128 KiB bound before operation classification. The stricter owner 32 KiB check
+then precedes authentication and typed canonical decoding; it is not a preparse
+owner limit. The wire contract's before-decoding owner bound remains an enabling
+prerequisite: a dedicated bounded ingress or jointly reviewed incremental
+envelope classifier must satisfy it. This slice does not waive that requirement.
+
+Preparation has a rolling monotonic 60-second limit of six attempts per
+authenticated principal/account and twelve per principal. Both buckets share
+one finite 4096-entry budget; all checks precede either charge. Invalid account
+grammar creates no bucket. Limits refuse without waiting or creating a request
+ID, and status/cancel/daemon reports bypass preparation limits. Rate buckets
+are ephemeral, cleared on broker stop; they neither retire nor reset journal
+reservations. Readiness refusal may consume preparation rate, never an ID.
+
+The fixed readiness inspection checks Darwin/group mode, nonzero service UID,
+private state ownership, absence of known same-UID paired soul accounts and
+fixed native artifact provenance. These are necessary, insufficient predicates.
+The protected installation/enrollment producer and physical support producer
+remain explicitly unavailable, so readiness always refuses. No configuration,
+request, environment variable or host assertion enables support or supplies keys.
+Broker startup and ordinary operations continue; a future reviewed producer
+must use this same factory/composition and preserve distinct local trust-chain
+versions, exact namespace/key/service bindings and revocation checks.
