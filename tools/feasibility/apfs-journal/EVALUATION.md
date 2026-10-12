@@ -185,3 +185,63 @@ reduction of **201318400 bytes** after the two new removal receipts. This is
 lossless archival of the failed attempt too; it discards no experimental bytes. Raw logs, sources and failed attempts stay
 retained. Per-file allocation still excludes unattributable host snapshots and
 outer filesystem metadata.
+
+## Fixed-name successor: qualified pass
+
+The separately reviewed fixed-name run, session **68224**, executed once from
+2026-10-12 04:06:11.027 to 04:06:28.175 UTC, exit 0. Its fresh fixed 64 MiB image,
+filler and complete 215-record log remain under:
+
+```text
+/private/tmp/owner-journal-apfs-aa78cbd1-c977-4289-8105-6f43adba6271/
+```
+
+Raw log SHA-256 is
+`eea0437613de8058c7fe83c503a61d36791469ae15d337316543d31b945faa7a`.
+The portable projection is `evidence/fixed-name-qualified-pass.json`. Frozen
+executed sources are in `evidence/fixed-name-tested-source/`:
+
+```text
+e35e7ac51bf4492280672d53e4e71d738604be772d602501a75ef496b2066111  allocator.c
+bfc18e2959bd519e752776ce73ddce2ed26cd254a03afdc0eb90f1823d1f7526  fixed-allocator.c
+027ac35a0c602a38aa2b645f218c6441da8bbb9ea073f0bed7b9c8f054a45168  run.mjs
+```
+
+All eleven final names were exclusively created, fully sized, zero initialized
+and full-flushed before pressure. Their complete allocations, fixed EOFs, zeros
+and inode identities survived close/reopen, owned-child SIGKILL and remount.
+The filler received **write ENOSPC (errno 28)** at **64487424 bytes**, the same
+filler byte count as the earlier failed hard-link comparison. Immediately before
+the first nonzero frame writes, statfs reported **393 available 4096-byte blocks**
+(1609728 bytes). This was not zero reported free space or an identical-state
+counterbalanced comparison.
+
+Action completed its body/trailer flushes. Acceptance then received maximal
+body write, body full flush and trailer write, followed by owned-child SIGKILL
+before its final full flush. The recorded last successful phase was
+`acceptance:trailer-written-unflushed`; the last completed flush phase was
+`acceptance:body-fullflushed`. Native and independent Node readers found valid
+visible action/acceptance frames but retained explicit **uncertain**, with
+`acceptanceEstablished:false, authority:false`. A separate explicit recovery
+full-flushed and revalidated them before reporting only non-authorizing saved
+bytes. Every requested full flush succeeded; no weaker fallback exists.
+
+All eleven maximal test frames completed and passed native deterministic readback
+and independent Node field/context/digest/content checks, including after final
+detach/remount. Frame checks covered two visible prefix frames and eleven final
+frames both before and after remount. No late hard link, rename or unlink was
+used. Available-block observations were 393 before remount and 394 afterward.
+The last successful/completed flush phase was `scratch:trailer-fullflushed`;
+terminal outcome was `verified-test-frames-nonauthorizing`. The exact verified
+image-backed device detached and absence was confirmed. No attachment or
+allocation uncertainty remained. Aggregate reported retained live allocation
+was **70004736 bytes**, including the earlier compressed evidence, below the
+unchanged 248 MiB guard; the new root accounted for 67563520 bytes.
+
+This supports precreated fixed-name content publication as the next candidate.
+The image remains retained; no snapshot, reclaim, fallback, repeat or extra run
+followed. It does not prove actual canonical protocol records, every interruption,
+observation replacement, 4096-request allocation, unconditional future metadata
+capacity, actual macOS 13 support or power-loss safety. No production physical
+support is claimed. The [backend contract proposal](../../../docs/owner-decision-journal-fixed-slots.md)
+identifies the next disabled integration and failure-test work.

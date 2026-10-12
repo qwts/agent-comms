@@ -1,0 +1,973 @@
+{
+  "v": 1,
+  "id": "fixed-name-qualified-pass",
+  "session": 68224,
+  "rawSha256": "eea0437613de8058c7fe83c503a61d36791469ae15d337316543d31b945faa7a",
+  "rawRecordCount": 215,
+  "projection": "Selected owned native/statistics/terminal records; global disk-image inventory and local command argument paths omitted.",
+  "physicalCapacitySupported": false,
+  "powerLossTested": false,
+  "records": [
+    {
+      "at": "2026-10-12T04:06:11.027Z",
+      "event": "limits",
+      "imageMiB": 64,
+      "liveAllocatedCeilingMiB": 192,
+      "aggregateRetainedCeilingMiB": 248,
+      "overallTimeoutSeconds": 600,
+      "snapshot": false,
+      "comparison": false,
+      "fixedNames": true,
+      "physicalCapacitySupported": false,
+      "powerLossTested": false
+    },
+    {
+      "at": "2026-10-12T04:06:11.028Z",
+      "event": "tested-source-hashes",
+      "files": {
+        "allocator.c": "e35e7ac51bf4492280672d53e4e71d738604be772d602501a75ef496b2066111",
+        "fixed-allocator.c": "bfc18e2959bd519e752776ce73ddce2ed26cd254a03afdc0eb90f1823d1f7526",
+        "run.mjs": "027ac35a0c602a38aa2b645f218c6441da8bbb9ea073f0bed7b9c8f054a45168"
+      }
+    },
+    {
+      "at": "2026-10-12T04:06:11.029Z",
+      "event": "contract-cap-comparison",
+      "framingBytes": 256,
+      "slots": {
+        "acceptance": 4096,
+        "action": 32768,
+        "challenge": 32768,
+        "presence": 4096,
+        "receipt": 4096,
+        "authorization": 4096,
+        "release": 4096,
+        "outcome": 4096,
+        "observation": 2048,
+        "resolution": 2048,
+        "scratch": 32768
+      }
+    },
+    {
+      "at": "2026-10-12T04:06:12.881Z",
+      "event": "command-terminal",
+      "code": null,
+      "signal": "SIGKILL",
+      "cause": null,
+      "ready": true,
+      "lastSuccessfulPhase": "all:fixed-directory-full-initialization-fsynced",
+      "lastDurablePhase": "all:fixed-directory-full-initialization-fsynced",
+      "stdout": "{\"event\":\"inode\",\"phase\":\"fixed-zero-initialized-fullflushed\",\"slot\":\"acceptance\",\"dev\":16777242,\"ino\":18,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-closed-reopened\",\"slot\":\"acceptance\",\"dev\":16777242,\"ino\":18,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-initialized-fullflushed\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-closed-reopened\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-initialized-fullflushed\",\"slot\":\"challenge\",\"dev\":16777242,\"ino\":20,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-closed-reopened\",\"slot\":\"challenge\",\"dev\":16777242,\"ino\":20,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-initialized-fullflushed\",\"slot\":\"presence\",\"dev\":16777242,\"ino\":21,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-closed-reopened\",\"slot\":\"presence\",\"dev\":16777242,\"ino\":21,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-initialized-fullflushed\",\"slot\":\"receipt\",\"dev\":16777242,\"ino\":22,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-closed-reopened\",\"slot\":\"receipt\",\"dev\":16777242,\"ino\":22,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-initialized-fullflushed\",\"slot\":\"authorization\",\"dev\":16777242,\"ino\":23,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-closed-reopened\",\"slot\":\"authorization\",\"dev\":16777242,\"ino\":23,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-initialized-fullflushed\",\"slot\":\"release\",\"dev\":16777242,\"ino\":24,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-closed-reopened\",\"slot\":\"release\",\"dev\":16777242,\"ino\":24,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-initialized-fullflushed\",\"slot\":\"outcome\",\"dev\":16777242,\"ino\":25,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-closed-reopened\",\"slot\":\"outcome\",\"dev\":16777242,\"ino\":25,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-initialized-fullflushed\",\"slot\":\"observation\",\"dev\":16777242,\"ino\":26,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-closed-reopened\",\"slot\":\"observation\",\"dev\":16777242,\"ino\":26,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-initialized-fullflushed\",\"slot\":\"resolution\",\"dev\":16777242,\"ino\":27,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-closed-reopened\",\"slot\":\"resolution\",\"dev\":16777242,\"ino\":27,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-initialized-fullflushed\",\"slot\":\"scratch\",\"dev\":16777242,\"ino\":28,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-closed-reopened\",\"slot\":\"scratch\",\"dev\":16777242,\"ino\":28,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"fixed-phase\",\"slot\":\"all\",\"phase\":\"fixed-directory-full-initialization-fsynced\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"ready\",\"phase\":\"fixed-all-final-slots-closed\"}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T04:06:12.984Z",
+      "event": "command-terminal",
+      "code": 0,
+      "signal": null,
+      "cause": null,
+      "ready": false,
+      "lastSuccessfulPhase": "all:fixed-directory-full-initialization-fsynced",
+      "lastDurablePhase": "all:fixed-directory-full-initialization-fsynced",
+      "stdout": "{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"acceptance\",\"dev\":16777242,\"ino\":18,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"challenge\",\"dev\":16777242,\"ino\":20,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"presence\",\"dev\":16777242,\"ino\":21,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"receipt\",\"dev\":16777242,\"ino\":22,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"authorization\",\"dev\":16777242,\"ino\":23,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"release\",\"dev\":16777242,\"ino\":24,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"outcome\",\"dev\":16777242,\"ino\":25,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"observation\",\"dev\":16777242,\"ino\":26,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"resolution\",\"dev\":16777242,\"ino\":27,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"scratch\",\"dev\":16777242,\"ino\":28,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"space\",\"blockSize\":4096,\"freeBlocks\":16141,\"availableBlocks\":16141}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T04:06:12.984Z",
+      "event": "observations-validated",
+      "label": "fixed-zero-after-owned-child-sigkill",
+      "slots": [
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "acceptance",
+          "dev": 16777242,
+          "ino": 18,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "action",
+          "dev": 16777242,
+          "ino": 19,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "challenge",
+          "dev": 16777242,
+          "ino": 20,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "presence",
+          "dev": 16777242,
+          "ino": 21,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "receipt",
+          "dev": 16777242,
+          "ino": 22,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "authorization",
+          "dev": 16777242,
+          "ino": 23,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "release",
+          "dev": 16777242,
+          "ino": 24,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "outcome",
+          "dev": 16777242,
+          "ino": 25,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "observation",
+          "dev": 16777242,
+          "ino": 26,
+          "bytes": 2304,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "resolution",
+          "dev": 16777242,
+          "ino": 27,
+          "bytes": 2304,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "scratch",
+          "dev": 16777242,
+          "ino": 28,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        }
+      ]
+    },
+    {
+      "at": "2026-10-12T04:06:23.737Z",
+      "event": "detached",
+      "device": "/dev/disk6"
+    },
+    {
+      "at": "2026-10-12T04:06:24.169Z",
+      "event": "command-terminal",
+      "code": 0,
+      "signal": null,
+      "cause": null,
+      "ready": false,
+      "lastSuccessfulPhase": "all:fixed-directory-full-initialization-fsynced",
+      "lastDurablePhase": "all:fixed-directory-full-initialization-fsynced",
+      "stdout": "{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"acceptance\",\"dev\":16777242,\"ino\":18,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"challenge\",\"dev\":16777242,\"ino\":20,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"presence\",\"dev\":16777242,\"ino\":21,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"receipt\",\"dev\":16777242,\"ino\":22,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"authorization\",\"dev\":16777242,\"ino\":23,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"release\",\"dev\":16777242,\"ino\":24,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"outcome\",\"dev\":16777242,\"ino\":25,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"observation\",\"dev\":16777242,\"ino\":26,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"resolution\",\"dev\":16777242,\"ino\":27,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"scratch\",\"dev\":16777242,\"ino\":28,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"space\",\"blockSize\":4096,\"freeBlocks\":16141,\"availableBlocks\":16141}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T04:06:24.169Z",
+      "event": "observations-validated",
+      "label": "fixed-zero-after-detach-remount",
+      "slots": [
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "acceptance",
+          "dev": 16777242,
+          "ino": 18,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "action",
+          "dev": 16777242,
+          "ino": 19,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "challenge",
+          "dev": 16777242,
+          "ino": 20,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "presence",
+          "dev": 16777242,
+          "ino": 21,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "receipt",
+          "dev": 16777242,
+          "ino": 22,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "authorization",
+          "dev": 16777242,
+          "ino": 23,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "release",
+          "dev": 16777242,
+          "ino": 24,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "outcome",
+          "dev": 16777242,
+          "ino": 25,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "observation",
+          "dev": 16777242,
+          "ino": 26,
+          "bytes": 2304,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "resolution",
+          "dev": 16777242,
+          "ino": 27,
+          "bytes": 2304,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "scratch",
+          "dev": 16777242,
+          "ino": 28,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        }
+      ]
+    },
+    {
+      "at": "2026-10-12T04:06:26.496Z",
+      "event": "command-terminal",
+      "code": 0,
+      "signal": null,
+      "cause": null,
+      "ready": false,
+      "lastSuccessfulPhase": "all:fixed-directory-full-initialization-fsynced",
+      "lastDurablePhase": "all:fixed-directory-full-initialization-fsynced",
+      "stdout": "{\"event\":\"fill-result\",\"bytes\":64487424,\"exhausted\":true,\"refusalErrno\":28,\"refusalSyscall\":\"write\"}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T04:06:26.611Z",
+      "event": "command-terminal",
+      "code": 0,
+      "signal": null,
+      "cause": null,
+      "ready": false,
+      "lastSuccessfulPhase": "all:fixed-directory-full-initialization-fsynced",
+      "lastDurablePhase": "all:fixed-directory-full-initialization-fsynced",
+      "stdout": "{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"acceptance\",\"dev\":16777242,\"ino\":18,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"challenge\",\"dev\":16777242,\"ino\":20,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"presence\",\"dev\":16777242,\"ino\":21,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"receipt\",\"dev\":16777242,\"ino\":22,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"authorization\",\"dev\":16777242,\"ino\":23,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"release\",\"dev\":16777242,\"ino\":24,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"outcome\",\"dev\":16777242,\"ino\":25,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"observation\",\"dev\":16777242,\"ino\":26,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"resolution\",\"dev\":16777242,\"ino\":27,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"fixed-zero-verified\",\"slot\":\"scratch\",\"dev\":16777242,\"ino\":28,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"space\",\"blockSize\":4096,\"freeBlocks\":393,\"availableBlocks\":393}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T04:06:26.611Z",
+      "event": "observations-validated",
+      "label": "fixed-zero-after-fill-before-first-nonzero-write",
+      "slots": [
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "acceptance",
+          "dev": 16777242,
+          "ino": 18,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "action",
+          "dev": 16777242,
+          "ino": 19,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "challenge",
+          "dev": 16777242,
+          "ino": 20,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "presence",
+          "dev": 16777242,
+          "ino": 21,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "receipt",
+          "dev": 16777242,
+          "ino": 22,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "authorization",
+          "dev": 16777242,
+          "ino": 23,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "release",
+          "dev": 16777242,
+          "ino": 24,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "outcome",
+          "dev": 16777242,
+          "ino": 25,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "observation",
+          "dev": 16777242,
+          "ino": 26,
+          "bytes": 2304,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "resolution",
+          "dev": 16777242,
+          "ino": 27,
+          "bytes": 2304,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-zero-verified",
+          "slot": "scratch",
+          "dev": 16777242,
+          "ino": 28,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        }
+      ]
+    },
+    {
+      "at": "2026-10-12T04:06:26.735Z",
+      "event": "command-terminal",
+      "code": null,
+      "signal": "SIGKILL",
+      "cause": null,
+      "ready": true,
+      "lastSuccessfulPhase": "acceptance:trailer-written-unflushed",
+      "lastDurablePhase": "acceptance:body-fullflushed",
+      "stdout": "{\"event\":\"fixed-phase\",\"slot\":\"action\",\"phase\":\"body-written\",\"durableFlushCompleted\":false,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"action\",\"phase\":\"body-fullflushed\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"action\",\"phase\":\"trailer-written-unflushed\",\"durableFlushCompleted\":false,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"action\",\"phase\":\"trailer-fullflushed\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-committed-readback\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"action\",\"bytes\":33024,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"acceptance\",\"phase\":\"body-written\",\"durableFlushCompleted\":false,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"acceptance\",\"phase\":\"body-fullflushed\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"acceptance\",\"phase\":\"trailer-written-unflushed\",\"durableFlushCompleted\":false,\"acceptanceEstablished\":false}\n{\"event\":\"ready\",\"phase\":\"acceptance-trailer-written-before-fullflush\",\"outcome\":\"uncertain\",\"acceptanceEstablished\":false}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T04:06:26.735Z",
+      "event": "fixed-kill-before-flush",
+      "outcome": "uncertain",
+      "lastSuccessfulPhase": "acceptance:trailer-written-unflushed",
+      "lastDurablePhase": "acceptance:body-fullflushed",
+      "acceptanceEstablished": false,
+      "authority": false
+    },
+    {
+      "at": "2026-10-12T04:06:26.833Z",
+      "event": "command-terminal",
+      "code": 0,
+      "signal": null,
+      "cause": null,
+      "ready": false,
+      "lastSuccessfulPhase": "acceptance:trailer-written-unflushed",
+      "lastDurablePhase": "acceptance:body-fullflushed",
+      "stdout": "{\"event\":\"inode\",\"phase\":\"fixed-visible-uncertain\",\"slot\":\"acceptance\",\"dev\":16777242,\"ino\":18,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"acceptance\",\"bytes\":4352,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-visible-uncertain\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"action\",\"bytes\":33024,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"fixed-prefix\",\"recoveryFlushCompleted\":false,\"outcome\":\"uncertain\",\"acceptanceEstablished\":false,\"authority\":false}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T04:06:26.834Z",
+      "event": "fixed-independent-node-frame-verification",
+      "prefix": true,
+      "frames": [
+        {
+          "slot": "acceptance",
+          "bytes": 4352,
+          "sha256": "df34208dfe871ad6755d47fe2dfaddb18ca07c4cf23baa65933db022ab0b2dad"
+        },
+        {
+          "slot": "action",
+          "bytes": 33024,
+          "sha256": "e67193067773a0efb109d594a1a6226eab8bc297f5d5b8a3e7c1e00e3a66d0d0"
+        }
+      ],
+      "acceptanceEstablished": false,
+      "authority": false
+    },
+    {
+      "at": "2026-10-12T04:06:26.834Z",
+      "event": "fixed-visible-prefix",
+      "outcome": "uncertain",
+      "acceptanceEstablished": false,
+      "authority": false
+    },
+    {
+      "at": "2026-10-12T04:06:26.933Z",
+      "event": "command-terminal",
+      "code": 0,
+      "signal": null,
+      "cause": null,
+      "ready": false,
+      "lastSuccessfulPhase": "action:explicit-recovery-fullflushed",
+      "lastDurablePhase": "action:explicit-recovery-fullflushed",
+      "stdout": "{\"event\":\"fixed-phase\",\"slot\":\"acceptance\",\"phase\":\"explicit-recovery-fullflushed\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-recovered-nonauthorizing\",\"slot\":\"acceptance\",\"dev\":16777242,\"ino\":18,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"acceptance\",\"bytes\":4352,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"action\",\"phase\":\"explicit-recovery-fullflushed\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-recovered-nonauthorizing\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"action\",\"bytes\":33024,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"fixed-prefix\",\"recoveryFlushCompleted\":true,\"outcome\":\"verified-nonauthorizing\",\"acceptanceEstablished\":false,\"authority\":false}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T04:06:26.933Z",
+      "event": "fixed-prefix-recovery",
+      "outcome": "recovery-flushed-nonauthorizing",
+      "acceptanceEstablished": false,
+      "authority": false
+    },
+    {
+      "at": "2026-10-12T04:06:27.176Z",
+      "event": "command-terminal",
+      "code": 0,
+      "signal": null,
+      "cause": null,
+      "ready": false,
+      "lastSuccessfulPhase": "scratch:trailer-fullflushed",
+      "lastDurablePhase": "scratch:trailer-fullflushed",
+      "stdout": "{\"event\":\"fixed-phase\",\"slot\":\"challenge\",\"phase\":\"body-written\",\"durableFlushCompleted\":false,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"challenge\",\"phase\":\"body-fullflushed\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"challenge\",\"phase\":\"trailer-written-unflushed\",\"durableFlushCompleted\":false,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"challenge\",\"phase\":\"trailer-fullflushed\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-committed-readback\",\"slot\":\"challenge\",\"dev\":16777242,\"ino\":20,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"challenge\",\"bytes\":33024,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"presence\",\"phase\":\"body-written\",\"durableFlushCompleted\":false,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"presence\",\"phase\":\"body-fullflushed\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"presence\",\"phase\":\"trailer-written-unflushed\",\"durableFlushCompleted\":false,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"presence\",\"phase\":\"trailer-fullflushed\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-committed-readback\",\"slot\":\"presence\",\"dev\":16777242,\"ino\":21,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"presence\",\"bytes\":4352,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"receipt\",\"phase\":\"body-written\",\"durableFlushCompleted\":false,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"receipt\",\"phase\":\"body-fullflushed\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"receipt\",\"phase\":\"trailer-written-unflushed\",\"durableFlushCompleted\":false,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"receipt\",\"phase\":\"trailer-fullflushed\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-committed-readback\",\"slot\":\"receipt\",\"dev\":16777242,\"ino\":22,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"receipt\",\"bytes\":4352,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"authorization\",\"phase\":\"body-written\",\"durableFlushCompleted\":false,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"authorization\",\"phase\":\"body-fullflushed\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"authorization\",\"phase\":\"trailer-written-unflushed\",\"durableFlushCompleted\":false,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"authorization\",\"phase\":\"trailer-fullflushed\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-committed-readback\",\"slot\":\"authorization\",\"dev\":16777242,\"ino\":23,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"authorization\",\"bytes\":4352,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"release\",\"phase\":\"body-written\",\"durableFlushCompleted\":false,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"release\",\"phase\":\"body-fullflushed\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"release\",\"phase\":\"trailer-written-unflushed\",\"durableFlushCompleted\":false,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"release\",\"phase\":\"trailer-fullflushed\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-committed-readback\",\"slot\":\"release\",\"dev\":16777242,\"ino\":24,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"release\",\"bytes\":4352,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"outcome\",\"phase\":\"body-written\",\"durableFlushCompleted\":false,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"outcome\",\"phase\":\"body-fullflushed\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"outcome\",\"phase\":\"trailer-written-unflushed\",\"durableFlushCompleted\":false,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"outcome\",\"phase\":\"trailer-fullflushed\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-committed-readback\",\"slot\":\"outcome\",\"dev\":16777242,\"ino\":25,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"outcome\",\"bytes\":4352,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"observation\",\"phase\":\"body-written\",\"durableFlushCompleted\":false,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"observation\",\"phase\":\"body-fullflushed\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"observation\",\"phase\":\"trailer-written-unflushed\",\"durableFlushCompleted\":false,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"observation\",\"phase\":\"trailer-fullflushed\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-committed-readback\",\"slot\":\"observation\",\"dev\":16777242,\"ino\":26,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"observation\",\"bytes\":2304,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"resolution\",\"phase\":\"body-written\",\"durableFlushCompleted\":false,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"resolution\",\"phase\":\"body-fullflushed\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"resolution\",\"phase\":\"trailer-written-unflushed\",\"durableFlushCompleted\":false,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"resolution\",\"phase\":\"trailer-fullflushed\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-committed-readback\",\"slot\":\"resolution\",\"dev\":16777242,\"ino\":27,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"resolution\",\"bytes\":2304,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"scratch\",\"phase\":\"body-written\",\"durableFlushCompleted\":false,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"scratch\",\"phase\":\"body-fullflushed\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"scratch\",\"phase\":\"trailer-written-unflushed\",\"durableFlushCompleted\":false,\"acceptanceEstablished\":false}\n{\"event\":\"fixed-phase\",\"slot\":\"scratch\",\"phase\":\"trailer-fullflushed\",\"durableFlushCompleted\":true,\"acceptanceEstablished\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-committed-readback\",\"slot\":\"scratch\",\"dev\":16777242,\"ino\":28,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"scratch\",\"bytes\":33024,\"acceptanceEstablished\":false,\"authority\":false}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T04:06:27.274Z",
+      "event": "command-terminal",
+      "code": 0,
+      "signal": null,
+      "cause": null,
+      "ready": false,
+      "lastSuccessfulPhase": "scratch:trailer-fullflushed",
+      "lastDurablePhase": "scratch:trailer-fullflushed",
+      "stdout": "{\"event\":\"inode\",\"phase\":\"fixed-frame-read-only-verified\",\"slot\":\"acceptance\",\"dev\":16777242,\"ino\":18,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"acceptance\",\"bytes\":4352,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-frame-read-only-verified\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"action\",\"bytes\":33024,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-frame-read-only-verified\",\"slot\":\"challenge\",\"dev\":16777242,\"ino\":20,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"challenge\",\"bytes\":33024,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-frame-read-only-verified\",\"slot\":\"presence\",\"dev\":16777242,\"ino\":21,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"presence\",\"bytes\":4352,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-frame-read-only-verified\",\"slot\":\"receipt\",\"dev\":16777242,\"ino\":22,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"receipt\",\"bytes\":4352,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-frame-read-only-verified\",\"slot\":\"authorization\",\"dev\":16777242,\"ino\":23,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"authorization\",\"bytes\":4352,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-frame-read-only-verified\",\"slot\":\"release\",\"dev\":16777242,\"ino\":24,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"release\",\"bytes\":4352,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-frame-read-only-verified\",\"slot\":\"outcome\",\"dev\":16777242,\"ino\":25,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"outcome\",\"bytes\":4352,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-frame-read-only-verified\",\"slot\":\"observation\",\"dev\":16777242,\"ino\":26,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"observation\",\"bytes\":2304,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-frame-read-only-verified\",\"slot\":\"resolution\",\"dev\":16777242,\"ino\":27,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"resolution\",\"bytes\":2304,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-frame-read-only-verified\",\"slot\":\"scratch\",\"dev\":16777242,\"ino\":28,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"scratch\",\"bytes\":33024,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"space\",\"blockSize\":4096,\"freeBlocks\":393,\"availableBlocks\":393}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T04:06:27.275Z",
+      "event": "observations-validated",
+      "label": "fixed-all-maximal-frames-before-remount",
+      "slots": [
+        {
+          "event": "inode",
+          "phase": "fixed-frame-read-only-verified",
+          "slot": "acceptance",
+          "dev": 16777242,
+          "ino": 18,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-frame-read-only-verified",
+          "slot": "action",
+          "dev": 16777242,
+          "ino": 19,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-frame-read-only-verified",
+          "slot": "challenge",
+          "dev": 16777242,
+          "ino": 20,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-frame-read-only-verified",
+          "slot": "presence",
+          "dev": 16777242,
+          "ino": 21,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-frame-read-only-verified",
+          "slot": "receipt",
+          "dev": 16777242,
+          "ino": 22,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-frame-read-only-verified",
+          "slot": "authorization",
+          "dev": 16777242,
+          "ino": 23,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-frame-read-only-verified",
+          "slot": "release",
+          "dev": 16777242,
+          "ino": 24,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-frame-read-only-verified",
+          "slot": "outcome",
+          "dev": 16777242,
+          "ino": 25,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-frame-read-only-verified",
+          "slot": "observation",
+          "dev": 16777242,
+          "ino": 26,
+          "bytes": 2304,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-frame-read-only-verified",
+          "slot": "resolution",
+          "dev": 16777242,
+          "ino": 27,
+          "bytes": 2304,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-frame-read-only-verified",
+          "slot": "scratch",
+          "dev": 16777242,
+          "ino": 28,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        }
+      ]
+    },
+    {
+      "at": "2026-10-12T04:06:27.275Z",
+      "event": "fixed-independent-node-frame-verification",
+      "prefix": false,
+      "frames": [
+        {
+          "slot": "acceptance",
+          "bytes": 4352,
+          "sha256": "df34208dfe871ad6755d47fe2dfaddb18ca07c4cf23baa65933db022ab0b2dad"
+        },
+        {
+          "slot": "action",
+          "bytes": 33024,
+          "sha256": "e67193067773a0efb109d594a1a6226eab8bc297f5d5b8a3e7c1e00e3a66d0d0"
+        },
+        {
+          "slot": "challenge",
+          "bytes": 33024,
+          "sha256": "896db5f1d1a050d1f2bdc4afba7c1257f5d43941e9439c71b116e4902db5a0b0"
+        },
+        {
+          "slot": "presence",
+          "bytes": 4352,
+          "sha256": "c2ac417a74380792ac7747704a8d3db5caf6cf207c19bec1701090da4a411080"
+        },
+        {
+          "slot": "receipt",
+          "bytes": 4352,
+          "sha256": "0879f750ae86e6850c674d59b6e5f120116d4bea6526b31e4709957cb62f7d1b"
+        },
+        {
+          "slot": "authorization",
+          "bytes": 4352,
+          "sha256": "33c81aefd33c077325e07f5ba3f99d1bd88a248bea1be5802cb339a365152bb0"
+        },
+        {
+          "slot": "release",
+          "bytes": 4352,
+          "sha256": "b297db922a9ff050b16e98be743620603a91cbac60d35f6ea524e9c534fe17e3"
+        },
+        {
+          "slot": "outcome",
+          "bytes": 4352,
+          "sha256": "2795bd4cdc91fda84f8279283630749ce096f14518c7aac1b69473358e73b5eb"
+        },
+        {
+          "slot": "observation",
+          "bytes": 2304,
+          "sha256": "0192fcbf15d342c83e9b2689eff2a4dc609d650d5f904db5d8a23bf45f83c35d"
+        },
+        {
+          "slot": "resolution",
+          "bytes": 2304,
+          "sha256": "358fb3b5b0dd15fac31ba0526ebf2f848a3c95a33a509d7e9a7772cc7fb5be31"
+        },
+        {
+          "slot": "scratch",
+          "bytes": 33024,
+          "sha256": "0d71dd79af478e239f07d32bcd87715bd1252a0ca8e602a9461b97fd42bd243a"
+        }
+      ],
+      "acceptanceEstablished": false,
+      "authority": false
+    },
+    {
+      "at": "2026-10-12T04:06:27.577Z",
+      "event": "detached",
+      "device": "/dev/disk6"
+    },
+    {
+      "at": "2026-10-12T04:06:28.022Z",
+      "event": "command-terminal",
+      "code": 0,
+      "signal": null,
+      "cause": null,
+      "ready": false,
+      "lastSuccessfulPhase": "scratch:trailer-fullflushed",
+      "lastDurablePhase": "scratch:trailer-fullflushed",
+      "stdout": "{\"event\":\"inode\",\"phase\":\"fixed-frame-read-only-verified\",\"slot\":\"acceptance\",\"dev\":16777242,\"ino\":18,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"acceptance\",\"bytes\":4352,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-frame-read-only-verified\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"action\",\"bytes\":33024,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-frame-read-only-verified\",\"slot\":\"challenge\",\"dev\":16777242,\"ino\":20,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"challenge\",\"bytes\":33024,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-frame-read-only-verified\",\"slot\":\"presence\",\"dev\":16777242,\"ino\":21,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"presence\",\"bytes\":4352,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-frame-read-only-verified\",\"slot\":\"receipt\",\"dev\":16777242,\"ino\":22,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"receipt\",\"bytes\":4352,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-frame-read-only-verified\",\"slot\":\"authorization\",\"dev\":16777242,\"ino\":23,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"authorization\",\"bytes\":4352,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-frame-read-only-verified\",\"slot\":\"release\",\"dev\":16777242,\"ino\":24,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"release\",\"bytes\":4352,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-frame-read-only-verified\",\"slot\":\"outcome\",\"dev\":16777242,\"ino\":25,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"outcome\",\"bytes\":4352,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-frame-read-only-verified\",\"slot\":\"observation\",\"dev\":16777242,\"ino\":26,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"observation\",\"bytes\":2304,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-frame-read-only-verified\",\"slot\":\"resolution\",\"dev\":16777242,\"ino\":27,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"resolution\",\"bytes\":2304,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"inode\",\"phase\":\"fixed-frame-read-only-verified\",\"slot\":\"scratch\",\"dev\":16777242,\"ino\":28,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"fixed-frame-verified\",\"slot\":\"scratch\",\"bytes\":33024,\"acceptanceEstablished\":false,\"authority\":false}\n{\"event\":\"space\",\"blockSize\":4096,\"freeBlocks\":394,\"availableBlocks\":394}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T04:06:28.022Z",
+      "event": "observations-validated",
+      "label": "fixed-all-maximal-frames-after-remount",
+      "slots": [
+        {
+          "event": "inode",
+          "phase": "fixed-frame-read-only-verified",
+          "slot": "acceptance",
+          "dev": 16777242,
+          "ino": 18,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-frame-read-only-verified",
+          "slot": "action",
+          "dev": 16777242,
+          "ino": 19,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-frame-read-only-verified",
+          "slot": "challenge",
+          "dev": 16777242,
+          "ino": 20,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-frame-read-only-verified",
+          "slot": "presence",
+          "dev": 16777242,
+          "ino": 21,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-frame-read-only-verified",
+          "slot": "receipt",
+          "dev": 16777242,
+          "ino": 22,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-frame-read-only-verified",
+          "slot": "authorization",
+          "dev": 16777242,
+          "ino": 23,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-frame-read-only-verified",
+          "slot": "release",
+          "dev": 16777242,
+          "ino": 24,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-frame-read-only-verified",
+          "slot": "outcome",
+          "dev": 16777242,
+          "ino": 25,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-frame-read-only-verified",
+          "slot": "observation",
+          "dev": 16777242,
+          "ino": 26,
+          "bytes": 2304,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-frame-read-only-verified",
+          "slot": "resolution",
+          "dev": 16777242,
+          "ino": 27,
+          "bytes": 2304,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "fixed-frame-read-only-verified",
+          "slot": "scratch",
+          "dev": 16777242,
+          "ino": 28,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        }
+      ]
+    },
+    {
+      "at": "2026-10-12T04:06:28.023Z",
+      "event": "fixed-independent-node-frame-verification",
+      "prefix": false,
+      "frames": [
+        {
+          "slot": "acceptance",
+          "bytes": 4352,
+          "sha256": "df34208dfe871ad6755d47fe2dfaddb18ca07c4cf23baa65933db022ab0b2dad"
+        },
+        {
+          "slot": "action",
+          "bytes": 33024,
+          "sha256": "e67193067773a0efb109d594a1a6226eab8bc297f5d5b8a3e7c1e00e3a66d0d0"
+        },
+        {
+          "slot": "challenge",
+          "bytes": 33024,
+          "sha256": "896db5f1d1a050d1f2bdc4afba7c1257f5d43941e9439c71b116e4902db5a0b0"
+        },
+        {
+          "slot": "presence",
+          "bytes": 4352,
+          "sha256": "c2ac417a74380792ac7747704a8d3db5caf6cf207c19bec1701090da4a411080"
+        },
+        {
+          "slot": "receipt",
+          "bytes": 4352,
+          "sha256": "0879f750ae86e6850c674d59b6e5f120116d4bea6526b31e4709957cb62f7d1b"
+        },
+        {
+          "slot": "authorization",
+          "bytes": 4352,
+          "sha256": "33c81aefd33c077325e07f5ba3f99d1bd88a248bea1be5802cb339a365152bb0"
+        },
+        {
+          "slot": "release",
+          "bytes": 4352,
+          "sha256": "b297db922a9ff050b16e98be743620603a91cbac60d35f6ea524e9c534fe17e3"
+        },
+        {
+          "slot": "outcome",
+          "bytes": 4352,
+          "sha256": "2795bd4cdc91fda84f8279283630749ce096f14518c7aac1b69473358e73b5eb"
+        },
+        {
+          "slot": "observation",
+          "bytes": 2304,
+          "sha256": "0192fcbf15d342c83e9b2689eff2a4dc609d650d5f904db5d8a23bf45f83c35d"
+        },
+        {
+          "slot": "resolution",
+          "bytes": 2304,
+          "sha256": "358fb3b5b0dd15fac31ba0526ebf2f848a3c95a33a509d7e9a7772cc7fb5be31"
+        },
+        {
+          "slot": "scratch",
+          "bytes": 33024,
+          "sha256": "0d71dd79af478e239f07d32bcd87715bd1252a0ca8e602a9461b97fd42bd243a"
+        }
+      ],
+      "acceptanceEstablished": false,
+      "authority": false
+    },
+    {
+      "at": "2026-10-12T04:06:28.175Z",
+      "event": "detached",
+      "device": "/dev/disk6"
+    },
+    {
+      "at": "2026-10-12T04:06:28.175Z",
+      "event": "lab-terminal",
+      "outcome": "observed-pass",
+      "primaryFailure": null,
+      "lastSuccessfulPhase": "scratch:trailer-fullflushed",
+      "lastDurablePhase": "scratch:trailer-fullflushed",
+      "fixedPublicationOutcome": "verified-test-frames-nonauthorizing",
+      "acceptanceEstablished": false,
+      "authority": false,
+      "attached": null,
+      "attachmentMayExist": false,
+      "allocatedLiveBytes": 67563520,
+      "aggregateRetainedBytes": 70004736,
+      "allocationError": null,
+      "limits": "reported task-owned live allocation; excludes host APFS metadata/external snapshots",
+      "physicalCapacitySupported": false,
+      "powerLossTested": false
+    }
+  ]
+}

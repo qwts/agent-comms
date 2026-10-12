@@ -26,10 +26,16 @@ independent of these on-disk order rules.
 Prefer immutable per-request phase/slot records over rewriting a complete state
 image. Serialize admission globally; serialize each request's transitions and
 follow the existing [domain lock order](owner-decision-locking.md). Every
-permission-bearing slot publishes once, exclusively, from the one reserved
-scratch file: write complete bounded bytes and framing, flush, publish without
-replacing an existing destination, flush the directory, then acknowledge or
-forward. Acknowledged acceptance also durably reserves its full budget and ID
+permission-bearing slot publishes logically once, exclusively, through a
+reviewed backend. The original scratch/hard-link candidate writes and flushes
+bounded bytes, creates the final name without replacing an existing destination,
+then flushes the directory before acknowledgement or forwarding. The proposed
+[fixed-name backend](owner-decision-journal-fixed-slots.md) instead creates and
+initializes all final names before admission, then publishes bounded framed
+contents with explicit body/trailer flushes and strict recovery. The bounded
+APFS comparison found that successful data preallocation alone does not cover
+a later hard-link metadata operation. Neither mechanism is production-enabled
+or establishes unconditional future physical capacity. Acknowledged acceptance also durably reserves its full budget and ID
 before any preparation event. Exact duplicate input reads saved state and never
 publishes another slot, proof or delivery attempt.
 

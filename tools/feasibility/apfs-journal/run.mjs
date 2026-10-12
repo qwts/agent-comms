@@ -4,7 +4,7 @@ import * as fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { randomUUID, randomBytes } from 'node:crypto';
+import { randomUUID, randomBytes, createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 
 const MiB=1024*1024;
@@ -14,10 +14,11 @@ const inventoryPath=inventoryIndex<0 ? undefined : args[inventoryIndex+1];
 if(inventoryIndex>=0) args.splice(inventoryIndex,2);
 const withSnapshot=args.includes('--snapshot');
 const comparison=args.includes('--comparison');
+const fixedNames=args.includes('--fixed-names');
 if (process.platform!=='darwin' || !inventoryPath || !path.isAbsolute(inventoryPath)
-  || args.some(x=>!['--snapshot','--comparison'].includes(x)) || new Set(args).size!==args.length
-  || (comparison && withSnapshot)) {
-  throw new Error('requires-darwin-inventory-and-exclusive-optional-comparison-or-snapshot');
+  || args.some(x=>!['--snapshot','--comparison','--fixed-names'].includes(x)) || new Set(args).size!==args.length
+  || Number(comparison)+Number(withSnapshot)+Number(fixedNames)>1) {
+  throw new Error('requires-darwin-inventory-and-exclusive-lab-mode');
 }
 const rootName=/^owner-journal-apfs-(?:[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}|preflight\.[A-Za-z0-9]{6})$/;
 const allowedParents=new Set([fs.realpathSync('/tmp'),fs.realpathSync(os.tmpdir())]);
@@ -51,11 +52,12 @@ const mount=path.join(root,'mnt');
 const executable=path.join(root,'allocator');
 const build=path.join(root,'build');
 const nonce=randomBytes(16).toString('hex');
-const source=fileURLToPath(new URL('./allocator.c',import.meta.url));
+const source=fileURLToPath(new URL(fixedNames ? './fixed-allocator.c' : './allocator.c',import.meta.url));
 const result=path.join(root,'results.jsonl');
 let logBytes=0, attached=null, attachmentMayExist=false, volumeUuid=null, outcome='failed',primaryFailure=null;
 let aggregateRetainedBytes=0;
-const imageMiB=comparison ? 64 : 128;
+const imageMiB=comparison || fixedNames ? 64 : 128;
+let lastSuccessfulPhase=null,lastDurablePhase=null,fixedPublicationOutcome='not-started';
 const deadline=Date.now()+600_000;
 const slotCaps=new Map([
   ['acceptance',4096],['action',32768],['challenge',32768],['presence',4096],['receipt',4096],
@@ -161,7 +163,16 @@ async function command(program,args,{input,timeout=60_000,killWhenReady=false}={
     child.once('close',(code,signal)=>resolve({code,signal,spawnError}));
   });
   clearTimeout(timer);clearTimeout(killTimer);clearInterval(allocationTimer);
-  record({event:'command-terminal',program,...terminal,cause,ready,
+  if(fixedNames && program===executable) {
+    for(const line of stdout.toString('utf8').split('\n')) {
+      let event;try{event=JSON.parse(line);}catch{continue;}
+      if(event.event==='fixed-phase') {
+        lastSuccessfulPhase=`${event.slot}:${event.phase}`;
+        if(event.durableFlushCompleted===true) lastDurablePhase=lastSuccessfulPhase;
+      }
+    }
+  }
+  record({event:'command-terminal',program,...terminal,cause,ready,lastSuccessfulPhase,lastDurablePhase,
     stdout:stdout.toString('utf8'),stderr:stderr.toString('utf8'),allocatedLiveBytes:footprint(),aggregateRetainedBytes});
   if (cause || terminal.spawnError || (killWhenReady
     ? !(ready && terminal.signal==='SIGKILL') : terminal.code!==0)) throw new Error(cause??'command-failed');
@@ -221,10 +232,58 @@ async function native(operation,{crash=false,timeout=60_000}={}) {
   const bytes=await command(executable,[operation,mount,nonce],{killWhenReady:crash,timeout});
   const events=bytes.toString('utf8').trim().split('\n').filter(Boolean).map(line=>JSON.parse(line));
   const names=fs.readdirSync(path.join(mount,'journal'));
+  if(fixedNames && (names.length>12 || names.some(n=>!['filler',...[...slotCaps.keys()].map(k=>`${k}.record`)].includes(n)))) {
+    throw new Error('fixed-final-name-bound');
+  }
   if(names.length>24 || names.some(n=>n.length>64 || !/^(reserve\.|control\.)?(acceptance|action|challenge|presence|receipt|authorization|release|outcome|observation|resolution|scratch)(\.record)?$|^filler$/.test(n))) {
     throw new Error('journal-name-bound');
   }
   return events;
+}
+function verifyFixedFrames(prefix=false) {
+  const hash=bytes=>createHash('sha256').update(bytes).digest();
+  const allZero=bytes=>bytes.every(b=>b===0);
+  const summaries=[];let index=0;
+  for(const [slot,cap] of slotCaps) {
+    const filename=path.join(mount,'journal',`${slot}.record`);
+    const fd=fs.openSync(filename,fs.constants.O_RDONLY|fs.constants.O_NOFOLLOW);
+    try {
+      const stat=fs.fstatSync(fd),size=cap+256;
+      if(!stat.isFile() || stat.uid!==process.getuid() || stat.nlink!==1
+        || (stat.mode&0o7777)!==0o600 || stat.dev!==fs.statSync(mount).dev
+        || stat.size!==size || stat.blocks*512<size) throw new Error('fixed-node-file-binding');
+      const bytes=Buffer.alloc(size);let done=0;
+      while(done<size) {
+        const n=fs.readSync(fd,bytes,done,size-done,done);
+        if(n<=0) throw new Error('fixed-node-short-read');done+=n;
+      }
+      if(prefix && !['acceptance','action'].includes(slot)) {
+        if(!allZero(bytes)) throw new Error('fixed-node-unexpected-prefix-slot');
+      } else {
+        const header=bytes.subarray(0,128),payload=bytes.subarray(128,128+cap),trailer=bytes.subarray(128+cap);
+        const context=hash(Buffer.from(JSON.stringify({namespaceDigest:nonce+nonce,
+          requestId:'00000000-0000-4000-8000-000000000077',slot,v:1})));
+        if(header.toString('ascii',0,8)!=='ODJSLOT1' || header.readUInt16BE(8)!==1
+          || header.readUInt16BE(10)!==index+1 || header.readUInt32BE(12)!==0
+          || header.readUInt32BE(16)!==cap || header.readUInt32BE(20)!==cap
+          || header.readBigUInt64BE(24)!==1n || !header.subarray(32,64).equals(context)
+          || !header.subarray(64,96).equals(hash(payload)) || !allZero(header.subarray(96))
+          || trailer.toString('ascii',0,8)!=='ODJCOM01' || trailer.readUInt16BE(8)!==1
+          || trailer.readUInt16BE(10)!==index+1 || trailer.readUInt32BE(12)!==0
+          || trailer.readBigUInt64BE(16)!==1n || trailer.readUInt32BE(24)!==cap
+          || trailer.readUInt32BE(28)!==0 || !allZero(trailer.subarray(96))
+          || !trailer.subarray(64,96).equals(context)
+          || !trailer.subarray(32,64).equals(hash(Buffer.concat([Buffer.from('owner-journal-frame-v1\n'),header,payload])))) {
+          throw new Error('fixed-node-frame-grammar-digest-binding');
+        }
+        if(!payload.every((byte,k)=>byte===1+((k+index+1)%251))) throw new Error('fixed-node-deterministic-content');
+        summaries.push({slot,bytes:size,sha256:hash(bytes).toString('hex')});
+      }
+    } finally {fs.closeSync(fd);}
+    index++;
+  }
+  record({event:'fixed-independent-node-frame-verification',prefix,frames:summaries,
+    acceptanceEstablished:false,authority:false});
 }
 const baselineInodes=new Map();
 function observations(events,label,seeded=false) {
@@ -233,7 +292,7 @@ function observations(events,label,seeded=false) {
   for(const e of inodes) {
     if(!slotCaps.has(e.slot) || !Number.isSafeInteger(e.blocks512)
       || e.blocks512*512<slotCaps.get(e.slot)+256 || !Number.isSafeInteger(e.ino)
-      || e.bytes!==(seeded ? slotCaps.get(e.slot)+256 : 0)) throw new Error('allocation-or-length-not-observed');
+      || e.bytes!==((seeded || fixedNames) ? slotCaps.get(e.slot)+256 : 0)) throw new Error('allocation-or-length-not-observed');
     const previous=baselineInodes.get(e.slot);
     if(previous && (previous.ino!==e.ino || e.blocks512<previous.blocks512)) throw new Error('allocation-or-inode-not-retained');
     if(!previous) baselineInodes.set(e.slot,e);
@@ -246,7 +305,11 @@ try {
   footprint();
   if(aggregateRetainedBytes+(imageMiB+32+20)*MiB>248*MiB) throw new Error('projected-retained-allocation-ceiling');
   record({event:'limits',imageMiB,liveAllocatedCeilingMiB:192,aggregateRetainedCeilingMiB:248,overallTimeoutSeconds:600,
-    snapshot:withSnapshot,comparison,physicalCapacitySupported:false,powerLossTested:false});
+    snapshot:withSnapshot,comparison,fixedNames,physicalCapacitySupported:false,powerLossTested:false});
+  if(fixedNames) {
+    record({event:'tested-source-hashes',files:Object.fromEntries(['allocator.c','fixed-allocator.c','run.mjs'].map(name=>[name,
+      createHash('sha256').update(fs.readFileSync(new URL(`./${name}`,import.meta.url))).digest('hex')]))});
+  }
   record({event:'reviewed-retained-inventory',manifest:inventoryPath,roots:retainedRoots,aggregateRetainedBytes});
   const fixture=JSON.parse(fs.readFileSync(new URL('../../../tests/fixtures/owner-decisions/journal-budget-v1.json',import.meta.url)));
   const aliases={'original-action':'action','prepared-challenge':'challenge','initial-outcome':'outcome',
@@ -264,43 +327,69 @@ try {
   await attach();fs.chmodSync(mount,0o700);
   fs.writeFileSync(path.join(mount,'.lab-identity'),nonce,{mode:0o600,flag:'wx'});
   const identity=fs.openSync(path.join(mount,'.lab-identity'),'r');fs.fsyncSync(identity);fs.closeSync(identity);
-  await native('reserve-hold',{crash:true,timeout:30_000});
-  observations(await native('observe'),'after-child-sigkill-eof-zero');
-  if(comparison) {
-    const controls=(await native('control-reserve')).filter(e=>e.event==='inode');
-    if(controls.length!==11 || new Set(controls.map(e=>e.slot)).size!==11
-      || controls.some(e=>!slotCaps.has(e.slot) || e.bytes!==0 || e.blocks512!==0)) throw new Error('unreserved-control-baseline');
-    record({event:'unreserved-control-baseline',slots:controls});
+  if(fixedNames) {
+    await native('reserve-hold',{crash:true,timeout:30_000});
+    observations(await native('verify-zero'),'fixed-zero-after-owned-child-sigkill');
+    await detach();await attach();
+    observations(await native('verify-zero'),'fixed-zero-after-detach-remount');
+    await native('fill',{timeout:180_000});
+    observations(await native('verify-zero'),'fixed-zero-after-fill-before-first-nonzero-write');
+    fixedPublicationOutcome='uncertain';
+    await native('commit-crash',{crash:true,timeout:30_000});
+    record({event:'fixed-kill-before-flush',outcome:'uncertain',lastSuccessfulPhase,lastDurablePhase,
+      acceptanceEstablished:false,authority:false});
+    await native('inspect-prefix'); // Visible valid trailer is explicitly NOT durable acceptance.
+    verifyFixedFrames(true);
+    record({event:'fixed-visible-prefix',outcome:'uncertain',acceptanceEstablished:false,authority:false});
+    await native('recover-prefix'); // Explicit full flush before any saved-record finding.
+    fixedPublicationOutcome='recovery-flushed-nonauthorizing';
+    record({event:'fixed-prefix-recovery',outcome:fixedPublicationOutcome,acceptanceEstablished:false,authority:false});
+    await native('commit-rest');
+    observations(await native('verify'),'fixed-all-maximal-frames-before-remount',true);
+    verifyFixedFrames();
+    await detach();await attach();
+    observations(await native('verify'),'fixed-all-maximal-frames-after-remount',true);
+    verifyFixedFrames();
+    fixedPublicationOutcome='verified-test-frames-nonauthorizing';
+  } else {
+    await native('reserve-hold',{crash:true,timeout:30_000});
+    observations(await native('observe'),'after-child-sigkill-eof-zero');
+    if(comparison) {
+      const controls=(await native('control-reserve')).filter(e=>e.event==='inode');
+      if(controls.length!==11 || new Set(controls.map(e=>e.slot)).size!==11
+        || controls.some(e=>!slotCaps.has(e.slot) || e.bytes!==0 || e.blocks512!==0)) throw new Error('unreserved-control-baseline');
+      record({event:'unreserved-control-baseline',slots:controls});
+    }
+    await detach();await attach();
+    observations(await native('observe'),'after-detach-remount-eof-zero');
+    // Essential: exhaust the disposable filesystem before the FIRST payload write.
+    await native('fill',{timeout:180_000});
+    observations(await native('observe'),'after-fill-before-first-write');
+    if(comparison) {
+      record({event:'comparison-group-start',group:'unreserved-first',reclaim:false});
+      const controls=await native('control-seed');
+      const results=controls.filter(e=>e.event==='control-result');
+      if(results.length!==11 || new Set(results.map(e=>e.slot)).size!==11) throw new Error('control-result-count');
+      record({event:'comparison-control-results',results,
+        allCompleted:results.every(e=>e.completed),causalityEstablished:false,order:'control-first'});
+      observations(await native('observe'),'after-control-before-reserved-first-write');
+      record({event:'comparison-group-start',group:'reserved-second',reclaim:false});
+    }
+    await native('seed'); // First writes consume the reserved extents, at full caps.
+    observations(await native('observe'),'after-first-max-write',true);
+    if(withSnapshot) {
+      await verifyMounted();
+      await native('snapshot');
+      record({event:'snapshot-observed',volumeUuid});
+    }
+    await native('overwrite');
+    observations(await native('observe'),'after-whole-file-max-overwrite',true);
+    await native('publish');
+    observations(await native('observe'),'after-exclusive-link-publication',true);
+    await detach();await attach();
+    observations(await native('observe'),'after-published-remount',true);
+    observations(await native('verify'),'after-published-remount-generation-two-content',true);
   }
-  await detach();await attach();
-  observations(await native('observe'),'after-detach-remount-eof-zero');
-  // Essential: exhaust the disposable filesystem before the FIRST payload write.
-  await native('fill',{timeout:180_000});
-  observations(await native('observe'),'after-fill-before-first-write');
-  if(comparison) {
-    record({event:'comparison-group-start',group:'unreserved-first',reclaim:false});
-    const controls=await native('control-seed');
-    const results=controls.filter(e=>e.event==='control-result');
-    if(results.length!==11 || new Set(results.map(e=>e.slot)).size!==11) throw new Error('control-result-count');
-    record({event:'comparison-control-results',results,
-      allCompleted:results.every(e=>e.completed),causalityEstablished:false,order:'control-first'});
-    observations(await native('observe'),'after-control-before-reserved-first-write');
-    record({event:'comparison-group-start',group:'reserved-second',reclaim:false});
-  }
-  await native('seed'); // First writes consume the reserved extents, at full caps.
-  observations(await native('observe'),'after-first-max-write',true);
-  if(withSnapshot) {
-    await verifyMounted();
-    await native('snapshot');
-    record({event:'snapshot-observed',volumeUuid});
-  }
-  await native('overwrite');
-  observations(await native('observe'),'after-whole-file-max-overwrite',true);
-  await native('publish');
-  observations(await native('observe'),'after-exclusive-link-publication',true);
-  await detach();await attach();
-  observations(await native('observe'),'after-published-remount',true);
-  observations(await native('verify'),'after-published-remount-generation-two-content',true);
   outcome='observed-pass';
 } catch(error) {
   primaryFailure=error.message;record({event:'lab-failed',code:primaryFailure});
@@ -312,13 +401,18 @@ try {
     }
   }
 } finally {
-  try {await detach();} catch(error) {record({event:'detach-unconfirmed-retained',code:error.message});}
+  try {await detach();} catch(error) {
+    outcome='failed';primaryFailure??='detach-unconfirmed';
+    record({event:'detach-unconfirmed-retained',code:error.message});
+  }
   let allocatedLiveBytes=null,allocationError=null;
   try {allocatedLiveBytes=footprint();} catch(error) {allocationError=error.message;aggregateRetainedBytes=null;outcome='failed';}
-  record({event:'lab-terminal',outcome,primaryFailure,attached,attachmentMayExist,allocatedLiveBytes,aggregateRetainedBytes,allocationError,
+  record({event:'lab-terminal',outcome,primaryFailure,lastSuccessfulPhase,lastDurablePhase,fixedPublicationOutcome,
+    acceptanceEstablished:false,authority:false,attached,attachmentMayExist,allocatedLiveBytes,aggregateRetainedBytes,allocationError,
     limits:'reported task-owned live allocation; excludes host APFS metadata/external snapshots',
     physicalCapacitySupported:false,powerLossTested:false});
-  console.log(JSON.stringify({outcome,primaryFailure,labRoot:root,results:result,
+  console.log(JSON.stringify({outcome,primaryFailure,lastSuccessfulPhase,lastDurablePhase,fixedPublicationOutcome,
+    acceptanceEstablished:false,authority:false,labRoot:root,results:result,
     attachmentUncertain:attachmentMayExist,allocationUnknown:allocationError!==null}));
   if(outcome!=='observed-pass') process.exitCode=1;
 }
