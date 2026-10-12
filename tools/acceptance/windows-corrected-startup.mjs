@@ -14,7 +14,7 @@ export function verifyCorrectedStartupSource(tree, archiveSha256) {
 
 // Preserve actionable production refusals, never their messages, paths or cause.
 export function boundedBrokerCode(value) {
-  return ['broker-running','broker-probe-failed','broker-unreachable','broker-untrusted',
+  return ['broker-running','broker-timeout','broker-probe-failed','broker-unreachable','broker-untrusted',
     'state-dir-untrusted','storage-failed','unauthenticated','permission-denied'].includes(value) ? value : undefined;
 }
 

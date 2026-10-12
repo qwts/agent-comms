@@ -91,13 +91,14 @@ test('failure retention refuses arbitrary timing payloads instead of serializing
 });
 
 
-test('only the fixed candidate channel receives 180/240; startup, storage and both baselines retain 90/120', () => {
+test('closed candidate profiles select startup 360/420 and channel 180/240; storage and both baselines retain 90/120', () => {
   const channel = capacityTimingMode('candidate', 'channel');
   assert.deepEqual(capacityTimingProfile(channel), { mode: 'candidate-channel', requestDeadlineMs: 180_000, timingCapMs: 240_000 });
+  assert.deepEqual(capacityTimingProfile(capacityTimingMode('candidate', 'candidate-startup')), { mode: 'candidate-startup', requestDeadlineMs: 360_000, timingCapMs: 420_000 });
   assert.throws(() => { capacityTimingProfile(channel).timingCapMs = 999_999; }, TypeError);
   for (const revision of ['old', 'new', 'candidate']) {
     for (const preflight of ['normal','candidate-startup','storage','channel']) {
-      if (revision === 'candidate' && preflight === 'channel') continue;
+      if (revision === 'candidate' && ['channel','candidate-startup'].includes(preflight)) continue;
       assert.deepEqual(capacityTimingProfile(capacityTimingMode(revision, preflight)), { mode: 'default', requestDeadlineMs: 90_000, timingCapMs: 120_000 });
     }
   }
@@ -135,5 +136,28 @@ test('trusted channel controller accepts bounded larger timing, snapshots it and
   assert.equal(retainCapacityFailure({ stage: 'production-startup', check: 'control-closed', ...snapshot },
     { revision: 'old', preflight: 'channel' }, {}).phaseTimings, undefined);
   child.emit('message', { id: -1, phase: 'channel-ready', phaseElapsedMs: 240_000, timingCapMs: 999_999 });
+  await assert.rejects(control.startup, { message: 'control-invalid' }); close();
+});
+
+
+test('full startup timing retains original timeout and refuses arbitrary cap negotiation at 420s', async () => {
+  const mode = 'candidate-startup';
+  for (const elapsed of [360_001, 420_000, 420_001, Infinity, -1]) {
+    const original = new Error('broker-timeout'); let timing, tick = 0;
+    await assert.rejects(timeCapacityRequest(() => Promise.reject(original), value => { timing = value; },
+      () => tick++ ? elapsed : 0, mode), error => error === original);
+    const receipt = retainCapacityFailure({ stage: 'production-startup', check: 'operation-failed', brokerCode: original.message, controlTiming: timing },
+      { revision: 'candidate', preflight: 'candidate-startup', fixturePhase: 'fixture-pair' }, {});
+    assert.deepEqual(receipt.controlTiming, elapsedCapacityTiming(elapsed, mode));
+    assert.equal(receipt.brokerCode, 'broker-timeout'); assert.equal(receipt.timingProfile.requestDeadlineMs, 360_000);
+  }
+  const child = new EventEmitter(); child.send = () => {}; let close;
+  const control = createCapacityController({ child, exited: new Promise(resolve => { close = resolve; }), terminal: () => false },
+    { ipc: true, capturePhaseTimings: true, timingMode: mode });
+  child.emit('message', { id: -1, phase: 'fixture-imports', phaseElapsedMs: 240_001 });
+  child.emit('message', { id: -1, phase: 'fixture-pair', phaseElapsedMs: 420_000 });
+  const snapshot = snapshotCapacityPhases({ state: () => ({ phase: 'private-job-assigned' }) }, control);
+  assert.equal(snapshot.phaseTimings.at(-1).elapsedMs, 420_000);
+  child.emit('message', { id: -1, phase: 'fixture-ready', phaseElapsedMs: 420_000, requestDeadlineMs: 999_999 });
   await assert.rejects(control.startup, { message: 'control-invalid' }); close();
 });

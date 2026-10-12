@@ -29,8 +29,8 @@ test('candidate failure receipt retains the scoped revision and known code while
   assert.equal(retainCapacityFailure({ stage: 'production-startup', check: 'operation-failed', brokerCode: 'CANARY-private-code' }, {}, {}).brokerCode, undefined);
 });
 
-for (const [code, probe] of [['broker-probe-failed', undefined], ['CANARY-private-code', undefined], ['storage-failed', 'storage'], ['broker-probe-failed', 'channel']]) {
-  test(`actual fixture IPC reports ${probe === 'channel' ? 'channel refusal' : probe === 'storage' ? 'storage failure' : code === 'broker-probe-failed' ? 'known refusal' : 'unknown failure'} and still performs owned cleanup`, async () => {
+for (const [code, probe] of [['broker-probe-failed', undefined], ['CANARY-private-code', undefined], ['broker-timeout', undefined], ['storage-failed', 'storage'], ['broker-probe-failed', 'channel']]) {
+  test(`actual fixture IPC reports ${probe === 'channel' ? 'channel refusal' : probe === 'storage' ? 'storage failure' : code === 'broker-timeout' ? 'known timeout' : code === 'broker-probe-failed' ? 'known refusal' : 'unknown failure'} and still performs owned cleanup`, async () => {
     // Harness regression only: the manual acceptance mode always verifies and
     // imports the pinned production archive. This stub makes failure deterministic.
     const scratch = mkdtempSync(path.join(os.tmpdir(), 'comms-candidate-ipc-'));
@@ -44,12 +44,12 @@ for (const [code, probe] of [['broker-probe-failed', undefined], ['CANARY-privat
     mkdirSync(path.join(scratch, 'lib/platform'));
     writeFileSync(path.join(scratch, 'lib/platform/account-isolation.mjs'), 'export function assertLogFile(){}');
     writeFileSync(path.join(scratch, 'lib/platform/local-channel.mjs'), `import {writeFileSync} from 'node:fs';export function prepare(){return 'private'}export async function removeStaleSocket(){throw Object.assign(new Error('CANARY-channel-secret'),{code:${JSON.stringify(code)}})}export function stop(){writeFileSync(${JSON.stringify(cleaned)},'stopped')}`);
-    const child = spawn(process.execPath, [fileURLToPath(new URL('../tools/acceptance/windows-connector-capacity.mjs', import.meta.url)), '--fixture', scratch, ...(probe === 'channel' ? ['--candidate-channel-timing'] : [])], { stdio: ['ignore','pipe','pipe','ipc'] });
+    const child = spawn(process.execPath, [fileURLToPath(new URL('../tools/acceptance/windows-connector-capacity.mjs', import.meta.url)), '--fixture', scratch, ...(probe === 'channel' ? ['--candidate-channel-timing'] : probe === undefined ? ['--candidate-startup-timing'] : [])], { stdio: ['ignore','pipe','pipe','ipc'] });
     let stdout = '', stderr = '', failure;
     child.stdout.on('data', chunk => { stdout += chunk; }); child.stderr.on('data', chunk => { stderr += chunk; });
     const terminal = new Promise((resolve, reject) => { child.once('error', reject); child.once('close', (exitCode, signal) => resolve({ exitCode, signal })); });
     child.on('message', record => { if (record.id === 1) failure = record; });
-    const control = createCapacityController({ child, exited: terminal, terminal: () => child.exitCode !== null }, { ipc: true, capturePhaseTimings: true, timingMode: probe === 'channel' ? 'candidate-channel' : 'default',
+    const control = createCapacityController({ child, exited: terminal, terminal: () => child.exitCode !== null }, { ipc: true, capturePhaseTimings: true, timingMode: probe === 'channel' ? 'candidate-channel' : probe === undefined ? 'candidate-startup' : 'default',
       classifyFailure: record => classifyFixtureFailure(record, new Set(['operation-failed'])) });
     const timer = setTimeout(() => child.kill(), 5000);
     try {

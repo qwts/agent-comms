@@ -4,6 +4,7 @@ export const CAPACITY_TIMING_CAP_MS = 120_000;
 export const CAPACITY_PHASE_LIMIT = 64;
 const PROFILES = Object.freeze({
   default: Object.freeze({ mode: 'default', requestDeadlineMs: 90_000, timingCapMs: CAPACITY_TIMING_CAP_MS }),
+  'candidate-startup': Object.freeze({ mode: 'candidate-startup', requestDeadlineMs: 360_000, timingCapMs: 420_000 }),
   'candidate-channel': Object.freeze({ mode: 'candidate-channel', requestDeadlineMs: 180_000, timingCapMs: 240_000 }),
 });
 // Selected by trusted driver/fixture mode, never by a reported IPC duration/cap.
@@ -12,7 +13,8 @@ export function capacityTimingProfile(mode = 'default') {
   return PROFILES[mode];
 }
 export function capacityTimingMode(revision, preflight) {
-  return revision === 'candidate' && preflight === 'channel' ? 'candidate-channel' : 'default';
+  if (revision !== 'candidate') return 'default';
+  return preflight === 'channel' ? 'candidate-channel' : preflight === 'candidate-startup' ? 'candidate-startup' : 'default';
 }
 export function elapsedCapacityTiming(elapsed, mode = 'default') {
   const { timingCapMs } = capacityTimingProfile(mode);

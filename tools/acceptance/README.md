@@ -25,8 +25,10 @@ The tool refuses a tree or digest mismatch before extraction/import. This
 single candidate report has no old/new comparison or offered-rate stages;
 the existing capacity pins remain unchanged. The first reviewed manual attempt failed; its
 [retained receipt](../../docs/windows-candidate-startup-evidence.md)
-does not establish corrected native startup or capacity. Resource/profile/cleanup guards and
-the 90-second startup deadline remain identical. Known production refusal
+does not establish corrected native startup or capacity. Resource/profile guards and
+owned cleanup remain unchanged. The first attempt used a 90-second watchdog; the
+[reviewed full-startup guard](../../docs/windows-candidate-startup-guard.md)
+selects 360s requests/420s reporting as finite diagnostic headroom. Known production refusal
 codes are retained through correlated fixture IPC; error text and causes are
 excluded. Local stub IPC tests establish classification and cleanup mechanics,
 not production pipe acceptance.
@@ -45,7 +47,8 @@ does not establish whole Broker startup, delivery or capacity.
 The manual `candidate-channel` task uses that same approved correction archive
 for actual prepare and both stale APIs, with no Broker.start, storage or load.
 Fixed candidate controls retain bounded parent request duration and relative
-fixed child phase timing. Startup/storage retain 90s requests and 120s reporting;
+fixed child phase timing. Startup selects 360s requests/420s reporting as a
+finite diagnostic guard; storage retains 90s requests/120s reporting;
 only candidate-channel selects 180s requests and 240s reporting, from a closed
 trusted mode. Production connector and old/new diagnostic budgets are unchanged. Missing/invalid timing cannot qualify a pass.
 The [first retained channel failure](../../docs/windows-candidate-channel-evidence.md)

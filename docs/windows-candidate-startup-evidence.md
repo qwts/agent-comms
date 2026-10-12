@@ -114,9 +114,10 @@ retained before cleanup; original failure classification and cleanup receipts
 remain separate. No paths, commands, request content or exception text enter
 these observations.
 
-Startup and storage retain their ninety-second request deadline and separate
-120-second reporting cap. Following the [retained channel deadline failure](windows-candidate-channel-evidence.md),
-only the fixed candidate-channel mode selects a finite 180-second request
+Storage retains its ninety-second request deadline and separate 120-second
+reporting cap. The first full-startup attempt used that same default; the later
+reviewed [full-startup guard](windows-candidate-startup-guard.md) is separate. Following the [retained channel deadline failure](windows-candidate-channel-evidence.md),
+the fixed candidate-channel mode selects a finite 180-second request
 deadline and separate 240-second reporting cap. The observed 78.854-second
 prepare plus two ordinary ten-second connector windows exceeds the original
 diagnostic window. This adjusts diagnostic coverage, not a performance budget

@@ -72,6 +72,7 @@ async function fixture(source, timingMode = 'default') {
   assert.equal(start.op, 'start');
   fixtureRequestId = start.id;
   if (timingMode === 'candidate-channel') assert.equal(start.probe, 'channel');
+  if (timingMode === 'candidate-startup') assert.equal(start.probe, undefined);
   activeStage = 'fixture-startup';
   const phaseTiming = start.phaseTimings === true ? createCapacityPhaseTiming(undefined, timingMode) : () => ({});
   const phase = (value, progress) => {
@@ -286,7 +287,7 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
   const root = mkdtempSync(path.join(process.env.LOCALAPPDATA, 'agent-comms-capacity-'));
   const shell = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
   const timingMode = capacityTimingMode(revision, preflight), timingProfile = capacityTimingProfile(timingMode);
-  const args = [SELF, '--fixture', source, ...(timingMode === 'candidate-channel' ? ['--candidate-channel-timing'] : [])];
+  const args = [SELF, '--fixture', source, ...(timingMode === 'candidate-channel' ? ['--candidate-channel-timing'] : timingMode === 'candidate-startup' ? ['--candidate-startup-timing'] : [])];
   const fixtureOwned = ownedChild(process.execPath, args, { env: environment({
     AGENT_COMMS_SHARED_DIR: path.join(root, 'shared'), AGENT_COMMS_BROKER_STATE_DIR: path.join(root, 'broker'),
     AGENT_COMMS_CLIENT_STATE_DIR: path.join(root, 'client'), AGENT_COMMS_SERVICE_LABEL: `test.capacity.${randomUUID()}`,
@@ -513,7 +514,7 @@ async function main() {
     channelSha256: hash(readFileSync(new URL('./windows-capacity-channel.mjs', import.meta.url))),
     connectorSha256: hash(readFileSync(new URL('./windows-capacity-connector.mjs', import.meta.url))),
     timingSha256: hash(readFileSync(new URL('./windows-capacity-timing.mjs', import.meta.url))),
-    ...(candidateOnly ? { timingProfile: capacityTimingProfile(candidateChannel ? 'candidate-channel' : 'default'),
+    ...(candidateOnly ? { timingProfile: capacityTimingProfile(candidateChannel ? 'candidate-channel' : candidateStartup ? 'candidate-startup' : 'default'),
       timingScope: 'parent start-request duration and independent child relative fixed-phase observations; explicit trusted-mode deadline/reporting cap; observational, not performance acceptance' } : {}),
     storageSha256: hash(readFileSync(new URL('./windows-capacity-storage.mjs', import.meta.url))),
     correctedStartupSha256: hash(readFileSync(new URL('./windows-corrected-startup.mjs', import.meta.url))),
@@ -547,8 +548,8 @@ try {
       process.send({ id, ok: true, stopped: true }, () => { if (process.connected) process.disconnect(); });
     });
   } else if (process.argv[2] === '--fixture') {
-    assert.ok(process.argv.length === 4 || (process.argv.length === 5 && process.argv[4] === '--candidate-channel-timing'));
-    await fixture(process.argv[3], process.argv[4] === '--candidate-channel-timing' ? 'candidate-channel' : 'default');
+    assert.ok(process.argv.length === 4 || (process.argv.length === 5 && ['--candidate-channel-timing','--candidate-startup-timing'].includes(process.argv[4])));
+    await fixture(process.argv[3], process.argv[4] === '--candidate-channel-timing' ? 'candidate-channel' : process.argv[4] === '--candidate-startup-timing' ? 'candidate-startup' : 'default');
   } else await main();
 } catch (error) {
   // Deliver only the fixed classification before cleanup disconnects IPC.
