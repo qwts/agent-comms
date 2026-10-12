@@ -41,6 +41,10 @@ request fields, arbitrary messages, paths, bodies or credentials are serialized.
 | `transport.retry` | `transport.watch` | `backoff` | `retry-scheduled` | `succeeded` |
 | `diagnostics.dropped` | `diagnostics` | `queue` | `diagnostics-dropped` | `dropped` |
 
+[Direct mailbox diagnostics](mailbox-diagnostics.md) add successful admission,
+idempotent duplicate, read-page and acknowledgment observations, plus a
+grant-filtered canonical census queue age.
+
 [Lifecycle diagnostics](lifecycle-diagnostics.md) extend this private registry
 with broker startup/shutdown and watch readiness/reconnection outcomes.
 

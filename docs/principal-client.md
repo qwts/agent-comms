@@ -33,7 +33,7 @@ See [Windows](windows.md) for platform acceptance limits.
 
 ## Use the library
 
-Import from the pinned agent-comms release bundled with the host:
+Import from the host’s pinned agent-comms release:
 
 ```js
 import { createPrincipalClient } from './lib/principal-client.mjs';
@@ -69,7 +69,7 @@ credentials.
 
 | Method | Request and result |
 | --- | --- |
-| `census()` | Returns `{ ok, souls }`; each row has account, agentId, name, harness, parent, presence, verification, hardened, daemonWatching, unacked and lastWake. |
+| `census()` | Returns `{ ok, souls }`; each row has account, agentId, name, harness, parent, presence, verification, hardened, daemonWatching, unacked, [oldestUnackedAgeMs](mailbox-diagnostics.md) and lastWake. |
 | `send({ to, body, key, kind, refs, correlation, replyTo })` | Returns `{ ok, messageId, seq, duplicate, wake }`, including original acceptance on retry. |
 | `inbox({ after = 0, limit = 20, channel })` | Returns `{ ok, messages, cursor, remaining, gap? }` from this principal's retained unacknowledged mailbox, optionally filtered by canonical channel. |
 | `ack(ids)` | Returns `{ ok, acknowledged, alreadyAcknowledged }` for this principal's messages only. |

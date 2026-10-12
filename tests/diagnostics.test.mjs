@@ -60,7 +60,9 @@ function safeLines(lines) {
     assert.deepEqual(Object.keys(record).sort(), ['v', 'buildVersion', 'buildSource', 'code', 'component', 'event', 'eventId',
       'sessionId', 'operation', 'outcome', 'stage', 'observedAtUnixMs',
       ...(record.durationMs === undefined ? [] : ['durationMs']),
-      ...(record.event === 'diagnostics.dropped' ? ['details'] : [])].sort());
+      ...(['diagnostics.dropped', 'mailbox.read', 'mailbox.acked'].includes(record.event) ? ['details'] : [])].sort());
+    if (record.event === 'mailbox.read') assert.deepEqual(record.details, { returnedCount: 1, remainingCount: 0 });
+    if (record.event === 'mailbox.acked') assert.deepEqual(record.details, { acknowledgedCount: 1, alreadyAcknowledgedCount: 0 });
     assert.equal(record.v, 1);
     assert.equal(record.buildSource, 'running');
     assert.equal(record.component, 'agent-comms-broker');
@@ -215,7 +217,7 @@ for (const mode of ['capture', 'blocked', 'throwing', 'callback-error']) {
       const persisted = readFileSync(broker.log.file, 'utf8');
       await assert.rejects(call(paths, { ...credential, secret: SECRET }, request), { code: 'unauthenticated' });
       assert.equal(readFileSync(broker.log.file, 'utf8'), persisted, 'permission refusal must not write state');
-      assert.ok(output.lines.every((line) => JSON.parse(line).event === 'broker.started'), 'expected refusals add no implementation diagnostics');
+      assert.ok(output.lines.every((line) => ['broker.started', 'mailbox.admitted'].includes(JSON.parse(line).event)), 'expected refusals add no implementation diagnostics');
 
       const now = broker.now;
       broker.now = () => { throw sensitiveError(); };
@@ -247,7 +249,8 @@ for (const mode of ['capture', 'blocked', 'throwing', 'callback-error']) {
       if (mode === 'capture') {
         await flushed(sink);
         assert.deepEqual(safeLines(output.lines).map((record) => [record.event, record.code]), [
-          ['broker.started', 'ready'], ['broker.request-failure', 'internal'], ['broker.storage-failure', 'storage-failed'],
+          ['broker.started', 'ready'], ['mailbox.admitted', 'admitted'], ['broker.request-failure', 'internal'],
+          ['mailbox.read', 'read'], ['mailbox.acked', 'acknowledged'], ['broker.storage-failure', 'storage-failed'],
         ]);
       }
     }, { brokerOptions: { mode: 'single-account', now: () => 1000, diagnostic } });
