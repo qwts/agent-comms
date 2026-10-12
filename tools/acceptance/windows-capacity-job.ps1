@@ -143,6 +143,11 @@ public static class CapacityJob {
     }
 }
 '@ | Out-Null
+    $phase = 'supervisor-compiled'
+    if (-not $ValidateOnly) {
+        [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"supervisor-compiled"}')
+        [Console]::Out.Flush()
+    }
     if ($ValidateOnly) {
         $job = [CapacityJob]::Create(536870912)
         if (@([CapacityJob]::Pids($job)).Count -ne 0 -or [CapacityJob]::Cpu100ns($job) -ne 0) { throw 'invalid-empty-job' }
@@ -151,8 +156,13 @@ public static class CapacityJob {
         Reply @{ok=$true;validated=$true;workloadRun=$false}
         return
     }
-    $phase = 'read-control'
+    $phase = 'serialize-ready'
+    [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"serialize-ready"}')
+    [Console]::Out.Flush()
     Reply @{id=0;ok=$true;phase='ready'}
+    [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"ready-serialized"}')
+    [Console]::Out.Flush()
+    $phase = 'read-control'
     while ($null -ne ($line = [Console]::In.ReadLine())) {
         if ($line.Length -gt 32768) { throw 'invalid-control-line' }
         $inputData = $line | ConvertFrom-Json

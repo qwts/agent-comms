@@ -85,7 +85,7 @@ lines, credentials or message bodies.
 The manual `Windows desktop diagnostics` workflow offers four tasks:
 `engine` retains existing acceptance; `capacity-supervisor` checks supervisor
 control under the actual sanitized standard-user environment without importing
-production code. It compares a literal bare-shell command with the supervisor
+production code. It compares a JSON-only shell command with the marked supervisor
 script, preserving both outcomes and explicit EOF/forced-exit/stdio-close
 receipts within a combined 58-second process budget; `capacity-preflight` and
 `capacity-pilot` select this separate foreground-library probe. Capacity modes

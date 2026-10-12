@@ -132,29 +132,5 @@ is removed; the probe explicitly records `executionPolicyObservation` as
 The inherited module-path explanation remains unconfirmed. This CI failure
 does not explain the earlier standard-user deadline.
 
-The first supervisor-only run
-[38206749476](https://github.com/qwts/agent-comms/actions/runs/38206749476),
-at `a561e9a4590fd04c1902e62ff8934bbf990b953b`, also reached a startup
-`control-deadline`: no observed control marker/encoding, zero stderr bytes,
-`productionImported=false`, and `ownedTerminalConfirmed=true`. Its receipt
-did not distinguish EOF exit from forced termination. Bootstrap correctly
-retained the account/profile (`removed=false`). These are original hashes:
-
-- [Acceptance](../tools/acceptance/evidence/2026-10-12-windows-connector/supervisor-38206749476/acceptance.json):
-  `1fad12131e62b54afe78fd122d9edd68429965761540d4c35e3d2535ba3bfa07`.
-- [Capacity](../tools/acceptance/evidence/2026-10-12-windows-connector/supervisor-38206749476/capacity/capacity.json):
-  `0b9273400e36466bece723e8dbca374de8c0e104ef4523fb79cbd7d497f2ca86`.
-- [Failure](../tools/acceptance/evidence/2026-10-12-windows-connector/supervisor-38206749476/capacity/failure.json):
-  `19c4fbb5703f7e3fb25502bcecf760af747a438387bfada0b4e3139845cf9411`.
-- Failed-step log: `e249d2f5196f2ae3e29f50cb20dc327bde46ba77fb355b2ab083051aed61bd71`.
-
-The original marker itself called `ConvertTo-Json`, so its absence cannot
-establish whether script execution began. Literal .NET writes now precede
-all cmdlets and compilation. The next supervisor-only probe compares a bare
-literal .NET command with the script under the same environment/policy/stdio,
-preserving both outcomes, fifteen-second startup deadlines, owned exit codes,
-EOF/forced termination flags, and stdio-close receipts. It creates no fixture
-or production workload and leaves the earlier failure cause unresolved.
-The second variant is explicitly unrun if either owned terminal or stdio close
-is unconfirmed for the first; its receipt cannot turn the overall result into
-a pass.
+Supervisor-only startup diagnosis and the next bounded comparison are
+recorded separately in [startup evidence](windows-supervisor-startup-evidence.md).

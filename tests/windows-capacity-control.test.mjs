@@ -59,6 +59,17 @@ test('valid acknowledged response survives immediate owned terminal but future c
   assert.equal((await request).closed, true);
   await assert.rejects(control.request('close'), { message: 'control-closed' });
 });
+test('post-ready serialization marker preserves close acknowledgement and terminal receipt', async () => {
+  const owned = transport(), control = createCapacityController(owned);
+  owned.child.stdout.write('{"id":-1,"phase":"supervisor-compiled"}\n{"id":-1,"phase":"serialize-ready"}\n{"id":0,"ok":true,"phase":"ready"}\n');
+  assert.equal((await control.startup).phase, 'ready');
+  const request = control.request('close');
+  owned.child.stdout.write('{"id":-1,"phase":"ready-serialized"}\n{"id":1,"ok":true,"closed":true}\n');
+  owned.close();
+  assert.equal((await request).closed, true);
+  assert.equal(control.state().phase, 'ready-serialized');
+  await assert.rejects(control.request('close'), { message: 'control-closed' });
+});
 test('IPC fixtures preserve the supplied bounded failure classification', async () => {
   const owned = transport(); owned.child.send = () => {};
   const control = createCapacityController(owned, { ipc: true,
@@ -81,7 +92,7 @@ test('supervisor variants never start a second process after uncertain exit or s
     await collectSupervisorProbes(async (variant) => {
       calls.push(variant); return { variant, status: 'failed', ...receipt };
     }, (record) => records.push(record));
-    assert.deepEqual(calls, ['literal-command']);
+    assert.deepEqual(calls, ['json-command']);
     assert.equal(records[0].status, 'failed');
     assert.deepEqual(records[1], { runType: 'supervisor-only-no-workload', variant: 'supervisor-script',
       productionImported: false, status: 'not-run', reason: 'prior-cleanup-unconfirmed' });
@@ -93,6 +104,6 @@ test('a failed but fully disposed first probe allows a matched second diagnostic
     calls.push(variant); return { variant, status: calls.length === 1 ? 'failed' : 'passed',
       ownedTerminalConfirmed: true, stdioClosedConfirmed: true };
   }, (record) => records.push(record));
-  assert.deepEqual(calls, ['literal-command','supervisor-script']);
+  assert.deepEqual(calls, ['json-command','supervisor-script']);
   assert.deepEqual(records.map((record) => record.status), ['failed','passed']);
 });

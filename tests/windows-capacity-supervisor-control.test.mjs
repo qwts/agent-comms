@@ -11,9 +11,11 @@ async function within(promise, ms) {
   finally { clearTimeout(timer); }
 }
 
-test('bare classic shell emits literal control and exits naturally with stdin still open', { skip: process.platform !== 'win32' }, async () => {
+for (const [kind, command] of [
+  ['bare literal', `[Console]::Out.WriteLine('{"id":0,"ok":true,"phase":"ready"}');[Console]::Out.Flush()`],
+  ['JSON-only', `[Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"serialize-ready"}');[Console]::Out.Flush();$json=(@{id=0;ok=$true;phase='ready'} | ConvertTo-Json -Depth 8 -Compress);[Console]::Out.WriteLine($json);[Console]::Out.Flush()`],
+]) test(`${kind} classic shell emits control and exits naturally with stdin still open`, { skip: process.platform !== 'win32' }, async () => {
   const shell = path.join(process.env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe');
-  const command = `[Console]::Out.WriteLine('{"id":0,"ok":true,"phase":"ready"}');[Console]::Out.Flush()`;
   const child = spawn(shell, ['-NoLogo','-NoProfile','-NonInteractive','-Command',command], { stdio: ['pipe','pipe','pipe'], windowsHide: true });
   let terminal = false, stderrBytes = 0;
   const exited = new Promise((resolve) => {
@@ -40,6 +42,7 @@ test('classic supervisor exchanges bounded control records with stdin still open
   const child = spawn(shell, ['-NoProfile','-NonInteractive','-File',script], { stdio: ['pipe','pipe','pipe'], windowsHide: true });
   let terminal = false, bytes = '', fault, stderrBytes = 0;
   const records = new Map(), phases = new Set();
+  const stdioClosed = new Promise((resolve) => child.once('close', resolve));
   const exited = new Promise((resolve) => {
     child.once('error', () => { terminal = true; resolve({ code: null }); });
     child.once('exit', (code) => { terminal = true; resolve({ code }); });
@@ -56,7 +59,7 @@ test('classic supervisor exchanges bounded control records with stdin still open
       try {
         const value = JSON.parse(line);
         if (value.id === -1) {
-          if (!['script-entry','compile-supervisor'].includes(value.phase)) { fault = true; return; }
+          if (!['script-entry','compile-supervisor','supervisor-compiled','serialize-ready','ready-serialized'].includes(value.phase)) { fault = true; return; }
           phases.add(value.phase);
         }
         if (!records.has(value.id) && records.size >= 4) { fault = true; return; }
@@ -80,16 +83,18 @@ test('classic supervisor exchanges bounded control records with stdin still open
   }
   try {
     assert.deepEqual(await record(0), { id: 0, ok: true, phase: 'ready' });
-    assert.deepEqual([...phases].sort(), ['compile-supervisor','script-entry']);
     child.stdin.write('{"id":1,"op":"close"}\n');
     // Do not send EOF: this checks the same live duplex control path as attach.
     const closed = await record(1);
     assert.equal(closed.ok, true); assert.equal(closed.closed, true); assert.equal(closed.jobEmptyConfirmed, true);
     const result = await terminalWithin(5000);
+    await within(stdioClosed, 5000);
     assert.equal(result?.code, 0); assert.equal(stderrBytes, 0);
+    assert.deepEqual([...phases].sort(), ['compile-supervisor','ready-serialized','script-entry','serialize-ready','supervisor-compiled']);
   } finally {
     if (!terminal) child.kill();
     const result = await terminalWithin(5000);
     assert.notEqual(result, null, 'owned supervisor terminal unconfirmed');
+    await within(stdioClosed, 5000);
   }
 });

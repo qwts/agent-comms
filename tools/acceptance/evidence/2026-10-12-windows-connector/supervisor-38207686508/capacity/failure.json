@@ -1,0 +1,33 @@
+{
+  "status": "failed",
+  "stage": "supervisor-only-startup",
+  "check": "control-deadline",
+  "supervisorPhase": "compile-supervisor",
+  "supervisorProbe": {
+    "runType": "supervisor-only-no-workload",
+    "variant": "supervisor-script",
+    "productionImported": false,
+    "executionPolicyObservation": "not-queried",
+    "environmentParity": {
+      "inheritedExecutionPolicy": false,
+      "inheritedModulePath": false,
+      "explicitExecutionPolicyArgument": false
+    },
+    "stderrBytes": 0,
+    "stderrByteCountCapped": false,
+    "stderrEncoding": null,
+    "control": {
+      "phase": "compile-supervisor",
+      "encoding": "ascii-compatible"
+    },
+    "eofSent": true,
+    "forcedTerminationRequested": true,
+    "terminal": {
+      "code": null,
+      "signal": "SIGTERM"
+    },
+    "stdioClosedConfirmed": true,
+    "ownedTerminalConfirmed": true,
+    "elapsedMs": 20021
+  }
+}

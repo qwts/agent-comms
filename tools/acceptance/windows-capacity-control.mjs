@@ -1,5 +1,5 @@
 // Dev-only finite control transport. Failure records never contain child output.
-const PHASES = new Set(['script-entry','compile-supervisor','read-control','verify-fixture','assign-private-job','sample-job','query-members','close-job']);
+const PHASES = new Set(['script-entry','compile-supervisor','supervisor-compiled','serialize-ready','ready-serialized','read-control','verify-fixture','assign-private-job','sample-job','query-members','close-job']);
 export function encodingSignature(chunk) {
   if (chunk[0] === 0xff && chunk[1] === 0xfe) return 'utf16le-bom';
   if (chunk[0] === 0xfe && chunk[1] === 0xff) return 'utf16be-bom';
@@ -11,7 +11,7 @@ export function encodingSignature(chunk) {
 // A subsequent diagnostic must not overlap a child whose lifetime is unknown.
 export async function collectSupervisorProbes(probe, record) {
   let mayContinue = true;
-  for (const variant of ['literal-command','supervisor-script']) {
+  for (const variant of ['json-command','supervisor-script']) {
     if (!mayContinue) {
       await record({ runType: 'supervisor-only-no-workload', variant, productionImported: false,
         status: 'not-run', reason: 'prior-cleanup-unconfirmed' });
