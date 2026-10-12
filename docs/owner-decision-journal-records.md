@@ -44,24 +44,44 @@ occupy these records' spare bytes. The action/challenge/proof and
 check-response schemas remain the merged contracts. Public result codes remain
 those in [the envelopes](owner-decision-envelopes.md).
 
-| Daemon slot | Payload cap | Exact retained meaning |
+| Daemon u16 ID / exact slot name | Payload cap | Exact retained meaning |
 | --- | ---: | --- |
-| Acceptance/context | 4096 | Authenticated original action references/acceptance, enrolled broker namespace and selected daemon/watch binding; immutable after admission. |
-| Original action | 32768 | Exact canonical action bytes. |
-| Prepared challenge | 32768 | The exact saved challenge in canonical local serialization. |
-| Presence | 4096 | Complete original p1 token received with the decision. |
-| Receipt | 4096 | Complete original d1 token received with the decision. |
-| Preparation | 4096 | Exact typed preparation evidence, including fixed daemon-generated effectId and expected state. |
-| Successful check | 4096 | Exact verified live check response; restart never converts it to permission to resume an effect. |
-| Pre-effect refused | 4096 | Exact effect.refused record; impossible after entered. |
-| Entered | 4096 | Exact effect.entered record; immutable request-linked consumption and uncertainty, not completion. |
-| Completed | 4096 | Exact effect.completed record; requires retained entered and whole-effect proof. |
-| Indeterminate reconciliation | 2048 | Exact typed reconciliation record; replaceable bounded observation only. |
-| Terminal reconciliation | 2048 | Exact immutable typed applied/refused reconciliation record. |
-| Observation preimage | 2048 | Canonical typed revision/cold observation whose digest the current reconciliation references. |
-| Resolution preimage | 2048 | Canonical typed observation for the terminal resolution; retained independently. |
-| Linked authoritative event | 16384 | Bounded retained source-event bytes for a revision effect, verified against its actual authoritative journal and ownerDecision linkage; null for cold changes. |
-| Local lifecycle outcome | 4096 | Fixed typed local outcome/report metadata; no arbitrary error strings or appended attempts. |
+| 1 `acceptance-context` | 4096 | Immutable authenticated original action references/acceptance, enrolled broker namespace and selected daemon/watch binding. |
+| 2 `original-action` | 32768 | Exact canonical action bytes. |
+| 3 `prepared-challenge` | 32768 | Exact daemon-generated challenge in canonical local serialization. |
+| 4 `presence` | 4096 | Complete original p1 token received with the decision. |
+| 5 `receipt` | 4096 | Complete original d1 token received with the decision. |
+| 6 `preparation` | 4096 | Exact typed preparation evidence, including fixed daemon-generated effectId and expected state. |
+| 7 `successful-check` | 4096 | Exact verified live check response; restart never turns it into permission to resume. |
+| 8 `pre-effect-refused` | 4096 | Exact effect.refused record; impossible after entered. |
+| 9 `entered` | 4096 | Immutable effect.entered; consumption and uncertainty, not completion. |
+| 10 `completed` | 4096 | Exact effect.completed with retained entered and whole-effect proof. |
+| 11 `observation-pair` | 4352 | Exact combined indeterminate reconciliation and its typed observation preimage; replacement only through reviewed recovery. |
+| 12 `terminal-pair` | 4352 | Exact combined immutable applied/refused reconciliation and its typed preimage. |
+| 13 `linked-authoritative-event` | 16384 | Retained bounded revision source-event bytes verified against its authoritative journal and ownerDecision linkage; empty for cold changes. |
+| 14 `local-lifecycle-outcome` | 4096 | Fixed typed local outcome/report metadata; no arbitrary errors or appended attempts. |
+
+Each daemon pair is exactly canonical `{preimage,record,v:1}`. `record` is the
+existing exact reconciliation object, at most 2048 canonical bytes; `preimage`
+is its exact revision/cold observation, independently at most 2048 bytes.
+Wrapper bytes (the complete pair length minus both component lengths) are at
+most 256; the entire pair cap is exactly 4352. There are no extra keys or
+relaxed component limits. SHA-256 of canonical preimage equals observedDigest.
+Observation finding is indeterminate; terminal finding is applied/refused and
+requires its retained completed/pre-effect refused basis before publication.
+One frame binds both components; no separately visible preimage file exists.
+The terminal pair publishes once before its terminal outcome/report. Observation
+replacement remains a prerequisite; it cannot erase immutable proof.
+
+Fixed names append `.record` to each exact slot name, plus `scratch.record`:
+15 daemon names and 11 broker names. No extra preimage or reconciliation files
+are permitted. The maximum 24 named entries/eight directories still applies to
+all other charged artifacts. Frame role is fixed daemon/broker as appropriate;
+ID overlap cannot cross that domain. Daemon directory keys remain the enrolled
+namespace/request hash: recover requestId only from bounded acceptance-context
+payload, validate its UUIDv4 and expected directory hash, then validate the full
+context-bound frame and original-action agreement before trusting any finding.
+Missing/invalid context refuses; the hashed directory is never parsed as UUID.
 
 Preparation/effect/reconciliation/preimage shapes are exactly the
 [effect companion](owner-decision-effect-evidence.md) and its private-descriptor

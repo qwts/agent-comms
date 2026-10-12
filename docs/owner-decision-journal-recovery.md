@@ -11,8 +11,13 @@ Admission is deliberately multi-file, not atomic as a group:
 1. Authenticate, authorize and validate the complete bounded original action before creating admission artifacts. Fix the selected binding and original acceptedAt once; never refresh that clock while allocating.
 2. Under the store admission lock, charge a full reservation for a new request directory and durably publish its name before creating other entries. Any surviving directory or partial artifact counts after interruption, even before acceptance. At the broker its name is the UUIDv4 request ID. At the daemon use lowercase SHA-256 of canonical `{namespaceDigest,requestId,v:1}` so the stable namespace/request tuple has one fixed 64-byte name. A repeated orphan key refuses, never starts fresh admission.
 3. Publish and flush the exact canonical original action slot, then publish and flush immutable acceptance referencing its digest and fixed reservation. Only the complete validated durable pair may become preparing or be forwarded. An interrupted prefix stays reserved; restart never automatically forwards even a complete saved pair.
-4. Before daemon preparation acknowledgement, persist its complete context/action pair, immutable typed preparation evidence and exact challenge. Validate their byte/digest/nonce/time/expected-state bindings and separately retained private stage descriptors. No preparation acknowledgement precedes these flushes. A partial prefix cannot stand in for preparation or permit application.
-5. Before the broker exposes prepared status, validate the selected authenticated response, build its exact challenge from saved action/context and durably publish it. Before authorization/delivery, flush complete p1 and d1 slots followed by the spent-nonce authorization marker. Before mayApply:true, durably publish release. Before daemon effect entry, flush the successful check and entered evidence under the required final lock. Completion and terminal reconciliation require their own whole-effect proof and flushes.
+4. The daemon creates nonce, preparedAt, expiry and effectId once from the authenticated original prepare event and saved expected state. Before its owner-decision-prepared request, persist complete context/action, immutable typed preparation evidence and its exact deterministic challenge. Validate their byte/digest/nonce/time/expected-state bindings and separately retained private stage descriptors. No preparation acknowledgement precedes these flushes. A partial prefix cannot stand in for preparation or permit application.
+5. Before exposing prepared status, the broker validates the selected authenticated response and reconstructs the same challenge from saved action/context plus the daemon's unchanged nonce/preparedAt/exp, then durably publishes it. It creates no new challenge nonce or preparation binding. Before authorization/delivery, flush complete p1 and d1 slots followed by the spent-nonce authorization marker. Before mayApply:true, durably publish release. Before daemon effect entry, flush the successful check and entered evidence under the required final lock. Completion and terminal reconciliation require their own whole-effect proof and flushes.
+
+A duplicate daemon preparation never regenerates nonce, effectId, expected state
+or deadlines. Reopening visible preparation/challenge bytes requires explicit
+flush and full graph revalidation before repeating prepared acknowledgement,
+including exact duplicates. Recovery never schedules application.
 
 Every step rechecks the applicable original deadlines before proceeding. A
 partial graph or leftover proof must not expose an older success that would
@@ -58,12 +63,15 @@ does not claim existing generic file-lock stale-artifact cleanup already meets
 these bounds.
 
 Only the indeterminate observation and its preimage may replace old bytes. Their
-publication needs one bounded atomic association (for example, one framed slot
-containing both records within their combined caps), scratch reservation and
+publication uses the exact bounded observation-pair frame from the
+[slot contract](owner-decision-journal-records.md#producer-owned-slots), scratch reservation and
 durable replacement; an implementation cannot expose a mixed digest/preimage.
 Original entered/completed/refused evidence and authoritative linkage remain
-unchanged forever. Terminal resolution likewise atomically binds its record and
-preimage and is published once. No permission-bearing rollback or automatic
+unchanged forever. Terminal resolution uses the immutable terminal-pair frame with the same
+component/wrapper bounds. Flush completed or proven pre-effect refused evidence
+first, then body/trailer and exact readback of the terminal pair, then terminal
+outcome/report. Reopened visible pairs require explicit recovery flush before
+acknowledgement. No mixed record/preimage pair is ever a committed resolution. No permission-bearing rollback or automatic
 mutation retry is permitted after restart. Current authority, live check,
 receipt deadline and final expected-state lock checks remain independent
 requirements; a valid stored phase is never standalone authorization.
