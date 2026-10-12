@@ -3,9 +3,12 @@
 **Status:** Proposed preparation for [ADR-0028](decisions/ADR-0028-cross-machine-hubs-and-federation.md)
 and the [custody/delivery contract](federation-contract-proposal.md), which owns
 the policy and numeric limits. This plan adds no implementation authority,
-schema, codec or acceptance evidence. Owner choices remain pending; crypto and
-provider review precede implementation. #120/#122 acceptance does not accept
-federation.
+schema, codec or runtime acceptance evidence. The owner accepted the policy
+choices on 2026-10-11 in the
+[decision receipt](https://github.com/qwts/agent-comms/issues/28#issuecomment-6115481556);
+independent crypto and provider review gates remain. Deployment and spending
+need separate authorization. #120/#122 acceptance does not establish federation
+runtime acceptance.
 
 ## Existing seams and migration review
 
@@ -68,7 +71,8 @@ receipt is neither a mailbox ack nor evidence of work.
 
 ## Ownership and execution order
 
-The sequence below begins after ADR acceptance and independent crypto review.
+The owner policy is accepted; the sequence below remains gated on independent
+crypto review and the existing provider review boundary.
 Every slice has a reviewer-visible storage/security boundary before the next
 depends on it. The epic is not a third runtime implementation.
 

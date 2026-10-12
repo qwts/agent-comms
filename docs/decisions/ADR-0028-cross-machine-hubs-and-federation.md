@@ -1,14 +1,18 @@
 # ADR-0028: Broker federation through explicitly enrolled remote hubs
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-10-11
 **Issue:** qwts/agent-comms#28
 
-This proposes the policy for outbound machine tunnels (#118) and multiple
-remote hubs (#119). It authorizes no runtime, deployment, spending or release.
-Owner acceptance and repository review are pending. The supporting
-[federation contract](../federation-contract-proposal.md) defines proposed
-custody, finite defaults, receipts and acceptance evidence.
+The owner accepted the deployment/custody, explicit enrollment/multihoming and
+finite lifetime/capacity policy groups on 2026-10-11; the
+[decision receipt](https://github.com/qwts/agent-comms/issues/28#issuecomment-6115481556)
+records that approval. This decides policy for outbound machine tunnels (#118)
+and multiple remote hubs (#119), not delivered runtime. It authorizes no
+deployment, spending, provider provisioning or release. Independent crypto and
+provider/persistence/cost review gates remain. The supporting
+[federation contract](../federation-contract-proposal.md) defines the accepted
+custody, finite defaults, receipts and required acceptance evidence.
 
 ## Context
 
@@ -18,17 +22,18 @@ account and mailbox authority must survive federation. Existing A2A routes
 provide scoped configuration and durable-outbox patterns, not transparent
 broker federation: inbound A2A callers are principals and ambiguous outbound
 sends remain uncertain under [ADR-0005](ADR-0005-a2a-at-the-broker-edge.md).
-The owner's #28 production sequencing remains a release gate; this proposal
+The owner's #28 production sequencing remains a release gate; this decision
 does not reopen completed GeniusBar #41 or agent-bot #332/#45 work.
 
-## Proposed decision
+## Decision
 
-1. **Private relay, local authority.** Recommend an owner-operated, single-tenant
+1. **Private relay, local authority.** Use an owner-operated, single-tenant
    reference hub at `unforgiven.ai`, with a documented self-hostable protocol.
    Brokers initiate TLS WebSocket connections; no local inbound listener opens.
-   Recommend Cloudflare Workers with Durable Objects as the first implementation
-   candidate, subject to acceptance of custody, operating budget and a measured
-   persistence/cost review. No provider account or remote hub is required locally.
+   Cloudflare Workers with Durable Objects is the first implementation
+   candidate, subject to provider/key-custody and measured persistence/cost
+   review. Operating budget and deployment need separate authorization. No provider
+   account or remote hub is required locally.
    The relay stores bounded encrypted envelopes and routing metadata, never
    population registries, transcript locators, spaces, credentials or execution
    state. This is messaging custody, not the personal remote population server
@@ -61,14 +66,14 @@ does not reopen completed GeniusBar #41 or agent-bot #332/#45 work.
    all-or-none admission must not silently become a distributed transaction.
    Local named channels and their canonical addresses remain compatible.
 
-## Consequences and owner choices
+## Consequences
 
-Accept the deployment/custody recommendation, peer enrollment model,
-multihoming/no-bridge rule and finite offline budget together or request concrete
-changes before runtime work. Encryption and approved peer keys add setup and
+The accepted policy adds encryption and approved peer keys, with setup and
 rotation costs; metadata remains visible to the operator. Long protected
 deduplication consumes finite capacity and may refuse traffic during outages.
 No availability, global ordering, exactly-once execution or remote owner-presence
-guarantee follows from this decision. Accepted ADR text remains unchanged; on
-acceptance this record supersedes only ADR-0006's cross-machine exclusion and
-extends its address boundary, preserving the remaining local contract.
+guarantee follows from this decision. This record supersedes only ADR-0006's
+cross-machine exclusion and extends its address boundary, preserving the
+remaining local contract. The existing production sequencing, independent
+crypto review, provider/persistence/cost review and runtime acceptance gates
+remain; #28, #118 and #119 stay open until their full requirements have evidence.
