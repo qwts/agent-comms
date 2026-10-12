@@ -43,6 +43,8 @@ contract; they do not establish live target ownership or daemon C2 conformance.
 atomic receipt/presence key pair, stable namespace, broker service account and
 nonzero unsigned-32-bit service UID, plus a monotonic pair revision. This is
 neither a production enrollment record format nor a protected key provider.
+The [public enrollment codec](owner-enrollment-codec.md) validates proposed
+broker-local chains without establishing authority or custody.
 Installing a pair permits revisions 1–1023; revision 1024 is reserved for
 terminal revocation. Revocation/reinstallation requires a larger revision;
 exhaustion cannot reset the namespace, retained IDs or reservations. The terminal
