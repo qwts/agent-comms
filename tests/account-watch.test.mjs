@@ -3,7 +3,7 @@
 
 import assert from 'node:assert/strict';
 import { generateKeyPairSync, randomBytes, randomUUID } from 'node:crypto';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
@@ -197,6 +197,83 @@ test('account-watch and wake-report require an approved daemon credential', asyn
     op: 'account-watch', auth: { daemon: 'staged', secret: pendingSecret },
   });
   assert.equal(pending.reply.error.code, 'unauthenticated');
+});
+
+const TRACE = '00-1234567890abcdef1234567890abcdef-1234567890abcdef-ff';
+const OTHER_TRACE = '00-abcdef1234567890abcdef1234567890-abcd1234567890ef-01';
+async function tracedSend(to, traceparent, key = randomUUID()) {
+  return (await request(paths.socket, { op: 'send', auth: owner, agentId: luna,
+    to, body: 'wake trace fixture', key, traceparent, baggage: 'PRIVATE-BAGGAGE', tracestate: 'PRIVATE-STATE' })).reply;
+}
+
+test('only homogeneous live daemon wake batches carry context; mailbox, receipt and journal exclude it', async () => {
+  const watcher = openStream({ op: 'account-watch', auth: daemonAuth });
+  await until(() => watcher.events.some(e => e.event === 'ready'), 'trace watcher ready');
+  const invalid = [null, 17, {}, TRACE + '\n', TRACE.toUpperCase(), '01' + TRACE.slice(2),
+    '00-' + '0'.repeat(32) + TRACE.slice(35), TRACE.slice(0,36) + '0'.repeat(16) + '-ff'];
+  const cases = [[TRACE], [TRACE, TRACE], [TRACE, OTHER_TRACE], [undefined, TRACE], [TRACE, undefined], invalid];
+  for (const [index, contexts] of cases.entries()) {
+    const soul = `agent_${randomUUID()}`; await join(owner, soul);
+    const full = openStream({ op: 'watch', auth: owner, agentId: soul, mode: 'full' });
+    await until(() => full.events.some(e => e.event === 'ready'), 'full watcher ready');
+    const replies = [];
+    for (const context of contexts) {
+      const reply = await tracedSend(soul, context); assert.equal(reply.ok, true); replies.push(reply);
+      assert.equal(Object.hasOwn(reply, 'traceparent'), false);
+    }
+    await until(() => wakesFor(watcher.events, soul).length === 1, 'trace wake');
+    const wake = wakesFor(watcher.events, soul)[0];
+    assert.equal(wake.count, contexts.length);
+    assert.equal(wake.traceparent, index < 2 ? TRACE : undefined);
+    assert.equal(Object.hasOwn(wake, 'baggage'), false); assert.equal(Object.hasOwn(wake, 'tracestate'), false);
+    await until(() => full.events.filter(e => e.event === 'message').length === contexts.length, 'full messages');
+    const read = (await request(paths.socket, { op: 'read', auth: owner, agentId: soul })).reply;
+    const report = (await request(paths.socket, { op: 'wake-report', auth: daemonAuth, agentId: soul,
+      messageIds: replies.map(r => r.messageId), outcome: 'warm', traceparent: TRACE })).reply;
+    assert.equal(report.ok, true);
+    for (const value of [read, full.events, report]) assert.equal(JSON.stringify(value).includes('traceparent'), false);
+    await ack(owner, soul, replies.map(r => r.messageId)); await closeSocket(full.socket);
+  }
+  const journal = readFileSync(broker.log.file, 'utf8');
+  for (const canary of ['traceparent', TRACE, OTHER_TRACE, 'PRIVATE-BAGGAGE', 'PRIVATE-STATE']) assert.equal(journal.includes(canary), false);
+  await closeSocket(watcher.socket);
+});
+
+test('wake rate holds merge context conservatively and retries never replace live context', async () => {
+  const soul = `agent_${randomUUID()}`; await join(owner, soul);
+  const watcher = openStream({ op: 'account-watch', auth: daemonAuth });
+  await until(() => watcher.events.some(e => e.event === 'ready'), 'hold ready');
+  const first = await tracedSend(soul, TRACE);
+  await until(() => wakesFor(watcher.events, soul).length === 1, 'first wake');
+  await ack(owner, soul, [first.messageId]);
+  const key = randomUUID(), second = await tracedSend(soul, TRACE, key);
+  const retry = await tracedSend(soul, OTHER_TRACE, key);
+  assert.equal(retry.duplicate, true); assert.equal(retry.messageId, second.messageId);
+  await until(() => wakesFor(watcher.events, soul).length === 2, 'second wake');
+  assert.equal(wakesFor(watcher.events, soul)[1].traceparent, TRACE);
+  await ack(owner, soul, [second.messageId]);
+  const third = await tracedSend(soul, TRACE);
+  // Let this pending window enter the account rate hold before next window.
+  await new Promise(resolve => setTimeout(resolve, windowMs + 60));
+  const fourth = await tracedSend(soul, OTHER_TRACE);
+  await until(() => wakesFor(watcher.events, soul).length === 3, 'merged held wake');
+  const held = wakesFor(watcher.events, soul)[2];
+  assert.equal(held.count, 2); assert.equal(Object.hasOwn(held, 'traceparent'), false);
+  await ack(owner, soul, [third.messageId, fourth.messageId]);
+  await closeSocket(watcher.socket);
+});
+
+test('reconnect and restart catch-up wakes cannot recover trace context from retained messages', async () => {
+  const soul = `agent_${randomUUID()}`; await join(owner, soul);
+  const sent = await tracedSend(soul, TRACE); assert.equal(sent.ok, true);
+  for (const restart of [false, true]) {
+    if (restart) { await broker.stop(); broker = await new Broker({ paths, uidOf, limits }).start(); }
+    const watcher = openStream({ op: 'account-watch', auth: daemonAuth });
+    await until(() => wakesFor(watcher.events, soul).length === 1, 'catch-up wake');
+    assert.equal(Object.hasOwn(wakesFor(watcher.events, soul)[0], 'traceparent'), false);
+    await closeSocket(watcher.socket);
+  }
+  await ack(owner, soul, [sent.messageId]);
 });
 
 test('a burst produces one wake per soul, and the census shows the daemon watching', async () => {
