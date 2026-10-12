@@ -140,7 +140,8 @@ test('unchanged CI child refuses mismatched SID before cloning or marker issuanc
   const copied = path.join(root, 'child.ps1'); await writeFile(copied, original, { flag: 'wx' });
   await writeFile(path.join(root, 'inputs.json'), JSON.stringify({ sid: 'S-1-0-0', mode: 'candidate-compiler' }), { flag: 'wx' });
   let result;
-  try { result = await owned(shell(), ['-NoLogo','-NoProfile','-NonInteractive','-File',copied], clean(root)); }
+  // The same inclusive owned deadline covers fixed native imports and original child.
+  try { result = await owned(shell(), [...args('tests/windows-desktop-sid-launcher.ps1'), '-Child', copied], clean(root)); }
   catch (error) {
     const evidence = { kind: 'ci-child-terminal-unconfirmed', owned: error.ownedState ?? null, receipt: 'unavailable' };
     try {
