@@ -106,6 +106,15 @@ assembly refusal, foreign-type refusal and an invalid
 limit that refuses before native calls. These new tests remain unexecuted on
 Windows; syntax/source review establishes no new native cleanup evidence.
 
+## Environment serialization regression
+
+A desktop attempt failed at `environment` with `InvalidCastException` before
+process creation. The wrapper now stores fixed allowlisted entries as strings;
+the shared serializer keeps strict casts and all validation/order/size limits.
+An unexecuted classic regression requires original Join-Path cast failure and
+actual corrected-map admission without native calls. PSObject wrapping remains
+a hypothesis until reproduced. Input-escaping failure launched no wrapper. No compiler acceptance follows.
+
 ## Remaining native matrix
 
 | Case | Required evidence |
