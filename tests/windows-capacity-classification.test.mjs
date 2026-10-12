@@ -83,7 +83,7 @@ for (const variant of ['exact','count-mismatch','value-mismatch']) test(`native 
   writeFileSync(script,`import {spawn} from 'node:child_process';
 let child;process.send({id:0,paused:true});
 process.on('message',({id,op,args})=>{
- if(op==='start'){child=spawn(process.execPath,args,{stdio:'ignore',windowsHide:true});child.once('spawn',()=>process.send({id,ok:true,spawned:true}));}
+ if(op==='start'){child=spawn(process.execPath,args,{stdio:['ignore','pipe','pipe'],windowsHide:true});child.stdout.resume();child.stderr.resume();child.once('spawn',()=>process.send({id,ok:true,spawned:true}));}
  if(op==='stop'){child.once('close',()=>process.send({id,ok:true,stopped:true},()=>process.disconnect()));child.kill();}
 });`);
   const shell=path.join(process.env.SystemRoot,'System32/WindowsPowerShell/v1.0/powershell.exe');
