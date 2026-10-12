@@ -4,7 +4,8 @@ This disabled companion to [the lifecycle](owner-decision-lifecycle.md) proposes
 finite storage for [the exact retained slots](owner-decision-journal-records.md).
 It supplies no journal implementation, routes, custody, evidence transfer or
 R1–R4 acceptance. Broker and bot must review the backend and crash tests before
-admitting owner decisions.
+admitting owner decisions. The [disabled admission core](owner-decision-journal-core.md)
+implements only a storage prefix and supplies no capacity-support claim.
 
 ## Admission and retention
 

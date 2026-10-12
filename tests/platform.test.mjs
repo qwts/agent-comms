@@ -19,7 +19,10 @@ const seams = { 'local-channel': createLocalChannel, 'secret-store': createSecre
 // and native replacement are exercised in durable-file.test.mjs.
 // Diagnostic stderr isolates platform-specific subprocess custody and cleanup;
 // its stream port is exercised below and in diagnostic-process.test.mjs.
-const platformSources = [...Object.keys(seams), 'durable-file', 'diagnostic-stderr'];
+// Disabled admission journal locking is Darwin-only and refuses before any
+// filesystem operation elsewhere; owner-decision-journal-lock.test.mjs covers
+// native contention/crash/inheritance and the unsupported-platform boundary.
+const platformSources = [...Object.keys(seams), 'durable-file', 'diagnostic-stderr', 'owner-journal-lock'];
 
 // GeniusBar ADR-0046: every seam has a Windows branch, exercised with fake
 // runners in tests/platform-win32.test.mjs (secret store, service startup)
