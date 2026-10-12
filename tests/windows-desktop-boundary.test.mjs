@@ -240,3 +240,17 @@ test('desktop downloader shared transfer uses deterministic responses and owned 
     'unknown-over-cap-deleted','create-new-collision-preserved','sibling-preserved',
   ], failure: null, networkInvoked: false, rootRetained: true, nativeCloseProven: false, httpAbortProven: false });
 });
+
+test('desktop start diagnostics preserve first failure and separate cleanup evidence', {
+  skip: process.platform !== 'win32', timeout: 30000,
+}, async t => {
+  const root = await scratch(t, 'comms-desktop-start-diagnostic-');
+  const result = await owned(shell(), [...args('tests/windows-desktop-start-diagnostic.ps1'), '-Root', root], clean(root));
+  assert.equal(result.code, 0, 'fixed start diagnostic proof failed');
+  const bytes = await readFile(path.join(root, 'start-diagnostic.json')); assert.ok(bytes.length <= 2048);
+  assert.deepEqual(JSON.parse(bytes.toString('utf8')), { v: 1, status: 'passed', cases: [
+    'normal-proof-field-absent','first-failure-latched','cleanup-first-failure-latched','later-cleanup-observed',
+    'cleanup-only-distinct','native-before-buffer-cleanup-preserved','forged-fullname-record-refused',
+    'forged-fullname-failure-refused','binding-unavailable','foreign-record-refused','invalid-limit-no-native',
+  ], nativeInvoked: false, profileAttested: false, rootRetained: true });
+});

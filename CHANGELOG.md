@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Preserve the first client result or error before best-effort disposal, so a synchronous disposal throw or later close/error cannot replace it. Disposal attempts do not establish helper or descendant exit (#164).
 
 ### Validation
+- Retain fixed per-invocation Windows desktop start-failure stages and valid native error codes separately from bounded cleanup observations. Original failure and unknown terminal/EOF/close evidence remain distinct; no launch fallback or acceptance predicate changes (#164).
 - Add compile-time-only deterministic desktop downloader proofs through the shared production transfer and owned-file cleanup implementation, including exact-cap streaming hash/content checks, metadata/body refusals and collision/sibling preservation. Native execution, real HTTP abort and native close confirmation remain pending (#164).
 - Retain distinct macOS mailbox reporting observations: earlier healthy pairs, the failed helper-loss p95 pair, and changed-source helper-loss pairs passing unchanged budgets. This does not establish causation, total instrumentation cost, Windows/host or unread acceptance (#164).
 - Add separate disabled daemon-local preparation v2 vectors with bounded odd trust versions, entry mismatch refusals and rebound effect/reconciliation digests. V1 fixtures, schemas and public challenges remain unchanged; these specification checks do not implement daemon runtime entry (#77).

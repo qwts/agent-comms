@@ -5,10 +5,11 @@ $ErrorActionPreference = 'Stop'
 $repo = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 . (Join-Path $repo 'tools/acceptance/windows-desktop-root.ps1')
 . (Join-Path $repo 'tools/acceptance/windows-desktop-cleanup.ps1')
+. (Join-Path $repo 'tools/acceptance/windows-desktop-start-diagnostic.ps1')
 $identity = Assert-DesktopProfile
 $root = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData)) ('agent-comms-desktop-' + [Guid]::NewGuid().ToString('N'))
 $originalTemp = $env:TEMP; $originalTmp = $env:TMP
-$held = $null; $child = $null; $exitCode = 1; $terminal = $false; $streamsClosed = $false; $outerEmpty = $false; $outerAssigned = $false; $outerClosed = $false; $cleanupClock = $null; $cleanupUncertain = $false; $phase = 'exclusive-root'
+$held = $null; $child = $null; $exitCode = 1; $terminal = $false; $streamsClosed = $false; $outerEmpty = $false; $outerAssigned = $false; $outerClosed = $false; $cleanupClock = $null; $cleanupUncertain = $false; $phase = 'exclusive-root'; $startDiagnostic = $null
 try {
     # New-Item without Force refuses a collision. No caller chooses this root.
     $null = New-Item -ItemType Directory -Path $root
@@ -84,7 +85,11 @@ try {
 } catch {
     # Fixed phase only. No raw exception/credential/path serialization.
     $exitCode = 1
-    if ($phase -eq 'outer-start') { $cleanupUncertain = $true }
+    if ($phase -eq 'outer-start') {
+        $cleanupUncertain = $true
+        try { $startDiagnostic = Get-DesktopStartFailureDiagnostic $_.Exception }
+        catch { $startDiagnostic = @{available=$false;stage='start-diagnostic-unavailable'} }
+    }
 } finally {
     try {
         if ($child -and (-not $terminal -or -not $outerEmpty -or -not $streamsClosed)) {
@@ -112,8 +117,10 @@ try {
             # also required after every held close and environment restoration.
             if ($held) {
                 try {
-                    @{v=1;executionKind='desktop-current-user';task=$Task;phase=$phase;ownedNodeTerminalConfirmed=$terminal;ownedStreamsClosedConfirmed=$streamsClosed;outerJobAssignedBeforeResume=$outerAssigned;outerJobEmptyConfirmed=$outerEmpty;outerJobHandleClosedConfirmed=$outerClosed;cleanupUncertain=$cleanupUncertain;rootRetained=$true;finalOutcomeRequiresProcessExit=$true;status=$(if ($exitCode -eq 0) {'awaiting-final-cleanup'} else {'failed'})} |
-                        ConvertTo-Json -Compress | Set-Content -LiteralPath (Join-Path $root 'desktop.json') -Encoding UTF8
+                    $checkpoint = @{v=1;startDiagnostic=$startDiagnostic;executionKind='desktop-current-user';task=$Task;phase=$phase;ownedNodeTerminalConfirmed=$terminal;ownedStreamsClosedConfirmed=$streamsClosed;outerJobAssignedBeforeResume=$outerAssigned;outerJobEmptyConfirmed=$outerEmpty;outerJobHandleClosedConfirmed=$outerClosed;cleanupUncertain=$cleanupUncertain;rootRetained=$true;finalOutcomeRequiresProcessExit=$true;status=$(if ($exitCode -eq 0) {'awaiting-final-cleanup'} else {'failed'})} |
+                        ConvertTo-Json -Depth 5 -Compress
+                    if ([Text.Encoding]::UTF8.GetByteCount($checkpoint) -gt 8192) { throw 'desktop-checkpoint-bound' }
+                    $checkpoint | Set-Content -LiteralPath (Join-Path $root 'desktop.json') -Encoding UTF8
                 } catch {
                     $cleanupUncertain = $true; $exitCode = 1
                 }
