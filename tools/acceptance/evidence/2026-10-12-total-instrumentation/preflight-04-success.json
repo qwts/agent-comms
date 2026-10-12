@@ -1,0 +1,127 @@
+{
+  "v": 1,
+  "stage": "startup-normal-and-fault-cleanup-preflight",
+  "timedWorkloadRun": false,
+  "node": "v26.11.1",
+  "runnerSha256": "fff5620f589c7071a56546bfc58576bbbd613dcefdd21b52c28fc65e6dab71d5",
+  "archives": {
+    "old": {
+      "pin": "25dfa8362401489503f704c7322ad1314b7e6ddb",
+      "tree": "125c504a11148b2eec922f915683fb32d1366b48",
+      "archiveSha256": "03825d8bc712fdc1e844316635cca495c3d87ee884f255f81c9dfc731e68a67c"
+    },
+    "new": {
+      "pin": "e648d71277da72fc50c70ebcbb94c3c8f53c7cf3",
+      "tree": "a3bdaab0a6fa7068b293ab34dea66bba670b4e43",
+      "archiveSha256": "ca84dcec8c2a219025b936b953c3a48b3d387591fc114c8034af865fe711f25b"
+    }
+  },
+  "runs": [
+    {
+      "revision": "old",
+      "mode": "healthy",
+      "deployment": "one embedded Broker/client process; default callbacks",
+      "preflight": true,
+      "importMs": 13.785916,
+      "brokerStartMs": 26.675041999999998,
+      "warmupMs": 102.475417,
+      "actualLocalFailureWarmup": 1,
+      "shutdownMs": 3.025332999999989,
+      "ownedTerminalConfirmed": true,
+      "helperWasPresent": false,
+      "helperExitConfirmed": true,
+      "diagnosticBytes": 0,
+      "diagnosticLines": 0,
+      "destination": "healthy",
+      "failedHelperApplicable": false,
+      "peakMainRssKiB": 61952,
+      "peakHelperRssKiB": 0,
+      "peakTotalRssKiB": 61952,
+      "mainCpuSeconds": 0.11,
+      "helperCpuSeconds": 0,
+      "tail": [
+        {
+          "mainRssKiB": 61952,
+          "helperRssKiB": 0,
+          "mainCpuSeconds": 0.11,
+          "helperCpuSeconds": 0
+        },
+        {
+          "mainRssKiB": 61952,
+          "helperRssKiB": 0,
+          "mainCpuSeconds": 0.11,
+          "helperCpuSeconds": 0
+        }
+      ]
+    },
+    {
+      "revision": "old",
+      "preflight": true,
+      "startupFault": true,
+      "timedWorkloadRun": false,
+      "importMs": 13.450291,
+      "brokerStartMs": 19.18275,
+      "warmupMs": 102.40033400000002,
+      "fixtureFailure": {
+        "stage": "fixture-startup-fault",
+        "check": "startup-injected-fault"
+      },
+      "ownedTerminalConfirmed": true,
+      "helperWasPresent": false,
+      "helperExitConfirmed": true
+    },
+    {
+      "revision": "new",
+      "mode": "healthy",
+      "deployment": "one embedded Broker/client process; default callbacks",
+      "preflight": true,
+      "importMs": 12.673500000000002,
+      "brokerStartMs": 20.160458000000002,
+      "warmupMs": 102.392709,
+      "actualLocalFailureWarmup": 1,
+      "shutdownMs": 2.808791999999926,
+      "ownedTerminalConfirmed": true,
+      "helperWasPresent": true,
+      "helperExitConfirmed": true,
+      "diagnosticBytes": 365,
+      "diagnosticLines": 1,
+      "destination": "healthy",
+      "failedHelperApplicable": false,
+      "peakMainRssKiB": 61872,
+      "peakHelperRssKiB": 42672,
+      "peakTotalRssKiB": 104544,
+      "mainCpuSeconds": 0.11,
+      "helperCpuSeconds": 0.07,
+      "tail": [
+        {
+          "mainRssKiB": 61872,
+          "helperRssKiB": 42672,
+          "mainCpuSeconds": 0.11,
+          "helperCpuSeconds": 0.07
+        },
+        {
+          "mainRssKiB": 61872,
+          "helperRssKiB": 42672,
+          "mainCpuSeconds": 0.11,
+          "helperCpuSeconds": 0.07
+        }
+      ]
+    },
+    {
+      "revision": "new",
+      "preflight": true,
+      "startupFault": true,
+      "timedWorkloadRun": false,
+      "importMs": 15.501082999999998,
+      "brokerStartMs": 18.074042,
+      "warmupMs": 100.843583,
+      "fixtureFailure": {
+        "stage": "fixture-startup-fault",
+        "check": "startup-injected-fault"
+      },
+      "ownedTerminalConfirmed": true,
+      "helperWasPresent": true,
+      "helperExitConfirmed": true
+    }
+  ]
+}

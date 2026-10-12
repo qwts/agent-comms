@@ -1,0 +1,7 @@
+{
+  "testedRunnerSha256": "6cd158abd67e7971962f37be974c043692fc70aa1f737fb3db98372e8a731184",
+  "timedWorkloadRun": false,
+  "finding": "macOS comm column default truncated executable identity; first accounting sample rejected before workload",
+  "cleanup": "old fixture executable, parent and exact fixture command independently verified using explicit wide comm; SIGTERM terminal confirmed via owned command session exit 1; scratch retained",
+  "originalFailureJsonUnchanged": true
+}

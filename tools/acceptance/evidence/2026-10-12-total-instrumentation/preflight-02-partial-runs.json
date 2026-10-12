@@ -1,0 +1,55 @@
+[
+  {
+    "revision": "old",
+    "mode": "healthy",
+    "deployment": "one embedded Broker/client process; default callbacks",
+    "preflight": true,
+    "importMs": 27.791041000000003,
+    "brokerStartMs": 26.563291999999997,
+    "warmupMs": 102.62650000000001,
+    "actualLocalFailureWarmup": 1,
+    "shutdownMs": 4.477125000000001,
+    "ownedTerminalConfirmed": true,
+    "helperWasPresent": false,
+    "helperExitConfirmed": true,
+    "diagnosticBytes": 0,
+    "diagnosticLines": 0,
+    "destination": "healthy",
+    "failedHelperApplicable": false,
+    "peakMainRssKiB": 62544,
+    "peakHelperRssKiB": 0,
+    "peakTotalRssKiB": 62544,
+    "mainCpuSeconds": 0.18,
+    "helperCpuSeconds": 0,
+    "tail": [
+      {
+        "mainRssKiB": 62544,
+        "helperRssKiB": 0,
+        "mainCpuSeconds": 0.18,
+        "helperCpuSeconds": 0
+      },
+      {
+        "mainRssKiB": 62544,
+        "helperRssKiB": 0,
+        "mainCpuSeconds": 0.18,
+        "helperCpuSeconds": 0
+      }
+    ]
+  },
+  {
+    "revision": "old",
+    "preflight": true,
+    "startupFault": true,
+    "timedWorkloadRun": false,
+    "importMs": 22.869542000000003,
+    "brokerStartMs": 22.284625,
+    "warmupMs": 102.842042,
+    "fixtureFailure": {
+      "stage": "fixture-startup-fault",
+      "check": "startup-injected-fault"
+    },
+    "ownedTerminalConfirmed": true,
+    "helperWasPresent": false,
+    "helperExitConfirmed": true
+  }
+]
