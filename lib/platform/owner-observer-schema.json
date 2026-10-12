@@ -1,0 +1,7 @@
+{
+  "projectionKind": "geniusbar-native-cutover-inspection",
+  "installationKind": "geniusbar-native-installation",
+  "pinsKind": "geniusbar-native-enrollment-pins",
+  "helperService": "app.geniusbar.owner-admin",
+  "helperIdentifier": "app.geniusbar.owner-admin"
+}
