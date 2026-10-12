@@ -130,3 +130,7 @@ byte stability, key rotation/revocation scenarios, restored-state uncertainty
 and exact maximum-size vectors. Review dependencies, constant-time/native API
 behavior and key erasure limitations separately. No deployment, account creation
 or spending is authorized by this review proposal.
+
+The separate [candidate v1 wire profile](federation-wire-candidate.md) makes
+one suite, coverage and structural size budget concrete for independent review.
+It remains a proposal with explicit native compatibility and completeness gates.
