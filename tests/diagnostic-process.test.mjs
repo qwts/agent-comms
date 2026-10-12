@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { once } from 'node:events';
-import { copyFileSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -15,6 +15,13 @@ import { pairAccount } from './helpers/broker.mjs';
 
 const moduleUrl = (file) => JSON.stringify(new URL(`../lib/${file}`, import.meta.url).href);
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function copiedTransport(root) {
+  mkdirSync(path.join(root, 'platform'));
+  const transport = path.join(root, 'platform', 'diagnostic-stderr.mjs');
+  copyFileSync(new URL('../lib/platform/diagnostic-stderr.mjs', import.meta.url), transport);
+  return transport;
+}
 
 test('fd transport acknowledges only a complete line after bounded partial progress', async () => {
   const line = '{"event":"safe","value":"☃"}\n';
@@ -83,8 +90,7 @@ test('helper does not inherit NODE_OPTIONS or a secret-bearing environment', (t)
 test('missing and syntax-broken helper startup stay silent, disable diagnostics and never restart', (t) => {
   const root = mkdtempSync(path.join(os.tmpdir(), 'ac-private-path-canary-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
-  const transport = path.join(root, 'diagnostic-stderr.mjs');
-  copyFileSync(new URL('../lib/diagnostic-stderr.mjs', import.meta.url), transport);
+  const transport = copiedTransport(root);
   for (const broken of ['missing', 'syntax']) {
     if (broken === 'syntax') writeFileSync(path.join(root, 'diagnostic-writer.mjs'), 'this is invalid javascript !');
     const result = spawnSync(process.execPath, ['--input-type=module', '-e', `
@@ -106,8 +112,7 @@ test('missing and syntax-broken helper startup stay silent, disable diagnostics 
 test('helper environment excludes caller credentials as well as preload hooks', (t) => {
   const root = mkdtempSync(path.join(os.tmpdir(), 'ac-diagnostic-secret-env-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
-  const transport = path.join(root, 'diagnostic-stderr.mjs');
-  copyFileSync(new URL('../lib/diagnostic-stderr.mjs', import.meta.url), transport);
+  const transport = copiedTransport(root);
   writeFileSync(path.join(root, 'diagnostic-writer.mjs'), `
     if (process.env.DIAGNOSTIC_SECRET_CANARY || process.env.NODE_OPTIONS) process.stderr.write('CANARY-credential-leak');
     process.on('disconnect', () => process.exit(0));
@@ -129,8 +134,7 @@ test('helper environment excludes caller credentials as well as preload hooks', 
 test('natural parent exit kills an unacknowledging helper on every supported platform', async (t) => {
   const root = mkdtempSync(path.join(os.tmpdir(), 'ac-diagnostic-stalled-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
-  const transport = path.join(root, 'diagnostic-stderr.mjs');
-  copyFileSync(new URL('../lib/diagnostic-stderr.mjs', import.meta.url), transport);
+  const transport = copiedTransport(root);
   writeFileSync(path.join(root, 'diagnostic-writer.mjs'), `
     process.on('message', () => {});
     process.on('disconnect', () => process.exit(0));
@@ -182,7 +186,7 @@ for (const mode of ['unread-stderr', 'stopped-helper']) {
       import { Broker } from ${moduleUrl('broker.mjs')};
       import { brokerPaths } from ${moduleUrl('paths.mjs')};
       import { createDiagnosticSink } from ${moduleUrl('diagnostics.mjs')};
-      import { createDiagnosticStderr } from ${moduleUrl('diagnostic-stderr.mjs')};
+      import { createDiagnosticStderr } from ${moduleUrl('platform/diagnostic-stderr.mjs')};
       const stream = createDiagnosticStderr(); const sink = createDiagnosticSink(stream);
       const broker = await new Broker({ paths: brokerPaths(), mode: 'single-account', now: () => 1000, diagnostic: sink.report }).start();
       let flood;
