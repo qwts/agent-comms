@@ -1,3 +1,5 @@
+import {createServer} from 'node:net';
+import {controlReady,inspectorRpc} from './inspector-client.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, execFileSync } from 'node:child_process';
@@ -22,7 +24,8 @@ function admission(index) {
 test('full relay body/outcome caps, bounded pages and injected-clock protection',async()=>{
   assert.ok(['darwin','linux'].includes(process.platform),'RSS sampling requires supported ps platform');
   const scratch=await mkdtemp(join(tmpdir(),'agent-comms-do-full-cap-'));
-  let child,exited,primary,port,commandLine,stderr='';
+  let child,exited,primary,port,commandLine,inspectorPort,inspectorSocket,serial=0,stderr='';
+  const inspect=process.env.PROBE_INSPECTOR==='1';
   const report={scope:'local-synthetic-full-relay-caps',node:process.version,workerd:require('workerd').version,
     caps:limits,fullRelayBodyOutcomeCapsTested:true,otherAdmissionScopesTested:false,processRssIsNotIsolateHeap:true,productionGuarantees:false,cases:[],sourceHashes:{}};
   const began=performance.now();
@@ -36,6 +39,14 @@ test('full relay body/outcome caps, bounded pages and injected-clock protection'
     const value=Number(match[2])*1024;
     assert.ok(Number.isFinite(value)&&value>0);rss.push(value);
     assert.equal(child.exitCode,null);assert.equal(child.signalCode,null);
+  };
+  const sampleHeap=async(phase)=>{
+    if(!inspect)return;
+    sampleRss();
+    const result=await inspectorRpc(inspectorSocket,++serial,'Runtime.getHeapUsage');
+    if(result.error)throw new Error('full-cap-heap-method-unsupported');
+    const fields={};for(const key of ['usedSize','totalSize','embedderHeapUsedSize','backingStorageSize'])if(result.result[key]!==undefined){assert.ok(Number.isFinite(result.result[key])&&result.result[key]>=0);fields[key]=result.result[key];}
+    assert.ok('usedSize' in fields);report.inspector.observations.push({phase,...fields});assert.ok(report.inspector.observations.length<=20);sampleRss();
   };
   const call=async(input)=>{
     assert.ok(Date.now()<deadline,'finite overall probe deadline');
@@ -62,7 +73,7 @@ test('full relay body/outcome caps, bounded pages and injected-clock protection'
     return {count,actualBytes,hash:hash.digest('hex'),maxRowsRead};
   };
   try {
-    for(const name of ['full-cap-worker.mjs','full-cap.test.mjs','probe-worker.mjs','package-lock.json'])
+    for(const name of ['full-cap-worker.mjs','full-cap.test.mjs','probe-worker.mjs','package-lock.json','inspector-client.mjs'])
       report.sourceHashes[name]=createHash('sha256').update(await readFile(new URL(name,import.meta.url))).digest('hex');
     assert.equal(report.workerd,'1.20260730.1');
     const storage=join(scratch,'storage');await mkdir(storage,{mode:0o700});
@@ -81,32 +92,31 @@ const config :W.Config = (
   (name = "storage", disk = (path = ${JSON.stringify(storage)}, writable = true))
  ], sockets = [(name = "probe", address = "127.0.0.1:0", http = (), service = "main")]
 );`,{mode:0o600});
+    if(inspect){const reserve=createServer();reserve.listen(0,'127.0.0.1');await once(reserve,'listening');inspectorPort=reserve.address().port;await new Promise(resolve=>reserve.close(resolve));}
     const args=['serve','--experimental','--control-fd=3','-I/',config];
+    if(inspect)args.splice(1,0,'--inspector-addr=127.0.0.1:'+inspectorPort);
     commandLine=[require('workerd').default,...args].join(' ');
     child=spawn(require('workerd').default,args,{stdio:['ignore','ignore','pipe','pipe']});
     exited=once(child,'exit');exited.catch(()=>{});
     child.stderr.on('data',chunk=>{stderr=(stderr+chunk).slice(-8192);});
-    port=await new Promise((resolve,reject)=>{
-      let buffered='';const timer=setTimeout(()=>reject(new Error('workerd-ready-timeout')),10000);
-      child.stdio[3].on('data',chunk=>{
-        if(Buffer.byteLength(buffered)+chunk.length>65536){clearTimeout(timer);reject(new Error('workerd-control-buffer-limit'));return;}
-        buffered+=chunk;let boundary;
-        while((boundary=buffered.indexOf('\n'))!==-1){const line=buffered.slice(0,boundary);buffered=buffered.slice(boundary+1);
-          try{const ready=JSON.parse(line);if(ready.event==='listen'&&ready.socket==='probe'){clearTimeout(timer);resolve(ready.port);}}catch{}}
-      });
-      child.once('error',error=>{clearTimeout(timer);reject(error);});
-      child.once('exit',()=>{clearTimeout(timer);reject(new Error('workerd-start-failed: '+stderr));});
-    });
-    assert.equal((await call({op:'egress-check'})).outboundStatus,403);sampleRss();
+    port=await controlReady(child.stdio[3],child,10000);
+    if(inspect){
+      sampleRss();
+      const response=await fetch('http://127.0.0.1:'+inspectorPort+'/json/list',{signal:AbortSignal.timeout(5000)});const raw=await response.text();assert.ok(Buffer.byteLength(raw)<=65536);const targets=JSON.parse(raw);assert.ok(targets.length<=8);const target=targets.find(row=>row.id==='main');assert.ok(target);
+      const url=new URL(target.webSocketDebuggerUrl);assert.equal(url.hostname,'127.0.0.1');assert.equal(Number(url.port),inspectorPort);assert.equal(url.protocol,'ws:');
+      report.inspector={targetId:target.id,providerMemoryCompliance:false,observations:[]};
+      inspectorSocket=new WebSocket(url);let timer;try{await Promise.race([once(inspectorSocket,'open'),new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('inspector-open-timeout')),5000);})]);}finally{clearTimeout(timer);}sampleRss();
+    }
+    assert.equal((await call({op:'egress-check'})).outboundStatus,403);sampleRss();await sampleHeap('empty');
     for(let offset=0;offset<OUTCOMES;offset+=100) {
       const items=Array.from({length:100},(_,i)=>admission(offset+i));
       const result=await call({op:'batch',items});assert.deepEqual(result.results,Array(100).fill('accepted'));
-      if(offset%10000===0)sampleRss();
+      if(offset%10000===0){sampleRss();await sampleHeap('admission-'+offset);}
     }
     const full=await call({op:'usage'});
     assert.equal(full.bodies,BODY_COUNT);assert.equal(full.body_bytes,BODY_BYTES);
     assert.equal(full.outcomes,OUTCOMES);assert.equal(full.outcome_bytes,OUTCOME_BYTES);
-    report.databaseBytesAtFull=full.databaseBytes;sampleRss();
+    report.databaseBytesAtFull=full.databaseBytes;sampleRss();await sampleHeap('full');
     const bodyBefore=await pages('body-page',1),evidenceBefore=await pages('evidence-page',32);
     assert.equal(bodyBefore.count,BODY_COUNT);assert.equal(evidenceBefore.count,OUTCOMES);
     assert.equal(bodyBefore.actualBytes,BODY_BYTES);assert.equal(evidenceBefore.actualBytes,OUTCOME_BYTES);
@@ -119,6 +129,7 @@ const config :W.Config = (
     assert.equal((await call({op:'admit',...admission(90000),digest:'changed'})).result,'conflict');
     assert.deepEqual(await pages('body-page',1),bodyBefore);
     assert.deepEqual(await pages('evidence-page',32),evidenceBefore);
+    await sampleHeap('paged-and-refused');
     report.cases.push({name:'full-count-byte-caps-and-bounded-content-pages',pass:true,bodyBefore,evidenceBefore});
     for(let i=0;i<100;i++)assert.deepEqual(await call({op:'sweep',now:EXPIRES,limit:100}),{bodies:100,outcomes:0});
     assert.equal((await call({op:'usage'})).bodies,0);
@@ -132,10 +143,12 @@ const config :W.Config = (
     assert.equal((await call({op:'usage'})).outcomes,OUTCOMES);
     assert.equal((await call({op:'admit',...admission(OUTCOMES+1)})).result,'capacity');
     report.cases.push({name:'body-expiry-does-not-release-protected-outcome-reservation',pass:true,retainedAtBoundaryMs:120000,releasedAtMs:120001});
+    await sampleHeap('expired-protected-and-replaced');
     sampleRss();report.workerdProcessRssBytes={samples:rss.length,min:Math.min(...rss),max:Math.max(...rss)};
     report.elapsedMs=Math.round(performance.now()-began);
   } catch(error){primary=error;report.failure={name:error.name,code:error.code??null};}
   finally {
+    inspectorSocket?.close();
     let stopped=!child?.pid;
     try {
       if(child?.exitCode===null&&child?.signalCode===null)child.kill('SIGKILL');
