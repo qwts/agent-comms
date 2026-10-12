@@ -9,6 +9,7 @@ import { createLocalChannel } from '../lib/platform/local-channel.mjs';
 import { createSecretStore } from '../lib/platform/secret-store.mjs';
 import { createServiceStartup } from '../lib/platform/service-startup.mjs';
 import { createAccountIsolation } from '../lib/platform/account-isolation.mjs';
+import { createDiagnosticStderr } from '../lib/platform/diagnostic-stderr.mjs';
 import * as channel from '../lib/broker/server.mjs';
 import * as startup from '../lib/broker/launchagent.mjs';
 
@@ -16,13 +17,25 @@ const seams = { 'local-channel': createLocalChannel, 'secret-store': createSecre
   'service-startup': createServiceStartup, 'account-isolation': createAccountIsolation };
 // Durable replacement has one function port; its POSIX and Windows branches
 // and native replacement are exercised in durable-file.test.mjs.
-const platformSources = [...Object.keys(seams), 'durable-file'];
+// Diagnostic stderr isolates platform-specific subprocess custody and cleanup;
+// its stream port is exercised below and in diagnostic-process.test.mjs.
+const platformSources = [...Object.keys(seams), 'durable-file', 'diagnostic-stderr'];
 
 // GeniusBar ADR-0046: every seam has a Windows branch, exercised with fake
 // runners in tests/platform-win32.test.mjs (secret store, service startup)
 // and tests/platform-win32-channel.test.mjs (account isolation, local
 // channel). The port check below keeps every macOS operation name on win32.
 const implemented = new Set(['secret-store', 'service-startup', 'account-isolation', 'local-channel']);
+
+test('diagnostic stderr: Windows has the same lazy write and lifecycle port', () => {
+  for (const platform of ['darwin', 'win32']) {
+    const stream = createDiagnosticStderr(platform);
+    assert.equal(typeof stream.write, 'function');
+    assert.equal(typeof stream.on, 'function');
+    assert.equal(typeof stream.removeListener, 'function');
+    assert.equal(stream.pid, null, 'constructing diagnostics must not spawn a helper');
+  }
+});
 
 for (const [name, create] of Object.entries(seams)) {
   test(`${name}: Windows has the same port${implemented.has(name) ? '' : ' and every operation refuses before side effects'}`, () => {
