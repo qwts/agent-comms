@@ -63,6 +63,27 @@ claiming a stall or capacity. The original-pin [subsequent scoped pass](../../do
 records both completed stale APIs and proven cleanup, leaving whole startup
 separate. See the [control and timing scope](../../docs/windows-candidate-startup-evidence.md#fixed-source-channel-control-and-timing).
 
+The manual `candidate-compiler` task derives the exact fixed production worker
+through its public spawn seam, validates its command and source hashes, and
+removes only the final pipe `Run` call. Four controls run in
+implicit/explicit/explicit/implicit order, each with a 15-second work deadline.
+Explicit controls import the exact built-in Utility manifest under the verified
+Windows PowerShell home. Up to six ordered .NET-written markers retain bounded
+elapsed times and manifest booleans; stderr is counted without retaining text.
+Each paused fixture is assigned to the existing private job before shell spawn,
+using the same exact descendant command guard. Terminal, stdio, empty-job and
+scratch-cleanup uncertainty skips all remaining controls. Separate bounded
+supervisor, attach and cleanup budgets remain diagnostic overhead; the existing
+15-minute bootstrap watchdog is unchanged. Reports retain the compiler helper,
+runner, supervisor, controller, lifecycle and fixed worker source hashes.
+These derived controls make no pipe connection, Broker startup or workload and
+do not establish actual connector acceptance, capacity or installed-host support.
+The existing supervisor samples every 250ms with one request in flight and a
+5-second request deadline; at least one exact-command relay observation is
+required. Sampling failures stop the control, and the sampler drains before
+fixture/job cleanup. Samples cannot prove the command of every short-lived
+descendant; the private job contains all descendants regardless.
+
 ## Total instrumentation comparison with actual source archives
 
 The separate macOS-only probe compares complete unmodified production trees:

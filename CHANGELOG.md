@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Preserve the first client result or error before best-effort disposal, so a synchronous disposal throw or later close/error cannot replace it. Disposal attempts do not establish helper or descendant exit (#164).
 
 ### Validation
+- Add an opt-in Windows derived compiler control with exact worker/argv hashes, opposite-order implicit and explicit built-in Utility imports, fixed stage markers and a 15-second work deadline. Existing private-job and descendant guards apply; cleanup uncertainty stops further controls. This does not establish actual connector, capacity or host acceptance (#164).
 - Development-only Windows startup evidence can preserve the existing closed local connector stage through correlated fixture failure IPC, using an explicitly pinned reviewed source. Historical failures remain retained; native Windows capacity and installed host acceptance remain unqualified (#164).
 
 ## [0.5.3] - 2026-10-12
