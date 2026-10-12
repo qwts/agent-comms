@@ -5,7 +5,7 @@ This opt-in pilot is related to
 [SOP #85](https://github.com/qwts/qwts-agent-sop/issues/85); both issues remain
 open. It is a finite capacity qualification tool, not benchmark acceptance,
 100-request/s product support, packaged host acceptance or desktop evidence.
-No hosted run is claimed by this implementation document. Retain failed
+No successful hosted preflight or capacity result is claimed here. Retain failed
 preflights and capacity failures before considering any change to the workload.
 
 ## Exact production behavior
@@ -89,6 +89,19 @@ The existing manual `Windows desktop diagnostics` workflow offers three tasks:
 use the disposable standard-user account/profile bootstrap and install no
 scheduled task, daemon or host. The workflow remains manual; normal CI runs
 only the small admission regressions and empty-job supervisor validation.
+
+The initial hosted preflight
+[38202022510](https://github.com/qwts/agent-comms/actions/runs/38202022510), at
+head `1e45919a5a6efbf2c345915509963fda671bd2f9`, failed in the standard-user
+bootstrap. The upload step found no report files, so none of the six requested
+normal/fault/forced cases can be assessed from that run. Its retained full log
+has SHA256 `8b9a657633bc18e03cf065f9ed0f4eeeddefd937c38c3f036f0113270674a3d8`.
+The relative report argument was resolved through .NET's process directory,
+which can differ from PowerShell's location; this is a possible explanation,
+not an established cause of the bootstrap failure. The bootstrap now resolves
+the FileSystem provider path explicitly and prints a fixed, path-free terminal
+summary even if report writing fails. Windows CI deliberately separates those
+directories to check that reports follow PowerShell's location.
 
 After reviewing the exact PR, root dispatches `capacity-preflight` first. It
 checks old/new normal startup and cleanup, an injected startup fault and forced

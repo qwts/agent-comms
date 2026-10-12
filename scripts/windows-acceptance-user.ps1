@@ -11,7 +11,8 @@ if (-not ([Security.Principal.WindowsPrincipal]$identity).IsInRole([Security.Pri
     throw 'CI bootstrap requires the disposable runner administrator'
 }
 $repository = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$Report = [IO.Path]::GetFullPath($Report)
+. (Join-Path $repository 'tools/acceptance/windows-report-path.ps1')
+$Report = Resolve-WindowsAcceptanceReportPath $Report
 $runId = [Guid]::NewGuid().ToString('N')
 $userName = 'comms' + $runId.Substring(0, 12)
 # New-LocalUser limits Description to 48 characters; keep the full run marker.
@@ -189,8 +190,17 @@ try {
         $reportData.bootstrapCleanup = @{errors=@($cleanupErrors.ToArray());removed=($cleanupErrors.Count -eq 0)}
         if ($failure -or $cleanupErrors.Count -gt 0) { $reportData.status = 'failed' }
     }
-    New-Item -ItemType Directory -Path (Split-Path -Parent $Report) -Force | Out-Null
-    $reportData | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $Report -Encoding utf8
+    try {
+        New-Item -ItemType Directory -Path (Split-Path -Parent $Report) -Force | Out-Null
+        $reportData | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $Report -Encoding utf8
+    } catch {
+        $cleanupErrors.Add('report-write-failed')
+        $exitCode = 1
+    }
+    # This fallback contains only bounded control fields, never paths or SIDs.
+    @{status=$(if ($exitCode -eq 0) { 'passed' } else { 'failed' });gate=$gate;
+      errorType=$(if ($failure) { $failure.errorType } else { $null });cleanup=@($cleanupErrors.ToArray())} |
+        ConvertTo-Json -Depth 4 -Compress | ForEach-Object { [Console]::Out.WriteLine($_) }
     if ($password) { $password.Dispose() }
     $password = $null
     $credential = $null

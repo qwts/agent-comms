@@ -130,11 +130,12 @@ jobs:
       - name: Validate dev-only Windows capacity supervisor without workload
         shell: pwsh
         run: |
-          foreach ($file in @('tools/acceptance/windows-capacity-job.ps1','scripts/windows-acceptance-user.ps1','scripts/windows-acceptance-child.ps1')) {
+          foreach ($file in @('tools/acceptance/windows-capacity-job.ps1','tools/acceptance/windows-report-path.ps1','tests/windows-acceptance-report-path.ps1','scripts/windows-acceptance-user.ps1','scripts/windows-acceptance-child.ps1')) {
             $tokens = $null; $parseErrors = $null
             [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $file), [ref]$tokens, [ref]$parseErrors)
             if ($parseErrors.Count -ne 0) { throw 'Capacity PowerShell parse failed' }
           }
+          & ./tests/windows-acceptance-report-path.ps1
           $env:PSModulePath = "$env:WINDIR\System32\WindowsPowerShell\v1.0\Modules"
           & "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -File tools/acceptance/windows-capacity-job.ps1 -ValidateOnly
           exit $LASTEXITCODE
