@@ -119,6 +119,8 @@ jobs:
         run: node --test tests/platform-win32-task-job-native.test.mjs
       - name: Verify native durable checkpoint replacement
         run: node --test tests/durable-file.test.mjs
+      - name: Verify isolated diagnostic writer lifecycle
+        run: node --test tests/diagnostic-process.test.mjs
       - name: Verify native custody and DPAPI through inherited PowerShell 7 environment
         run: node --test tests/platform-win32-custody-native.test.mjs
 
