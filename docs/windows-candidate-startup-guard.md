@@ -36,3 +36,7 @@ sources, changed runtime pins, offered rates or automatic retries. Exact-head
 native CI and separate manual authorization precede one full-startup run.
 Candidate success cannot validate the older immutable comparison pins; any
 later baseline reconciliation requires independent review.
+
+The subsequent [retained pairing failure](windows-candidate-pairing-evidence.md)
+reached an actual Broker.start return within this guard; it does not qualify
+the complete startup-plus-delivery sequence.

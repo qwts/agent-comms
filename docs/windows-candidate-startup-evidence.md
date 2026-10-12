@@ -2,7 +2,9 @@
 
 This continues [production startup diagnosis](windows-capacity-startup-evidence.md)
 for [#164](https://github.com/qwts/agent-comms/issues/164), which remains open.
-No corrected native startup or capacity is qualified.
+No corrected startup-plus-delivery or capacity is qualified. The subsequent
+[bounded pairing failure](windows-candidate-pairing-evidence.md) records an actual
+Broker.start return without qualifying the complete sequence.
 
 
 Production stale-probe settlement repair [#219](https://github.com/qwts/agent-comms/pull/219)
