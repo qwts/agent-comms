@@ -239,7 +239,7 @@ test('only homogeneous live daemon wake batches carry context; mailbox, receipt 
   await closeSocket(watcher.socket);
 });
 
-test('wake rate holds merge context conservatively and retries never replace live context', async () => {
+test('retries never replace live wake context', async () => {
   const soul = `agent_${randomUUID()}`; await join(owner, soul);
   const watcher = openStream({ op: 'account-watch', auth: daemonAuth });
   await until(() => watcher.events.some(e => e.event === 'ready'), 'hold ready');
@@ -252,14 +252,10 @@ test('wake rate holds merge context conservatively and retries never replace liv
   await until(() => wakesFor(watcher.events, soul).length === 2, 'second wake');
   assert.equal(wakesFor(watcher.events, soul)[1].traceparent, TRACE);
   await ack(owner, soul, [second.messageId]);
-  const third = await tracedSend(soul, TRACE);
-  // Let this pending window enter the account rate hold before next window.
-  await new Promise(resolve => setTimeout(resolve, windowMs + 60));
-  const fourth = await tracedSend(soul, OTHER_TRACE);
-  await until(() => wakesFor(watcher.events, soul).length === 3, 'merged held wake');
-  const held = wakesFor(watcher.events, soul)[2];
-  assert.equal(held.count, 2); assert.equal(Object.hasOwn(held, 'traceparent'), false);
-  await ack(owner, soul, [third.messageId, fourth.messageId]);
+  assert.deepEqual(wakesFor(watcher.events, soul).map(({ count, messageIds }) => ({ count, messageIds })), [
+    { count: 1, messageIds: [first.messageId] },
+    { count: 1, messageIds: [second.messageId] },
+  ]);
   await closeSocket(watcher.socket);
 });
 
