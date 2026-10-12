@@ -1,0 +1,19 @@
+{
+  "status": "failed",
+  "stage": "channel-prepare-and-stale-probes",
+  "check": "control-deadline",
+  "supervisorPhase": "private-job-assigned",
+  "revision": "old",
+  "fixturePhase": "channel-stale-admin",
+  "ownedCleanup": {
+    "fixtureOwnedTerminalConfirmed": true,
+    "fixtureStdioClosedConfirmed": true,
+    "supervisorOwnedTerminalConfirmed": true,
+    "supervisorStdioClosedConfirmed": true,
+    "forcedSupervisorTerminationRequested": false,
+    "forcedFixtureTerminationRequested": false,
+    "jobEmptyConfirmed": true,
+    "scratchRemoved": true,
+    "errors": []
+  }
+}

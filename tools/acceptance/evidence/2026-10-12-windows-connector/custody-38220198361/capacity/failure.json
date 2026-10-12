@@ -1,0 +1,29 @@
+{
+  "status": "failed",
+  "stage": "custody-api",
+  "check": "control-deadline",
+  "supervisorPhase": "control-parsed",
+  "revision": "old",
+  "preflight": "custody",
+  "fixturePhase": "custody-ready",
+  "ownedCleanup": {
+    "fixtureOwnedTerminalConfirmed": true,
+    "fixtureStdioClosedConfirmed": true,
+    "supervisorOwnedTerminalConfirmed": true,
+    "supervisorStdioClosedConfirmed": true,
+    "forcedSupervisorTerminationRequested": true,
+    "forcedFixtureTerminationRequested": false,
+    "jobEmptyConfirmed": false,
+    "scratchRemoved": false,
+    "errors": [
+      {
+        "stage": "cleanup",
+        "check": "job-exit-unconfirmed"
+      },
+      {
+        "stage": "cleanup",
+        "check": "job-exit-unconfirmed"
+      }
+    ]
+  }
+}

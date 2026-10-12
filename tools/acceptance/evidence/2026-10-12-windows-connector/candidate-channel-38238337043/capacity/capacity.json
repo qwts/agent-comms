@@ -1,0 +1,33 @@
+{
+  "v": 1,
+  "scope": "hosted standard-user exact corrected-source channel-prepare-and-stale-probes only; actual default channel; no Broker.start, EventLog, replay, maintenance, listeners, delivery or offered rates",
+  "storageType": "not-measured",
+  "nodeArchiveSha256": "158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541",
+  "node": "v24.21.0",
+  "nodeExecutableSha256": "ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32",
+  "osRelease": "10.0.26100",
+  "arch": "x64",
+  "logicalCpus": 4,
+  "physicalMemoryBytes": 17174360064,
+  "commitLimitBytes": 2147483648,
+  "runnerSha256": "cafc121c67e105aee5f7605dd83c8e5e44ce7f0a672f99f145292cb721574707",
+  "policySha256": "3f63c0be9bc54bc527c1111d6e4fc3aea4fb7d44f904386ff845d4c5207634f8",
+  "supervisorSha256": "adff4d760d97c212e0b39b52ddf655ceaebe023b79d5e40428803a24db9cc7f8",
+  "controlSha256": "b44d047f154c20855ea80aa64c375f42d0dc74e3f46d1a1614b79586ea700331",
+  "lifecycleSha256": "429f9b90870738c6983a593738cb6330f24dfa2c160df7ab5652b78f60982c18",
+  "custodySha256": "60ec225d64566323a78b55d12cea7dece0c3176091cdf1dc96d116469206998b",
+  "channelSha256": "941eb75322d97e1d67bdb85ee781ee374624b51cc922436f4b3dc844521ee10c",
+  "connectorSha256": "9e3356eedff14a726b2dc4da437e429e876700fbfbb7e17c1578b2a2e367b13a",
+  "timingSha256": "157e7432053b35c8e6b432adc27e70105a5795124b7c4003c53ff3d9d9870e7b",
+  "timingScope": "parent start-request duration and independent child relative fixed-phase observations; reporting cap120s, request deadline90s unchanged; observational, not performance acceptance",
+  "storageSha256": "15b599824dcbb4189aad7c5d5756b940e9a4b1e7121651eb19257bc61bb0c3bd",
+  "correctedStartupSha256": "32fc2c0c1de0714fc96edc42389966f63817e427afd51e06c251eda5a6bc463a",
+  "archives": {
+    "candidate": {
+      "pin": "2d94b16a17f7d0a8625e6151e97fee844232aab1",
+      "tree": "9c1719821d656e17eb04dc477cc9415e4697f12f",
+      "archiveSha256": "d3465c40e5e11561f22f3aa720f74146aa70b2091dcd09c34c1c4046daea6853"
+    }
+  },
+  "runs": []
+}

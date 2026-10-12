@@ -1,0 +1,6 @@
+{
+  "status": "failed",
+  "stage": "production-startup",
+  "check": "control-deadline",
+  "supervisorPhase": "private-job-assigned"
+}

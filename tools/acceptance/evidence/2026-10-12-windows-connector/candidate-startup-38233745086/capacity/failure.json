@@ -1,0 +1,20 @@
+{
+  "status": "failed",
+  "stage": "production-startup",
+  "check": "control-deadline",
+  "supervisorPhase": "private-job-assigned",
+  "revision": "candidate",
+  "preflight": "candidate-startup",
+  "fixturePhase": "fixture-broker-start",
+  "ownedCleanup": {
+    "fixtureOwnedTerminalConfirmed": true,
+    "fixtureStdioClosedConfirmed": true,
+    "supervisorOwnedTerminalConfirmed": true,
+    "supervisorStdioClosedConfirmed": true,
+    "forcedSupervisorTerminationRequested": false,
+    "forcedFixtureTerminationRequested": false,
+    "jobEmptyConfirmed": true,
+    "scratchRemoved": true,
+    "errors": []
+  }
+}

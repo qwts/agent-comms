@@ -1,0 +1,20 @@
+{
+  "status": "failed",
+  "stage": "supervisor-attach",
+  "check": "scratch-retained",
+  "cleanup": [
+    {
+      "stage": "cleanup",
+      "check": "job-exit-unconfirmed"
+    },
+    {
+      "stage": "cleanup",
+      "check": "job-exit-unconfirmed"
+    }
+  ],
+  "original": {
+    "stage": "supervisor-attach",
+    "check": "control-deadline",
+    "supervisorPhase": "ready-serialized"
+  }
+}

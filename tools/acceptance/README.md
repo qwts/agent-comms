@@ -1,5 +1,68 @@
 # Opt-in local acceptance tools
 
+## Windows production-connector capacity pilot
+
+The manual Windows workflow has separate no-workload `capacity-supervisor`
+`capacity-attach` and one-sample `capacity-sample` diagnostics, the single-old-pin `capacity-startup`
+production startup/disposal probe without offered requests, `capacity-channel`
+for actual pinned default channel prepare/stale probes without Broker/listener, and `capacity-custody`
+for the actual pinned current-account and three-directory custody API without a
+Broker or connector. The separate `capacity-connector` observes actual unconsumed connector events
+after prepare/main probe, without Broker/listener/workload. These precede `capacity-preflight` and
+`capacity-pilot` tasks. The [capacity pilot contract](../../docs/windows-connector-capacity.md)
+describes exact source pins, the actual Identification-level PowerShell connector,
+fixed 1/10/100 requests/s stages, bounded admission, owned job accounting and
+cleanup. These are hosted standard-user finite capacity observations, not
+benchmark, signed-in desktop or host acceptance. No load runs in normal CI.
+
+The separate `candidate-startup` task attempts one corrected-source Broker
+startup, pair/admin approval, two joins, send/read/ack/empty and natural stop.
+Its current fixed source is reviewed PR [#224](https://github.com/qwts/agent-comms/pull/224)
+head `cb50469ca0b6757c4ab860de582b9b140fc525a0`, tree
+`34011276c3e651e6fd5bf7ba1e7c7f373053249e`, Windows CRLF archive SHA256
+`85991a457b19c0f7367ca7a1d7fabbeadd7acb3bf15828f37594a5669c185ef6`.
+The [explicit source refresh](../../docs/windows-candidate-stage-refresh.md) preserves
+the original `2d94b16a` reports without relabelling them as current-pin evidence.
+The [first refreshed-source attempt](../../docs/windows-candidate-connector-stage-evidence.md)
+failed at pair with the existing local `startup-timeout` stage; no underlying
+helper cause or startup-plus-delivery acceptance is inferred.
+The tool refuses a tree or digest mismatch before extraction/import. This
+single candidate report has no old/new comparison or offered-rate stages;
+the existing capacity pins remain unchanged. The first reviewed manual attempt failed; its
+[retained receipt](../../docs/windows-candidate-startup-evidence.md)
+does not establish corrected native startup or capacity. Resource/profile guards and
+owned cleanup remain unchanged. The first attempt used a 90-second watchdog; the
+[reviewed full-startup guard](../../docs/windows-candidate-startup-guard.md)
+selects 360s requests/420s reporting as finite diagnostic headroom. Known production refusal
+codes and only the existing closed local Windows connector stage are retained
+through correlated fixture IPC using the shared own-data projector; error text,
+accessors, unknown metadata and causes are excluded. Local stub IPC tests establish classification and cleanup mechanics,
+not production pipe acceptance.
+
+The separate `candidate-storage` control uses the same fixed candidate source
+and bootstrap to isolate actual prepare, EventLog construction, file custody,
+empty replay and public compacting maintenance, without calling Broker.start
+or creating listeners, stale probes, A2A startup, delivery or rate offers.
+Fixed phases bracket each API; real child IPC regressions cover a maintenance
+failure and registered cleanup. The production storage subprocess stays in the
+private job without command, environment or timeout changes. Its configured
+child timeout does not establish terminal/stdio closure. Only owned-handle/job
+receipts establish cleanup. The original-pin [retained storage-only pass](../../docs/windows-candidate-storage-evidence.md)
+does not establish whole Broker startup, delivery or capacity.
+
+The manual `candidate-channel` task uses that same approved correction archive
+for actual prepare and both stale APIs, with no Broker.start, storage or load.
+Fixed candidate controls retain bounded parent request duration and relative
+fixed child phase timing. Startup selects 360s requests/420s reporting as a
+finite diagnostic guard; storage retains 90s requests/120s reporting;
+only candidate-channel selects 180s requests and 240s reporting, from a closed
+trusted mode. Production connector and old/new diagnostic budgets are unchanged. Missing/invalid timing cannot qualify a pass.
+The [first retained channel failure](../../docs/windows-candidate-channel-evidence.md)
+records the actual prepare/main durations and incomplete admin window without
+claiming a stall or capacity. The original-pin [subsequent scoped pass](../../docs/windows-candidate-channel-evidence.md#revised-scoped-channel-pass)
+records both completed stale APIs and proven cleanup, leaving whole startup
+separate. See the [control and timing scope](../../docs/windows-candidate-startup-evidence.md#fixed-source-channel-control-and-timing).
+
 ## Total instrumentation comparison with actual source archives
 
 The separate macOS-only probe compares complete unmodified production trees:

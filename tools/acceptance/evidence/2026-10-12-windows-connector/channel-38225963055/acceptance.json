@@ -1,0 +1,48 @@
+{
+  "v": 1,
+  "scope": "channel-prepare-and-stale-probes; actual pinned default channel; no Broker, listener, EventLog, replay, maintenance or workload",
+  "storageType": "not-measured",
+  "nodeArchiveSha256": "158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541",
+  "node": "v24.21.0",
+  "nodeExecutableSha256": "ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32",
+  "osRelease": "10.0.26100",
+  "arch": "x64",
+  "logicalCpus": 4,
+  "physicalMemoryBytes": 17174360064,
+  "commitLimitBytes": 2147483648,
+  "runnerSha256": "475c87d57638fc5cb68456d02411ff7b4068ab7cdfb089c2eef611bdcc62bc2e",
+  "policySha256": "3f63c0be9bc54bc527c1111d6e4fc3aea4fb7d44f904386ff845d4c5207634f8",
+  "supervisorSha256": "adff4d760d97c212e0b39b52ddf655ceaebe023b79d5e40428803a24db9cc7f8",
+  "controlSha256": "630c16fea4b5bb0f275c2d698bf8da378b7c2a5b1fe180b10ea9414e1fc0ea8f",
+  "lifecycleSha256": "196d826589ea5ef7aaae1385300c3d9451074e3cbcfc37989fc551fe1c4cfcdc",
+  "custodySha256": "60ec225d64566323a78b55d12cea7dece0c3176091cdf1dc96d116469206998b",
+  "channelSha256": "941eb75322d97e1d67bdb85ee781ee374624b51cc922436f4b3dc844521ee10c",
+  "archives": {
+    "old": {
+      "pin": "25dfa8362401489503f704c7322ad1314b7e6ddb",
+      "tree": "125c504a11148b2eec922f915683fb32d1366b48",
+      "archiveSha256": "3af858af820e31c315310dc197153eab62d0e7115417ccdbdbb11244eae6ce7e"
+    },
+    "new": {
+      "pin": "e648d71277da72fc50c70ebcbb94c3c8f53c7cf3",
+      "tree": "a3bdaab0a6fa7068b293ab34dea66bba670b4e43",
+      "archiveSha256": "e36eddf8612bf9e65ac4414f1a48c4dc6ff3fcc25d7ca7b6ea87eddbd6f1f352"
+    }
+  },
+  "runs": [],
+  "standardUser": {
+    "status": "failed",
+    "profileLoaded": true,
+    "sessionId": 2,
+    "administrator": false,
+    "interactiveTaskGate": "not-reached"
+  },
+  "bootstrapCleanup": {
+    "removed": false,
+    "errors": [
+      "capacity-tool-cleanup-unconfirmed",
+      "test-profile-cleanup"
+    ]
+  },
+  "status": "failed"
+}

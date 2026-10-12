@@ -111,10 +111,12 @@ socket/client canary and unread-stderr delivery fixtures run on POSIX. This
 slice does not claim packaged host integration or complete numeric acceptance.
 [Local paired evidence](local-diagnostics-performance.md) records independently
 passing reporting/helper comparisons, a retained healthy p99 failure, exact
-provenance and baseline limitations. [Pinned total-runtime evidence](local-diagnostics-total-overhead.md)
-covers the scoped embedded macOS workload against an actual pre-change runtime;
-it does not establish native Windows numeric budgets, which remain outstanding
-in [#164](https://github.com/qwts/agent-comms/issues/164).
+provenance and baseline limitations. [Complete-runtime evidence](local-diagnostics-total-overhead.md) records the
+scoped macOS embedded Broker/client comparison against a pre-change runtime,
+including healthy, failed and unread diagnostic destinations. CPU remains
+ungated and sparse appends do not establish compaction performance. Native
+Windows numeric budgets and packaged host integration remain outstanding in
+[#164](https://github.com/qwts/agent-comms/issues/164).
 
 ## Private Windows connector stage
 

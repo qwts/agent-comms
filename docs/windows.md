@@ -150,3 +150,8 @@ The [Windows acceptance evidence](windows-acceptance.md) records exact candidate
 pins, report hashes and limits alongside the runnable CLI/library, DPAPI and
 scheduled-task harness. Hosted diagnostics and signed-in desktop results are
 distinct evidence; neither establishes complete Windows host support alone.
+
+The separate [production-connector capacity pilot](windows-connector-capacity.md)
+adds manual standard-user hosted preflight and finite offered-load stages using
+unmodified production archives. Its implementation does not claim executed
+capacity evidence, numeric diagnostic budgets or signed-in desktop acceptance.

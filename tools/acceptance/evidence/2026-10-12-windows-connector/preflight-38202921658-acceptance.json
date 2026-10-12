@@ -1,0 +1,20 @@
+{
+  "bootstrapCleanup": {
+    "removed": true,
+    "errors": []
+  },
+  "standardUser": {
+    "failure": {
+      "errorType": "RemoteException",
+      "gate": "clone-child-owned-inputs"
+    },
+    "profileLoaded": true,
+    "sessionId": 2,
+    "interactiveTaskGate": "not-reached",
+    "status": "failed",
+    "administrator": false
+  },
+  "status": "failed",
+  "completeEmbeddingAcceptance": false,
+  "capacityOnly": true
+}

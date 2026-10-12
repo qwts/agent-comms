@@ -1,0 +1,232 @@
+import assert from 'node:assert/strict';
+import { EventEmitter } from 'node:events';
+import { PassThrough } from 'node:stream';
+import test from 'node:test';
+import { collectSupervisorProbes, createCapacityController } from '../tools/acceptance/windows-capacity-control.mjs';
+
+function transport() {
+  const child = new EventEmitter(); child.stdin = new PassThrough(); child.stdout = new PassThrough();
+  let close;
+  const exited = new Promise((resolve) => { close = resolve; });
+  return { child, exited, terminal: () => false, close };
+}
+test('malformed supervisor startup refuses immediately with no child source leakage', async () => {
+  const owned = transport(), control = createCapacityController(owned);
+  owned.child.stdout.write('CANARY-private-path-body\n');
+  await assert.rejects(control.startup, { message: 'control-invalid' });
+  await assert.rejects(control.request('close'), { message: 'control-invalid' });
+  owned.close();
+});
+test('bounded supervisor output rejects startup and an already pending request', async () => {
+  const owned = transport(), control = createCapacityController(owned);
+  const request = control.request('close', {}, 50);
+  owned.child.stdout.write('x'.repeat(65537));
+  await assert.rejects(control.startup, { message: 'control-output-bound' });
+  await assert.rejects(request, { message: 'control-output-bound' });
+  owned.close();
+});
+test('valid fixed phases remain bounded metadata and do not prematurely resolve readiness', async () => {
+  const owned = transport(), control = createCapacityController(owned);
+  let ready = false; control.startup.then(() => { ready = true; });
+  owned.child.stdout.write('{"id":-1,"phase":"compile-supervisor"}\n');
+  await Promise.resolve(); assert.equal(ready, false);
+  assert.deepEqual(control.state(), { phase: 'compile-supervisor', encoding: 'ascii-compatible' });
+  owned.child.stdout.write('{"id":0,"ok":true,"phase":"ready"}\n');
+  assert.equal((await control.startup).phase, 'ready');
+  owned.close();
+});
+test('UTF16 framing is identified and refused instead of disguised as a deadline', async () => {
+  const owned = transport(), control = createCapacityController(owned);
+  owned.child.stdout.write(Buffer.from('{"id":0}\n', 'utf16le'));
+  await assert.rejects(control.startup, { message: 'control-invalid' });
+  assert.equal(control.state().encoding, 'utf16le-json'); owned.close();
+});
+test('module observations retain only typed booleans and reject extra or untyped fields', async () => {
+  const owned = transport(), control = createCapacityController(owned);
+  owned.child.stdout.write('{"id":-1,"ok":true,"phase":"module-observation","manifestPresent":true,"expectedPSHome":false}\n');
+  assert.deepEqual(control.state().moduleObservation, { manifestPresent: true, expectedPSHome: false });
+  control.state().moduleObservation.manifestPresent = false;
+  assert.equal(control.state().moduleObservation.manifestPresent, true);
+  owned.child.stdout.write('{"id":-1,"phase":"import-utility"}\n{"id":-1,"phase":"utility-imported"}\n{"id":0,"ok":true,"phase":"ready"}\n');
+  assert.equal((await control.startup).phase, 'ready'); owned.close();
+  for (const fields of [{ manifestPresent: 'true', expectedPSHome: true },
+    { manifestPresent: true }, { manifestPresent: true, expectedPSHome: true, path: 'CANARY-private-path' }]) {
+    const invalidOwned = transport(), invalidControl = createCapacityController(invalidOwned);
+    invalidOwned.child.stdout.write(`${JSON.stringify({ id: -1, phase: 'module-observation', ...fields })}\n`);
+    await assert.rejects(invalidControl.startup, { message: 'control-invalid' });
+    assert.equal(invalidControl.state().moduleObservation, undefined); invalidOwned.close();
+  }
+});
+test('owned terminal before readiness rejects the startup promise', async () => {
+  const owned = transport(), control = createCapacityController(owned);
+  owned.close(); await assert.rejects(control.startup, { message: 'control-closed' });
+});
+test('stream failure persists for later requests while the child is still live', async () => {
+  const owned = transport(), control = createCapacityController(owned);
+  owned.child.stdout.write('{"id":0,"ok":true}\n'); await control.startup;
+  owned.child.stdin.emit('error', new Error('CANARY-private-path'));
+  await assert.rejects(control.request('close'), { message: 'control-closed' }); owned.close();
+});
+test('valid acknowledged response survives immediate owned terminal but future calls refuse', async () => {
+  const owned = transport(), control = createCapacityController(owned);
+  owned.child.stdout.write('{"id":0,"ok":true}\n'); await control.startup;
+  const request = control.request('close');
+  owned.child.stdout.write('{"id":1,"ok":true,"closed":true}\n'); owned.close();
+  assert.equal((await request).closed, true);
+  await assert.rejects(control.request('close'), { message: 'control-closed' });
+});
+test('post-ready serialization marker preserves close acknowledgement and terminal receipt', async () => {
+  const owned = transport(), control = createCapacityController(owned);
+  owned.child.stdout.write('{"id":-1,"phase":"supervisor-compiled"}\n{"id":-1,"phase":"serialize-ready"}\n{"id":0,"ok":true,"phase":"ready"}\n');
+  assert.equal((await control.startup).phase, 'ready');
+  const request = control.request('close');
+  owned.child.stdout.write('{"id":-1,"phase":"ready-serialized"}\n{"id":1,"ok":true,"closed":true}\n');
+  owned.close();
+  assert.equal((await request).closed, true);
+  assert.equal(control.state().phase, 'ready-serialized');
+  await assert.rejects(control.request('close'), { message: 'control-closed' });
+});
+test('IPC fixtures preserve the supplied bounded failure classification', async () => {
+  const owned = transport(); owned.child.send = () => {};
+  const control = createCapacityController(owned, { ipc: true,
+    classifyFailure: (record) => new Error(record.failure.check === 'owned-startup-fault' ? 'owned-startup-fault' : 'job-supervisor-failed') });
+  const request = control.request('start');
+  owned.child.emit('message', { id: 1, ok: false, failure: { check: 'owned-startup-fault' } });
+  await assert.rejects(request, { message: 'owned-startup-fault' }); owned.close();
+});
+test('IPC send failure persists for later calls without waiting for child exit', async () => {
+  const owned = transport(); owned.child.send = (record, callback) => callback(new Error('CANARY-private-path'));
+  const control = createCapacityController(owned, { ipc: true });
+  await assert.rejects(control.request('start'), { message: 'control-closed' });
+  await assert.rejects(control.request('start'), { message: 'control-closed' }); owned.close();
+});
+test('supervisor variants never start a second process after uncertain exit or stdio cleanup', async () => {
+  for (const receipt of [{ ownedTerminalConfirmed: false, stdioClosedConfirmed: true },
+    { ownedTerminalConfirmed: true, stdioClosedConfirmed: false },
+    { ownedTerminalConfirmed: true, stdioClosedConfirmed: 'true' }]) {
+    const calls = [], records = [];
+    await collectSupervisorProbes(async (variant) => {
+      calls.push(variant); return { variant, status: 'failed', ...receipt };
+    }, (record) => records.push(record), ['json-command','explicit-utility-command']);
+    assert.deepEqual(calls, ['json-command']);
+    assert.equal(records[0].status, 'failed');
+    assert.deepEqual(records[1], { runType: 'supervisor-only-no-workload', variant: 'explicit-utility-command',
+      productionImported: false, status: 'not-run', reason: 'prior-cleanup-unconfirmed' });
+  }
+});
+test('a failed but fully disposed first probe allows a matched second diagnostic without erasing failure', async () => {
+  const calls = [], records = [];
+  await collectSupervisorProbes(async (variant) => {
+    calls.push(variant); return { variant, status: calls.length === 1 ? 'failed' : 'passed',
+      ownedTerminalConfirmed: true, stdioClosedConfirmed: true };
+  }, (record) => records.push(record), ['json-command','explicit-utility-command']);
+  assert.deepEqual(calls, ['json-command','explicit-utility-command']);
+  assert.deepEqual(records.map((record) => record.status), ['failed','passed']);
+});
+test('default supervisor diagnostic runs one full script without repeating failed implicit control', async () => {
+  const calls = [], records = [];
+  await collectSupervisorProbes(async (variant) => {
+    calls.push(variant); return { variant, status: 'passed', ownedTerminalConfirmed: true, stdioClosedConfirmed: true };
+  }, (record) => records.push(record));
+  assert.deepEqual(calls, ['supervisor-script']); assert.equal(records.length, 1);
+  for (const variants of [[], ['supervisor-script','supervisor-script'], ['CANARY-private-path'], ['json-command','explicit-utility-command','supervisor-script']]) {
+    await assert.rejects(collectSupervisorProbes(() => assert.fail('unbounded or unreviewed process start'), () => {}, variants), { message: 'control-invalid' });
+  }
+});
+
+test('attach phase boundaries and CIM observations remain fixed metadata with no command or path leakage', async () => {
+  const owned = transport(), control = createCapacityController(owned);
+  for (const phase of ['control-read','parse-control','control-parsed','verify-fixture','verify-fixture-existence','verify-fixture-parent','verify-fixture-executable','parse-fixture-command','verify-fixture-argument-count','verify-fixture-arguments','convert-fixture-creation','verify-job-limit','cim-module-refused','import-cim','cim-imported','query-fixture','fixture-queried','create-private-job','assign-private-job','private-job-assigned']) {
+    owned.child.stdout.write(JSON.stringify({ id: -1, phase }) + '\n');
+    assert.equal(control.state().phase, phase);
+  }
+  owned.child.stdout.write('{"id":-1,"phase":"cim-module-observation","manifestPresent":false}\n');
+  assert.deepEqual(control.state().cimModuleObservation, { manifestPresent: false });
+  control.state().cimModuleObservation.manifestPresent = true;
+  assert.equal(control.state().cimModuleObservation.manifestPresent, false);
+  owned.child.stdout.write('{"id":-1,"phase":"cim-module-observation","manifestPresent":true,"path":"CANARY-private-command"}\n');
+  await assert.rejects(control.startup, { message: 'control-invalid' });
+  assert.equal(JSON.stringify(control.state()).includes('CANARY'), false); owned.close();
+});
+
+test('startup fixture IPC phases preserve pending request and refuse arbitrary metadata without leakage', async () => {
+  const owned = transport(); owned.child.send = () => {};
+  const control = createCapacityController(owned, { ipc: true });
+  owned.child.emit('message', { id: 0, paused: true }); await control.startup;
+  const started = control.request('start');
+  for (const phase of ['fixture-imports','fixture-broker-start','fixture-pair','fixture-approve','fixture-join-first','fixture-join-second','fixture-delivery-send','fixture-delivery-read','fixture-delivery-ack','fixture-delivery-empty','fixture-ready','custody-imports','custody-current-uid','custody-uid-checked','custody-shared','custody-shared-checked','custody-proofs','custody-proofs-checked','custody-state','custody-state-checked','custody-ready']) {
+    owned.child.emit('message', { id: -1, phase });
+    assert.equal(control.state().phase, phase);
+  }
+  owned.child.emit('message', { id: 1, ok: true, ready: true }); assert.equal((await started).ready, true);
+  owned.child.emit('message', { id: -1, phase: 'fixture-pair', path: 'CANARY-private-path' });
+  await assert.rejects(control.request('finish'), { message: 'control-invalid' });
+  assert.equal(JSON.stringify(control.state()).includes('CANARY'), false); owned.close();
+  const invalid = transport(); invalid.child.send = () => {};
+  const other = createCapacityController(invalid, { ipc: true });
+  invalid.child.emit('message', { id: -1, phase: 'CANARY-untrusted-body' });
+  await assert.rejects(other.startup, { message: 'control-invalid' });
+  assert.equal(other.state().phase, null); invalid.close();
+});
+
+test('both operation-time phases stay immutable when teardown makes later progress', async () => {
+  const { snapshotCapacityPhases } = await import('../tools/acceptance/windows-capacity-control.mjs');
+  const observerOwned = transport(), fixtureOwned = transport(); fixtureOwned.child.send = () => {};
+  const observer = createCapacityController(observerOwned), fixture = createCapacityController(fixtureOwned, { ipc: true });
+  observerOwned.child.stdout.write('{"id":-1,"phase":"sample-observer"}\n');
+  fixtureOwned.child.emit('message', { id: -1, phase: 'custody-ready' });
+  const failure = snapshotCapacityPhases(observer, fixture);
+  observerOwned.child.stdout.write('{"id":-1,"phase":"close-job"}\n');
+  fixtureOwned.child.emit('message', { id: -1, phase: 'fixture-ready' });
+  assert.deepEqual(failure, { supervisorPhase: 'sample-observer', fixturePhase: 'custody-ready' });
+  assert.deepEqual(snapshotCapacityPhases(observer, fixture), { supervisorPhase: 'close-job', fixturePhase: 'fixture-ready' });
+  observerOwned.close(); fixtureOwned.close();
+});
+test('literal sample phases preserve bounded request acknowledgement followed by trailing progress and close', async () => {
+  const owned = transport(), control = createCapacityController(owned);
+  owned.child.stdout.write('{"id":0,"ok":true}\n'); await control.startup;
+  const sample = control.request('sample');
+  for (const phase of ['sample-job','sample-ids-read','sample-filter','sample-query','sample-rows','sample-verify','sample-classify','sample-observer','sample-observer-read','sample-reply']) {
+    owned.child.stdout.write(`${JSON.stringify({ id: -1, phase })}\n`); assert.equal(control.state().phase, phase);
+  }
+  owned.child.stdout.write('{"id":1,"ok":true,"sampled":true}\n{"id":-1,"phase":"sample-replied"}\n');
+  owned.close(); assert.equal((await sample).sampled, true); assert.equal(control.state().phase, 'sample-replied');
+  await assert.rejects(control.request('close'), { message: 'control-closed' });
+});
+
+
+test('connector progress remains bounded, monotonic and snapshotted before disposal cleanup', async () => {
+  const { snapshotCapacityPhases } = await import('../tools/acceptance/windows-capacity-control.mjs');
+  const owned = transport(), control = createCapacityController(owned, { ipc: true });
+  const emit = (record) => owned.child.emit('message', record);
+  emit({ id: -1, phase: 'connector-heartbeat', heartbeatCount: 9, elapsedMs: 9007 });
+  const external = control.state(); external.connectorProgress.heartbeatCount = 0;
+  assert.equal(control.state().connectorProgress.heartbeatCount, 9);
+  emit({ id: -1, phase: 'connector-observation-finished', heartbeatCount: 12, elapsedMs: 12005 });
+  emit({ id: -1, phase: 'connector-dispose-admin' });
+  const snapshot = snapshotCapacityPhases({ state: () => ({ phase: 'private-job-assigned' }) }, control);
+  emit({ id: -1, phase: 'connector-admin-disposed' });
+  assert.equal(snapshot.fixturePhase, 'connector-dispose-admin');
+  assert.deepEqual(snapshot.connectorProgress, { heartbeatCount: 12, elapsedMs: 12005 });
+  snapshot.connectorProgress.elapsedMs = 0;
+  assert.equal(control.state().connectorProgress.elapsedMs, 12005); owned.close();
+});
+
+test('connector progress refuses malformed, private, regressing or unreviewed phase fields', async () => {
+  for (const record of [
+    { phase: 'connector-heartbeat', heartbeatCount: 13, elapsedMs: 12_000 },
+    { phase: 'connector-heartbeat', heartbeatCount: 9, elapsedMs: 90_001 },
+    { phase: 'connector-heartbeat', heartbeatCount: '9', elapsedMs: 9000 },
+    { phase: 'connector-heartbeat', heartbeatCount: 9, elapsedMs: 9000, path: 'CANARY-private' },
+    { phase: 'connector-heartbeat', heartbeatCount: 8, elapsedMs: 9100 },
+    { phase: 'connector-observation-finished', heartbeatCount: 9, elapsedMs: 8999 },
+    { phase: 'connector-dispose-admin', heartbeatCount: 9, elapsedMs: 9000 },
+  ]) {
+    const owned = transport(), control = createCapacityController(owned, { ipc: true });
+    owned.child.emit('message', { id: -1, phase: 'connector-heartbeat', heartbeatCount: 9, elapsedMs: 9000 });
+    owned.child.emit('message', { id: -1, ...record });
+    await assert.rejects(control.startup, { message: 'control-invalid' });
+    assert.deepEqual(control.state().connectorProgress, { heartbeatCount: 9, elapsedMs: 9000 });
+    assert.equal(JSON.stringify(control.state()).includes('CANARY'), false); owned.close();
+  }
+});

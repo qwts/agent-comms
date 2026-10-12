@@ -1,0 +1,99 @@
+{
+  "v": 1,
+  "scope": "hosted standard-user exact corrected-source fresh storage prefix only; actual prepare, EventLog custody/replay and compacting maintenance; no Broker.start, stale probes, listeners, delivery or offered rates",
+  "storageHelperLifetime": "actual production subprocesses belong to private job; configured timeout is not exit proof; no individual helper terminal observation",
+  "storageType": "not-measured",
+  "nodeArchiveSha256": "158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541",
+  "node": "v24.21.0",
+  "nodeExecutableSha256": "ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32",
+  "osRelease": "10.0.26100",
+  "arch": "x64",
+  "logicalCpus": 4,
+  "physicalMemoryBytes": 17174360064,
+  "commitLimitBytes": 2147483648,
+  "runnerSha256": "c961163ef8996abcb61215df08c13e1ad6a0381cb7105f7fdadf5008465fb228",
+  "policySha256": "3f63c0be9bc54bc527c1111d6e4fc3aea4fb7d44f904386ff845d4c5207634f8",
+  "supervisorSha256": "adff4d760d97c212e0b39b52ddf655ceaebe023b79d5e40428803a24db9cc7f8",
+  "controlSha256": "dcac3e759c4d9eceac3c456c2f7ef65bb2b48bef9c57821f2826610289c3423c",
+  "lifecycleSha256": "836484787b078f8773c5c4c8f1d4d158d948eafea53a56f8c417437a6c6d07cb",
+  "custodySha256": "60ec225d64566323a78b55d12cea7dece0c3176091cdf1dc96d116469206998b",
+  "channelSha256": "941eb75322d97e1d67bdb85ee781ee374624b51cc922436f4b3dc844521ee10c",
+  "connectorSha256": "9e3356eedff14a726b2dc4da437e429e876700fbfbb7e17c1578b2a2e367b13a",
+  "storageSha256": "15b599824dcbb4189aad7c5d5756b940e9a4b1e7121651eb19257bc61bb0c3bd",
+  "correctedStartupSha256": "32fc2c0c1de0714fc96edc42389966f63817e427afd51e06c251eda5a6bc463a",
+  "archives": {
+    "candidate": {
+      "pin": "2d94b16a17f7d0a8625e6151e97fee844232aab1",
+      "tree": "9c1719821d656e17eb04dc477cc9415e4697f12f",
+      "archiveSha256": "d3465c40e5e11561f22f3aa720f74146aa70b2091dcd09c34c1c4046daea6853"
+    }
+  },
+  "runs": [
+    {
+      "revision": "candidate",
+      "preflight": "storage",
+      "stages": [],
+      "deployment": "actual corrected-source fresh Broker storage prefix; no Broker.start, stale probes, listeners, A2A startup or delivery",
+      "requestedRates": [],
+      "skippedRates": [
+        1,
+        10,
+        100
+      ],
+      "baselinePermittedRates": [],
+      "skipReason": "preflight-no-offers",
+      "diagnosticBytes": 0,
+      "commitLimitBytes": 2147483648,
+      "samples": [
+        {
+          "main": {
+            "workingSetBytes": 53288960,
+            "count": 1,
+            "cpu100ns": 937500
+          },
+          "compiler": {
+            "workingSetBytes": 0,
+            "count": 0,
+            "cpu100ns": 0
+          },
+          "diagnostic": {
+            "workingSetBytes": 0,
+            "count": 0,
+            "cpu100ns": 0
+          },
+          "relay": {
+            "workingSetBytes": 0,
+            "count": 0,
+            "cpu100ns": 0
+          },
+          "jobPeakCommitBytes": 339582976,
+          "jobCpu100ns": 605156250,
+          "observer": {
+            "workingSetBytes": 92225536,
+            "cpu100ns": 5781250
+          }
+        }
+      ],
+      "powershellVersion": [
+        5,
+        1,
+        26100
+      ],
+      "deliveryChecks": 0,
+      "sampledPeakJobWorkingSetBytes": 53288960,
+      "accountingScope": "sampled private-job WorkingSet is not instantaneous peak; job CPU/peak committed bytes include short-lived descendants; observer excluded and separately reported",
+      "ownedTerminalConfirmed": true,
+      "cleanup": {
+        "jobEmptyConfirmed": true,
+        "scratchRemoved": true,
+        "naturalJobEmptyConfirmed": true,
+        "id": 4,
+        "ok": true,
+        "peakJobCommitBytes": 339582976,
+        "finalJobCpu100ns": 605156250,
+        "closed": true
+      }
+    }
+  ],
+  "status": "passed"
+}

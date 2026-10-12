@@ -1,0 +1,29 @@
+{
+  "v": 1,
+  "scope": "hosted standard-user Windows finite capacity pilot; no benchmark, desktop, host or 100/s support acceptance",
+  "storageType": "not-measured",
+  "nodeArchiveSha256": "158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541",
+  "node": "v24.21.0",
+  "nodeExecutableSha256": "ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32",
+  "osRelease": "10.0.26100",
+  "arch": "x64",
+  "logicalCpus": 4,
+  "physicalMemoryBytes": 17174360064,
+  "commitLimitBytes": 2147483648,
+  "runnerSha256": "971950c04f54d16d3d2df6e2156cb585eb1d57d668b9e52d17882a068d6fa186",
+  "policySha256": "3f63c0be9bc54bc527c1111d6e4fc3aea4fb7d44f904386ff845d4c5207634f8",
+  "supervisorSha256": "7e6c1678d191ea79091576fb2626b778c1b97afea2531923e684d7a9e52b06d9",
+  "archives": {
+    "old": {
+      "pin": "25dfa8362401489503f704c7322ad1314b7e6ddb",
+      "tree": "125c504a11148b2eec922f915683fb32d1366b48",
+      "archiveSha256": "3af858af820e31c315310dc197153eab62d0e7115417ccdbdbb11244eae6ce7e"
+    },
+    "new": {
+      "pin": "e648d71277da72fc50c70ebcbb94c3c8f53c7cf3",
+      "tree": "a3bdaab0a6fa7068b293ab34dea66bba670b4e43",
+      "archiveSha256": "e36eddf8612bf9e65ac4414f1a48c4dc6ff3fcc25d7ca7b6ea87eddbd6f1f352"
+    }
+  },
+  "runs": []
+}

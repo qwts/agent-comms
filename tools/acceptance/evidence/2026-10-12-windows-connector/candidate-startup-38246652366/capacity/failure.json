@@ -1,0 +1,44 @@
+{
+  "status": "failed",
+  "timingProfile": {
+    "mode": "candidate-startup",
+    "requestDeadlineMs": 360000,
+    "timingCapMs": 420000
+  },
+  "stage": "production-startup",
+  "check": "operation-failed",
+  "windowsPipeStage": "startup-timeout",
+  "brokerCode": "broker-unreachable",
+  "supervisorPhase": "private-job-assigned",
+  "controlTiming": {
+    "elapsedMs": 176967
+  },
+  "phaseTimings": [
+    {
+      "phase": "fixture-imports",
+      "elapsedMs": 0
+    },
+    {
+      "phase": "fixture-broker-start",
+      "elapsedMs": 72
+    },
+    {
+      "phase": "fixture-pair",
+      "elapsedMs": 143904
+    }
+  ],
+  "revision": "candidate",
+  "preflight": "candidate-startup",
+  "fixturePhase": "fixture-pair",
+  "ownedCleanup": {
+    "fixtureOwnedTerminalConfirmed": true,
+    "fixtureStdioClosedConfirmed": true,
+    "supervisorOwnedTerminalConfirmed": true,
+    "supervisorStdioClosedConfirmed": true,
+    "forcedSupervisorTerminationRequested": false,
+    "forcedFixtureTerminationRequested": false,
+    "jobEmptyConfirmed": true,
+    "scratchRemoved": true,
+    "errors": []
+  }
+}

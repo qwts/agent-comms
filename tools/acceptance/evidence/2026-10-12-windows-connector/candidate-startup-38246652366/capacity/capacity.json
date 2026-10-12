@@ -1,0 +1,39 @@
+{
+  "v": 1,
+  "scope": "hosted standard-user exact corrected-source Broker startup, one delivery and disposal only; no offered-rate stages, capacity comparison, desktop or host acceptance",
+  "storageType": "not-measured",
+  "nodeArchiveSha256": "158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541",
+  "node": "v24.21.0",
+  "nodeExecutableSha256": "ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32",
+  "osRelease": "10.0.26100",
+  "arch": "x64",
+  "logicalCpus": 4,
+  "physicalMemoryBytes": 17174360064,
+  "commitLimitBytes": 2147483648,
+  "runnerSha256": "743da65bd02380bdda218df4474456e878fa67a6220be651cbf22532c3235237",
+  "policySha256": "3f63c0be9bc54bc527c1111d6e4fc3aea4fb7d44f904386ff845d4c5207634f8",
+  "supervisorSha256": "adff4d760d97c212e0b39b52ddf655ceaebe023b79d5e40428803a24db9cc7f8",
+  "controlSha256": "7a3c86c07ea2b7dac9108dad7a460631dd3b312167a6d3556841c15cb7254b5f",
+  "lifecycleSha256": "0fdaedefcd6aebb5a3839bad18cf24e483f25c2f54bfe8b905725265270f6323",
+  "custodySha256": "60ec225d64566323a78b55d12cea7dece0c3176091cdf1dc96d116469206998b",
+  "channelSha256": "941eb75322d97e1d67bdb85ee781ee374624b51cc922436f4b3dc844521ee10c",
+  "connectorSha256": "9e3356eedff14a726b2dc4da437e429e876700fbfbb7e17c1578b2a2e367b13a",
+  "timingSha256": "223f3b0701093c02897ab3b15e883c8d4179fedcc33093db70b38f59d442530b",
+  "pipeStageSha256": "93d0ab05570c873359753ed1f5f52d948fea5b3975bd03bd08801ad3198d2d15",
+  "timingProfile": {
+    "mode": "candidate-startup",
+    "requestDeadlineMs": 360000,
+    "timingCapMs": 420000
+  },
+  "timingScope": "parent start-request duration and independent child relative fixed-phase observations; explicit trusted-mode deadline/reporting cap; observational, not performance acceptance",
+  "storageSha256": "15b599824dcbb4189aad7c5d5756b940e9a4b1e7121651eb19257bc61bb0c3bd",
+  "correctedStartupSha256": "356c3b91d38047e4fab5739d7ce48199200dd560efb7e491dc97a1332a1b0280",
+  "archives": {
+    "candidate": {
+      "pin": "cb50469ca0b6757c4ab860de582b9b140fc525a0",
+      "tree": "34011276c3e651e6fd5bf7ba1e7c7f373053249e",
+      "archiveSha256": "85991a457b19c0f7367ca7a1d7fabbeadd7acb3bf15828f37594a5669c185ef6"
+    }
+  },
+  "runs": []
+}

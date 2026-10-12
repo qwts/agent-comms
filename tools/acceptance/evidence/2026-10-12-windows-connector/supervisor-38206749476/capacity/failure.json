@@ -1,0 +1,23 @@
+{
+  "status": "failed",
+  "stage": "supervisor-only-startup",
+  "check": "control-deadline",
+  "supervisorProbe": {
+    "runType": "supervisor-only-no-workload",
+    "productionImported": false,
+    "executionPolicyObservation": "not-queried",
+    "environmentParity": {
+      "inheritedExecutionPolicy": false,
+      "inheritedModulePath": false,
+      "explicitExecutionPolicyArgument": false
+    },
+    "stderrBytes": 0,
+    "stderrByteCountCapped": false,
+    "stderrEncoding": null,
+    "control": {
+      "phase": null,
+      "encoding": null
+    },
+    "ownedTerminalConfirmed": true
+  }
+}

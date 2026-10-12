@@ -1,0 +1,93 @@
+{
+  "v": 1,
+  "scope": "standard-user sanitized-environment supervisor control only; no production workload",
+  "node": "v24.21.0",
+  "runnerSha256": "b822e5f76e409a9ce68d6774df0e764725278b0c560c23a6218eb784f0213e12",
+  "supervisorSha256": "a03175d48ed3bdebdca2e14ff901f846f3dbeb881df7af97c4d3bc1ab37f3ff5",
+  "controlSha256": "f5218946a63f3ef884263ce5e858e2760a7413f8d9c08f6563d761859f73ca04",
+  "runs": [
+    {
+      "runType": "supervisor-only-no-workload",
+      "variant": "literal-command",
+      "productionImported": false,
+      "executionPolicyObservation": "not-queried",
+      "environmentParity": {
+        "inheritedExecutionPolicy": false,
+        "inheritedModulePath": false,
+        "explicitExecutionPolicyArgument": false
+      },
+      "stderrBytes": 0,
+      "stderrByteCountCapped": false,
+      "stderrEncoding": null,
+      "control": {
+        "phase": null,
+        "encoding": "ascii-compatible"
+      },
+      "eofSent": false,
+      "forcedTerminationRequested": false,
+      "terminal": {
+        "code": 0,
+        "signal": null
+      },
+      "stdioClosedConfirmed": true,
+      "ownedTerminalConfirmed": true,
+      "cleanup": {
+        "jobEmptyConfirmed": true,
+        "naturalJobEmptyConfirmed": true,
+        "jobCreated": false,
+        "scratchRemoved": true,
+        "scratchCreated": false
+      },
+      "elapsedMs": 577,
+      "status": "passed"
+    },
+    {
+      "runType": "supervisor-only-no-workload",
+      "variant": "supervisor-script",
+      "productionImported": false,
+      "executionPolicyObservation": "not-queried",
+      "environmentParity": {
+        "inheritedExecutionPolicy": false,
+        "inheritedModulePath": false,
+        "explicitExecutionPolicyArgument": false
+      },
+      "stderrBytes": 0,
+      "stderrByteCountCapped": false,
+      "stderrEncoding": null,
+      "control": {
+        "phase": "compile-supervisor",
+        "encoding": "ascii-compatible"
+      },
+      "eofSent": true,
+      "forcedTerminationRequested": true,
+      "terminal": {
+        "code": null,
+        "signal": "SIGTERM"
+      },
+      "stdioClosedConfirmed": true,
+      "ownedTerminalConfirmed": true,
+      "elapsedMs": 20021,
+      "status": "failed",
+      "failure": {
+        "stage": "supervisor-only-startup",
+        "check": "control-deadline",
+        "supervisorPhase": "compile-supervisor"
+      }
+    }
+  ],
+  "status": "failed",
+  "standardUser": {
+    "status": "failed",
+    "profileLoaded": true,
+    "sessionId": 2,
+    "administrator": false,
+    "interactiveTaskGate": "not-reached"
+  },
+  "bootstrapCleanup": {
+    "removed": false,
+    "errors": [
+      "capacity-tool-cleanup-unconfirmed",
+      "test-profile-cleanup"
+    ]
+  }
+}

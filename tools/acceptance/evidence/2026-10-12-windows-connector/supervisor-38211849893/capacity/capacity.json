@@ -1,0 +1,50 @@
+{
+  "v": 1,
+  "scope": "standard-user sanitized-environment supervisor control only; no production workload",
+  "node": "v24.21.0",
+  "runnerSha256": "494d6931acbf0e5446c97cb80a04b59b691a0dccbf7599d30d1c61fac56ffde7",
+  "supervisorSha256": "b414efae3ae653cbf53a5745f28bf44d87beff7e5ed6ae176e22326338d1baab",
+  "controlSha256": "5732d41d89e54d697d82483f801312346c3d6a8737b9fa212ea41c2456929c45",
+  "runs": [
+    {
+      "runType": "supervisor-only-no-workload",
+      "variant": "supervisor-script",
+      "productionImported": false,
+      "executionPolicyObservation": "not-queried",
+      "environmentParity": {
+        "inheritedExecutionPolicy": false,
+        "inheritedModulePath": false,
+        "explicitExecutionPolicyArgument": false
+      },
+      "stderrBytes": 0,
+      "stderrByteCountCapped": false,
+      "stderrEncoding": null,
+      "control": {
+        "phase": "ready-serialized",
+        "encoding": "ascii-compatible",
+        "moduleObservation": {
+          "manifestPresent": true,
+          "expectedPSHome": true
+        }
+      },
+      "eofSent": false,
+      "forcedTerminationRequested": false,
+      "terminal": {
+        "code": 0,
+        "signal": null
+      },
+      "stdioClosedConfirmed": true,
+      "ownedTerminalConfirmed": true,
+      "cleanup": {
+        "jobEmptyConfirmed": true,
+        "naturalJobEmptyConfirmed": true,
+        "jobCreated": false,
+        "scratchRemoved": true,
+        "scratchCreated": false
+      },
+      "elapsedMs": 1001,
+      "status": "passed"
+    }
+  ],
+  "status": "passed"
+}

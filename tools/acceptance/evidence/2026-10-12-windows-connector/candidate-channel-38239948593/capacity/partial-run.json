@@ -1,0 +1,35 @@
+{
+  "revision": "candidate",
+  "requestedRates": [],
+  "stages": [],
+  "samples": [
+    {
+      "main": {
+        "workingSetBytes": 43253760,
+        "count": 1,
+        "cpu100ns": 1406250
+      },
+      "compiler": {
+        "workingSetBytes": 0,
+        "count": 0,
+        "cpu100ns": 0
+      },
+      "diagnostic": {
+        "workingSetBytes": 0,
+        "count": 0,
+        "cpu100ns": 0
+      },
+      "relay": {
+        "workingSetBytes": 0,
+        "count": 0,
+        "cpu100ns": 0
+      },
+      "jobPeakCommitBytes": 332578816,
+      "jobCpu100ns": 725781250,
+      "observer": {
+        "workingSetBytes": 102735872,
+        "cpu100ns": 4687500
+      }
+    }
+  ]
+}

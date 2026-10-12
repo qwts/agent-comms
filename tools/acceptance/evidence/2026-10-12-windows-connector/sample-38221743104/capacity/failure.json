@@ -1,0 +1,51 @@
+{
+  "status": "failed",
+  "stage": "supervisor-only-sample",
+  "check": "control-deadline",
+  "supervisorPhase": "sample-observer",
+  "supervisorProbe": {
+    "runType": "supervisor-sample-no-workload",
+    "variant": "supervisor-sample",
+    "productionImported": false,
+    "executionPolicyObservation": "not-queried",
+    "environmentParity": {
+      "inheritedExecutionPolicy": false,
+      "inheritedModulePath": false,
+      "explicitExecutionPolicyArgument": false
+    },
+    "stderrBytes": 0,
+    "stderrByteCountCapped": false,
+    "stderrEncoding": null,
+    "control": {
+      "phase": "sample-observer",
+      "encoding": "ascii-compatible",
+      "moduleObservation": {
+        "manifestPresent": true,
+        "expectedPSHome": true
+      },
+      "cimModuleObservation": {
+        "manifestPresent": true
+      }
+    },
+    "eofSent": true,
+    "forcedTerminationRequested": true,
+    "terminal": {
+      "code": null,
+      "signal": "SIGTERM"
+    },
+    "stdioClosedConfirmed": true,
+    "ownedTerminalConfirmed": true,
+    "attached": true,
+    "failurePhases": {
+      "supervisorPhase": "sample-observer"
+    },
+    "fixtureForcedTerminationRequested": true,
+    "fixtureTerminal": {
+      "code": null,
+      "signal": "SIGTERM"
+    },
+    "fixtureOwnedTerminalConfirmed": true,
+    "fixtureStdioClosedConfirmed": true,
+    "elapsedMs": 11260
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "v": 1,
+  "scope": "standard-user sanitized-environment supervisor control only; no production workload",
+  "node": "v24.21.0",
+  "runnerSha256": "cc28c1d304548fd07754f05ff34db21e76ce1078b71369ae67e8d668365efea4",
+  "supervisorSha256": "69761791ae01c60f2967a52ad79715c235104b37199420badd9a9c8cb7e70ce2",
+  "controlSha256": "039eefe44633bb5f87587d22b4392a4c98baf50f56909c00f169b61c1b1922ce",
+  "runs": []
+}

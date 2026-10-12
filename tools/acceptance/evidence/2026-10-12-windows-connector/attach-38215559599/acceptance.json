@@ -1,0 +1,72 @@
+{
+  "v": 1,
+  "scope": "standard-user sanitized-environment paused-fixture attach only; no production imports or workload",
+  "node": "v24.21.0",
+  "runnerSha256": "4f293b4198d4d2be79c07cb8f591176ff17c4f3f83393b591fdff14b3870fdfb",
+  "supervisorSha256": "31e2fbd29dce74ee774140c065ef0f16b51d3085bfa9a6a08546396420d58fd0",
+  "controlSha256": "a513c02535405a2817dc1e59cf292d43fad808a31bba5b1394ed38110666a6a1",
+  "runs": [
+    {
+      "runType": "supervisor-attach-no-workload",
+      "variant": "supervisor-attach",
+      "productionImported": false,
+      "executionPolicyObservation": "not-queried",
+      "environmentParity": {
+        "inheritedExecutionPolicy": false,
+        "inheritedModulePath": false,
+        "explicitExecutionPolicyArgument": false
+      },
+      "stderrBytes": 0,
+      "stderrByteCountCapped": false,
+      "stderrEncoding": null,
+      "control": {
+        "phase": "query-fixture",
+        "encoding": "ascii-compatible",
+        "moduleObservation": {
+          "manifestPresent": true,
+          "expectedPSHome": true
+        },
+        "cimModuleObservation": {
+          "manifestPresent": true
+        }
+      },
+      "eofSent": true,
+      "forcedTerminationRequested": true,
+      "terminal": {
+        "code": null,
+        "signal": "SIGTERM"
+      },
+      "stdioClosedConfirmed": true,
+      "ownedTerminalConfirmed": true,
+      "fixtureForcedTerminationRequested": true,
+      "fixtureTerminal": {
+        "code": null,
+        "signal": "SIGTERM"
+      },
+      "fixtureOwnedTerminalConfirmed": true,
+      "fixtureStdioClosedConfirmed": true,
+      "elapsedMs": 20049,
+      "status": "failed",
+      "failure": {
+        "stage": "supervisor-only-attach",
+        "check": "control-deadline",
+        "supervisorPhase": "query-fixture"
+      }
+    }
+  ],
+  "status": "failed",
+  "standardUser": {
+    "status": "failed",
+    "profileLoaded": true,
+    "sessionId": 2,
+    "administrator": false,
+    "interactiveTaskGate": "not-reached"
+  },
+  "bootstrapCleanup": {
+    "errors": [
+      "capacity-tool-cleanup-unconfirmed",
+      "test-profile-cleanup"
+    ],
+    "removed": false
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "v": 1,
+  "scope": "standard-user sanitized-environment supervisor control only; no production workload",
+  "node": "v24.21.0",
+  "runnerSha256": "36da4df8d6ecd437829c8a0c7b6ef0efd216bad6b4aca065d32d4600ab4591ba",
+  "supervisorSha256": "6232ef63b3374473d1f1319c84f660bf440584d13aab621717240655d33d7b36",
+  "controlSha256": "79a2e7bd6d9623d61924496f170df023d7af12c92a6d83c5658c04cd43d01063",
+  "runs": [
+    {
+      "runType": "supervisor-only-no-workload",
+      "variant": "json-command",
+      "productionImported": false,
+      "executionPolicyObservation": "not-queried",
+      "environmentParity": {
+        "inheritedExecutionPolicy": false,
+        "inheritedModulePath": false,
+        "explicitExecutionPolicyArgument": false
+      },
+      "stderrBytes": 0,
+      "stderrByteCountCapped": false,
+      "stderrEncoding": null,
+      "control": {
+        "phase": "serialize-ready",
+        "encoding": "ascii-compatible"
+      },
+      "eofSent": true,
+      "forcedTerminationRequested": true,
+      "terminal": {
+        "code": null,
+        "signal": "SIGTERM"
+      },
+      "stdioClosedConfirmed": true,
+      "ownedTerminalConfirmed": true,
+      "elapsedMs": 20037,
+      "status": "failed",
+      "failure": {
+        "stage": "supervisor-json-startup",
+        "check": "control-deadline",
+        "supervisorPhase": "serialize-ready"
+      }
+    },
+    {
+      "runType": "supervisor-only-no-workload",
+      "variant": "supervisor-script",
+      "productionImported": false,
+      "executionPolicyObservation": "not-queried",
+      "environmentParity": {
+        "inheritedExecutionPolicy": false,
+        "inheritedModulePath": false,
+        "explicitExecutionPolicyArgument": false
+      },
+      "stderrBytes": 0,
+      "stderrByteCountCapped": false,
+      "stderrEncoding": null,
+      "control": {
+        "phase": "compile-supervisor",
+        "encoding": "ascii-compatible"
+      },
+      "eofSent": true,
+      "forcedTerminationRequested": true,
+      "terminal": {
+        "code": null,
+        "signal": "SIGTERM"
+      },
+      "stdioClosedConfirmed": true,
+      "ownedTerminalConfirmed": true,
+      "elapsedMs": 20018,
+      "status": "failed",
+      "failure": {
+        "stage": "supervisor-only-startup",
+        "check": "control-deadline",
+        "supervisorPhase": "compile-supervisor"
+      }
+    }
+  ],
+  "status": "failed",
+  "standardUser": {
+    "status": "failed",
+    "profileLoaded": true,
+    "sessionId": 2,
+    "administrator": false,
+    "interactiveTaskGate": "not-reached"
+  },
+  "bootstrapCleanup": {
+    "removed": false,
+    "errors": [
+      "capacity-tool-cleanup-unconfirmed",
+      "test-profile-cleanup"
+    ]
+  }
+}

@@ -1,6 +1,7 @@
 # CI-only bootstrap. Never run on an owner's computer.
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$Report)
+param([Parameter(Mandatory)][string]$Report,
+      [ValidateSet('engine','candidate-startup','candidate-storage','candidate-channel','capacity-supervisor','capacity-attach','capacity-sample','capacity-startup','capacity-custody','capacity-channel','capacity-connector','capacity-preflight','capacity-pilot')][string]$Mode = 'engine')
 $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -ne 'true' -or $env:AGENT_COMMS_DISPOSABLE_WINDOWS -ne '1') {
     throw 'Disposable GitHub Windows runner required'
@@ -10,7 +11,9 @@ if (-not ([Security.Principal.WindowsPrincipal]$identity).IsInRole([Security.Pri
     throw 'CI bootstrap requires the disposable runner administrator'
 }
 $repository = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$Report = [IO.Path]::GetFullPath($Report)
+. (Join-Path $repository 'tools/acceptance/windows-report-path.ps1')
+. (Join-Path $repository 'tools/acceptance/windows-capacity-cleanup.ps1')
+$Report = Resolve-WindowsAcceptanceReportPath $Report
 $runId = [Guid]::NewGuid().ToString('N')
 $userName = 'comms' + $runId.Substring(0, 12)
 # New-LocalUser limits Description to 48 characters; keep the full run marker.
@@ -26,7 +29,8 @@ $cleanupErrors = [Collections.Generic.List[string]]::new()
 $gate = 'create-test-account'
 
 function Invoke-Checked([string]$File, [string[]]$Arguments) {
-    & $File @Arguments | Out-Null
+    if ($Mode -eq 'engine') { & $File @Arguments | Out-Null }
+    else { & $File @Arguments 2>$null | Out-Null }
     if ($LASTEXITCODE -ne 0) { throw 'CI bootstrap native command failed' }
 }
 
@@ -48,11 +52,17 @@ try {
     $stageCreated = $true
     Invoke-Checked 'icacls.exe' @($stage, '/inheritance:r', '/grant:r', '*S-1-5-18:(OI)(CI)F', '*S-1-5-32-544:(OI)(CI)F', "*${sid}:(OI)(CI)RX")
     $git = (Get-Command git.exe).Source
-    foreach ($entry in @(
-        @{name='candidate';source=$repository},
-        @{name='bot';source=(Join-Path $repository '.windows-fixtures/agent-bot')},
-        @{name='released';source=(Join-Path $repository '.windows-fixtures/agent-comms')}
-    )) {
+    $entries = @(@{name='candidate';source=$repository})
+    if ($Mode -eq 'engine') {
+        $entries += @(@{name='bot';source=(Join-Path $repository '.windows-fixtures/agent-bot')},
+                      @{name='released';source=(Join-Path $repository '.windows-fixtures/agent-comms')})
+    } elseif ($Mode -in @('candidate-startup','candidate-storage','candidate-channel')) {
+        $entries += @(@{name='correction';source=(Join-Path $repository '.windows-fixtures/stale-correction')})
+    } else {
+        $entries += @(@{name='old';source=(Join-Path $repository '.windows-fixtures/observability-old')},
+                      @{name='new';source=(Join-Path $repository '.windows-fixtures/observability-new')})
+    }
+    foreach ($entry in $entries) {
         $source = (Resolve-Path $entry.source).Path
         # Exact-path trust is only for these read-only CI inputs; no global config.
         Invoke-Checked $git @('-c', "safe.directory=$source", 'clone', '--local', '--no-hardlinks', '--no-checkout', $source, (Join-Path $stage ($entry.name + '-source')))
@@ -60,10 +70,11 @@ try {
     $nodeDirectory = Split-Path -Parent $env:AGENT_COMMS_ACCEPTANCE_NODE
     Copy-Item -LiteralPath $nodeDirectory -Destination (Join-Path $stage 'node') -Recurse
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'windows-acceptance-child.ps1') -Destination (Join-Path $stage 'child.ps1')
+    Copy-Item -LiteralPath (Join-Path $repository 'tools/acceptance/windows-native-command.ps1') -Destination (Join-Path $stage 'native-command.ps1')
     $results = Join-Path $stage 'results'
     New-Item -ItemType Directory -Path $results | Out-Null
     Invoke-Checked 'icacls.exe' @($results, '/grant:r', "*${sid}:(OI)(CI)M")
-    @{sid=$sid;runId=$runId;git=$git;nodeArchiveSha256=$env:AGENT_COMMS_NODE_ARCHIVE_SHA256} |
+    @{sid=$sid;runId=$runId;git=$git;mode=$Mode;nodeArchiveSha256=$env:AGENT_COMMS_NODE_ARCHIVE_SHA256} |
         ConvertTo-Json | Set-Content -LiteralPath (Join-Path $stage 'inputs.json') -Encoding utf8
 
     $gate = 'launch-profile-process'
@@ -80,7 +91,14 @@ try {
     $password = $null
     $credential = $null
     $gate = 'standard-user-engine-acceptance'
-    if (-not $child.WaitForExit(15 * 60 * 1000)) { throw 'Standard-user acceptance timed out' }
+    if (-not $child.WaitForExit(15 * 60 * 1000)) {
+        if ($Mode -ne 'engine') {
+            # The directly owned Process handle is safe; no descendant PID kill.
+            $child.Kill()
+            [void]$child.WaitForExit(5000)
+        }
+        throw 'Standard-user acceptance timed out'
+    }
     $child.Refresh()
     if ($null -eq $child.ExitCode) { throw 'Acceptance exit status unavailable' }
     $exitCode = $child.ExitCode
@@ -109,7 +127,10 @@ try {
                 $owner = $null
                 try {
                     $owner = Invoke-CimMethod -InputObject $process -MethodName GetOwnerSid
-                    if ($owner.Sid -eq $sid) { Stop-Process -Id $process.ProcessId -Force -ErrorAction Stop }
+                    if ($owner.Sid -eq $sid) {
+                        if ($Mode -eq 'engine') { Stop-Process -Id $process.ProcessId -Force -ErrorAction Stop }
+                        else { $cleanupErrors.Add('capacity-account-process-survived') }
+                    }
                 } catch {
                     if ($owner -and $owner.Sid -eq $sid -and (Get-Process -Id $process.ProcessId -ErrorAction SilentlyContinue)) { $cleanupErrors.Add('test-process-cleanup') }
                 }
@@ -122,16 +143,33 @@ try {
             }
         } catch { $cleanupErrors.Add('task-absence-query') }
     }
-    $engineReport = Join-Path $stage 'results/acceptance.json'
+    $engineReport = if ($Mode -eq 'engine') { Join-Path $stage 'results/acceptance.json' } else { Join-Path $stage 'results/capacity/capacity.json' }
+    if ($Mode -ne 'engine') {
+        try {
+            $capacityArtifacts = Join-Path $stage 'results/capacity'
+            if (Test-Path -LiteralPath $capacityArtifacts) {
+                $destination = Join-Path (Split-Path -Parent $Report) 'capacity'
+                New-Item -ItemType Directory -Path (Split-Path -Parent $Report) -Force | Out-Null
+                Copy-Item -LiteralPath $capacityArtifacts -Destination $destination -Recurse
+            }
+        } catch { $cleanupErrors.Add('capacity-artifact-copy') }
+    }
     $childReport = Join-Path $stage 'results/bootstrap.json'
-    $reportData = @{engineOnly=$true;cases=@();requiredEngineChecks='failed';completeEmbeddingAcceptance=$false}
+    $reportData = if ($Mode -eq 'engine') { @{engineOnly=$true;cases=@();requiredEngineChecks='failed';completeEmbeddingAcceptance=$false} }
+                  else { @{capacityOnly=$true;status='failed';completeEmbeddingAcceptance=$false} }
     try {
         if (Test-Path -LiteralPath $engineReport) { $reportData = Get-Content -LiteralPath $engineReport -Raw | ConvertFrom-Json -AsHashtable }
         if (Test-Path -LiteralPath $childReport) { $reportData.standardUser = Get-Content -LiteralPath $childReport -Raw | ConvertFrom-Json -AsHashtable }
     } catch { $cleanupErrors.Add('report-read') }
+    if ($Mode -ne 'engine' -and $child) {
+        if (-not (Test-WindowsCapacityCleanupConfirmed (Join-Path $stage 'results/capacity'))) {
+            $cleanupErrors.Add('capacity-tool-cleanup-unconfirmed')
+        }
+    }
     if ($sid) {
         try {
             for ($attempt=0; $attempt -lt 20; $attempt++) {
+                if ($Mode -ne 'engine' -and $cleanupErrors.Count -gt 0) { throw 'Capacity cleanup unconfirmed; retain profile scratch' }
                 $profile = Get-CimInstance Win32_UserProfile | Where-Object SID -eq $sid
                 if (-not $profile -or -not $profile.Loaded) { break }
                 Start-Sleep -Milliseconds 250
@@ -142,19 +180,44 @@ try {
                 if (Get-CimInstance Win32_UserProfile | Where-Object SID -eq $sid) { throw 'Test profile still present' }
             }
         } catch { $cleanupErrors.Add('test-profile-cleanup') }
-        try { Remove-LocalUser -SID $sid } catch { $cleanupErrors.Add('test-account-cleanup') }
-        if (Get-LocalUser -SID $sid -ErrorAction SilentlyContinue) { $cleanupErrors.Add('test-account-still-present') }
+        if ($Mode -eq 'engine' -or $cleanupErrors.Count -eq 0) {
+            try { Remove-LocalUser -SID $sid } catch { $cleanupErrors.Add('test-account-cleanup') }
+            if (Get-LocalUser -SID $sid -ErrorAction SilentlyContinue) { $cleanupErrors.Add('test-account-still-present') }
+        }
     }
-    if ($stageCreated) {
+    if ($stageCreated -and ($Mode -eq 'engine' -or $cleanupErrors.Count -eq 0)) {
         try { Remove-Item -LiteralPath $stage -Recurse -Force } catch { $cleanupErrors.Add('input-stage-cleanup') }
     }
     if ($failure) { $reportData.environmentFailure = $failure; $exitCode = 1 }
     if ($cleanupErrors.Count -gt 0) { $exitCode = 1 }
-    if ($reportData.requiredEngineChecks -ne 'passed') { $exitCode = 1 }
-    $reportData.bootstrapCleanup = @{accountSid=$sid;errors=@($cleanupErrors.ToArray());removed=($cleanupErrors.Count -eq 0)}
-    if ($exitCode -ne 0) { $reportData.requiredEngineChecks = 'failed' }
-    New-Item -ItemType Directory -Path (Split-Path -Parent $Report) -Force | Out-Null
-    $reportData | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $Report -Encoding utf8
+    if ($Mode -eq 'engine') {
+        if ($reportData.requiredEngineChecks -ne 'passed') { $exitCode = 1 }
+        $reportData.bootstrapCleanup = @{accountSid=$sid;errors=@($cleanupErrors.ToArray());removed=($cleanupErrors.Count -eq 0)}
+        if ($exitCode -ne 0) { $reportData.requiredEngineChecks = 'failed' }
+    } else {
+        if ($reportData.status -ne 'passed') { $exitCode = 1 }
+        $reportData.bootstrapCleanup = @{errors=@($cleanupErrors.ToArray());removed=($cleanupErrors.Count -eq 0)}
+        if ($failure -or $cleanupErrors.Count -gt 0) { $reportData.status = 'failed' }
+    }
+    try {
+        New-Item -ItemType Directory -Path (Split-Path -Parent $Report) -Force | Out-Null
+        $reportData | ConvertTo-Json -Depth 30 | Set-Content -LiteralPath $Report -Encoding utf8
+    } catch {
+        $cleanupErrors.Add('report-write-failed')
+        $exitCode = 1
+    }
+    # This fallback contains only bounded control fields, never paths or SIDs.
+    $childGate = $null
+    $childErrorType = $null
+    if ($reportData.standardUser.failure) {
+        $candidateGate = $reportData.standardUser.failure.gate
+        $childGate = if ($candidateGate -in @('validate-profile-token','clone-child-owned-inputs','production-connector-capacity','production-interactive-task-and-engine')) { $candidateGate } else { 'unknown-child-stage' }
+        $candidateType = [string]$reportData.standardUser.failure.errorType
+        $childErrorType = if ($candidateType -cmatch '^[A-Za-z][A-Za-z0-9]{0,95}$') { $candidateType } else { 'unknown-child-error' }
+    }
+    @{status=$(if ($exitCode -eq 0) { 'passed' } else { 'failed' });gate=$gate;
+      errorType=$(if ($failure) { $failure.errorType } else { $null });childGate=$childGate;childErrorType=$childErrorType;cleanup=@($cleanupErrors.ToArray())} |
+        ConvertTo-Json -Depth 4 -Compress | ForEach-Object { [Console]::Out.WriteLine($_) }
     if ($password) { $password.Dispose() }
     $password = $null
     $credential = $null

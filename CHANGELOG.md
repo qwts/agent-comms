@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Preserve the Windows connector's closed local refusal stage through generic client error wrapping as nonenumerable internal metadata. Unknown/accessor and remote-response fields are excluded; public errors, authentication and deadlines remain unchanged (#164).
 - Preserve the first client result or error before best-effort disposal, so a synchronous disposal throw or later close/error cannot replace it. Disposal attempts do not establish helper or descendant exit (#164).
 
+### Validation
+- Development-only Windows startup evidence can preserve the existing closed local connector stage through correlated fixture failure IPC, using an explicitly pinned reviewed source. Historical failures remain retained; native Windows capacity and installed host acceptance remain unqualified (#164).
+
 ## [0.5.3] - 2026-10-12
 
 ### Fixed
