@@ -870,6 +870,131 @@
       "now": 2000000100,
       "stageExp": 2000000100,
       "expected": false
+    },
+    {
+      "id": "preparation-cannot-extend-broker-cap",
+      "acceptedAt": 2000000000,
+      "preparedAt": 2000000030,
+      "exp": 2000000210,
+      "now": 2000000000,
+      "stageExp": null,
+      "expected": false
+    }
+  ],
+  "primitiveCases": [
+    {
+      "id": "soul-v8",
+      "field": "soul",
+      "value": "agent_01234567-89ab-8cde-8f01-23456789abcd",
+      "expected": true
+    },
+    {
+      "id": "soul-v1",
+      "field": "soul",
+      "value": "agent_01234567-89ab-1cde-af01-23456789abcd",
+      "expected": true
+    },
+    {
+      "id": "soul-version-zero",
+      "field": "soul",
+      "value": "agent_01234567-89ab-0cde-8f01-23456789abcd",
+      "expected": false
+    },
+    {
+      "id": "soul-invalid-variant",
+      "field": "soul",
+      "value": "agent_01234567-89ab-8cde-7f01-23456789abcd",
+      "expected": false
+    },
+    {
+      "id": "principal-existing-unrestricted-groups",
+      "field": "principal",
+      "value": "principal_01234567-89ab-0cde-7f01-23456789abcd",
+      "expected": true
+    },
+    {
+      "id": "request-v8-refused",
+      "field": "requestId",
+      "value": "01234567-89ab-8cde-8f01-23456789abcd",
+      "expected": false
+    },
+    {
+      "id": "request-v4",
+      "field": "requestId",
+      "value": "01234567-89ab-4cde-8f01-23456789abcd",
+      "expected": true
+    },
+    {
+      "id": "host-dns",
+      "field": "host",
+      "value": "hooks.example.test",
+      "expected": true
+    },
+    {
+      "id": "host-ipv6-port",
+      "field": "host",
+      "value": "[2001:db8::1]:8443",
+      "expected": true
+    },
+    {
+      "id": "host-ipv4",
+      "field": "host",
+      "value": "127.0.0.1",
+      "expected": true
+    },
+    {
+      "id": "host-default-port",
+      "field": "host",
+      "value": "hooks.example.test:443",
+      "expected": false
+    },
+    {
+      "id": "host-uppercase",
+      "field": "host",
+      "value": "HOOKS.example.test",
+      "expected": false
+    },
+    {
+      "id": "host-port-leading-zero",
+      "field": "host",
+      "value": "hooks.example.test:08443",
+      "expected": false
+    },
+    {
+      "id": "host-expanded-ipv6",
+      "field": "host",
+      "value": "[2001:0db8::1]",
+      "expected": false
+    },
+    {
+      "id": "host-path",
+      "field": "host",
+      "value": "hooks.example.test/path",
+      "expected": false
+    },
+    {
+      "id": "host-credentials",
+      "field": "host",
+      "value": "user@hooks.example.test",
+      "expected": false
+    },
+    {
+      "id": "host-query",
+      "field": "host",
+      "value": "hooks.example.test?secret=value",
+      "expected": false
+    },
+    {
+      "id": "host-idna-noncanonical",
+      "field": "host",
+      "value": "é.example.test",
+      "expected": false
+    },
+    {
+      "id": "host-empty",
+      "field": "host",
+      "value": "",
+      "expected": false
     }
   ]
 }

@@ -37,6 +37,7 @@ production parser.
 | `displayBoundaries` | 400 scalars accepts, 401 refuses; 500 UTF-8 bytes accepts, 501 refuses; a 64-character account makes a longer otherwise valid reason unpreparable. Signed examples describe bytes only: a refused display must never reach a real issuer. |
 | `serialization` | Exact nested ASCII key order, raw Unicode scalar bytes, all required control/string escapes, integer endpoints and zero. These are generic serialization vectors, not allowed operation parameters. |
 | `negativeActionBytes` | Original bytes, including duplicate/non-ASCII/unknown keys, invalid UTF-8/surrogates, alternate escapes/escaped slash, noninteger/unsafe numbers, BOM and outside whitespace. Do not pre-parse through a library that loses duplicate keys or invalid bytes. |
+| `primitiveCases` | Existing soul UUID versions 1–8/RFC variant versus unrestricted principal UUID groups and request v4; normalized WHATWG HTTPS host spelling including IPv6. Grammar acceptance is separate from target/staging authorization. |
 | `receiptClockCases` | Strict receipt time envelope, including future equality, expiry equality, zero/61-second lifetimes, negative and fractional timestamps. |
 | `preparationClockCases` | Symmetric 30-second preparation timestamp skew, unchanged broker/stage deadlines and expiry equality. |
 | `nativePresenceClockCases` | Existing p1 expiry grace equality and one second beyond it. Preserve these semantics separately from strict d1 expiry. |
