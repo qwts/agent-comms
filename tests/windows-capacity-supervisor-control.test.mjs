@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
-import { createCapacityController } from '../tools/acceptance/windows-capacity-control.mjs';
+import { createCapacityController, utilityProbeCommand } from '../tools/acceptance/windows-capacity-control.mjs';
 
 async function within(promise, ms) {
   let timer;
@@ -13,7 +13,8 @@ async function within(promise, ms) {
 
 for (const [kind, command] of [
   ['bare literal', `[Console]::Out.WriteLine('{"id":0,"ok":true,"phase":"ready"}');[Console]::Out.Flush()`],
-  ['JSON-only', `[Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"serialize-ready"}');[Console]::Out.Flush();$json=(@{id=0;ok=$true;phase='ready'} | ConvertTo-Json -Depth 8 -Compress);[Console]::Out.WriteLine($json);[Console]::Out.Flush()`],
+  ['JSON-only', utilityProbeCommand()],
+  ['explicit built-in Utility', utilityProbeCommand(true)],
 ]) test(`${kind} classic shell emits control and exits naturally with stdin still open`, { skip: process.platform !== 'win32' }, async () => {
   const shell = path.join(process.env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe');
   const child = spawn(shell, ['-NoLogo','-NoProfile','-NonInteractive','-Command',command], { stdio: ['pipe','pipe','pipe'], windowsHide: true });

@@ -1,5 +1,11 @@
 // Dev-only finite control transport. Failure records never contain child output.
-const PHASES = new Set(['script-entry','compile-supervisor','supervisor-compiled','serialize-ready','ready-serialized','read-control','verify-fixture','assign-private-job','sample-job','query-members','close-job']);
+const PHASES = new Set(['script-entry','compile-supervisor','supervisor-compiled','module-observation','import-utility','utility-imported','serialize-ready','ready-serialized','read-control','verify-fixture','assign-private-job','sample-job','query-members','close-job']);
+// Diagnostic-only comparison: never used by the production connector.
+export function utilityProbeCommand(explicit = false) {
+  const observe = `$manifest=[IO.Path]::Combine($PSHOME,'Modules\\Microsoft.PowerShell.Utility\\Microsoft.PowerShell.Utility.psd1');$present=[IO.File]::Exists($manifest);$expected=[string]::Equals([IO.Path]::GetFullPath($PSHOME),[IO.Path]::GetFullPath([IO.Path]::Combine([Environment]::GetEnvironmentVariable('SystemRoot'),'System32\\WindowsPowerShell\\v1.0')),[StringComparison]::OrdinalIgnoreCase);[Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"module-observation","manifestPresent":'+$present.ToString().ToLowerInvariant()+',"expectedPSHome":'+$expected.ToString().ToLowerInvariant()+'}');[Console]::Out.Flush();`;
+  const load = explicit ? `if (-not $present -or -not $expected) {[Console]::Out.WriteLine('{"id":0,"ok":false,"failure":{"phase":"module-observation"}}');[Console]::Out.Flush();exit 1};[Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"import-utility"}');[Console]::Out.Flush();Import-Module -Name $manifest -ErrorAction Stop;[Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"utility-imported"}');[Console]::Out.Flush();` : '';
+  return observe + load + `[Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"serialize-ready"}');[Console]::Out.Flush();$json=(@{id=0;ok=$true;phase='ready'} | ConvertTo-Json -Depth 8 -Compress);[Console]::Out.WriteLine($json);[Console]::Out.Flush();[Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"ready-serialized"}');[Console]::Out.Flush()`;
+}
 export function encodingSignature(chunk) {
   if (chunk[0] === 0xff && chunk[1] === 0xfe) return 'utf16le-bom';
   if (chunk[0] === 0xfe && chunk[1] === 0xff) return 'utf16be-bom';
@@ -11,7 +17,7 @@ export function encodingSignature(chunk) {
 // A subsequent diagnostic must not overlap a child whose lifetime is unknown.
 export async function collectSupervisorProbes(probe, record) {
   let mayContinue = true;
-  for (const variant of ['json-command','supervisor-script']) {
+  for (const variant of ['json-command','explicit-utility-command']) {
     if (!mayContinue) {
       await record({ runType: 'supervisor-only-no-workload', variant, productionImported: false,
         status: 'not-run', reason: 'prior-cleanup-unconfirmed' });
@@ -23,7 +29,7 @@ export async function collectSupervisorProbes(probe, record) {
   }
 }
 export function createCapacityController(owned, { ipc = false, classifyFailure = () => new Error('job-supervisor-failed') } = {}) {
-  const pending = new Map(); let id = 1, bytes = '', rejected, phase, encoding;
+  const pending = new Map(); let id = 1, bytes = '', rejected, phase, encoding, moduleObservation;
   let resolveStartup, rejectStartup;
   const startup = new Promise((resolve, reject) => { resolveStartup = resolve; rejectStartup = reject; });
   startup.catch(() => {}); // A startup failure may precede the parent's await.
@@ -38,6 +44,13 @@ export function createCapacityController(owned, { ipc = false, classifyFailure =
     if (!record || typeof record !== 'object' || !Number.isSafeInteger(record.id)) { fail('control-invalid'); return; }
     if (record.id === -1 && !ipc) {
       if (!PHASES.has(record.phase)) { fail('control-invalid'); return; }
+      if (record.phase === 'module-observation') {
+        if (typeof record.manifestPresent !== 'boolean' || typeof record.expectedPSHome !== 'boolean'
+            || Object.keys(record).some(key => !['id','ok','phase','manifestPresent','expectedPSHome'].includes(key))) {
+          fail('control-invalid'); return;
+        }
+        moduleObservation = { manifestPresent: record.manifestPresent, expectedPSHome: record.expectedPSHome };
+      }
       phase = record.phase;
     } else if (record.id === 0) resolveStartup(record);
     else pending.get(record.id)?.resolve(record);
@@ -55,7 +68,8 @@ export function createCapacityController(owned, { ipc = false, classifyFailure =
   });
   owned.exited.then(closed);
   owned.child.stdin?.on('error', closed); owned.child.stdout?.on('error', closed);
-  return { startup, state: () => ({ phase: phase ?? null, encoding: encoding ?? null }),
+  return { startup, state: () => ({ phase: phase ?? null, encoding: encoding ?? null,
+    ...(moduleObservation === undefined ? {} : { moduleObservation: { ...moduleObservation } }) }),
     async request(op, fields = {}, timeout = 5000) {
       if (rejected) throw rejected;
       if (owned.terminal()) throw new Error('control-closed');

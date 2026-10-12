@@ -41,6 +41,22 @@ test('UTF16 framing is identified and refused instead of disguised as a deadline
   await assert.rejects(control.startup, { message: 'control-invalid' });
   assert.equal(control.state().encoding, 'utf16le-json'); owned.close();
 });
+test('module observations retain only typed booleans and reject extra or untyped fields', async () => {
+  const owned = transport(), control = createCapacityController(owned);
+  owned.child.stdout.write('{"id":-1,"ok":true,"phase":"module-observation","manifestPresent":true,"expectedPSHome":false}\n');
+  assert.deepEqual(control.state().moduleObservation, { manifestPresent: true, expectedPSHome: false });
+  control.state().moduleObservation.manifestPresent = false;
+  assert.equal(control.state().moduleObservation.manifestPresent, true);
+  owned.child.stdout.write('{"id":-1,"phase":"import-utility"}\n{"id":-1,"phase":"utility-imported"}\n{"id":0,"ok":true,"phase":"ready"}\n');
+  assert.equal((await control.startup).phase, 'ready'); owned.close();
+  for (const fields of [{ manifestPresent: 'true', expectedPSHome: true },
+    { manifestPresent: true }, { manifestPresent: true, expectedPSHome: true, path: 'CANARY-private-path' }]) {
+    const invalidOwned = transport(), invalidControl = createCapacityController(invalidOwned);
+    invalidOwned.child.stdout.write(`${JSON.stringify({ id: -1, phase: 'module-observation', ...fields })}\n`);
+    await assert.rejects(invalidControl.startup, { message: 'control-invalid' });
+    assert.equal(invalidControl.state().moduleObservation, undefined); invalidOwned.close();
+  }
+});
 test('owned terminal before readiness rejects the startup promise', async () => {
   const owned = transport(), control = createCapacityController(owned);
   owned.close(); await assert.rejects(control.startup, { message: 'control-closed' });
@@ -94,7 +110,7 @@ test('supervisor variants never start a second process after uncertain exit or s
     }, (record) => records.push(record));
     assert.deepEqual(calls, ['json-command']);
     assert.equal(records[0].status, 'failed');
-    assert.deepEqual(records[1], { runType: 'supervisor-only-no-workload', variant: 'supervisor-script',
+    assert.deepEqual(records[1], { runType: 'supervisor-only-no-workload', variant: 'explicit-utility-command',
       productionImported: false, status: 'not-run', reason: 'prior-cleanup-unconfirmed' });
   }
 });
@@ -104,6 +120,6 @@ test('a failed but fully disposed first probe allows a matched second diagnostic
     calls.push(variant); return { variant, status: calls.length === 1 ? 'failed' : 'passed',
       ownedTerminalConfirmed: true, stdioClosedConfirmed: true };
   }, (record) => records.push(record));
-  assert.deepEqual(calls, ['json-command','supervisor-script']);
+  assert.deepEqual(calls, ['json-command','explicit-utility-command']);
   assert.deepEqual(records.map((record) => record.status), ['failed','passed']);
 });

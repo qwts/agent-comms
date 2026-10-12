@@ -1,0 +1,33 @@
+{
+  "status": "failed",
+  "stage": "supervisor-json-startup",
+  "check": "control-deadline",
+  "supervisorPhase": "serialize-ready",
+  "supervisorProbe": {
+    "runType": "supervisor-only-no-workload",
+    "variant": "json-command",
+    "productionImported": false,
+    "executionPolicyObservation": "not-queried",
+    "environmentParity": {
+      "inheritedExecutionPolicy": false,
+      "inheritedModulePath": false,
+      "explicitExecutionPolicyArgument": false
+    },
+    "stderrBytes": 0,
+    "stderrByteCountCapped": false,
+    "stderrEncoding": null,
+    "control": {
+      "phase": "serialize-ready",
+      "encoding": "ascii-compatible"
+    },
+    "eofSent": true,
+    "forcedTerminationRequested": true,
+    "terminal": {
+      "code": null,
+      "signal": "SIGTERM"
+    },
+    "stdioClosedConfirmed": true,
+    "ownedTerminalConfirmed": true,
+    "elapsedMs": 20037
+  }
+}

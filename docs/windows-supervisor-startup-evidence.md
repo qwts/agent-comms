@@ -61,3 +61,32 @@ supervisor with literal markers after the compile pipeline, before ready
 serialization and after it. It preserves the same environment, policy,
 startup deadline, total process budget and cleanup guard. Neither variant
 changes production connector behavior or establishes capacity qualification.
+
+The third run,
+[38209372753](https://github.com/qwts/agent-comms/actions/runs/38209372753), at
+`bb4d9e2e03612e4de8b96fbf4c4e33bea92e49af`, failed both controls. JSON-only
+reached `serialize-ready` then its readiness deadline (20,037 ms total).
+The supervisor reached `compile-supervisor`, with no `supervisor-compiled`
+marker before the deadline (20,018 ms total). Both recorded zero stderr bytes,
+ASCII-compatible control, EOF and forced `SIGTERM` requested, confirmed owned
+terminal and stdio close. The parent retained the account/profile/stage.
+No production code was imported. Original SHA256 values:
+
+- [Acceptance](../tools/acceptance/evidence/2026-10-12-windows-connector/supervisor-38209372753/acceptance.json):
+  `34dbedb551f1ce09fc97d032a9fedf70759353a2f3cba77fff64c9ea48c4c6e6`.
+- [Capacity](../tools/acceptance/evidence/2026-10-12-windows-connector/supervisor-38209372753/capacity/capacity.json):
+  `c0ac6fd99d8e6eb307e3f48c8160cd2000f7bd4d3eec4ab40dd04115e65b2929`.
+- [Failure](../tools/acceptance/evidence/2026-10-12-windows-connector/supervisor-38209372753/capacity/failure.json):
+  `9abf54f426504a938f67ced46e3283a7e3c894ecc88d2a17e0a08ed34f7d13da`.
+- Failed-step log: `f273eddbffa1662558ad79cc1fb01bbd2d5fe33128687edb1794661e954f28f2`.
+
+The JSON-only failure reproduces independently of compilation. Both
+`ConvertTo-Json` and `Add-Type` belong to the built-in Utility module; shared
+module loading is a concrete lead, not an established cause. The next
+comparison keeps implicit JSON loading and explicitly imports only the classic
+shell's Utility manifest before JSON. Literal/.NET observations classify
+manifest presence and expected classic `PSHOME` without publishing paths;
+explicit import refuses an unexpected home or absent manifest. Fixed phases
+bracket import and serialization. Environment, policy, startup/lifecycle
+budgets and the first-child cleanup guard remain unchanged. It runs no
+supervisor job, production imports or workload and does not qualify capacity.

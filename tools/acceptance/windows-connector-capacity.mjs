@@ -9,7 +9,7 @@ import { performance } from 'node:perf_hooks';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 import { admissionStage, RATES } from './windows-capacity-policy.mjs';
-import { collectSupervisorProbes, createCapacityController, encodingSignature } from './windows-capacity-control.mjs';
+import { collectSupervisorProbes, createCapacityController, encodingSignature, utilityProbeCommand } from './windows-capacity-control.mjs';
 
 const exec = promisify(execFile), SELF = fileURLToPath(import.meta.url);
 const JOB = fileURLToPath(new URL('./windows-capacity-job.ps1', import.meta.url));
@@ -18,7 +18,7 @@ const CANARY = 'CANARY-windows-capacity-body-secret';
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 let output, activeStage = 'arguments', fixtureCleanup;
-const supervisorPhases = new Set(['script-entry','compile-supervisor','supervisor-compiled','serialize-ready','ready-serialized','read-control','verify-fixture','assign-private-job','sample-job','query-members','close-job']);
+const supervisorPhases = new Set(['script-entry','compile-supervisor','supervisor-compiled','module-observation','import-utility','utility-imported','serialize-ready','ready-serialized','read-control','verify-fixture','assign-private-job','sample-job','query-members','close-job']);
 const checks = new Set(['fixture-terminal', 'fixture-deadline', 'control-deadline', 'control-closed',
   'control-output-bound', 'control-invalid', 'job-supervisor-failed', 'natural-exit-unconfirmed',
   'relay-exit-unconfirmed', 'scratch-retained', 'job-exit-unconfirmed', 'diagnostic-output-invalid',
@@ -116,9 +116,8 @@ async function supervisorProbe(variant) {
   const remaining = (at, cap) => Math.max(1, Math.min(cap, Math.floor(at - performance.now())));
   const shell = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
   const cleanEnvironment = environment();
-  const command = `[Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"serialize-ready"}');[Console]::Out.Flush();$json=(@{id=0;ok=$true;phase='ready'} | ConvertTo-Json -Depth 8 -Compress);[Console]::Out.WriteLine($json);[Console]::Out.Flush()`;
-  const owned = ownedChild(shell, ['-NoLogo','-NoProfile','-NonInteractive',
-    ...(variant === 'json-command' ? ['-Command',command] : ['-File',JOB])], {
+  const command = utilityProbeCommand(variant === 'explicit-utility-command');
+  const owned = ownedChild(shell, ['-NoLogo','-NoProfile','-NonInteractive','-Command',command], {
     env: cleanEnvironment, stdio: ['pipe','pipe','pipe'], windowsHide: true });
   const control = createCapacityController(owned, { classifyFailure: supervisorFailure });
   const evidence = { runType: 'supervisor-only-no-workload', variant, productionImported: false,
@@ -136,20 +135,16 @@ async function supervisorProbe(variant) {
   owned.child.stderr.on('error', () => { evidence.stderrEncoding = 'stream-error'; });
   let original;
   try {
-    activeStage = variant === 'json-command' ? 'supervisor-json-startup' : 'supervisor-only-startup';
+    activeStage = variant === 'json-command' ? 'supervisor-json-startup' : 'supervisor-explicit-utility-startup';
     const ready = await deadline(control.startup, 15_000, 'control-deadline');
     if (ready.ok === false) throw supervisorFailure(ready);
     assert.equal(ready.phase, 'ready');
-    activeStage = variant === 'json-command' ? 'supervisor-json-exit' : 'supervisor-only-close';
-    if (variant !== 'json-command') {
-      const closed = await control.request('close', {}, remaining(workDeadline, 10_000));
-      assert.equal(closed.jobEmptyConfirmed, true);
-    }
+    activeStage = variant === 'json-command' ? 'supervisor-json-exit' : 'supervisor-explicit-utility-exit';
     const terminal = await deadline(owned.exited, remaining(workDeadline, 5000), 'job-exit-unconfirmed');
     await deadline(owned.stdioClosed, remaining(workDeadline, 5000), 'job-exit-unconfirmed');
     assert.equal(terminal.code, 0); assert.equal(evidence.stderrBytes, 0); assert.notEqual(evidence.stderrEncoding, 'stream-error');
     evidence.cleanup = { jobEmptyConfirmed: true, naturalJobEmptyConfirmed: true,
-      jobCreated: variant !== 'json-command', scratchRemoved: true, scratchCreated: false };
+      jobCreated: false, scratchRemoved: true, scratchCreated: false };
     return evidence;
   } catch (error) {
     if (!error.supervisorPhase && supervisorPhases.has(control.state().phase)) error.supervisorPhase = control.state().phase;
