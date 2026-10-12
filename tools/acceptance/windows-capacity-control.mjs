@@ -1,6 +1,12 @@
 // Dev-only finite control transport. Failure records never contain child output.
-const PHASES = new Set(['bootstrap-ready','script-entry','compile-supervisor','supervisor-compiled','module-observation','import-utility','utility-imported','serialize-ready','ready-serialized','control-read','parse-control','control-parsed','cim-module-observation','verify-fixture-existence','verify-fixture-parent','verify-fixture-executable','parse-fixture-command','verify-fixture-argument-count','verify-fixture-arguments','convert-fixture-creation','verify-job-limit','cim-module-refused','import-cim','cim-imported','query-fixture','fixture-queried','create-private-job','private-job-assigned','read-control','verify-fixture','assign-private-job','sample-job','query-members','close-job']);
+const PHASES = new Set(['bootstrap-ready','script-entry','compile-supervisor','supervisor-compiled','module-observation','import-utility','utility-imported','serialize-ready','ready-serialized','control-read','parse-control','control-parsed','cim-module-observation','verify-fixture-existence','verify-fixture-parent','verify-fixture-executable','parse-fixture-command','verify-fixture-argument-count','verify-fixture-arguments','convert-fixture-creation','verify-job-limit','cim-module-refused','import-cim','cim-imported','query-fixture','fixture-queried','create-private-job','private-job-assigned','read-control','verify-fixture','assign-private-job','sample-job','sample-ids-read','sample-filter','sample-query','sample-rows','sample-verify','sample-classify','sample-observer','sample-observer-read','sample-reply','sample-replied','query-members','close-job']);
 export const FIXTURE_PHASES = new Set(['fixture-imports','fixture-broker-start','fixture-pair','fixture-approve','fixture-join-first','fixture-join-second','fixture-delivery-send','fixture-delivery-read','fixture-delivery-ack','fixture-delivery-empty','fixture-ready','custody-imports','custody-current-uid','custody-uid-checked','custody-shared','custody-shared-checked','custody-proofs','custody-proofs-checked','custody-state','custody-state-checked','custody-ready']);
+// Snapshot validated literal phases before cleanup can emit later progress.
+export function snapshotCapacityPhases(supervisor, fixture) {
+  const supervisorPhase = supervisor.state().phase, fixturePhase = fixture?.state().phase;
+  return { ...(PHASES.has(supervisorPhase) ? { supervisorPhase } : {}),
+    ...(FIXTURE_PHASES.has(fixturePhase) ? { fixturePhase } : {}) };
+}
 // Diagnostic-only comparison: never used by the production connector.
 export function utilityProbeCommand(explicit = false) {
   const observe = `$manifest=[IO.Path]::Combine($PSHOME,'Modules\\Microsoft.PowerShell.Utility\\Microsoft.PowerShell.Utility.psd1');$present=[IO.File]::Exists($manifest);$expected=[string]::Equals([IO.Path]::GetFullPath($PSHOME),[IO.Path]::GetFullPath([IO.Path]::Combine([Environment]::GetEnvironmentVariable('SystemRoot'),'System32\\WindowsPowerShell\\v1.0')),[StringComparison]::OrdinalIgnoreCase);[Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"module-observation","manifestPresent":'+$present.ToString().ToLowerInvariant()+',"expectedPSHome":'+$expected.ToString().ToLowerInvariant()+'}');[Console]::Out.Flush();`;
@@ -19,7 +25,7 @@ export function encodingSignature(chunk) {
 export async function collectSupervisorProbes(probe, record, variants = ['supervisor-script']) {
   if (!Array.isArray(variants) || variants.length < 1 || variants.length > 2
       || new Set(variants).size !== variants.length
-      || variants.some(variant => !['json-command','explicit-utility-command','supervisor-script','supervisor-attach'].includes(variant))) throw new Error('control-invalid');
+      || variants.some(variant => !['json-command','explicit-utility-command','supervisor-script','supervisor-attach','supervisor-sample'].includes(variant))) throw new Error('control-invalid');
   let mayContinue = true;
   for (const variant of variants) {
     if (!mayContinue) {

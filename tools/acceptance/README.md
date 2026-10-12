@@ -3,7 +3,7 @@
 ## Windows production-connector capacity pilot
 
 The manual Windows workflow has separate no-workload `capacity-supervisor`
-and `capacity-attach` diagnostics, the single-old-pin `capacity-startup`
+`capacity-attach` and one-sample `capacity-sample` diagnostics, the single-old-pin `capacity-startup`
 production startup/disposal probe without offered requests, and `capacity-custody`
 for the actual pinned current-account and three-directory custody API without a
 Broker or connector. These precede `capacity-preflight` and

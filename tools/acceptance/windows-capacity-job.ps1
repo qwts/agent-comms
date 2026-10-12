@@ -266,13 +266,26 @@ public static class CapacityJob {
             Reply @{id=$requestId;ok=$true;attached=$true;powershellVersion=@($PSVersionTable.PSVersion.Major,$PSVersionTable.PSVersion.Minor,$PSVersionTable.PSVersion.Build)}
         } elseif ($inputData.op -eq 'sample' -and $attached) {
             $phase = 'sample-job'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"sample-job"}'); [Console]::Out.Flush()
             $ids = @([CapacityJob]::Pids($job))
+            $phase = 'sample-ids-read'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"sample-ids-read"}'); [Console]::Out.Flush()
             if ($ids.Count -eq 0 -or $ids.Count -gt $maximumRows) { throw 'owned-job-empty-or-overbound' }
+            $phase = 'sample-filter'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"sample-filter"}'); [Console]::Out.Flush()
             $filter = ($ids | ForEach-Object { 'ProcessId=' + $_ }) -join ' OR '
+            $phase = 'sample-query'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"sample-query"}'); [Console]::Out.Flush()
             $rows = @(Get-CimInstance Win32_Process -Filter $filter -OperationTimeoutSec 2 | Where-Object { [CapacityJob]::Belongs($job, $_.ProcessId) })
+            $phase = 'sample-rows'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"sample-rows"}'); [Console]::Out.Flush()
             if ($rows.Count -gt $maximumRows) { throw 'owned-child-bound-exceeded' }
+            $phase = 'sample-verify'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"sample-verify"}'); [Console]::Out.Flush()
             $main = $rows | Where-Object ProcessId -eq $fixtureId
             if (-not $main -or $main.ParentProcessId -ne $parentId -or $main.ExecutablePath -ine $nodeExecutable -or $main.CreationDate.ToUniversalTime().Ticks.ToString() -ne $fixtureCreation) { throw 'fixture-lifetime-unconfirmed' }
+            $phase = 'sample-classify'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"sample-classify"}'); [Console]::Out.Flush()
             $totals = @{main=@{count=0;workingSetBytes=[uint64]0;cpu100ns=[uint64]0};relay=@{count=0;workingSetBytes=[uint64]0;cpu100ns=[uint64]0};diagnostic=@{count=0;workingSetBytes=[uint64]0;cpu100ns=[uint64]0};compiler=@{count=0;workingSetBytes=[uint64]0;cpu100ns=[uint64]0}}
             foreach ($row in $rows) {
                 $kind = 'main'
@@ -304,8 +317,16 @@ public static class CapacityJob {
                 $totals[$kind].cpu100ns += [uint64]$row.UserModeTime + [uint64]$row.KernelModeTime
             }
             if ($totals.relay.count -gt 32 -or $totals.diagnostic.count -gt 1) { throw 'owned-kind-bound' }
+            $phase = 'sample-observer'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"sample-observer"}'); [Console]::Out.Flush()
             $observer = Get-Process -Id $PID
+            $phase = 'sample-observer-read'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"sample-observer-read"}'); [Console]::Out.Flush()
+            $phase = 'sample-reply'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"sample-reply"}'); [Console]::Out.Flush()
             Reply @{id=$requestId;ok=$true;totals=$totals;jobPeakCommitBytes=[CapacityJob]::PeakCommit($job);jobCpu100ns=[CapacityJob]::Cpu100ns($job);observer=@{workingSetBytes=[uint64]$observer.WorkingSet64;cpu100ns=[uint64]$observer.TotalProcessorTime.Ticks}}
+            $phase = 'sample-replied'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"sample-replied"}'); [Console]::Out.Flush()
         } elseif ($inputData.op -eq 'members' -and $attached) {
             $phase = 'query-members'
             Reply @{id=$requestId;ok=$true;activeMembers=@([CapacityJob]::Pids($job)).Count}

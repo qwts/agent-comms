@@ -9,7 +9,7 @@ import { performance } from 'node:perf_hooks';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 import { admissionStage, RATES } from './windows-capacity-policy.mjs';
-import { collectSupervisorProbes, createCapacityController, encodingSignature, FIXTURE_PHASES } from './windows-capacity-control.mjs';
+import { collectSupervisorProbes, createCapacityController, encodingSignature, FIXTURE_PHASES, snapshotCapacityPhases } from './windows-capacity-control.mjs';
 
 import { cleanupCapacityRun, retainCapacityFailure } from './windows-capacity-lifecycle.mjs';
 
@@ -22,7 +22,7 @@ const CANARY = 'CANARY-windows-capacity-body-secret';
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 let output, activeStage = 'arguments', fixtureCleanup;
-const supervisorPhases = new Set(['script-entry','compile-supervisor','supervisor-compiled','module-observation','import-utility','utility-imported','serialize-ready','ready-serialized','control-read','parse-control','control-parsed','cim-module-observation','verify-fixture-existence','verify-fixture-parent','verify-fixture-executable','parse-fixture-command','verify-fixture-argument-count','verify-fixture-arguments','convert-fixture-creation','verify-job-limit','cim-module-refused','import-cim','cim-imported','query-fixture','fixture-queried','create-private-job','private-job-assigned','read-control','verify-fixture','assign-private-job','sample-job','query-members','close-job']);
+const supervisorPhases = new Set(['script-entry','compile-supervisor','supervisor-compiled','module-observation','import-utility','utility-imported','serialize-ready','ready-serialized','control-read','parse-control','control-parsed','cim-module-observation','verify-fixture-existence','verify-fixture-parent','verify-fixture-executable','parse-fixture-command','verify-fixture-argument-count','verify-fixture-arguments','convert-fixture-creation','verify-job-limit','cim-module-refused','import-cim','cim-imported','query-fixture','fixture-queried','create-private-job','private-job-assigned','read-control','verify-fixture','assign-private-job','sample-job','sample-ids-read','sample-filter','sample-query','sample-rows','sample-verify','sample-classify','sample-observer','sample-observer-read','sample-reply','sample-replied','query-members','close-job']);
 const checks = new Set(['fixture-terminal', 'fixture-deadline', 'control-deadline', 'control-closed',
   'control-output-bound', 'control-invalid', 'job-supervisor-failed', 'natural-exit-unconfirmed',
   'relay-exit-unconfirmed', 'scratch-retained', 'job-exit-unconfirmed', 'diagnostic-output-invalid',
@@ -145,7 +145,8 @@ async function supervisorProbe(variant) {
   const remaining = (at, cap) => Math.max(1, Math.min(cap, Math.floor(at - performance.now())));
   const shell = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
   const cleanEnvironment = environment();
-  const attachOnly = variant === 'supervisor-attach';
+  const sampleOnly = variant === 'supervisor-sample';
+  const attachOnly = variant === 'supervisor-attach' || sampleOnly;
   const fixtureArgs = [SELF, '--paused-fixture'];
   const paused = attachOnly ? ownedChild(process.execPath, fixtureArgs, {
     env: cleanEnvironment, stdio: ['ignore','ignore','pipe','ipc'], windowsHide: true }) : null;
@@ -153,7 +154,7 @@ async function supervisorProbe(variant) {
   const owned = ownedChild(shell, ['-NoLogo','-NoProfile','-NonInteractive','-File',JOB], {
     env: cleanEnvironment, stdio: ['pipe','pipe','pipe'], windowsHide: true });
   const control = createCapacityController(owned, { classifyFailure: supervisorFailure });
-  const evidence = { runType: attachOnly ? 'supervisor-attach-no-workload' : 'supervisor-only-no-workload', variant, productionImported: false,
+  const evidence = { runType: sampleOnly ? 'supervisor-sample-no-workload' : attachOnly ? 'supervisor-attach-no-workload' : 'supervisor-only-no-workload', variant, productionImported: false,
     executionPolicyObservation: 'not-queried',
     environmentParity: { inheritedExecutionPolicy: Object.keys(cleanEnvironment).some((key) => key.toLowerCase() === 'psexecutionpolicypreference'),
       inheritedModulePath: Object.keys(cleanEnvironment).some((key) => key.toLowerCase() === 'psmodulepath'), explicitExecutionPolicyArgument: false },
@@ -187,6 +188,16 @@ async function supervisorProbe(variant) {
         relayArgs: [], diagnosticArgs: [], compilerExecutables: [], compilerTemp: realpathSync(process.env.TEMP),
         commitLimitBytes: Math.min(2 * 1024 ** 3, Math.floor(os.totalmem() / 4)) }, remaining(started + 15_000, 15_000));
       assert.equal(attachment.attached, true); evidence.attached = true;
+      if (sampleOnly) {
+        activeStage = 'supervisor-only-sample';
+        const sample = await control.request('sample', {}, remaining(workDeadline, 5000));
+        for (const kind of ['main','relay','diagnostic','compiler']) {
+          for (const key of ['count','workingSetBytes','cpu100ns']) assert.ok(Number.isSafeInteger(sample.totals?.[kind]?.[key]) && sample.totals[kind][key] >= 0);
+          assert.equal(sample.totals[kind].count, kind === 'main' ? 1 : 0);
+        }
+        for (const value of [sample.jobPeakCommitBytes,sample.jobCpu100ns,sample.observer?.workingSetBytes,sample.observer?.cpu100ns]) assert.ok(Number.isSafeInteger(value) && value >= 0);
+        evidence.sampleValidated = true;
+      }
       activeStage = 'paused-fixture-stop';
       assert.equal((await pausedControl.request('stop', {}, remaining(workDeadline, 5000))).stopped, true);
       assert.equal((await deadline(paused.exited, remaining(workDeadline, 5000), 'fixture-terminal')).code, 0);
@@ -205,6 +216,7 @@ async function supervisorProbe(variant) {
     return evidence;
   } catch (error) {
     if (!error.supervisorPhase && supervisorPhases.has(control.state().phase)) error.supervisorPhase = control.state().phase;
+    evidence.failurePhases = snapshotCapacityPhases(control, pausedControl);
     error.supervisorProbe = evidence; original = error; throw error;
   } finally {
     if (paused) {
@@ -255,7 +267,7 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
   const supervisorOwned = ownedChild(shell, ['-NoLogo', '-NoProfile', '-NonInteractive', '-File', JOB], {
     env: environment(), stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
   const supervisor = createCapacityController(supervisorOwned, { classifyFailure: supervisorFailure });
-  let attached = false, disposed = false, sampler, sampling, sampleFailure, outputFailure = false, diagnosticBytes = 0, original, originalError;
+  let attached = false, disposed = false, sampler, sampling, sampleFailure, outputFailure = false, diagnosticBytes = 0, original, originalError, originalFixturePhase;
   let powershellVersion;
   const samples = [], stages = [], cleanupReceipt = { jobEmptyConfirmed: false, scratchRemoved: false };
   async function closeJob() {
@@ -311,6 +323,7 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
     const startup = await control.request('start', preflight === 'custody' ? { probe: 'custody' } : {}, 90_000);
     assert.equal(startup.ready, true);
     assert.equal(preflight === 'custody' ? startup.startupCustodyChecks : startup.startupDeliveryChecks, preflight === 'custody' ? 4 : 1);
+    activeStage = 'post-startup-process-check';
     await noRelays();
     sampler = setInterval(sample, 1000);
     if (preflight === 'custody') {
@@ -366,13 +379,15 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
       ownedTerminalConfirmed: fixtureOwned.terminal(), cleanup: cleanupReceipt };
   } catch (error) {
     if (!error.supervisorPhase && supervisorPhases.has(supervisor.state().phase)) error.supervisorPhase = supervisor.state().phase;
-    original = failure(error); originalError = error; throw error;
+    const phases = snapshotCapacityPhases(supervisor, control);
+    original = { ...failure(error), ...(phases.supervisorPhase ? { supervisorPhase: phases.supervisorPhase } : {}) };
+    originalFixturePhase = phases.fixturePhase; originalError = error; throw error;
   }
   finally {
     clearInterval(sampler); if (sampling) await sampling;
     const ownedCleanup = await cleanupCapacityRun({ fixture: fixtureOwned, supervisor: supervisorOwned,
       attached, disposed, closeJob, receipt: cleanupReceipt, removeScratch: () => rmSync(root, { recursive: true, force: true }) });
-    const fixturePhase = FIXTURE_PHASES.has(control.state().phase) ? control.state().phase : undefined;
+    const fixturePhase = originalError ? originalFixturePhase : FIXTURE_PHASES.has(control.state().phase) ? control.state().phase : undefined;
     if (originalError) originalError.capacityFailure = retainCapacityFailure(original, { revision, preflight, fixturePhase }, ownedCleanup);
     else if (ownedCleanup.errors.length) {
       const error = new Error('scratch-retained');
@@ -390,13 +405,13 @@ async function main() {
   assert.equal(process.version, `v${components.node.version}`);
   assert.equal(process.env.AGENT_COMMS_NODE_ARCHIVE_SHA256, components.node.sha256['win-x64']);
   assert.equal(process.argv[2], '--old'); assert.equal(process.argv[4], '--new'); assert.equal(process.argv[6], '--output');
-  assert.ok(process.argv.length === 8 || (process.argv.length === 9 && ['--preflight','--supervisor-preflight','--attach-preflight','--startup-preflight','--custody-preflight'].includes(process.argv[8])));
+  assert.ok(process.argv.length === 8 || (process.argv.length === 9 && ['--preflight','--supervisor-preflight','--attach-preflight','--sample-preflight','--startup-preflight','--custody-preflight'].includes(process.argv[8])));
   const preflight = process.argv[8] === '--preflight';
   const startupOnly = process.argv[8] === '--startup-preflight';
   const custodyOnly = process.argv[8] === '--custody-preflight';
   output = path.resolve(process.argv[7]); mkdirSync(output);
-  if (['--supervisor-preflight','--attach-preflight'].includes(process.argv[8])) {
-    const result = { v: 1, scope: process.argv[8] === '--attach-preflight' ? 'standard-user sanitized-environment paused-fixture attach only; no production imports or workload' : 'standard-user sanitized-environment supervisor control only; no production workload',
+  if (['--supervisor-preflight','--attach-preflight','--sample-preflight'].includes(process.argv[8])) {
+    const result = { v: 1, scope: process.argv[8] === '--sample-preflight' ? 'standard-user sanitized-environment paused-fixture observer sample only; no production imports or workload' : process.argv[8] === '--attach-preflight' ? 'standard-user sanitized-environment paused-fixture attach only; no production imports or workload' : 'standard-user sanitized-environment supervisor control only; no production workload',
       node: process.version, runnerSha256: hash(readFileSync(SELF)), supervisorSha256: hash(readFileSync(JOB)),
       controlSha256: hash(readFileSync(new URL('./windows-capacity-control.mjs', import.meta.url))),
     lifecycleSha256: hash(readFileSync(new URL('./windows-capacity-lifecycle.mjs', import.meta.url))),
@@ -413,7 +428,7 @@ async function main() {
     }, (receipt) => {
       result.runs.push(receipt); persist();
       if (receipt.status === 'not-run') firstFailure ??= { error: new Error('job-exit-unconfirmed'), stage: 'supervisor-probe-cleanup' };
-    }, [process.argv[8] === '--attach-preflight' ? 'supervisor-attach' : 'supervisor-script']);
+    }, [process.argv[8] === '--sample-preflight' ? 'supervisor-sample' : process.argv[8] === '--attach-preflight' ? 'supervisor-attach' : 'supervisor-script']);
     result.status = firstFailure ? 'failed' : 'passed'; persist();
     if (firstFailure) { activeStage = firstFailure.stage; throw firstFailure.error; }
     process.stdout.write('{"status":"passed","supervisorOnly":true,"workloadRun":false}\n'); return;

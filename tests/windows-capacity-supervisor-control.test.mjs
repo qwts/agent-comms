@@ -166,6 +166,10 @@ test('classic supervisor verifies and attaches an owned paused fixture before na
       commitLimitBytes: 536870912 }, remaining());
     assert.equal(attached.attached, true);
     assert.deepEqual(control.state().cimModuleObservation, { manifestPresent: true });
+    const sample = await control.request('sample');
+    assert.equal(sample.totals.main.count, 1);
+    for (const kind of ['relay','diagnostic','compiler']) assert.equal(sample.totals[kind].count, 0);
+    for (const value of [sample.totals.main.workingSetBytes,sample.totals.main.cpu100ns,sample.jobPeakCommitBytes,sample.jobCpu100ns,sample.observer.workingSetBytes,sample.observer.cpu100ns]) assert.ok(Number.isSafeInteger(value) && value >= 0);
     assert.equal((await fixtureControl.request('stop')).stopped, true);
     assert.equal((await within(fixture.exited, 5000)).code, 0); await within(fixture.closed, 5000);
     assert.equal((await control.request('members')).activeMembers, 0);

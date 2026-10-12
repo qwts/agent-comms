@@ -104,3 +104,7 @@ No subprocess, custody comparison, module loading, environment, policy or source
 archive is replaced or changed. Reports include a custody-helper source hash
 and distinct scope. Publication, native CI and a separately authorized single
 probe precede any subsequent startup/preflight/capacity work.
+
+
+[Observer sample evidence](windows-capacity-sample-evidence.md) records the
+subsequent custody-ready result and sampling timeout with retained cleanup.

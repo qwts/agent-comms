@@ -168,3 +168,28 @@ test('startup fixture IPC phases preserve pending request and refuse arbitrary m
   await assert.rejects(other.startup, { message: 'control-invalid' });
   assert.equal(other.state().phase, null); invalid.close();
 });
+
+test('both operation-time phases stay immutable when teardown makes later progress', async () => {
+  const { snapshotCapacityPhases } = await import('../tools/acceptance/windows-capacity-control.mjs');
+  const observerOwned = transport(), fixtureOwned = transport(); fixtureOwned.child.send = () => {};
+  const observer = createCapacityController(observerOwned), fixture = createCapacityController(fixtureOwned, { ipc: true });
+  observerOwned.child.stdout.write('{"id":-1,"phase":"sample-observer"}\n');
+  fixtureOwned.child.emit('message', { id: -1, phase: 'custody-ready' });
+  const failure = snapshotCapacityPhases(observer, fixture);
+  observerOwned.child.stdout.write('{"id":-1,"phase":"close-job"}\n');
+  fixtureOwned.child.emit('message', { id: -1, phase: 'fixture-ready' });
+  assert.deepEqual(failure, { supervisorPhase: 'sample-observer', fixturePhase: 'custody-ready' });
+  assert.deepEqual(snapshotCapacityPhases(observer, fixture), { supervisorPhase: 'close-job', fixturePhase: 'fixture-ready' });
+  observerOwned.close(); fixtureOwned.close();
+});
+test('literal sample phases preserve bounded request acknowledgement followed by trailing progress and close', async () => {
+  const owned = transport(), control = createCapacityController(owned);
+  owned.child.stdout.write('{"id":0,"ok":true}\n'); await control.startup;
+  const sample = control.request('sample');
+  for (const phase of ['sample-job','sample-ids-read','sample-filter','sample-query','sample-rows','sample-verify','sample-classify','sample-observer','sample-observer-read','sample-reply']) {
+    owned.child.stdout.write(`${JSON.stringify({ id: -1, phase })}\n`); assert.equal(control.state().phase, phase);
+  }
+  owned.child.stdout.write('{"id":1,"ok":true,"sampled":true}\n{"id":-1,"phase":"sample-replied"}\n');
+  owned.close(); assert.equal((await sample).sampled, true); assert.equal(control.state().phase, 'sample-replied');
+  await assert.rejects(control.request('close'), { message: 'control-closed' });
+});
