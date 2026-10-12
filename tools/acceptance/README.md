@@ -79,3 +79,11 @@ an incompatible launch before the old process runs; do not rely on its reader
 to protect a newer format. This harness does not implement that guard, authorize
 format rollback, restore a pre-upgrade backup or prove platform installation and
 recovery behavior. Those host/release acceptance obligations remain separate.
+
+## Local provider feasibility
+
+The separate opt-in [Durable Object probe](../feasibility/durable-objects/README.md)
+uses pinned dev-only vendor tooling and synthetic storage records. It measures
+local atomicity, capacity, persisted outcomes and paging, not production federation
+or cloud guarantees. It is excluded from the root runtime package and default
+test command.
