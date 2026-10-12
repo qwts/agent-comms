@@ -217,3 +217,26 @@ for (const mode of ['autoload','management-import','utility-import']) test(`diag
   } catch { /* No inferred progress from unavailable evidence. */ }
   t.diagnostic(JSON.stringify(evidence));
 });
+
+test('desktop downloader shared transfer uses deterministic responses and owned files', {
+  skip: process.platform !== 'win32', timeout: 180000,
+}, async t => {
+  const root = await scratch(t, 'comms-desktop-download-');
+  const result = await owned(shell(), [...args('tests/windows-desktop-downloader-native.ps1'), '-Root', root], clean(root), 150000);
+  const file = await open(path.join(root, 'downloader.json'), 'r');
+  const bytes = Buffer.alloc(4097); let bytesRead;
+  try { ({ bytesRead } = await file.read(bytes, 0, bytes.length, 0)); } finally { await file.close(); }
+  assert.ok(bytesRead <= 4096);
+  const receipt = JSON.parse(bytes.subarray(0, bytesRead).toString('utf8').replace(/^\uFEFF/, ''));
+  const token = value => typeof value === 'string' && /^[A-Za-z0-9_.-]{1,128}$/.test(value) ? value : 'invalid';
+  assert.equal(result.code, 0, JSON.stringify({ stage: token(receipt.failure?.stage),
+    exceptionType: token(receipt.failure?.exceptionType),
+    hresult: Number.isSafeInteger(receipt.failure?.hresult) ? receipt.failure.hresult : null }));
+  assert.deepEqual(receipt, { v: 1, status: 'passed', cases: [
+    'normal-proof-entrypoint-absent','success-known-length','success-unknown-length',
+    'success-exact-cap','invalid-negative-length-refused',
+    'status-refused','encoding-refused','declared-zero-refused','declared-over-cap-refused',
+    'empty-unknown-refused','short-body-refused','long-body-refused','read-failure-deleted',
+    'unknown-over-cap-deleted','create-new-collision-preserved','sibling-preserved',
+  ], failure: null, networkInvoked: false, rootRetained: true, nativeCloseProven: false, httpAbortProven: false });
+});
