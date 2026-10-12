@@ -6,7 +6,7 @@
     "test": "node --test --test-timeout=120000 probe.test.mjs report.test.mjs"
   },
   "devDependencies": {
-    "miniflare": "4.20260730.0"
+    "miniflare": "5.20261006.1-alpha"
   },
   "engines": {
     "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
