@@ -2,6 +2,7 @@
 
 See [producer opt-out](diagnostic-opt-out.md) and
 [pairing observations](pairing-diagnostics.md).
+See authenticated [health and recovery](health-and-recovery.md).
 
 The broker writes bounded JSON lines to stderr for startup and shutdown outcomes,
 unexpected request-handler

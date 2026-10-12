@@ -46,7 +46,9 @@ test('host transport receives only typed operation payloads and preserves result
     baggage: 'do-not-forward', tracestate: 'do-not-forward' });
   await client.postChannel({ ...hostile, channel: 'channel', body: 'hello', key: 'post' });
   await client.offerTask({ ...hostile, to: 'target', acceptanceCriteria: ['done'] });
-  assert.deepEqual(calls.map(([payload]) => payload.op), ['send', 'read', 'launch', 'channel-post', 'task-offer']);
+  assert.equal(await client.health(hostile), result);
+  assert.deepEqual(calls.map(([payload]) => payload.op), ['send', 'read', 'launch', 'channel-post', 'task-offer', 'health']);
+  assert.deepEqual(calls.at(-1)[0], { op: 'health' });
   for (const args of calls) {
     assert.equal(args.length, 1, 'no credential or auth options accompany the payload');
     for (const key of ['auth', 'secret', 'sender', 'agentId']) assert.equal(Object.hasOwn(args[0], key), false);
@@ -57,8 +59,10 @@ test('host transport receives only typed operation payloads and preserves result
   const failure = Object.assign(new Error('native backend unavailable'), { code: 'broker-untrusted' });
   const failed = createPrincipalClientFromTransport({ principal, request: async () => { throw failure; } });
   await assert.rejects(failed.census(), (error) => error === failure);
+  await assert.rejects(failed.health(), (error) => error === failure);
   const synchronous = createPrincipalClientFromTransport({ principal, request: () => { throw failure; } });
   assert.throws(() => synchronous.census(), (error) => error === failure);
+  assert.throws(() => synchronous.health(), (error) => error === failure);
   for (const options of [{}, { principal }, { principal, request: {} },
     { principal: 'agent_fake', request: () => {} }, { principal: { toString: () => principal }, request: () => {} }]) {
     assert.throws(() => createPrincipalClientFromTransport(options), { code: 'bad-request' });
@@ -96,6 +100,34 @@ async function setup(context, grant = null) {
   const approve = () => admin(context.paths, { op: 'principal-approve', code: pending.code, grant });
   return { env, client, credential, account, approve };
 }
+
+test('both principal factories expose authenticated additive health without widening census grants', async () => {
+  await withBroker(async (context) => {
+    const { client: saved, credential, account, approve } = await setup(context, [context.accounts.bob]);
+    const transported = createPrincipalClientFromTransport({ principal: credential.principal,
+      request: payload => callPrincipal(context.paths, credential, payload) });
+    for (const client of [saved, transported]) await assert.rejects(client.health(), { code: 'not-approved' });
+    await assert.rejects(callPrincipal(context.paths, { ...credential, secret: 'wrong-secret' }, { op: 'health' }), { code: 'unauthenticated' });
+    await assert.rejects(call(context.paths, account, { op: 'health' }), { code: 'unauthenticated' });
+    await approve();
+    const canary = 'CANARY-health-body-private-path-/Users/private-transcript';
+    await saved.send({ to: context.accounts.bob, body: canary, key: 'health-canary' });
+    for (const client of [saved, transported]) {
+      const reply = await client.health({ auth: { secret: canary }, path: canary, capabilities: canary });
+      // Existing consumers can continue selecting exactly the old fields.
+      const { ok, uptimeMs, eventLogBytes, pairings, watches } = reply;
+      assert.equal(ok, true); assert.ok(uptimeMs >= 0); assert.ok(eventLogBytes > 0);
+      assert.ok(pairings.accounts >= 1); assert.ok(pairings.principals >= 1); assert.equal(watches, 0);
+      assert.deepEqual(reply.capabilities, { v: 1, diagnosticRecordVersion: 1, diagnosticExportVersion: 1 });
+      assert.equal(reply.buildSource, 'running');
+      assert.ok(!JSON.stringify(reply).includes(canary));
+      assert.ok(!JSON.stringify(reply).includes(credential.secret));
+      assert.deepEqual((await client.census()).souls.map(s => s.agentId), [context.accounts.bob]);
+    }
+    await admin(context.paths, { op: 'principal-revoke', principal: credential.principal });
+    for (const client of [saved, transported]) await assert.rejects(client.health(), { code: 'unauthenticated' });
+  }, singleAccount);
+});
 
 test('example host: pair, approve, census, send, receive a reply, page and acknowledge', async () => {
   await withBroker(async (context) => {

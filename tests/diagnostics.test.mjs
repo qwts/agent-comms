@@ -238,6 +238,8 @@ for (const mode of ['capture', 'blocked', 'throwing', 'callback-error']) {
       await assert.rejects(call(paths, credential, failed), { code: 'storage-failed',
         message: 'broker storage is uncertain; stop the broker, correct storage and restart to recover before retrying' });
       assert.equal(broker.log.poisoned, true);
+      // Health is not a storage-poison bypass, even before credential parsing.
+      await assert.rejects(call(paths, credential, { op: 'health' }), { code: 'storage-failed' });
       assert.deepEqual(broker.state, before, 'uncertain append must not apply in-memory state');
       const uncertainLog = readFileSync(broker.log.file, 'utf8');
       await assert.rejects(call(paths, credential, { ...failed, key: 'must-refuse' }), { code: 'storage-failed' });

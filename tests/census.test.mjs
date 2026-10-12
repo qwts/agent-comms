@@ -219,7 +219,10 @@ test('health reports uptime, log size, pairing counts, and watches', async () =>
   assert.equal((await health(owner)).error.code, 'unauthenticated');
   const reply = await health();
   assert.equal(reply.ok, true, JSON.stringify(reply));
-  assert.deepEqual(Object.keys(reply).sort(), ['eventLogBytes', 'ok', 'pairings', 'uptimeMs', 'watches']);
+  assert.deepEqual(Object.keys(reply).sort(), ['buildSource', 'buildVersion', 'capabilities', 'eventLogBytes', 'ok', 'pairings', 'uptimeMs', 'watches']);
+  assert.equal(reply.buildSource, 'running');
+  assert.match(reply.buildVersion, /^\d+\.\d+\.\d+/);
+  assert.deepEqual(reply.capabilities, { v: 1, diagnosticRecordVersion: 1, diagnosticExportVersion: 1 });
   assert.deepEqual(Object.keys(reply.pairings).sort(), ['accounts', 'principals']);
   assert.equal(reply.pairings.accounts, 2);
   assert.ok(reply.pairings.principals >= 2);

@@ -4,9 +4,8 @@ Host apps use saved credentials or a [host-owned transport](principal-transport.
 
 ## Pair once, then connect
 
-Start the broker in the owner's account. One-account mode is the default;
-no group or administrator is needed. Use the same host configuration for
-setup and the app, including `AGENT_COMMS_CREDENTIAL_NAME`,
+Run the broker in the owner's account; one-account mode needs no administrator.
+Share setup/app configuration: `AGENT_COMMS_CREDENTIAL_NAME`,
 `AGENT_COMMS_SHARED_DIR` and `AGENT_COMMS_CLIENT_STATE_DIR`.
 
 ```sh
@@ -28,12 +27,12 @@ credential name and account `principal`. With `AGENT_COMMS_NO_KEYCHAIN=1`,
 or on the existing POSIX test implementation, it reads `principal.json`
 (`principal.<name>.json` for a non-default credential name) in the client
 state directory through the account-isolation seam.
-A failed keychain read fails closed; it does not silently try another store.
+A failed keychain read never falls back to another store.
 See [Windows](windows.md) for platform acceptance limits.
 
 ## Use the library
 
-Import from the host’s pinned agent-comms release:
+Import the pinned release:
 
 ```js
 import { createPrincipalClient } from './lib/principal-client.mjs';
@@ -70,6 +69,7 @@ credentials.
 | Method | Request and result |
 | --- | --- |
 | `census()` | Returns `{ ok, souls }`; each row has account, agentId, name, harness, parent, presence, verification, hardened, daemonWatching, unacked, [oldestUnackedAgeMs](mailbox-diagnostics.md) and lastWake. |
+| `health()` | Broker health and build/format metadata; see [recovery](health-and-recovery.md). |
 | `send({ to, body, key, kind, refs, correlation, replyTo })` | Returns `{ ok, messageId, seq, duplicate, wake }`, including original acceptance on retry. |
 | `inbox({ after = 0, limit = 20, channel })` | Returns `{ ok, messages, cursor, remaining, gap? }` from this principal's retained unacknowledged mailbox, optionally filtered by canonical channel. |
 | `ack(ids)` | Returns `{ ok, acknowledged, alreadyAcknowledged }` for this principal's messages only. |
