@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { createHash, createPublicKey, generateKeyPairSync, sign } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { issueOwnerDecisionReceipt as issue } from '../lib/owner-decision-issuer.mjs';
+import { issueOwnerDecisionReceipt as issue, prepareOwnerDecisionReceipt as prepare,
+  ownerDecisionReceiptSigningInput as signingInput, finishOwnerDecisionReceipt as finish } from '../lib/owner-decision-issuer.mjs';
 import { verifyOwnerDecisionProof } from '../lib/owner-decision-proof.mjs';
 const f = JSON.parse(readFileSync(new URL('./fixtures/owner-decisions/v1.json', import.meta.url)));
 const canonical = v => v && typeof v === 'object'
@@ -106,5 +107,47 @@ test('published synthetic issuer vectors reproduce exact d1 bytes for daemon con
       preparedBytes: Buffer.from(v.preparedJson), nowMilliseconds: v.nowMilliseconds });
     assert.equal(result.receiptToken, v.receiptToken);
     assert.equal(result.receiptDigest, v.receiptDigest); assert.deepEqual(result.payload, v.payload);
+  }
+});
+
+// Native signing uses public-only preparation and a one-use finalizer; the
+// legacy issuer below supplies synthetic signatures without exposing segment APIs.
+test('public-only preparation snapshots once and finalization verifies fresh clock exact key and one use', () => {
+  const o = input(), original = Buffer.from(o.preparedBytes);
+  const key = broker.publicKey, exported = key.export.bind(key);
+  key.export = (...args) => { o.preparedBytes.fill(32); return exported(...args); };
+  let handle;
+  try { handle = prepare({ ...o, brokerPublicKey: key }); } finally { delete key.export; }
+  assert.deepEqual(signingInput(handle).prepared, original);
+  const native = issue({ ...o, preparedBytes: original });
+  const signature = Buffer.from(native.receiptToken.split('.')[2], 'base64url');
+  const result = finish(handle, signature, o.nowMilliseconds + 1000);
+  assert.equal(result.receiptToken, native.receiptToken); reject(() => finish(handle, signature, o.nowMilliseconds));
+  for (const clock of [o.nowMilliseconds - 1, (native.payload.exp * 1000)]) {
+    const h = prepare({ ...o, preparedBytes: original, brokerPublicKey: key });
+    reject(() => finish(h, signature, clock));
+    reject(() => finish(h, signature, o.nowMilliseconds));
+  }
+  const h = prepare({ ...o, preparedBytes: original, brokerPublicKey: key });
+  const wrong = Buffer.from(signature); wrong[0] ^= 1; reject(() => finish(h, wrong, o.nowMilliseconds));
+  reject(() => finish(h, signature, o.nowMilliseconds));
+});
+
+test('protected command vectors preserve all eleven exact issuer segments and native raw signatures', () => {
+  const v = JSON.parse(readFileSync(new URL('./fixtures/owner-decisions/protected-signing-v1.json', import.meta.url)));
+  const source = readFileSync(new URL('./fixtures/owner-decisions/issuer-v1.json', import.meta.url));
+  assert.equal(v.sourceSha256, hash(source)); assert.equal(v.cases.length, f.positive.length);
+  const publicKey = createPublicKey({ key: Buffer.from(JSON.parse(source).brokerSpkiBase64, 'base64'), type: 'spki', format: 'der' });
+  for (const entry of v.cases) {
+    const c = JSON.parse(entry.commandJson), preparedBytes = Buffer.from(c.prepared, 'base64url');
+    assert.equal(canonical(c), entry.commandJson); assert(Buffer.byteLength(entry.commandJson) < 131072);
+    assert.deepEqual(Object.keys(c).sort(), ['v','op','namespaceDigest','brokerLocalRevision','brokerEnrollmentHeadDigest',
+      'observationDigest','prepared','originalAction','presence','iat','exp'].sort());
+    const w = JSON.parse(preparedBytes), challenge = w.challenge;
+    const h = prepare({ preparedBytes, saved: { originalActionBytes: Buffer.from(c.originalAction, 'base64url'),
+      acceptedAt: challenge.acceptedAt, daemonKey: challenge.daemonKey, daemonEpoch: challenge.daemonEpoch, watchId: challenge.watchId },
+    presenceToken: c.presence, presencePublicKey, brokerPublicKey: publicKey, nowMilliseconds: c.iat * 1000 });
+    const result = finish(h, Buffer.from(entry.signature, 'base64url'), c.iat * 1000 + 999);
+    assert.equal(result.receiptToken, entry.receiptToken); assert.equal(result.receiptDigest, entry.receiptDigest);
   }
 });
