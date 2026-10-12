@@ -4,7 +4,9 @@
 the admission prefix in the [proposed journal contract](owner-decision-journal-capacity.md).
 No broker route, capability discovery or daemon adapter imports it. It does not
 reserve physical write capacity, authorize an operation or claim R1–R4 acceptance.
-Later lifecycle phases remain future work.
+The default mode remains admission-only. Trusted fixed-v1 lifecycle mode now
+adds the [typed storage graph](owner-decision-journal-lifecycle.md); observation
+replacement and live coordinator composition remain prerequisites.
 
 ## Supported storage findings
 
@@ -61,9 +63,8 @@ No multi-file atomicity, mutation retry or missing-marker effect proof is claime
 
 The fixed-name experiment implements the [proposed frame and slot set](owner-decision-journal-fixed-slots.md).
 Its pure frame codec checks fixed cap/EOF, raw magic, primitives,
-broker-role context/payload/frame digests, sequence 1 and padding. It snapshots inputs and reports empty/uncommitted/committed integrity; it does not validate payload schemas or authority. The
-admission store separately applies the existing exact action/acceptance validator
-and complete namespace/request/digest binding to committed payloads.
+broker-role context/payload/frame digests, sequence 1 and padding. It reports snapshotted empty/uncommitted/committed integrity. The store separately
+validates exact action/acceptance schemas and namespace/request/digest binding.
 
 After charging and flushing the request directory, the disabled initializer
 exclusively creates the ten final broker slot files and scratch inode, sets each
@@ -99,8 +100,9 @@ Storage errors retain the prefix and require reopen. A partial trailer write
 can already equal its complete bytes when the unwritten suffix is zeros; visible
 validity proves no final flush. Recovery requires its own successful flush.
 The Node fsync caveat below precludes power-loss or unconditional-write claims.
-All later lifecycle slots must remain entirely zero. Their typed graph validators
-and observation replacement/recovery are separate prerequisites.
+In the default admission-only mode all later lifecycle slots must remain zero.
+The trusted lifecycle mode validates every supported typed prefix. Nonzero
+scratch and observation replacement/recovery remain unsupported.
 
 ## Darwin boundary and remaining prerequisites
 
@@ -135,9 +137,10 @@ stays in agent-bot under ADR-0002; this core never accesses its files.
 
 Run `node --test tests/owner-decision-journal*.test.mjs`. Pure acceptance tests run
 on every platform; native storage/lock tests skip outside Darwin. Tests cover
-all operation schemas, immutable binding, byte snapshots, quota including
-orphans, fixed-name scans, hard-linked scratch, short/zero writes, fsync/ENOSPC
-failure, exclusive conflicts, corrupt/future records and SIGKILL at publication
-boundaries. Fixed-v1 adds every initialization/admission/recovery phase, torn body/trailer writes, all slot corruption/EOF/link checks, explicit recovery before exact duplicates, and EIO/ENOSPC/EDQUOT at every flush boundary. Children have finite lifetimes, bounded output and awaited cleanup.
+operation schemas, byte snapshots, quota including orphans, short/zero writes,
+exclusive conflicts, corrupt/future records and process interruption. Fixed-v1
+covers initialized/admission/recovery phases, torn frames, explicit recovery,
+inode/link/EOF checks and EIO/ENOSPC/EDQUOT at every flush boundary. Children
+have finite lifetimes, bounded output and awaited cleanup.
 Trusted `io`/`fault` injection exists only for internal failure tests; it is not
 request-selectable authority or a production allocation adapter.
