@@ -1,3 +1,4 @@
+import { validConnectorProgress } from './windows-capacity-control.mjs';
 // Dev-only owned-handle cleanup. No PID signaling or raw failure serialization.
 export async function cleanupCapacityRun({ fixture, supervisor, attached, disposed, closeJob, receipt, removeScratch, timeoutMs = 5000 }) {
   const errors = [];
@@ -51,6 +52,7 @@ export async function cleanupCapacityRun({ fixture, supervisor, attached, dispos
 export function retainCapacityFailure(original, { revision, preflight, fixturePhase }, ownedCleanup) {
   return { status: 'failed', stage: original.stage, check: original.check,
     ...(original.supervisorPhase ? { supervisorPhase: original.supervisorPhase } : {}),
+    ...(validConnectorProgress(original.connectorProgress) ? { connectorProgress: { ...original.connectorProgress } } : {}),
     ...(revision === 'old' || revision === 'new' ? { revision } : {}),
     ...(preflight === 'normal' || preflight === 'fault' || preflight === 'forced' || preflight === 'custody' ? { preflight } : {}),
     ...(fixturePhase ? { fixturePhase } : {}), ownedCleanup };

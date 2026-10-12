@@ -1,0 +1,19 @@
+{
+  "status": "failed",
+  "stage": "actual-connector-events",
+  "check": "control-deadline",
+  "supervisorPhase": "private-job-assigned",
+  "revision": "old",
+  "fixturePhase": "connector-heartbeat",
+  "ownedCleanup": {
+    "fixtureOwnedTerminalConfirmed": true,
+    "fixtureStdioClosedConfirmed": true,
+    "supervisorOwnedTerminalConfirmed": true,
+    "supervisorStdioClosedConfirmed": true,
+    "forcedSupervisorTerminationRequested": false,
+    "forcedFixtureTerminationRequested": false,
+    "jobEmptyConfirmed": true,
+    "scratchRemoved": true,
+    "errors": []
+  }
+}

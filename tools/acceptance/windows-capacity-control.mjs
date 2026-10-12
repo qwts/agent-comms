@@ -1,11 +1,18 @@
 // Dev-only finite control transport. Failure records never contain child output.
 const PHASES = new Set(['bootstrap-ready','script-entry','compile-supervisor','supervisor-compiled','module-observation','import-utility','utility-imported','serialize-ready','ready-serialized','control-read','parse-control','control-parsed','cim-module-observation','verify-fixture-existence','verify-fixture-parent','verify-fixture-executable','parse-fixture-command','verify-fixture-argument-count','verify-fixture-arguments','convert-fixture-creation','verify-job-limit','cim-module-refused','import-cim','cim-imported','query-fixture','fixture-queried','create-private-job','private-job-assigned','read-control','verify-fixture','assign-private-job','sample-job','sample-ids-read','sample-filter','sample-query','sample-rows','sample-verify','sample-classify','sample-observer','sample-observer-read','sample-reply','sample-replied','query-members','close-job']);
-export const FIXTURE_PHASES = new Set(['fixture-imports','fixture-broker-start','fixture-pair','fixture-approve','fixture-join-first','fixture-join-second','fixture-delivery-send','fixture-delivery-read','fixture-delivery-ack','fixture-delivery-empty','fixture-ready','custody-imports','custody-current-uid','custody-uid-checked','custody-shared','custody-shared-checked','custody-proofs','custody-proofs-checked','custody-state','custody-state-checked','custody-ready','channel-imports','channel-prepare','channel-prepared','channel-stale-main','channel-stale-main-returned','channel-stale-main-checked','channel-stale-admin','channel-stale-admin-returned','channel-stale-admin-checked','channel-ready','connector-imports','connector-create-admin','connector-admin-returned','connector-event-connect','connector-event-error','connector-event-end','connector-event-close','connector-heartbeat','connector-observed']);
+export const FIXTURE_PHASES = new Set(['fixture-imports','fixture-broker-start','fixture-pair','fixture-approve','fixture-join-first','fixture-join-second','fixture-delivery-send','fixture-delivery-read','fixture-delivery-ack','fixture-delivery-empty','fixture-ready','custody-imports','custody-current-uid','custody-uid-checked','custody-shared','custody-shared-checked','custody-proofs','custody-proofs-checked','custody-state','custody-state-checked','custody-ready','channel-imports','channel-prepare','channel-prepared','channel-stale-main','channel-stale-main-returned','channel-stale-main-checked','channel-stale-admin','channel-stale-admin-returned','channel-stale-admin-checked','channel-ready','connector-imports','connector-create-admin','connector-admin-returned','connector-event-connect','connector-event-error','connector-event-end','connector-event-close','connector-heartbeat','connector-observation-finished','connector-dispose-admin','connector-admin-disposed','connector-observed']);
+export function validConnectorProgress(value) {
+  return value !== null && typeof value === 'object' && Object.keys(value).length === 2
+    && Object.keys(value).every(key => ['heartbeatCount','elapsedMs'].includes(key))
+    && Number.isSafeInteger(value.heartbeatCount) && value.heartbeatCount >= 0 && value.heartbeatCount <= 12
+    && Number.isSafeInteger(value.elapsedMs) && value.elapsedMs >= 0 && value.elapsedMs <= 90_000;
+}
 // Snapshot validated literal phases before cleanup can emit later progress.
 export function snapshotCapacityPhases(supervisor, fixture) {
-  const supervisorPhase = supervisor.state().phase, fixturePhase = fixture?.state().phase;
+  const supervisorPhase = supervisor.state().phase, fixtureState = fixture?.state(), fixturePhase = fixtureState?.phase;
   return { ...(PHASES.has(supervisorPhase) ? { supervisorPhase } : {}),
-    ...(FIXTURE_PHASES.has(fixturePhase) ? { fixturePhase } : {}) };
+    ...(FIXTURE_PHASES.has(fixturePhase) ? { fixturePhase } : {}),
+    ...(validConnectorProgress(fixtureState?.connectorProgress) ? { connectorProgress: { ...fixtureState.connectorProgress } } : {}) };
 }
 // Diagnostic-only comparison: never used by the production connector.
 export function utilityProbeCommand(explicit = false) {
@@ -39,7 +46,7 @@ export async function collectSupervisorProbes(probe, record, variants = ['superv
   }
 }
 export function createCapacityController(owned, { ipc = false, classifyFailure = () => new Error('job-supervisor-failed') } = {}) {
-  const pending = new Map(); let id = 1, bytes = '', rejected, phase, encoding, moduleObservation, cimModuleObservation;
+  const pending = new Map(); let id = 1, bytes = '', rejected, phase, encoding, moduleObservation, cimModuleObservation, connectorProgress;
   let resolveStartup, rejectStartup;
   const startup = new Promise((resolve, reject) => { resolveStartup = resolve; rejectStartup = reject; });
   startup.catch(() => {}); // A startup failure may precede the parent's await.
@@ -53,7 +60,14 @@ export function createCapacityController(owned, { ipc = false, classifyFailure =
   function receive(record) {
     if (!record || typeof record !== 'object' || !Number.isSafeInteger(record.id)) { fail('control-invalid'); return; }
     if (record.id === -1 && ipc) {
-      if (!FIXTURE_PHASES.has(record.phase) || Object.keys(record).some(key => !['id','phase'].includes(key))) { fail('control-invalid'); return; }
+      const progressPhase = ['connector-heartbeat','connector-observation-finished'].includes(record.phase);
+      if (!FIXTURE_PHASES.has(record.phase) || Object.keys(record).some(key => !(progressPhase ? ['id','phase','heartbeatCount','elapsedMs'] : ['id','phase']).includes(key))) { fail('control-invalid'); return; }
+      if (progressPhase) {
+        const progress = { heartbeatCount: record.heartbeatCount, elapsedMs: record.elapsedMs };
+        if (!validConnectorProgress(progress) || (connectorProgress && (progress.heartbeatCount < connectorProgress.heartbeatCount
+            || progress.elapsedMs < connectorProgress.elapsedMs))) { fail('control-invalid'); return; }
+        connectorProgress = { ...progress };
+      }
       phase = record.phase;
     } else if (record.id === -1 && !ipc) {
       if (!PHASES.has(record.phase)) { fail('control-invalid'); return; }
@@ -89,6 +103,7 @@ export function createCapacityController(owned, { ipc = false, classifyFailure =
   owned.exited.then(closed);
   owned.child.stdin?.on('error', closed); owned.child.stdout?.on('error', closed);
   return { startup, state: () => ({ phase: phase ?? null, encoding: encoding ?? null,
+    ...(connectorProgress === undefined ? {} : { connectorProgress: { ...connectorProgress } }),
     ...(moduleObservation === undefined ? {} : { moduleObservation: { ...moduleObservation } }),
     ...(cimModuleObservation === undefined ? {} : { cimModuleObservation: { ...cimModuleObservation } }) }),
     async request(op, fields = {}, timeout = 5000) {

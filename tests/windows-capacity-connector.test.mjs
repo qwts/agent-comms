@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
+import { performance } from 'node:perf_hooks';
 import test from 'node:test';
 import { observeConnector, probePinnedConnector, validConnectorObservation } from '../tools/acceptance/windows-capacity-connector.mjs';
 
@@ -38,11 +39,13 @@ test('silent close stays distinct from a refusal and completed observation snaps
 test('referenced twelve-second observation bounds heartbeats and keeps missing transport events explicit', async t => {
   t.mock.timers.enable({ apis: ['setInterval','setTimeout'] });
   const raw = rawStream(), phases = [];
-  const pending = observeConnector(raw, phase => phases.push(phase));
+  const pending = observeConnector(raw, (phase, progress) => phases.push({ phase, progress }));
   t.mock.timers.tick(12_000); const result = await pending;
   assert.equal(result.outcome, 'observation-deadline'); assert.deepEqual(result.events, []);
-  assert.equal(result.heartbeatCount, 12); assert.equal(phases.length, 12);
-  t.mock.timers.tick(30_000); assert.equal(phases.length, 12, 'no timer survives operation completion');
+  assert.equal(result.heartbeatCount, 12); assert.equal(phases.length, 13);
+  assert.equal(phases.at(-1).phase, 'connector-observation-finished');
+  assert.deepEqual(phases.at(-1).progress, { heartbeatCount: 12, elapsedMs: result.elapsedMs });
+  t.mock.timers.tick(30_000); assert.equal(phases.length, 13, 'no timer survives operation completion');
   assert.equal(validConnectorObservation(result), true);
 });
 
@@ -75,4 +78,30 @@ test('pinned event discriminant preserves prepare/main prefix, exact pipe deriva
   assert.equal(ready.connectorObservation.outcome, 'closed-without-refusal'); assert.equal(raw.destroys, 1);
   assert.equal(JSON.stringify({ ready, phases }).includes('CANARY'), false);
   await cleanup(); assert.equal(calls.at(-1), 'stop'); assert.equal(raw.destroys, 2);
+});
+
+
+test('elapsed time beyond the evidence bound refuses with a fixed error instead of clamping a false duration', async t => {
+  let clockReads = 0;
+  t.mock.method(performance, 'now', () => clockReads++ === 0 ? 0 : 90_001);
+  const raw = rawStream(), phases = [], pending = observeConnector(raw, value => phases.push(value));
+  raw.emit('close');
+  await assert.rejects(pending, { message: 'diagnostic-output-invalid' });
+  assert.equal(phases.includes('connector-observation-finished'), false);
+});
+
+test('observation completion and owned destroy entry are visible before a disposal failure', async () => {
+  const phases = [], raw = rawStream(); let cleanup;
+  raw.destroy = () => { throw new Error('CANARY-disposal-error'); };
+  await assert.rejects(probePinnedConnector(async name => {
+    if (name === 'lib/paths.mjs') return { brokerPaths: () => ({ socket: 'private-main', admin: 'private-admin' }) };
+    if (name === 'lib/platform/local-channel.mjs') return {
+      prepare() { return 'private-sid'; }, async removeStaleSocket() {}, pipeNameFor() { return 'private-pipe'; }, async stop() {},
+    };
+    return { connectWindowsPipe() { process.nextTick(() => raw.emit('close')); return raw; } };
+  }, (value, progress) => phases.push({ value, progress }), value => { cleanup = value; }), /CANARY-disposal-error/);
+  assert.equal(typeof cleanup, 'function');
+  assert.deepEqual(phases.slice(-3).map(value => value.value), ['connector-event-close','connector-observation-finished','connector-dispose-admin']);
+  assert.equal(phases.some(value => value.value === 'connector-admin-disposed'), false);
+  assert.equal(JSON.stringify(phases).includes('CANARY'), false);
 });

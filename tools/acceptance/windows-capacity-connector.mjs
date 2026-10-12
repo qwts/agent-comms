@@ -21,10 +21,21 @@ export async function observeConnector(raw, phase) {
   let heartbeatCount = 0, errorCode = null, errorStage = null, connected = false, done = false;
   let timer, heartbeat;
   try {
-    return await new Promise(resolve => {
+    return await new Promise((resolve, reject) => {
+      function progress(value) {
+        const elapsedMs = Math.floor(performance.now() - started);
+        if (!Number.isSafeInteger(elapsedMs) || elapsedMs < 0 || elapsedMs > 90_000) {
+          done = true; reject(new Error('diagnostic-output-invalid')); return null;
+        }
+        const record = { heartbeatCount, elapsedMs };
+        phase(value, record); return record;
+      }
       function finish(outcome) {
-        if (done) return; done = true;
-        resolve({ outcome, events: [...events], heartbeatCount, elapsedMs: Math.max(0, Math.floor(performance.now() - started)),
+        if (done) return;
+        const record = progress('connector-observation-finished');
+        if (record === null) return;
+        done = true;
+        resolve({ outcome, events: [...events], ...record,
           errorCode, errorStage, destroyed: raw.destroyed, readableEnded: raw.readableEnded, writableEnded: raw.writableEnded });
       }
       raw.once('connect', () => {
@@ -46,7 +57,7 @@ export async function observeConnector(raw, phase) {
         finish(connected ? 'connected' : errorCode === 'ECONNREFUSED' ? 'refused-and-closed' : 'closed-without-refusal');
       });
       heartbeat = setInterval(() => {
-        if (!done && heartbeatCount < 12) { heartbeatCount++; phase('connector-heartbeat'); }
+        if (!done && heartbeatCount < 12) { heartbeatCount++; progress('connector-heartbeat'); }
       }, 1000);
       timer = setTimeout(() => finish('observation-deadline'), 12_000);
     });
@@ -78,7 +89,7 @@ export async function probePinnedConnector(load, phase, registerCleanup) {
   phase('connector-admin-returned');
   let connectorObservation;
   try { connectorObservation = await observeConnector(raw, phase); }
-  finally { raw.destroy(); }
+  finally { phase('connector-dispose-admin'); raw.destroy(); phase('connector-admin-disposed'); }
   phase('connector-observed');
   return { ready: true, startupConnectorChecks: 3, connectorObservation };
 }

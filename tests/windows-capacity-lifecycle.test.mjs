@@ -68,3 +68,15 @@ test('paused unattached fixture is signalled only through its owned handle and u
   assert.equal(failed.supervisorOwnedTerminalConfirmed, true); assert.equal(failed.supervisorStdioClosedConfirmed, true);
   assert.deepEqual(failed.errors, [{ stage: 'cleanup', check: 'natural-exit-unconfirmed' }]);
 });
+
+
+test('failure retention privately copies only valid bounded connector progress', () => {
+  const progress = { heartbeatCount: 9, elapsedMs: 9003 };
+  const report = retainCapacityFailure({ stage: 'actual-connector-events', check: 'control-deadline', connectorProgress: progress }, { revision: 'old' }, {});
+  progress.elapsedMs = 0;
+  assert.deepEqual(report.connectorProgress, { heartbeatCount: 9, elapsedMs: 9003 });
+  for (const value of [{ ...progress, path: 'CANARY-private' }, { heartbeatCount: 13, elapsedMs: 9003 }]) {
+    const refused = retainCapacityFailure({ stage: 'actual-connector-events', check: 'control-deadline', connectorProgress: value }, {}, {});
+    assert.equal(refused.connectorProgress, undefined);
+  }
+});

@@ -193,3 +193,40 @@ test('literal sample phases preserve bounded request acknowledgement followed by
   owned.close(); assert.equal((await sample).sampled, true); assert.equal(control.state().phase, 'sample-replied');
   await assert.rejects(control.request('close'), { message: 'control-closed' });
 });
+
+
+test('connector progress remains bounded, monotonic and snapshotted before disposal cleanup', async () => {
+  const { snapshotCapacityPhases } = await import('../tools/acceptance/windows-capacity-control.mjs');
+  const owned = transport(), control = createCapacityController(owned, { ipc: true });
+  const emit = (record) => owned.child.emit('message', record);
+  emit({ id: -1, phase: 'connector-heartbeat', heartbeatCount: 9, elapsedMs: 9007 });
+  const external = control.state(); external.connectorProgress.heartbeatCount = 0;
+  assert.equal(control.state().connectorProgress.heartbeatCount, 9);
+  emit({ id: -1, phase: 'connector-observation-finished', heartbeatCount: 12, elapsedMs: 12005 });
+  emit({ id: -1, phase: 'connector-dispose-admin' });
+  const snapshot = snapshotCapacityPhases({ state: () => ({ phase: 'private-job-assigned' }) }, control);
+  emit({ id: -1, phase: 'connector-admin-disposed' });
+  assert.equal(snapshot.fixturePhase, 'connector-dispose-admin');
+  assert.deepEqual(snapshot.connectorProgress, { heartbeatCount: 12, elapsedMs: 12005 });
+  snapshot.connectorProgress.elapsedMs = 0;
+  assert.equal(control.state().connectorProgress.elapsedMs, 12005); owned.close();
+});
+
+test('connector progress refuses malformed, private, regressing or unreviewed phase fields', async () => {
+  for (const record of [
+    { phase: 'connector-heartbeat', heartbeatCount: 13, elapsedMs: 12_000 },
+    { phase: 'connector-heartbeat', heartbeatCount: 9, elapsedMs: 90_001 },
+    { phase: 'connector-heartbeat', heartbeatCount: '9', elapsedMs: 9000 },
+    { phase: 'connector-heartbeat', heartbeatCount: 9, elapsedMs: 9000, path: 'CANARY-private' },
+    { phase: 'connector-heartbeat', heartbeatCount: 8, elapsedMs: 9100 },
+    { phase: 'connector-observation-finished', heartbeatCount: 9, elapsedMs: 8999 },
+    { phase: 'connector-dispose-admin', heartbeatCount: 9, elapsedMs: 9000 },
+  ]) {
+    const owned = transport(), control = createCapacityController(owned, { ipc: true });
+    owned.child.emit('message', { id: -1, phase: 'connector-heartbeat', heartbeatCount: 9, elapsedMs: 9000 });
+    owned.child.emit('message', { id: -1, ...record });
+    await assert.rejects(control.startup, { message: 'control-invalid' });
+    assert.deepEqual(control.state().connectorProgress, { heartbeatCount: 9, elapsedMs: 9000 });
+    assert.equal(JSON.stringify(control.state()).includes('CANARY'), false); owned.close();
+  }
+});

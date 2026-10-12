@@ -66,8 +66,8 @@ async function fixture(source) {
   const start = await new Promise((resolve) => process.once('message', resolve));
   assert.equal(start.op, 'start');
   activeStage = 'fixture-startup';
-  const phase = (value) => {
-    if (process.connected) process.send({ id: -1, phase: value }, () => {});
+  const phase = (value, progress) => {
+    if (process.connected) process.send({ id: -1, phase: value, ...(progress ?? {}) }, () => {});
   };
   const load = (name) => import(pathToFileURL(path.join(source, name)).href);
   if (['channel','connector'].includes(start.probe)) {
@@ -401,7 +401,8 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
   } catch (error) {
     if (!error.supervisorPhase && supervisorPhases.has(supervisor.state().phase)) error.supervisorPhase = supervisor.state().phase;
     const phases = snapshotCapacityPhases(supervisor, control);
-    original = { ...failure(error), ...(phases.supervisorPhase ? { supervisorPhase: phases.supervisorPhase } : {}) };
+    original = { ...failure(error), ...(phases.supervisorPhase ? { supervisorPhase: phases.supervisorPhase } : {}),
+      ...(phases.connectorProgress ? { connectorProgress: phases.connectorProgress } : {}) };
     originalFixturePhase = phases.fixturePhase; originalError = error; throw error;
   }
   finally {
