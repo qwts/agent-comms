@@ -124,3 +124,7 @@ observational, not a performance budget gate; cumulative job CPU is not elapsed
 wall time and cannot reconstruct the earlier storage run's request duration.
 The standard-user channel run requires separate exact-head/native CI and manual
 authorization. No new startup, six-case preflight or pilot is implied.
+
+The first fixed-candidate channel attempt has a [retained deadline failure](windows-candidate-channel-evidence.md)
+with completed prepare and main stale probe, and bounded timing that distinguishes
+the remaining admin window from an established stall. Whole startup stays open.

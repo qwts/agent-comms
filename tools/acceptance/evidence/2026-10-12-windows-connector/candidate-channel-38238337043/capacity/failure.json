@@ -1,0 +1,57 @@
+{
+  "status": "failed",
+  "stage": "channel-prepare-and-stale-probes",
+  "check": "control-deadline",
+  "supervisorPhase": "private-job-assigned",
+  "controlTiming": {
+    "elapsedMs": 90010
+  },
+  "phaseTimings": [
+    {
+      "phase": "channel-imports",
+      "elapsedMs": 0
+    },
+    {
+      "phase": "channel-prepare",
+      "elapsedMs": 8
+    },
+    {
+      "phase": "channel-prepared",
+      "elapsedMs": 78862
+    },
+    {
+      "phase": "channel-stale-main",
+      "elapsedMs": 78862
+    },
+    {
+      "phase": "channel-stale-main-returned",
+      "elapsedMs": 78867
+    },
+    {
+      "phase": "channel-stale-main-checked",
+      "elapsedMs": 88871
+    },
+    {
+      "phase": "channel-stale-admin",
+      "elapsedMs": 88871
+    },
+    {
+      "phase": "channel-stale-admin-returned",
+      "elapsedMs": 88876
+    }
+  ],
+  "revision": "candidate",
+  "preflight": "channel",
+  "fixturePhase": "channel-stale-admin-returned",
+  "ownedCleanup": {
+    "fixtureOwnedTerminalConfirmed": true,
+    "fixtureStdioClosedConfirmed": true,
+    "supervisorOwnedTerminalConfirmed": true,
+    "supervisorStdioClosedConfirmed": true,
+    "forcedSupervisorTerminationRequested": false,
+    "forcedFixtureTerminationRequested": false,
+    "jobEmptyConfirmed": true,
+    "scratchRemoved": true,
+    "errors": []
+  }
+}
