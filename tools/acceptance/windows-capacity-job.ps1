@@ -288,34 +288,53 @@ public static class CapacityJob {
             [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"sample-classify"}'); [Console]::Out.Flush()
             $totals = @{main=@{count=0;workingSetBytes=[uint64]0;cpu100ns=[uint64]0};relay=@{count=0;workingSetBytes=[uint64]0;cpu100ns=[uint64]0};diagnostic=@{count=0;workingSetBytes=[uint64]0;cpu100ns=[uint64]0};compiler=@{count=0;workingSetBytes=[uint64]0;cpu100ns=[uint64]0}}
             foreach ($row in $rows) {
+                $classification = @{}
                 $kind = 'main'
                 if ($row.ProcessId -ne $fixtureId) {
+                    $classification.check = 'argv-parse'
                     $processArgs = [CapacityJob]::Args($row.CommandLine)
                     $expected = $null
+                    $classification.check = 'executable'
                     if ($row.ExecutablePath -ieq $shellExecutable) { $kind='relay'; $expected=$relayArgs }
                     elseif ($row.ExecutablePath -ieq $nodeExecutable) { $kind='diagnostic'; $expected=$diagnosticArgs }
                     elseif ($compilerExecutables -icontains $row.ExecutablePath) {
                         $kind='compiler'
                         $parentRelay = $rows | Where-Object { $_.ProcessId -eq $row.ParentProcessId -and $_.ExecutablePath -ieq $shellExecutable }
+                        $classification.check = 'compiler-parent'
                         if (-not $parentRelay) { throw 'compiler-parent-unconfirmed' }
                         $response = if ($processArgs.Count -eq 3) { [string]$processArgs[2] } else { '' }
+                        $classification.check = 'compiler-arguments'
                         if ($processArgs.Count -ne 3 -or $processArgs[0] -ine '/noconfig' -or $processArgs[1] -ine '/fullpaths' -or -not $response.StartsWith('@')) { throw 'compiler-command-unconfirmed' }
+                        $classification.check = 'compiler-response'
                         $responsePath = [IO.Path]::GetFullPath($response.Substring(1))
                         if (-not $responsePath.StartsWith($compilerTemp.TrimEnd('\') + '\', [StringComparison]::OrdinalIgnoreCase) -or -not $responsePath.EndsWith('.cmdline')) { throw 'compiler-response-unconfirmed' }
-                    } else { throw 'unexpected-owned-executable' }
+                    } else {
+                        $classification.executablePathPresent = $row.ExecutablePath -is [string] -and $row.ExecutablePath.Length -gt 0
+                        $classification.builtinConsoleHostMatch = [string]::Equals($row.ExecutablePath, [IO.Path]::Combine($env:SystemRoot,'System32','conhost.exe'), [StringComparison]::OrdinalIgnoreCase)
+                        $classification.parentIsFixture = $row.ParentProcessId -eq $fixtureId
+                        throw 'unexpected-owned-executable'
+                    }
+                    $classification.check = 'owned-parent'
                     if ($kind -ne 'compiler' -and $row.ParentProcessId -ne $fixtureId) { throw 'owned-parent-unconfirmed' }
+                    $classification.check = 'argv-count'
+                    if ($kind -ne 'compiler') { $classification.argvCountMatches = $processArgs.Count -eq $expected.Count }
                     if ($kind -ne 'compiler' -and $processArgs.Count -ne $expected.Count) { throw 'owned-command-unconfirmed' }
-                    for ($i=0; $kind -ne 'compiler' -and $i -lt $processArgs.Count; $i++) { if ($processArgs[$i] -cne $expected[$i]) { throw 'owned-command-unconfirmed' } }
+                    $classification.check = 'argv-equality'
+                    for ($i=0; $kind -ne 'compiler' -and $i -lt $processArgs.Count; $i++) { if ($processArgs[$i] -cne $expected[$i]) { $classification.argvMatches = $false; throw 'owned-command-unconfirmed' } }
+                    if ($kind -ne 'compiler') { $classification.argvMatches = $true }
                 }
                 $key = $row.ProcessId.ToString()
                 $created = $row.CreationDate.ToUniversalTime().Ticks.ToString()
+                $classification.check = 'pid-reuse'
                 if ($known.ContainsKey($key) -and $known[$key] -ne $created) { throw 'owned-pid-reused' }
+                $classification.check = 'history-bound'
                 if ($known.Count -ge 1200 -and -not $known.ContainsKey($key)) { throw 'owned-history-bound' }
                 $known[$key] = $created
                 $totals[$kind].count++
                 $totals[$kind].workingSetBytes += [uint64]$row.WorkingSetSize
                 $totals[$kind].cpu100ns += [uint64]$row.UserModeTime + [uint64]$row.KernelModeTime
             }
+            $classification = @{check='kind-bound'}
             if ($totals.relay.count -gt 32 -or $totals.diagnostic.count -gt 1) { throw 'owned-kind-bound' }
             $phase = 'sample-observer'
             [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"sample-observer"}'); [Console]::Out.Flush()
@@ -355,7 +374,16 @@ public static class CapacityJob {
         # Startup refusal must not retry the unavailable JSON cmdlet.
         [Console]::Out.WriteLine('{"id":0,"ok":false,"failure":{"check":"job-supervisor-failed","phase":"' + $phase + '"}}')
         [Console]::Out.Flush()
-    } else { Reply @{id=$failureId;ok=$false;failure=@{check='job-supervisor-failed';phase=$phase}} }
+    } else {
+        $failure = @{check='job-supervisor-failed';phase=$phase}
+        if ($phase -eq 'sample-classify' -and $classification.check -in @('argv-parse','executable','compiler-parent','compiler-arguments','compiler-response','owned-parent','argv-count','argv-equality','pid-reuse','history-bound','kind-bound')) {
+            $failure.classification = @{check=$classification.check}
+            foreach ($key in @('argvCountMatches','argvMatches','executablePathPresent','builtinConsoleHostMatch','parentIsFixture')) {
+                if ($classification[$key] -is [bool]) { $failure.classification[$key] = $classification[$key] }
+            }
+        }
+        Reply @{id=$failureId;ok=$false;failure=$failure}
+    }
     exit 1
 } finally {
     if ($job -ne [IntPtr]::Zero) { [void][CapacityJob]::CloseHandle($job) }
