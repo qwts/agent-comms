@@ -55,6 +55,10 @@ by this document.
 
 ## Proposed invariant to test matrix
 
+The [disabled pure codec](owner-decision-codec.md) covers canonical bytes,
+typed action/display validation and receipt signature/time checks in isolation.
+It supplies no route, presence verification or mutation authority.
+
 These cases are unimplemented acceptance work. Existing suites named above
 are reusable patterns, not passes for the proposed protocol.
 
