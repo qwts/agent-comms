@@ -5,6 +5,9 @@ Payload caps below apply to canonical bytes or complete original ASCII tokens;
 the reservation separately charges framing, scratch and filesystem objects.
 An empty slot is explicit absence, never proof that an effect did not enter.
 No production framing or storage codec is selected by this design.
+The [shared fixed-frame vectors](../tests/fixtures/owner-decisions/fixed-frames-v1/README.md)
+provide independent synthetic broker/daemon byte parity and cross-role refusal
+checks; they do not validate typed lifecycle payloads or physical capacity.
 
 ## Exact administrative records
 
