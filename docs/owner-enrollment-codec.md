@@ -4,8 +4,9 @@ The internal `lib/owner-enrollment-codec.mjs` validates public records for the
 broker-owned source required by ADR-0077 section 4. It performs no filesystem
 operations, enrollment, signing, key creation or authority checks. No runtime
 route imports it. A valid chain explicitly reports custody, durability and
-authorization as unverified. The protected loader and installation writer do
-not exist yet.
+authorization as unverified. A separate [disabled metadata store](owner-enrollment-store.md)
+now implements bounded filesystem persistence. The protected native producer
+and installation ceremony remain missing.
 
 ## Encoding and records
 
@@ -68,8 +69,8 @@ native principal-cutover assertions cannot install or revoke trust keys. A
 separate exact trust ceremony, independently installed verification pin, fresh
 presence and single-use verification are still required.
 
-The future store must use bounded fixed names, private custody and immutable
-exclusive publication under its lock. It must establish record, audit and
+The disabled store uses bounded fixed names, private custody and immutable
+content publication under its lock. A protected producer must establish record, audit and
 confirmation durability before acknowledgement. Partial publication, uncertain
 flushes, unexpected files or links, and pending revocation must refuse authority
 without falling back to an old active prefix. Explicit recovery must establish
@@ -79,8 +80,8 @@ Hash chaining alone does not detect consistent deletion or rollback.
 
 The logical record limits imply at most 5 MiB of public payload capacity, before
 metadata, temporary-publication and terminal-revocation reservation overhead.
-They do not establish physical reservation or power-loss support. No writer,
-private-key layout, cleanup policy or deployment is introduced here.
+They do not establish physical reservation or power-loss support. This codec
+defines no private-key layout, cleanup policy or deployment.
 
 ## Validation
 
