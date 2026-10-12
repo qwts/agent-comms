@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "test": "node --test --test-timeout=120000 probe.test.mjs report.test.mjs",
-    "test:crash": "node --test --test-timeout=30000 crash.test.mjs"
+    "test:crash": "node --test --test-timeout=30000 crash.test.mjs",
+    "test:full-cap": "node --test --test-timeout=930000 full-cap.test.mjs"
   },
   "devDependencies": {
     "miniflare": "4.20260730.0"

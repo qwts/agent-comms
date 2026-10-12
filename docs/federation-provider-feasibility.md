@@ -3,8 +3,8 @@
 **Status:** Proposed engineering review, 2026-10-11, for #28/#118/#119.
 The [owner receipt](https://github.com/qwts/agent-comms/issues/28#issuecomment-6115481556)
 accepts the [policy](decisions/ADR-0028-cross-machine-hubs-and-federation.md),
-not provider suitability. This document records official capabilities and
-arithmetic, not measured application results. No account, deployment, spending,
+not provider suitability. This document records official capabilities, arithmetic and bounded local
+synthetic measurements, not production application results. No account, deployment, spending,
 crypto construction, envelope codec or production schema is authorized here.
 
 ## Candidate fit and unresolved boundaries
@@ -53,6 +53,37 @@ in steady state. The 32 MiB cap permits about 335 serialized bytes/outcome at th
 count. Measure actual evidence encoding; whichever cap fills first rejects
 admission. Provider database overhead is separate from serialized application
 accounting and must be measured, not subtracted from protected evidence.
+
+## Measured local relay storage boundary
+
+The opt-in [local feasibility package](../tools/feasibility/durable-objects/README.md)
+now exercises the entire-relay body/outcome budgets with pinned native workerd
+1.20260730.1 on macOS and Node 24.19.0. One local run passed in 65,665 ms. These
+are synthetic measurements, not cloud limits or performance guarantees.
+
+| Measured quantity | Observed value |
+| --- | --- |
+| Pending bodies, verified from streamed complete rows | 10,000 / 268,435,456 bytes (256 MiB) |
+| Protected outcomes, serialized evidence verified from streamed rows | 100,000 / 33,554,432 bytes (32 MiB) |
+| SQLite database at full admission | 325,394,432 bytes (about 310.3 MiB), separate from 288 MiB serialized custody |
+| Actual native workerd process RSS, 322 samples | 32,522,240–392,658,944 bytes; sampled maximum about **374.5 MiB** |
+| Indexed body/evidence pages | One complete body / at most 32 outcomes; maximum reported rows read 1 / 32 |
+
+**The sampled 374.5 MiB process RSS leaves the provider memory question open.**
+It includes native runtime, SQLite and caches and can miss peaks; it is neither
+Node runner RSS nor a Worker isolate heap measurement. This local result does
+not demonstrate compliance with the documented 128 MB isolate limit. A separate
+provider-representative memory gate remains before suitability or deployment.
+
+Streaming hashes and independently counted serialized bytes remained unchanged
+after refused growth, lowered caps and duplicate/conflict retries. Bodies expired
+under an injected logical clock while outcomes still reserved admission capacity.
+Outcomes remained protected at exactly expiry plus 120,000 ms; releasing one
+reservation at plus 120,001 ms allowed exactly one replacement. Padded synthetic
+labels make this a storage/accounting probe, not evidence for production crypto,
+wire encoding, real outcome sizes, all per-route/broker/multihub caps or billing.
+Requests/pages are bounded, but response-size assertions verify this trusted test
+worker after reading; they are not an untrusted-response streaming limiter.
 
 ## Cost assumptions and finite write budget
 
