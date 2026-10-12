@@ -101,4 +101,3 @@ export function fixture(t, vector = f.positive[0], journalOptions = {}, coordina
     confirmRequest, confirm, checkRequest, check, binding, get retainedPrepared() { return retainedPrepared; },
     get retainedConfirm() { return retainedConfirm; }, setTime(value) { milliseconds = value; }, advance(value) { milliseconds += value; } };
 }
-

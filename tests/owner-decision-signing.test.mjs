@@ -147,17 +147,19 @@ test('actual ingress close cancels suspended coordinator before dropping its ref
 });
 
 test('unconfirmed or rejected terminal keeps finite capacity charged without unhandled rejections', darwin, async t => {
-  for (const fault of [{ terminalConfirmed: false }, { terminalReject: true, fail: true }]) {
+  for (const fault of [{ terminalConfirmed: false }, { terminalReject: true, fail: true }, { launchThrow: true }]) {
     const x = setup(t, fault); x.gate.resolve();
+    let launches = 0;
+    if (fault.launchThrow) x.options.signingCapability.startDecisionReceipt = () => { launches++; throw new Error('canary-launch-uncertain'); };
     for (let i = 0; i < 4; i++) {
       const id = i === 0 ? x.action.requestId : `ffffffff-ffff-4fff-8fff-${String(i).padStart(12, '0')}`;
       if (i) { x.prepare(id); x.prepared(id); }
       await refuse(x.core.confirm(x.confirmRequest(id)));
     }
-    assert.equal(x.calls(), 4);
+    assert.equal(fault.launchThrow ? launches : x.calls(), 4);
     const id = 'ffffffff-ffff-4fff-8fff-000000000005'; x.prepare(id); x.prepared(id);
     await refuse(x.core.confirm(x.confirmRequest(id)));
-    assert.equal(x.calls(), 4); assert.equal(x.journal.read(id).slots.has('presence'), false);
+    assert.equal(fault.launchThrow ? launches : x.calls(), 4); assert.equal(x.journal.read(id).slots.has('presence'), false);
     assert.equal(events(x).length, 0);
   }
 });
@@ -180,4 +182,15 @@ test('global uncertain invocation budget refuses thirty-third principal before s
     assert.equal(x.journal.read(requestId).slots.has('presence'), i < 32);
   }
   assert.equal(events(x).length, 0);
+});
+
+
+test('revocation after private result but before separate terminal receipt suppresses authorization', darwin, async t => {
+  const terminalGate = deferred(), terminalEntered = deferred();
+  const x = setup(t, { beforeTerminal: async () => { terminalEntered.resolve(); await terminalGate.promise; } });
+  const pending = x.core.confirm(x.confirmRequest()), rejected = refuse(pending);
+  await x.entered.promise; x.gate.resolve(); await terminalEntered.promise;
+  x.pairing.handleAdmin({ op: 'principal-owner-grants', principal: x.action.principal, grants: [] });
+  terminalGate.resolve(); await rejected;
+  assert.equal(events(x).length, 0); assert.equal(x.journal.read(x.action.requestId).slots.has('authorization'), false);
 });
