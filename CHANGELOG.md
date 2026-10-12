@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Strengthen actual-process diagnostic backpressure acceptance with separate live blocked-writer plateau and terminal-failure predicates, bounded sanitized receipts, and owned exit/helper/stdio checks. This is functional evidence, not numeric unread saturation or performance acceptance (#164).
 - Both principal client factories expose the existing authenticated `health()` operation with additive cached running-build and supported private diagnostic-format metadata. Existing health fields, grant-filtered census, authentication and storage-uncertainty refusals remain unchanged; documented recovery categories add no public errors or automatic retries (#164).
 - Add bounded private account/daemon/principal pairing request and approval observations plus authenticated join completion, with strict export reconstruction and no identifying details. Pending approval, registration, connectivity and task completion remain distinct; combined-producer numeric overhead remains pending (#164).
 - Add disabled private daemon preparation-v2, effect-v1 and reconciliation-pair admission with context-owned evidence tokens, explicit retained-graph and ceremony assertions, and exact original linked writer bytes. Independent synthetic companions exercise causal bindings; authenticated transport, durable graph custody and production activation remain outstanding (#77).

@@ -1,0 +1,30 @@
+✔ spawned broker delivers and exits naturally with unread-stderr and leaves no helper (4166.310458ms)
+ℹ {"stage":"start","disabled":false,"inFlight":0,"queued":0,"written":66,"dropped":4739,"queuedBytes":0,"inFlightBytes":0}
+ℹ {"stage":"plateau","disabled":false,"inFlight":1,"queued":64,"written":383,"dropped":343857,"queuedBytes":21632,"inFlightBytes":338}
+ℹ {"stage":"plateau","disabled":false,"inFlight":1,"queued":64,"written":383,"dropped":345657,"queuedBytes":21632,"inFlightBytes":338}
+ℹ {"stage":"plateau","disabled":false,"inFlight":1,"queued":64,"written":383,"dropped":347657,"queuedBytes":21632,"inFlightBytes":338}
+ℹ {"stage":"plateau","disabled":false,"inFlight":1,"queued":64,"written":383,"dropped":349557,"queuedBytes":21632,"inFlightBytes":338}
+ℹ {"stage":"plateau","disabled":false,"inFlight":1,"queued":64,"written":383,"dropped":351557,"queuedBytes":21632,"inFlightBytes":338}
+ℹ {"stage":"postcanonical","disabled":false,"inFlight":1,"queued":64,"written":383,"dropped":351860,"queuedBytes":21632,"inFlightBytes":338}
+ℹ {"stage":"cleanup","naturalExitConfirmed":true,"helperGoneConfirmed":true,"stdioClosedConfirmed":true}
+✔ spawned broker delivers and exits naturally with stopped-helper and leaves no helper (998.769917ms)
+ℹ {"stage":"start","disabled":false,"inFlight":0,"queued":0,"written":66,"dropped":5739,"queuedBytes":0,"inFlightBytes":0}
+ℹ {"stage":"plateau","disabled":false,"inFlight":1,"queued":64,"written":66,"dropped":62574,"queuedBytes":21632,"inFlightBytes":338}
+ℹ {"stage":"plateau","disabled":false,"inFlight":1,"queued":64,"written":66,"dropped":64274,"queuedBytes":21632,"inFlightBytes":338}
+ℹ {"stage":"plateau","disabled":false,"inFlight":1,"queued":64,"written":66,"dropped":65574,"queuedBytes":21632,"inFlightBytes":338}
+ℹ {"stage":"plateau","disabled":false,"inFlight":1,"queued":64,"written":66,"dropped":67074,"queuedBytes":21632,"inFlightBytes":338}
+ℹ {"stage":"plateau","disabled":false,"inFlight":1,"queued":64,"written":66,"dropped":68874,"queuedBytes":21632,"inFlightBytes":338}
+ℹ {"stage":"postcanonical","disabled":false,"inFlight":1,"queued":64,"written":66,"dropped":69477,"queuedBytes":21632,"inFlightBytes":338}
+ℹ {"stage":"cleanup","naturalExitConfirmed":true,"helperGoneConfirmed":true,"stdioClosedConfirmed":true}
+✔ spawned broker delivers and exits naturally with killed-helper and leaves no helper (317.44825ms)
+ℹ {"stage":"start","disabled":false,"inFlight":1,"queued":64,"written":1,"dropped":3640,"queuedBytes":21696,"inFlightBytes":374}
+ℹ {"stage":"postcanonical-disabled","disabled":true,"inFlight":0,"queued":0,"written":1,"dropped":5408,"queuedBytes":0,"inFlightBytes":0}
+ℹ {"stage":"cleanup","naturalExitConfirmed":true,"helperGoneConfirmed":true,"stdioClosedConfirmed":true}
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8602.552541
