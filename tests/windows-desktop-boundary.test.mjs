@@ -9,8 +9,10 @@ import test from 'node:test';
 const repo = fileURLToPath(new URL('../', import.meta.url));
 const shell = () => path.join(process.env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe');
 const clean = root => Object.fromEntries([
-  ...['SystemRoot','WINDIR','PATH','COMSPEC','USERPROFILE','LOCALAPPDATA','APPDATA','USERNAME','USERDOMAIN','PROGRAMDATA','PROGRAMFILES','PSModulePath']
+  ...['SystemRoot','WINDIR','PATH','COMSPEC','USERPROFILE','LOCALAPPDATA','APPDATA','USERNAME','USERDOMAIN','PROGRAMDATA','PROGRAMFILES']
     .filter(key => process.env[key] !== undefined).map(key => [key, process.env[key]]),
+  // Classic PowerShell must resolve its own modules, matching the CI native lane.
+  ['PSModulePath', path.join(process.env.SystemRoot, 'System32/WindowsPowerShell/v1.0/Modules')],
   ['TEMP',root],['TMP',root],
 ]);
 async function owned(file, args, env, deadlineMs = 15000) {
