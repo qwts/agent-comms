@@ -148,8 +148,10 @@ not the production connector or six-case preflight. Original CRLF hashes:
   `28dd069e946483d6d70246c290d88ed852de3b86c0e5be1e12ce3963f0028a3d`.
 - Full run log: `2c4d7bbbbe094b0c8d73751e08f2d00934ead29e3593debd1de3777b562803a1`.
 
-The recorded runner/supervisor/controller source hashes match the reviewed
-head after Windows checkout CRLF conversion. All earlier failures remain
-retained; explicit built-in module loading avoids the observed implicit
-autoload failure without diagnosing its underlying mechanism. The six-case
-preflight and production capacity stages remain unrun at this checkpoint.
+Recorded source hashes match reviewed source after Windows CRLF checkout.
+All earlier failures remain retained. Explicit loading avoids the observed
+autoload failure; its underlying mechanism remains undiagnosed. Capacity
+remains unqualified.
+
+The subsequent failed preflight and bounded attach-only diagnosis are recorded
+in [attach evidence](windows-capacity-attach-evidence.md).

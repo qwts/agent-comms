@@ -2,7 +2,8 @@
 
 ## Windows production-connector capacity pilot
 
-The manual Windows workflow has separate `capacity-preflight` and
+The manual Windows workflow has separate no-workload `capacity-supervisor`
+and `capacity-attach` diagnostics, then `capacity-preflight` and
 `capacity-pilot` tasks. The [capacity pilot contract](../../docs/windows-connector-capacity.md)
 describes exact source pins, the actual Identification-level PowerShell connector,
 fixed 1/10/100 requests/s stages, bounded admission, owned job accounting and

@@ -37,12 +37,13 @@ try {
     $env:AGENT_COMMS_NODE_ARCHIVE_SHA256 = $inputs.nodeArchiveSha256
     $candidate = Join-Path $working 'candidate'
     Set-Location -LiteralPath $candidate
-    if ($inputs.mode -in @('capacity-supervisor','capacity-preflight','capacity-pilot')) {
+    if ($inputs.mode -in @('capacity-supervisor','capacity-attach','capacity-preflight','capacity-pilot')) {
         $gate = 'production-connector-capacity'
         $env:AGENT_COMMS_CAPACITY_PROFILE_VERIFIED = '1'
         $arguments = @('tools/acceptance/windows-connector-capacity.mjs', '--old', (Join-Path $working 'old'), '--new', (Join-Path $working 'new'), '--output', (Join-Path $PSScriptRoot 'results/capacity'))
         if ($inputs.mode -eq 'capacity-preflight') { $arguments += '--preflight' }
         if ($inputs.mode -eq 'capacity-supervisor') { $arguments += '--supervisor-preflight' }
+        if ($inputs.mode -eq 'capacity-attach') { $arguments += '--attach-preflight' }
         & (Join-Path $PSScriptRoot 'node/node.exe') @arguments
         $exitCode = $LASTEXITCODE
         if ($exitCode -eq 0) { $result.status = 'passed' }

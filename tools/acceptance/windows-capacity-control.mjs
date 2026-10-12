@@ -1,5 +1,5 @@
 // Dev-only finite control transport. Failure records never contain child output.
-const PHASES = new Set(['bootstrap-ready','script-entry','compile-supervisor','supervisor-compiled','module-observation','import-utility','utility-imported','serialize-ready','ready-serialized','read-control','verify-fixture','assign-private-job','sample-job','query-members','close-job']);
+const PHASES = new Set(['bootstrap-ready','script-entry','compile-supervisor','supervisor-compiled','module-observation','import-utility','utility-imported','serialize-ready','ready-serialized','control-read','parse-control','control-parsed','cim-module-observation','query-fixture','fixture-queried','create-private-job','private-job-assigned','read-control','verify-fixture','assign-private-job','sample-job','query-members','close-job']);
 // Diagnostic-only comparison: never used by the production connector.
 export function utilityProbeCommand(explicit = false) {
   const observe = `$manifest=[IO.Path]::Combine($PSHOME,'Modules\\Microsoft.PowerShell.Utility\\Microsoft.PowerShell.Utility.psd1');$present=[IO.File]::Exists($manifest);$expected=[string]::Equals([IO.Path]::GetFullPath($PSHOME),[IO.Path]::GetFullPath([IO.Path]::Combine([Environment]::GetEnvironmentVariable('SystemRoot'),'System32\\WindowsPowerShell\\v1.0')),[StringComparison]::OrdinalIgnoreCase);[Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"module-observation","manifestPresent":'+$present.ToString().ToLowerInvariant()+',"expectedPSHome":'+$expected.ToString().ToLowerInvariant()+'}');[Console]::Out.Flush();`;
@@ -18,7 +18,7 @@ export function encodingSignature(chunk) {
 export async function collectSupervisorProbes(probe, record, variants = ['supervisor-script']) {
   if (!Array.isArray(variants) || variants.length < 1 || variants.length > 2
       || new Set(variants).size !== variants.length
-      || variants.some(variant => !['json-command','explicit-utility-command','supervisor-script'].includes(variant))) throw new Error('control-invalid');
+      || variants.some(variant => !['json-command','explicit-utility-command','supervisor-script','supervisor-attach'].includes(variant))) throw new Error('control-invalid');
   let mayContinue = true;
   for (const variant of variants) {
     if (!mayContinue) {
@@ -32,7 +32,7 @@ export async function collectSupervisorProbes(probe, record, variants = ['superv
   }
 }
 export function createCapacityController(owned, { ipc = false, classifyFailure = () => new Error('job-supervisor-failed') } = {}) {
-  const pending = new Map(); let id = 1, bytes = '', rejected, phase, encoding, moduleObservation;
+  const pending = new Map(); let id = 1, bytes = '', rejected, phase, encoding, moduleObservation, cimModuleObservation;
   let resolveStartup, rejectStartup;
   const startup = new Promise((resolve, reject) => { resolveStartup = resolve; rejectStartup = reject; });
   startup.catch(() => {}); // A startup failure may precede the parent's await.
@@ -54,6 +54,13 @@ export function createCapacityController(owned, { ipc = false, classifyFailure =
         }
         moduleObservation = { manifestPresent: record.manifestPresent, expectedPSHome: record.expectedPSHome };
       }
+      if (record.phase === 'cim-module-observation') {
+        if (typeof record.manifestPresent !== 'boolean'
+            || Object.keys(record).some(key => !['id','ok','phase','manifestPresent'].includes(key))) {
+          fail('control-invalid'); return;
+        }
+        cimModuleObservation = { manifestPresent: record.manifestPresent };
+      }
       phase = record.phase;
     } else if (record.id === 0) resolveStartup(record);
     else pending.get(record.id)?.resolve(record);
@@ -72,7 +79,8 @@ export function createCapacityController(owned, { ipc = false, classifyFailure =
   owned.exited.then(closed);
   owned.child.stdin?.on('error', closed); owned.child.stdout?.on('error', closed);
   return { startup, state: () => ({ phase: phase ?? null, encoding: encoding ?? null,
-    ...(moduleObservation === undefined ? {} : { moduleObservation: { ...moduleObservation } }) }),
+    ...(moduleObservation === undefined ? {} : { moduleObservation: { ...moduleObservation } }),
+    ...(cimModuleObservation === undefined ? {} : { cimModuleObservation: { ...cimModuleObservation } }) }),
     async request(op, fields = {}, timeout = 5000) {
       if (rejected) throw rejected;
       if (owned.terminal()) throw new Error('control-closed');

@@ -133,3 +133,18 @@ test('default supervisor diagnostic runs one full script without repeating faile
     await assert.rejects(collectSupervisorProbes(() => assert.fail('unbounded or unreviewed process start'), () => {}, variants), { message: 'control-invalid' });
   }
 });
+
+test('attach phase boundaries and CIM observations remain fixed metadata with no command or path leakage', async () => {
+  const owned = transport(), control = createCapacityController(owned);
+  for (const phase of ['control-read','parse-control','control-parsed','verify-fixture','query-fixture','fixture-queried','create-private-job','assign-private-job','private-job-assigned']) {
+    owned.child.stdout.write(JSON.stringify({ id: -1, phase }) + '\n');
+    assert.equal(control.state().phase, phase);
+  }
+  owned.child.stdout.write('{"id":-1,"phase":"cim-module-observation","manifestPresent":false}\n');
+  assert.deepEqual(control.state().cimModuleObservation, { manifestPresent: false });
+  control.state().cimModuleObservation.manifestPresent = true;
+  assert.equal(control.state().cimModuleObservation.manifestPresent, false);
+  owned.child.stdout.write('{"id":-1,"phase":"cim-module-observation","manifestPresent":true,"path":"CANARY-private-command"}\n');
+  await assert.rejects(control.startup, { message: 'control-invalid' });
+  assert.equal(JSON.stringify(control.state()).includes('CANARY'), false); owned.close();
+});

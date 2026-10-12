@@ -18,7 +18,7 @@ const CANARY = 'CANARY-windows-capacity-body-secret';
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 let output, activeStage = 'arguments', fixtureCleanup;
-const supervisorPhases = new Set(['script-entry','compile-supervisor','supervisor-compiled','module-observation','import-utility','utility-imported','serialize-ready','ready-serialized','read-control','verify-fixture','assign-private-job','sample-job','query-members','close-job']);
+const supervisorPhases = new Set(['script-entry','compile-supervisor','supervisor-compiled','module-observation','import-utility','utility-imported','serialize-ready','ready-serialized','control-read','parse-control','control-parsed','cim-module-observation','query-fixture','fixture-queried','create-private-job','private-job-assigned','read-control','verify-fixture','assign-private-job','sample-job','query-members','close-job']);
 const checks = new Set(['fixture-terminal', 'fixture-deadline', 'control-deadline', 'control-closed',
   'control-output-bound', 'control-invalid', 'job-supervisor-failed', 'natural-exit-unconfirmed',
   'relay-exit-unconfirmed', 'scratch-retained', 'job-exit-unconfirmed', 'diagnostic-output-invalid',
@@ -116,10 +116,15 @@ async function supervisorProbe(variant) {
   const remaining = (at, cap) => Math.max(1, Math.min(cap, Math.floor(at - performance.now())));
   const shell = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
   const cleanEnvironment = environment();
+  const attachOnly = variant === 'supervisor-attach';
+  const fixtureArgs = [SELF, '--paused-fixture'];
+  const paused = attachOnly ? ownedChild(process.execPath, fixtureArgs, {
+    env: cleanEnvironment, stdio: ['ignore','ignore','pipe','ipc'], windowsHide: true }) : null;
+  const pausedControl = paused ? createCapacityController(paused, { ipc: true }) : null;
   const owned = ownedChild(shell, ['-NoLogo','-NoProfile','-NonInteractive','-File',JOB], {
     env: cleanEnvironment, stdio: ['pipe','pipe','pipe'], windowsHide: true });
   const control = createCapacityController(owned, { classifyFailure: supervisorFailure });
-  const evidence = { runType: 'supervisor-only-no-workload', variant, productionImported: false,
+  const evidence = { runType: attachOnly ? 'supervisor-attach-no-workload' : 'supervisor-only-no-workload', variant, productionImported: false,
     executionPolicyObservation: 'not-queried',
     environmentParity: { inheritedExecutionPolicy: Object.keys(cleanEnvironment).some((key) => key.toLowerCase() === 'psexecutionpolicypreference'),
       inheritedModulePath: Object.keys(cleanEnvironment).some((key) => key.toLowerCase() === 'psmodulepath'), explicitExecutionPolicyArgument: false },
@@ -132,25 +137,60 @@ async function supervisorProbe(variant) {
     evidence.stderrEncoding ??= encodingSignature(chunk);
   });
   owned.child.stderr.on('error', () => { evidence.stderrEncoding = 'stream-error'; });
+  if (paused) {
+    paused.child.stderr.on('data', (chunk) => { evidence.stderrBytes = Math.min(1048577, evidence.stderrBytes + chunk.length); evidence.stderrByteCountCapped = evidence.stderrBytes > 1048576; });
+    paused.child.stderr.on('error', () => { evidence.stderrEncoding = 'stream-error'; });
+  }
   let original;
   try {
+    if (paused) {
+      activeStage = 'paused-fixture-startup';
+      assert.equal((await deadline(pausedControl.startup, remaining(started + 15_000, 5000), 'fixture-deadline')).paused, true);
+    }
     activeStage = 'supervisor-only-startup';
-    const ready = await deadline(control.startup, 15_000, 'control-deadline');
+    const ready = await deadline(control.startup, remaining(started + 15_000, 15_000), 'control-deadline');
     if (ready.ok === false) throw supervisorFailure(ready);
     assert.equal(ready.phase, 'ready');
+    if (paused) {
+      activeStage = 'supervisor-only-attach';
+      const attachment = await control.request('attach', { pid: paused.child.pid, parentPid: process.pid,
+        nodeExecutable: realpathSync(process.execPath), shellExecutable: shell, fixtureArgs,
+        relayArgs: [], diagnosticArgs: [], compilerExecutables: [], compilerTemp: realpathSync(process.env.TEMP),
+        commitLimitBytes: Math.min(2 * 1024 ** 3, Math.floor(os.totalmem() / 4)) }, remaining(started + 15_000, 15_000));
+      assert.equal(attachment.attached, true); evidence.attached = true;
+      activeStage = 'paused-fixture-stop';
+      assert.equal((await pausedControl.request('stop', {}, remaining(workDeadline, 5000))).stopped, true);
+      assert.equal((await deadline(paused.exited, remaining(workDeadline, 5000), 'fixture-terminal')).code, 0);
+      await deadline(paused.stdioClosed, remaining(workDeadline, 5000), 'fixture-terminal');
+      assert.equal((await control.request('members', {}, remaining(workDeadline, 5000))).activeMembers, 0);
+    }
     activeStage = 'supervisor-only-close';
     const closed = await control.request('close', {}, remaining(workDeadline, 10_000));
     assert.equal(closed.jobEmptyConfirmed, true);
+    if (paused) for (const key of ['finalJobCpu100ns','peakJobCommitBytes']) assert.ok(Number.isSafeInteger(closed[key]) && closed[key] >= 0);
     const terminal = await deadline(owned.exited, remaining(workDeadline, 5000), 'job-exit-unconfirmed');
     await deadline(owned.stdioClosed, remaining(workDeadline, 5000), 'job-exit-unconfirmed');
     assert.equal(terminal.code, 0); assert.equal(evidence.stderrBytes, 0); assert.notEqual(evidence.stderrEncoding, 'stream-error');
     evidence.cleanup = { jobEmptyConfirmed: true, naturalJobEmptyConfirmed: true,
-      jobCreated: false, scratchRemoved: true, scratchCreated: false };
+      jobCreated: attachOnly, scratchRemoved: true, scratchCreated: false };
     return evidence;
   } catch (error) {
     if (!error.supervisorPhase && supervisorPhases.has(control.state().phase)) error.supervisorPhase = control.state().phase;
     error.supervisorProbe = evidence; original = error; throw error;
   } finally {
+    if (paused) {
+      if (!paused.terminal()) { paused.child.kill(); evidence.fixtureForcedTerminationRequested = true; }
+      try {
+        const terminal = await deadline(paused.exited, remaining(cleanupDeadline, 5000), 'fixture-terminal');
+        evidence.fixtureTerminal = { code: Number.isSafeInteger(terminal.code) ? terminal.code : null,
+          signal: ['SIGTERM','SIGKILL','SIGINT'].includes(terminal.signal) ? terminal.signal : null };
+        evidence.fixtureOwnedTerminalConfirmed = paused.terminal();
+        await deadline(paused.stdioClosed, remaining(cleanupDeadline, 5000), 'fixture-terminal');
+        evidence.fixtureStdioClosedConfirmed = true;
+      } catch {
+        if (original) (original.cleanup ??= []).push({ stage: 'cleanup', check: 'fixture-terminal' });
+      }
+    }
     if (!owned.terminal()) {
       evidence.eofSent = true;
       owned.child.stdin.end();
@@ -159,7 +199,7 @@ async function supervisorProbe(variant) {
         evidence.forcedTerminationRequested = true;
         owned.child.kill();
         try { await deadline(owned.exited, remaining(cleanupDeadline, 5000), 'job-exit-unconfirmed'); }
-        catch { if (original) original.cleanup = [{ stage: 'cleanup', check: 'job-exit-unconfirmed' }]; }
+        catch { if (original) (original.cleanup ??= []).push({ stage: 'cleanup', check: 'job-exit-unconfirmed' }); }
       }
     }
     if (owned.terminal()) {
@@ -167,9 +207,9 @@ async function supervisorProbe(variant) {
       evidence.terminal = { code: Number.isSafeInteger(terminal.code) ? terminal.code : null,
         signal: ['SIGTERM','SIGKILL','SIGINT'].includes(terminal.signal) ? terminal.signal : null };
       try { await deadline(owned.stdioClosed, remaining(cleanupDeadline, 5000), 'job-exit-unconfirmed'); evidence.stdioClosedConfirmed = true; }
-      catch { if (original) original.cleanup = [{ stage: 'cleanup', check: 'job-exit-unconfirmed' }]; }
+      catch { if (original) (original.cleanup ??= []).push({ stage: 'cleanup', check: 'job-exit-unconfirmed' }); }
     }
-    evidence.control = control.state(); evidence.ownedTerminalConfirmed = owned.terminal();
+    evidence.control = control.state(); evidence.ownedTerminalConfirmed = owned.terminal() && (!paused || (evidence.fixtureOwnedTerminalConfirmed === true && evidence.fixtureStdioClosedConfirmed === true));
     evidence.elapsedMs = Math.ceil(performance.now() - started);
   }
 }
@@ -326,11 +366,11 @@ async function main() {
   assert.equal(process.version, `v${components.node.version}`);
   assert.equal(process.env.AGENT_COMMS_NODE_ARCHIVE_SHA256, components.node.sha256['win-x64']);
   assert.equal(process.argv[2], '--old'); assert.equal(process.argv[4], '--new'); assert.equal(process.argv[6], '--output');
-  assert.ok(process.argv.length === 8 || (process.argv.length === 9 && ['--preflight','--supervisor-preflight'].includes(process.argv[8])));
+  assert.ok(process.argv.length === 8 || (process.argv.length === 9 && ['--preflight','--supervisor-preflight','--attach-preflight'].includes(process.argv[8])));
   const preflight = process.argv[8] === '--preflight';
   output = path.resolve(process.argv[7]); mkdirSync(output);
-  if (process.argv[8] === '--supervisor-preflight') {
-    const result = { v: 1, scope: 'standard-user sanitized-environment supervisor control only; no production workload',
+  if (['--supervisor-preflight','--attach-preflight'].includes(process.argv[8])) {
+    const result = { v: 1, scope: process.argv[8] === '--attach-preflight' ? 'standard-user sanitized-environment paused-fixture attach only; no production imports or workload' : 'standard-user sanitized-environment supervisor control only; no production workload',
       node: process.version, runnerSha256: hash(readFileSync(SELF)), supervisorSha256: hash(readFileSync(JOB)),
       controlSha256: hash(readFileSync(new URL('./windows-capacity-control.mjs', import.meta.url))), runs: [] };
     const persist = () => writeFileSync(path.join(output, 'capacity.json'), `${JSON.stringify(result, null, 2)}\n`);
@@ -345,7 +385,7 @@ async function main() {
     }, (receipt) => {
       result.runs.push(receipt); persist();
       if (receipt.status === 'not-run') firstFailure ??= { error: new Error('job-exit-unconfirmed'), stage: 'supervisor-probe-cleanup' };
-    });
+    }, [process.argv[8] === '--attach-preflight' ? 'supervisor-attach' : 'supervisor-script']);
     result.status = firstFailure ? 'failed' : 'passed'; persist();
     if (firstFailure) { activeStage = firstFailure.stage; throw firstFailure.error; }
     process.stdout.write('{"status":"passed","supervisorOnly":true,"workloadRun":false}\n'); return;
@@ -384,7 +424,13 @@ async function main() {
   if (result.status !== 'passed') process.exitCode = 1;
 }
 try {
-  if (process.argv[2] === '--fixture') await fixture(process.argv[3]); else await main();
+  if (process.argv[2] === '--paused-fixture') {
+    process.send({ id: 0, paused: true });
+    process.once('message', ({ id, op }) => {
+      if (op !== 'stop') { process.exitCode = 1; process.disconnect(); return; }
+      process.send({ id, ok: true, stopped: true }, () => { if (process.connected) process.disconnect(); });
+    });
+  } else if (process.argv[2] === '--fixture') await fixture(process.argv[3]); else await main();
 } catch (error) {
   if (fixtureCleanup) await fixtureCleanup().catch(() => {});
   const result = { status: 'failed', ...failure(error), ...(error.cleanup ? { cleanup: error.cleanup, original: error.original ?? null } : {}),

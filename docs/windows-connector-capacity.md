@@ -82,16 +82,19 @@ lines, credentials or message bodies.
 
 ## Manual hosted execution
 
-The manual `Windows desktop diagnostics` workflow offers four tasks:
+The manual `Windows desktop diagnostics` workflow offers five tasks:
 `engine` retains existing acceptance; `capacity-supervisor` checks supervisor
 control under the actual sanitized standard-user environment without importing
 production code. It checks the full supervisor after explicit loading of the
 classic shell's built-in Utility manifest, preserving EOF/forced-exit/stdio-close
-receipts within a 29-second process budget; `capacity-preflight` and
+receipts within a 29-second process budget. `capacity-attach` adds one real
+paused fixture, verified private-job assignment and natural disposal, without
+production imports or load; see [attach diagnosis](windows-capacity-attach-evidence.md).
+`capacity-preflight` and
 `capacity-pilot` select this separate foreground-library probe. Capacity modes
 use the disposable standard-user account/profile bootstrap and install no
 scheduled task, daemon or host. The workflow remains manual; normal CI runs
-only the small admission regressions and empty-job supervisor validation.
+only bounded admission, native attach/duplex and empty-job regressions.
 
 Retained runs and fixes are recorded in the
 [preflight evidence history](windows-connector-capacity-evidence.md). No failed

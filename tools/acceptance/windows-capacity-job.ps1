@@ -185,12 +185,20 @@ public static class CapacityJob {
     [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"ready-serialized"}')
     [Console]::Out.Flush()
     $phase = 'read-control'
+    [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"read-control"}'); [Console]::Out.Flush()
     while ($null -ne ($line = [Console]::In.ReadLine())) {
+        $phase = 'control-read'
+        [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"control-read"}'); [Console]::Out.Flush()
         if ($line.Length -gt 32768) { throw 'invalid-control-line' }
+        $phase = 'parse-control'
+        [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"parse-control"}'); [Console]::Out.Flush()
         $inputData = $line | ConvertFrom-Json
+        $phase = 'control-parsed'
+        [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"control-parsed"}'); [Console]::Out.Flush()
         $requestId = [int]$inputData.id
         if ($inputData.op -eq 'attach' -and -not $attached) {
             $phase = 'verify-fixture'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"verify-fixture"}'); [Console]::Out.Flush()
             $fixtureId = [int]$inputData.pid
             $parentId = [int]$inputData.parentPid
             if ($fixtureId -le 0 -or $parentId -le 0) { throw 'invalid-fixture-id' }
@@ -201,7 +209,15 @@ public static class CapacityJob {
             $diagnosticArgs = @($inputData.diagnosticArgs)
             $compilerExecutables = @($inputData.compilerExecutables)
             $compilerTemp = [string]$inputData.compilerTemp
+            $phase = 'cim-module-observation'
+            $cimManifest = [IO.Path]::Combine($PSHOME, 'Modules\CimCmdlets\CimCmdlets.psd1')
+            $cimPresent = [IO.File]::Exists($cimManifest)
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"cim-module-observation","manifestPresent":' + $cimPresent.ToString().ToLowerInvariant() + '}'); [Console]::Out.Flush()
+            $phase = 'query-fixture'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"query-fixture"}'); [Console]::Out.Flush()
             $main = Get-CimInstance Win32_Process -Filter "ProcessId=$fixtureId" -OperationTimeoutSec 2
+            $phase = 'fixture-queried'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"fixture-queried"}'); [Console]::Out.Flush()
             if (-not $main -or $main.ParentProcessId -ne $parentId -or $main.ExecutablePath -ine $nodeExecutable) { throw 'fixture-identity-unconfirmed' }
             $actual = [CapacityJob]::Args($main.CommandLine)
             if ($actual.Count -ne $fixtureArgs.Count) { throw 'fixture-command-unconfirmed' }
@@ -209,10 +225,15 @@ public static class CapacityJob {
             $fixtureCreation = $main.CreationDate.ToUniversalTime().Ticks.ToString()
             $limit = [ulong]$inputData.commitLimitBytes
             if ($limit -lt 536870912 -or $limit -gt 2147483648) { throw 'invalid-memory-limit' }
+            $phase = 'create-private-job'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"create-private-job"}'); [Console]::Out.Flush()
             $job = [CapacityJob]::Create($limit)
             $phase = 'assign-private-job'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"assign-private-job"}'); [Console]::Out.Flush()
             [CapacityJob]::Attach($job, $fixtureId, [long]$fixtureCreation)
             $attached = $true
+            $phase = 'private-job-assigned'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"private-job-assigned"}'); [Console]::Out.Flush()
             Reply @{id=$requestId;ok=$true;attached=$true;powershellVersion=@($PSVersionTable.PSVersion.Major,$PSVersionTable.PSVersion.Minor,$PSVersionTable.PSVersion.Build)}
         } elseif ($inputData.op -eq 'sample' -and $attached) {
             $phase = 'sample-job'
@@ -261,6 +282,7 @@ public static class CapacityJob {
             Reply @{id=$requestId;ok=$true;activeMembers=@([CapacityJob]::Pids($job)).Count}
         } elseif ($inputData.op -eq 'close') {
             $phase = 'close-job'
+            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"close-job"}'); [Console]::Out.Flush()
             if ($job -ne [IntPtr]::Zero) {
                 [CapacityJob]::Stop($job)
                 for ($attempt=0; $attempt -lt 50 -and @([CapacityJob]::Pids($job)).Count -gt 0; $attempt++) { Start-Sleep -Milliseconds 100 }
