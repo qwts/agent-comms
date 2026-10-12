@@ -80,16 +80,11 @@ No production code was imported. Original SHA256 values:
   `9abf54f426504a938f67ced46e3283a7e3c894ecc88d2a17e0a08ed34f7d13da`.
 - Failed-step log: `f273eddbffa1662558ad79cc1fb01bbd2d5fe33128687edb1794661e954f28f2`.
 
-The JSON-only failure reproduces independently of compilation. Both
-`ConvertTo-Json` and `Add-Type` belong to the built-in Utility module; shared
-module loading is a concrete lead, not an established cause. The next
-comparison keeps implicit JSON loading and explicitly imports only the classic
-shell's Utility manifest before JSON. Literal/.NET observations classify
-manifest presence and expected classic `PSHOME` without publishing paths;
-explicit import refuses an unexpected home or absent manifest. Fixed phases
-bracket import and serialization. Environment, policy, startup/lifecycle
-budgets and the first-child cleanup guard remain unchanged. It runs no
-supervisor job, production imports or workload and does not qualify capacity.
+The JSON-only failure reproduces independently of compilation. Both cmdlets
+belong to the built-in Utility module. The fourth comparison below keeps
+implicit JSON and explicitly imports only the classic shell's exact Utility
+manifest, refusing unexpected home/manifest metadata. Environment, policy,
+deadlines and cleanup guard remain unchanged; no production workload runs.
 
 The fourth run,
 [38210228385](https://github.com/qwts/agent-comms/actions/runs/38210228385), at
@@ -134,3 +129,27 @@ the disposable child's expected-home input immediately before invoking the
 actual supervisor script. It still requires the fixed refusal, natural exit
 one, zero stderr and confirmed stdio close; it changes no production policy
 or environment and does not qualify the standard-user supervisor or workload.
+
+The fifth supervisor-only run,
+[38211849893](https://github.com/qwts/agent-comms/actions/runs/38211849893),
+at `90eb62aea3cf47d3a8ffff607038b67fdd995dc6`, passed the single full-script
+control in 1,001 ms. The expected classic home and manifest were present;
+`ready-serialized` was observed, the close request was acknowledged and
+the owned child exited naturally with code zero. No EOF or forced termination
+was requested; stderr was empty and terminal/stdio closure were confirmed.
+No production code, fixture, job or scratch directory was created. The
+loaded non-admin profile and account were removed with no bootstrap cleanup
+errors. This establishes the sanitized standard-user supervisor control,
+not the production connector or six-case preflight. Original CRLF hashes:
+
+- [Acceptance](../tools/acceptance/evidence/2026-10-12-windows-connector/supervisor-38211849893/acceptance.json):
+  `71c8c461099d9cfa089e5d81513c1408e8cdb05b0afc6ec6588413f7086efa44`.
+- [Capacity](../tools/acceptance/evidence/2026-10-12-windows-connector/supervisor-38211849893/capacity/capacity.json):
+  `28dd069e946483d6d70246c290d88ed852de3b86c0e5be1e12ce3963f0028a3d`.
+- Full run log: `2c4d7bbbbe094b0c8d73751e08f2d00934ead29e3593debd1de3777b562803a1`.
+
+The recorded runner/supervisor/controller source hashes match the reviewed
+head after Windows checkout CRLF conversion. All earlier failures remain
+retained; explicit built-in module loading avoids the observed implicit
+autoload failure without diagnosing its underlying mechanism. The six-case
+preflight and production capacity stages remain unrun at this checkpoint.
