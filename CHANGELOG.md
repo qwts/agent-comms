@@ -7,11 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-10-12
+
 ### Fixed
+- Owner-action reason and complete display validation rejects frozen Unicode 17.0.0 `Cc`/`Cf`/`Zl`/`Zp` ranges, including bidi format controls. Ordinary RTL letters and combining marks preserve exact bytes without normalization; signed v1 fixtures remain unchanged. Native consumers must adopt the same explicit ranges before compatible display support is claimed (#221).
 - Windows stale broker probes refuse an unexplained close instead of waiting indefinitely. An observed live connection stays `broker-running` even if disposal throws or emits a later error; late stream errors remain handled. This repairs constructor-level settlement defects without claiming the cause of earlier hosted capacity diagnostics (#164).
 
 ### Added
 - Disabled bounded broker enrollment metadata store with immutable fixed-slot framing, separate one-use intent/audit/confirmation phases, explicit restart flush recovery and real filesystem crash/error tests. Protected native ceremony, private signing, physical reservation and runtime authority remain unsupported (#77).
+
+### Upgrade notes
+- This patch changes no durable checkpoint format and performs no credential migration, key provisioning or installed service activation. The 0.5.0 rollback guidance still applies to upgrades from 0.4.x.
+- Broker enrollment metadata and native owner authority remain disabled/source-only; protected installation, signed app-only custody, fresh presence and separate-account cutover acceptance remain outstanding. Windows numeric capacity remains unqualified.
 
 ## [0.5.2] - 2026-10-12
 

@@ -1,6 +1,6 @@
 {
   "name": "agent-comms",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "private": true,
   "description": "Harness-independent agent communication for the qwts fleet",
   "engines": {
