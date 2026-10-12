@@ -8,7 +8,7 @@ on:
       task:
         description: 'Engine acceptance or finite production-connector capacity evidence'
         type: choice
-        options: [engine, capacity-supervisor, capacity-attach, capacity-sample, capacity-startup, capacity-custody, capacity-channel, capacity-connector, capacity-preflight, capacity-pilot]
+        options: [engine, candidate-startup, capacity-supervisor, capacity-attach, capacity-sample, capacity-startup, capacity-custody, capacity-channel, capacity-connector, capacity-preflight, capacity-pilot]
         default: engine
 
 permissions:
@@ -40,7 +40,7 @@ jobs:
           path: .windows-fixtures/agent-comms
           persist-credentials: false
       - name: Fetch exact pre-instrumentation capacity source
-        if: inputs.task != 'engine'
+        if: inputs.task != 'engine' && inputs.task != 'candidate-startup'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: qwts/agent-comms
@@ -48,12 +48,20 @@ jobs:
           path: .windows-fixtures/observability-old
           persist-credentials: false
       - name: Fetch exact instrumented capacity source
-        if: inputs.task != 'engine'
+        if: inputs.task != 'engine' && inputs.task != 'candidate-startup'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: qwts/agent-comms
           ref: e648d71277da72fc50c70ebcbb94c3c8f53c7cf3
           path: .windows-fixtures/observability-new
+          persist-credentials: false
+      - name: Fetch exact reviewed stale-probe correction source
+        if: inputs.task == 'candidate-startup'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: qwts/agent-comms
+          ref: 2d94b16a17f7d0a8625e6151e97fee844232aab1
+          path: .windows-fixtures/stale-correction
           persist-credentials: false
       - name: Download and verify the host-selected Windows Node sidecar
         shell: pwsh

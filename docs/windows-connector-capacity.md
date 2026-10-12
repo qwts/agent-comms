@@ -5,7 +5,7 @@ This opt-in pilot is related to
 [SOP #85](https://github.com/qwts/qwts-agent-sop/issues/85); both issues remain
 open. It is a finite capacity qualification tool, not benchmark acceptance,
 100-request/s product support, packaged host acceptance or desktop evidence.
-No successful hosted result is claimed. Retain failures before workload changes.
+No successful hosted capacity result is claimed. Retain failures before workload changes.
 
 ## Exact production behavior
 
@@ -82,7 +82,7 @@ lines, credentials or message bodies.
 
 ## Manual hosted execution
 
-The manual `Windows desktop diagnostics` workflow offers five tasks:
+The manual `Windows desktop diagnostics` workflow offers separate bounded tasks:
 `engine` retains existing acceptance; `capacity-supervisor` checks supervisor
 control under the actual sanitized standard-user environment without importing
 production code. It checks the full supervisor after explicit loading of the
@@ -95,6 +95,32 @@ production imports or load; see [attach diagnosis](windows-capacity-attach-evide
 use the disposable standard-user account/profile bootstrap and install no
 scheduled task, daemon or host. The workflow remains manual; normal CI runs
 only bounded admission, native attach/duplex and empty-job regressions.
+
+The separate `candidate-startup` task attempts the actual corrected production
+Broker lifecycle once, using reviewed [PR #219](https://github.com/qwts/agent-comms/pull/219)
+head `2d94b16a17f7d0a8625e6151e97fee844232aab1`. Its tree must equal
+`9c1719821d656e17eb04dc477cc9415e4697f12f` and Windows CRLF `git archive`
+SHA256 must equal
+`d3465c40e5e11561f22f3aa720f74146aa70b2091dcd09c34c1c4046daea6853`
+before extraction/import. These are fixed source approvals, not dispatch
+parameters. This tree is also the merged #219 tree; the source is post-0.5.2
+and is not relabelled as a released tuple. It uses the same verified Windows
+Node, standard-user environment, paused fixture/private job, process guards,
+90-second startup deadline and cleanup/account retention rules. It performs
+Broker.start, pair/admin approval, two joins, one send/read/ack/empty sequence
+and natural Broker stop. No connector/function is injected or source patched.
+The report records only a `candidate` source and one delivery check, with no
+rate offers, old/new comparison or capacity qualification. CPU remains
+recorded without a numeric gate. A retained fixed broker refusal code does
+not include raw error text, paths, cause or request data. This source repair
+addresses demonstrated probe settlement defects; it is not asserted to explain
+previous hosted timeouts. No corrected startup result is claimed yet.
+
+After exact tool source review and native CI, the explicit candidate command is:
+
+```sh
+node tools/acceptance/windows-connector-capacity.mjs --candidate CORRECTION_CHECKOUT --output NEW_DIRECTORY
+```
 
 Retained runs and fixes are recorded in the
 [preflight evidence history](windows-connector-capacity-evidence.md). No failed

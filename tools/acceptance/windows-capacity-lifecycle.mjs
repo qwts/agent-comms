@@ -1,3 +1,4 @@
+import { boundedBrokerCode } from './windows-corrected-startup.mjs';
 import { validConnectorProgress } from './windows-capacity-control.mjs';
 // Dev-only owned-handle cleanup. No PID signaling or raw failure serialization.
 export async function cleanupCapacityRun({ fixture, supervisor, attached, disposed, closeJob, receipt, removeScratch, timeoutMs = 5000 }) {
@@ -51,9 +52,10 @@ export async function cleanupCapacityRun({ fixture, supervisor, attached, dispos
 // never spread the Error or copy an arbitrary message/cause/property.
 export function retainCapacityFailure(original, { revision, preflight, fixturePhase }, ownedCleanup) {
   return { status: 'failed', stage: original.stage, check: original.check,
+    ...(boundedBrokerCode(original.brokerCode) ? { brokerCode: original.brokerCode } : {}),
     ...(original.supervisorPhase ? { supervisorPhase: original.supervisorPhase } : {}),
     ...(validConnectorProgress(original.connectorProgress) ? { connectorProgress: { ...original.connectorProgress } } : {}),
-    ...(revision === 'old' || revision === 'new' ? { revision } : {}),
-    ...(preflight === 'normal' || preflight === 'fault' || preflight === 'forced' || preflight === 'custody' ? { preflight } : {}),
+    ...(revision === 'old' || revision === 'new' || revision === 'candidate' ? { revision } : {}),
+    ...(preflight === 'normal' || preflight === 'fault' || preflight === 'forced' || preflight === 'custody' || preflight === 'candidate-startup' ? { preflight } : {}),
     ...(fixturePhase ? { fixturePhase } : {}), ownedCleanup };
 }

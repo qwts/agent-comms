@@ -16,6 +16,7 @@ import { cleanupCapacityRun, retainCapacityFailure } from './windows-capacity-li
 import { probePinnedCustody } from './windows-capacity-custody.mjs';
 import { probePinnedChannel } from './windows-capacity-channel.mjs';
 import { probePinnedConnector, validConnectorObservation } from './windows-capacity-connector.mjs';
+import { CORRECTED_STARTUP_SOURCE, verifyCorrectedStartupSource, boundedBrokerCode, classifyFixtureFailure } from './windows-corrected-startup.mjs';
 
 const exec = promisify(execFile), SELF = fileURLToPath(import.meta.url);
 const JOB = fileURLToPath(new URL('./windows-capacity-job.ps1', import.meta.url));
@@ -23,14 +24,15 @@ const PINS = { old: '25dfa8362401489503f704c7322ad1314b7e6ddb', new: 'e648d71277
 const CANARY = 'CANARY-windows-capacity-body-secret';
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-let output, activeStage = 'arguments', fixtureCleanup;
+let output, activeStage = 'arguments', fixtureCleanup, fixtureRequestId;
 const supervisorPhases = new Set(['script-entry','compile-supervisor','supervisor-compiled','module-observation','import-utility','utility-imported','serialize-ready','ready-serialized','control-read','parse-control','control-parsed','cim-module-observation','verify-fixture-existence','verify-fixture-parent','verify-fixture-executable','parse-fixture-command','verify-fixture-argument-count','verify-fixture-arguments','convert-fixture-creation','verify-job-limit','cim-module-refused','import-cim','cim-imported','query-fixture','fixture-queried','create-private-job','private-job-assigned','read-control','verify-fixture','assign-private-job','sample-job','sample-ids-read','sample-filter','sample-query','sample-rows','sample-verify','sample-classify','sample-observer','sample-observer-read','sample-reply','sample-replied','query-members','close-job']);
 const checks = new Set(['fixture-terminal', 'fixture-deadline', 'control-deadline', 'control-closed',
   'control-output-bound', 'control-invalid', 'job-supervisor-failed', 'natural-exit-unconfirmed',
   'relay-exit-unconfirmed', 'scratch-retained', 'job-exit-unconfirmed', 'diagnostic-output-invalid',
-  'owned-startup-fault', 'owned-forced-cleanup', 'policy-failed', 'memory-headroom-insufficient']);
+  'owned-startup-fault', 'owned-forced-cleanup', 'policy-failed', 'memory-headroom-insufficient', 'candidate-source-mismatch', 'operation-failed', 'assertion-failed']);
 function failure(error) {
   return { stage: activeStage, check: checks.has(error?.message) ? error.message : error?.code === 'ERR_ASSERTION' ? 'assertion-failed' : 'operation-failed',
+    ...(boundedBrokerCode(error?.brokerCode ?? error?.code) ? { brokerCode: boundedBrokerCode(error.brokerCode ?? error.code) } : {}),
     ...(supervisorPhases.has(error?.supervisorPhase) ? { supervisorPhase: error.supervisorPhase } : {}) };
 }
 function supervisorFailure(record) {
@@ -65,6 +67,7 @@ async function fixture(source) {
   process.send({ id: 0, paused: true });
   const start = await new Promise((resolve) => process.once('message', resolve));
   assert.equal(start.op, 'start');
+  fixtureRequestId = start.id;
   activeStage = 'fixture-startup';
   const phase = (value, progress) => {
     if (process.connected) process.send({ id: -1, phase: value, ...(progress ?? {}) }, () => {});
@@ -282,7 +285,7 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
     AGENT_COMMS_SHARED_DIR: path.join(root, 'shared'), AGENT_COMMS_BROKER_STATE_DIR: path.join(root, 'broker'),
     AGENT_COMMS_CLIENT_STATE_DIR: path.join(root, 'client'), AGENT_COMMS_SERVICE_LABEL: `test.capacity.${randomUUID()}`,
   }), stdio: ['ignore', 'ignore', 'pipe', 'ipc'], windowsHide: true });
-  const control = createCapacityController(fixtureOwned, { ipc: true, classifyFailure: (record) => new Error(checks.has(record.failure?.check) ? record.failure.check : 'job-supervisor-failed') });
+  const control = createCapacityController(fixtureOwned, { ipc: true, classifyFailure: (record) => classifyFixtureFailure(record, checks) });
   const supervisorOwned = ownedChild(shell, ['-NoLogo', '-NoProfile', '-NonInteractive', '-File', JOB], {
     env: environment(), stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
   const supervisor = createCapacityController(supervisorOwned, { classifyFailure: supervisorFailure });
@@ -346,8 +349,8 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
     activeStage = 'post-startup-process-check';
     await noRelays();
     sampler = setInterval(sample, 1000);
-    if (['custody','channel','connector'].includes(preflight)) {
-      activeStage = preflight === 'connector' ? 'connector-stop' : preflight === 'channel' ? 'channel-stop' : 'custody-stop';
+    if (['custody','channel','connector','candidate-startup'].includes(preflight)) {
+      activeStage = preflight === 'candidate-startup' ? 'candidate-startup-stop' : preflight === 'connector' ? 'connector-stop' : preflight === 'channel' ? 'channel-stop' : 'custody-stop';
       clearInterval(sampler); if (sampling) await sampling;
       await control.request('stop', {}, 15_000);
       const result = await deadline(fixtureOwned.exited, 5000, 'natural-exit-unconfirmed');
@@ -394,7 +397,7 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
       skipReason: preflight ? 'preflight-no-offers' : stages.some((stage) => !stage.qualified) ? 'preceding-stage-unqualified' : rates.length < RATES.length ? 'baseline-did-not-reach-higher-stage' : null,
       diagnosticBytes, commitLimitBytes, samples, powershellVersion,
       ...(connectorObservation ? { connectorObservation } : {}),
-      deliveryChecks: ['custody','channel','connector'].includes(preflight) ? 0 : preflight === 'fault' || preflight === 'forced' ? 1 : 2,
+      deliveryChecks: ['custody','channel','connector'].includes(preflight) ? 0 : preflight === 'candidate-startup' ? 1 : preflight === 'fault' || preflight === 'forced' ? 1 : 2,
       sampledPeakJobWorkingSetBytes: Math.max(...samples.map((sample) => ['main','relay','diagnostic','compiler'].reduce((sum, kind) => sum + sample[kind].workingSetBytes, 0))),
       accountingScope: 'sampled private-job WorkingSet is not instantaneous peak; job CPU/peak committed bytes include short-lived descendants; observer excluded and separately reported',
       ownedTerminalConfirmed: fixtureOwned.terminal(), cleanup: cleanupReceipt };
@@ -426,14 +429,18 @@ async function main() {
   const components = JSON.parse(readFileSync(new URL('../../tests/fixtures/windows-host-components.json', import.meta.url)));
   assert.equal(process.version, `v${components.node.version}`);
   assert.equal(process.env.AGENT_COMMS_NODE_ARCHIVE_SHA256, components.node.sha256['win-x64']);
-  assert.equal(process.argv[2], '--old'); assert.equal(process.argv[4], '--new'); assert.equal(process.argv[6], '--output');
-  assert.ok(process.argv.length === 8 || (process.argv.length === 9 && ['--preflight','--supervisor-preflight','--attach-preflight','--sample-preflight','--startup-preflight','--custody-preflight','--channel-preflight','--connector-preflight'].includes(process.argv[8])));
+  const candidateStartup = process.argv[2] === '--candidate';
+  if (candidateStartup) { assert.equal(process.argv.length, 6); assert.equal(process.argv[4], '--output'); }
+  else {
+    assert.equal(process.argv[2], '--old'); assert.equal(process.argv[4], '--new'); assert.equal(process.argv[6], '--output');
+    assert.ok(process.argv.length === 8 || (process.argv.length === 9 && ['--preflight','--supervisor-preflight','--attach-preflight','--sample-preflight','--startup-preflight','--custody-preflight','--channel-preflight','--connector-preflight'].includes(process.argv[8])));
+  }
   const preflight = process.argv[8] === '--preflight';
   const startupOnly = process.argv[8] === '--startup-preflight';
   const custodyOnly = process.argv[8] === '--custody-preflight';
   const channelOnly = process.argv[8] === '--channel-preflight';
   const connectorOnly = process.argv[8] === '--connector-preflight';
-  output = path.resolve(process.argv[7]); mkdirSync(output);
+  output = path.resolve(process.argv[candidateStartup ? 5 : 7]); mkdirSync(output);
   if (['--supervisor-preflight','--attach-preflight','--sample-preflight'].includes(process.argv[8])) {
     const result = { v: 1, scope: process.argv[8] === '--sample-preflight' ? 'standard-user sanitized-environment paused-fixture observer sample only; no production imports or workload' : process.argv[8] === '--attach-preflight' ? 'standard-user sanitized-environment paused-fixture attach only; no production imports or workload' : 'standard-user sanitized-environment supervisor control only; no production workload',
       node: process.version, runnerSha256: hash(readFileSync(SELF)), supervisorSha256: hash(readFileSync(JOB)),
@@ -462,16 +469,18 @@ async function main() {
   const commitLimitBytes = Math.min(2 * 1024 ** 3, Math.floor(os.totalmem() / 4));
   if (commitLimitBytes < 512 * 1024 ** 2 || os.freemem() < commitLimitBytes + 512 * 1024 ** 2) throw new Error('memory-headroom-insufficient');
   const archives = {};
-  for (const [revision, cwd] of [['old', process.argv[3]], ['new', process.argv[5]]]) {
+  for (const [revision, cwd] of candidateStartup ? [['candidate', process.argv[3]]] : [['old', process.argv[3]], ['new', process.argv[5]]]) {
+    const pin = revision === 'candidate' ? CORRECTED_STARTUP_SOURCE.pin : PINS[revision];
     activeStage = 'archive-source';
-    const { stdout: tree } = await exec('git.exe', ['rev-parse', `${PINS[revision]}^{tree}`], { cwd, encoding: 'utf8', windowsHide: true });
-    const { stdout: bytes } = await exec('git.exe', ['archive', '--format=tar', PINS[revision]], { cwd, encoding: 'buffer', maxBuffer: 32 * 1024 * 1024, windowsHide: true });
+    const { stdout: tree } = await exec('git.exe', ['rev-parse', `${pin}^{tree}`], { cwd, encoding: 'utf8', windowsHide: true });
+    const { stdout: bytes } = await exec('git.exe', ['archive', '--format=tar', pin], { cwd, encoding: 'buffer', maxBuffer: 32 * 1024 * 1024, windowsHide: true });
+    if (candidateStartup) verifyCorrectedStartupSource(tree.trim(), hash(bytes));
     const archive = path.join(output, `${revision}.tar`), source = path.join(output, revision);
     writeFileSync(archive, bytes); mkdirSync(source);
     await exec('tar.exe', ['-xf', archive, '-C', source], { windowsHide: true });
-    archives[revision] = { source, pin: PINS[revision], tree: tree.trim(), archiveSha256: hash(bytes) };
+    archives[revision] = { source, pin, tree: tree.trim(), archiveSha256: hash(bytes) };
   }
-  const result = { v: 1, scope: connectorOnly ? 'actual-connector-events; prepare/main stale probe then unconsumed admin connector; no Broker, listener, EventLog, replay, maintenance or workload' : channelOnly ? 'channel-prepare-and-stale-probes; actual pinned default channel; no Broker, listener, EventLog, replay, maintenance or workload' : custodyOnly ? 'hosted standard-user Windows pinned custody API only; no Broker or connector or offered-rate stages' : startupOnly ? 'hosted standard-user Windows old-pin production startup and disposal only; no offered-rate stages or capacity acceptance' : 'hosted standard-user Windows finite capacity pilot; no benchmark, desktop, host or 100/s support acceptance',
+  const result = { v: 1, scope: candidateStartup ? 'hosted standard-user exact corrected-source Broker startup, one delivery and disposal only; no offered-rate stages, capacity comparison, desktop or host acceptance' : connectorOnly ? 'actual-connector-events; prepare/main stale probe then unconsumed admin connector; no Broker, listener, EventLog, replay, maintenance or workload' : channelOnly ? 'channel-prepare-and-stale-probes; actual pinned default channel; no Broker, listener, EventLog, replay, maintenance or workload' : custodyOnly ? 'hosted standard-user Windows pinned custody API only; no Broker or connector or offered-rate stages' : startupOnly ? 'hosted standard-user Windows old-pin production startup and disposal only; no offered-rate stages or capacity acceptance' : 'hosted standard-user Windows finite capacity pilot; no benchmark, desktop, host or 100/s support acceptance',
     storageType: 'not-measured', nodeArchiveSha256: components.node.sha256['win-x64'],
     node: process.version, nodeExecutableSha256: hash(readFileSync(process.execPath)),
     osRelease: os.release(), arch: process.arch, logicalCpus: os.availableParallelism(), physicalMemoryBytes: os.totalmem(), commitLimitBytes,
@@ -481,11 +490,13 @@ async function main() {
     custodySha256: hash(readFileSync(new URL('./windows-capacity-custody.mjs', import.meta.url))),
     channelSha256: hash(readFileSync(new URL('./windows-capacity-channel.mjs', import.meta.url))),
     connectorSha256: hash(readFileSync(new URL('./windows-capacity-connector.mjs', import.meta.url))),
+    correctedStartupSha256: hash(readFileSync(new URL('./windows-corrected-startup.mjs', import.meta.url))),
     archives: Object.fromEntries(Object.entries(archives).map(([key, { source, ...value }]) => [key, value])), runs: [] };
   const persist = () => writeFileSync(path.join(output, 'capacity.json'), `${JSON.stringify(result, null, 2)}\n`);
   persist();
-  for (const revision of startupOnly || custodyOnly || channelOnly || connectorOnly ? ['old'] : ['old', 'new']) {
-    if (connectorOnly) { result.runs.push(await run(archives[revision].source, revision, [], 'connector', commitLimitBytes)); persist(); }
+  for (const revision of candidateStartup ? ['candidate'] : startupOnly || custodyOnly || channelOnly || connectorOnly ? ['old'] : ['old', 'new']) {
+    if (candidateStartup) { result.runs.push(await run(archives[revision].source, revision, [], 'candidate-startup', commitLimitBytes)); persist(); }
+    else if (connectorOnly) { result.runs.push(await run(archives[revision].source, revision, [], 'connector', commitLimitBytes)); persist(); }
     else if (channelOnly) { result.runs.push(await run(archives[revision].source, revision, [], 'channel', commitLimitBytes)); persist(); }
     else if (custodyOnly) { result.runs.push(await run(archives[revision].source, revision, [], 'custody', commitLimitBytes)); persist(); }
     else if (startupOnly) { result.runs.push(await run(archives[revision].source, revision, [], 'normal', commitLimitBytes)); persist(); }
@@ -496,8 +507,8 @@ async function main() {
       result.runs.push(await run(archives[revision].source, revision, rates, false, commitLimitBytes)); persist();
     }
   }
-  result.status = preflight || startupOnly || custodyOnly || channelOnly || connectorOnly || result.runs.every((entry) => entry.stages.length === 3 && entry.stages.every((stage) => stage.qualified)) ? 'passed' : 'capacity-not-qualified';
-  persist(); process.stdout.write(`${JSON.stringify({ status: result.status, preflight, startupOnly, custodyOnly, channelOnly, connectorOnly, runs: result.runs.length })}\n`);
+  result.status = candidateStartup || preflight || startupOnly || custodyOnly || channelOnly || connectorOnly || result.runs.every((entry) => entry.stages.length === 3 && entry.stages.every((stage) => stage.qualified)) ? 'passed' : 'capacity-not-qualified';
+  persist(); process.stdout.write(`${JSON.stringify({ status: result.status, candidateStartup, preflight, startupOnly, custodyOnly, channelOnly, connectorOnly, runs: result.runs.length })}\n`);
   if (result.status !== 'passed') process.exitCode = 1;
 }
 try {
@@ -509,6 +520,10 @@ try {
     });
   } else if (process.argv[2] === '--fixture') await fixture(process.argv[3]); else await main();
 } catch (error) {
+  // Deliver only the fixed classification before cleanup disconnects IPC.
+  if (process.argv[2] === '--fixture' && Number.isSafeInteger(fixtureRequestId) && process.connected) {
+    try { process.send({ id: fixtureRequestId, ok: false, failure: failure(error) }, () => {}); } catch { /* Owned cleanup still runs if IPC closed. */ }
+  }
   if (fixtureCleanup) await fixtureCleanup().catch(() => {});
   const result = { status: 'failed', ...(error.capacityFailure ?? failure(error)), ...(error.cleanup ? { cleanup: error.cleanup, original: error.original ?? null } : {}),
     ...(error.supervisorProbe ? { supervisorProbe: error.supervisorProbe } : {}) };
