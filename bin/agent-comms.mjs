@@ -460,7 +460,7 @@ async function run(argv, env) {
         return print(await admin(paths, { op: 'principal-owner-grants', principal: rest[0], grants }));
       }
       if (sub === 'principal-approve') return print(await admin(paths, {
-        op: 'principal-approve', code: rest[0],
+        op: flags['expected-principal'] === undefined ? 'principal-approve' : 'principal-approve-exact', code: rest[0],
         ...(flags['expected-principal'] === undefined ? {} : { expectedPrincipal: flags['expected-principal'] }),
         grant: flags.grant === undefined ? null : flags.grant.split(',').map((entry) => entry.trim()).filter(Boolean),
       }));

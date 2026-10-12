@@ -14,7 +14,7 @@ function fixture() {
   const state = emptyState(), records = [];
   apply(state, pending(a)); apply(state, pending(b));
   const commit = r => { records.push(r); apply(state, r); };
-  return { state, records, commit, approve: request => createPairing({ state, now: () => 2 }, commit, {}).handleAdmin({ op: 'principal-approve', code: 'SAME12', ...request }) };
+  return { state, records, commit, approve: request => createPairing({ state, now: () => 2 }, commit, {}).handleAdmin({ op: Object.hasOwn(request, 'expectedPrincipal') ? 'principal-approve-exact' : 'principal-approve', code: 'SAME12', ...request }) };
 }
 test('code collisions refuse legacy approval but exact identity selects only its pending principal', () => {
   const f = fixture(), before = structuredClone(f.state);
@@ -29,6 +29,11 @@ test('malformed, unknown, wrong-code, approved and revoked expected identities n
   for (const expectedPrincipal of [undefined, null, '', 1, {}, a + '\n', 'principal_bad']) {
     const f = fixture(), before = structuredClone(f.state);
     assert.throws(() => f.approve({ expectedPrincipal }), { code: 'bad-request' });
+    assert.equal(f.records.length, 0); assert.deepEqual(f.state, before);
+  }
+  for (const request of [{ op: 'principal-approve-exact' }, { op: 'principal-approve', expectedPrincipal: a }]) {
+    const f = fixture(), before = structuredClone(f.state);
+    assert.throws(() => f.approve(request), { code: 'bad-request' });
     assert.equal(f.records.length, 0); assert.deepEqual(f.state, before);
   }
   for (const mode of ['unknown', 'wrong-code', 'approved', 'revoked']) {
@@ -52,7 +57,7 @@ test('private socket approval returns exact identity/account and public callers 
     const reply = result.json;
     assert.equal(reply.principal, a); assert.equal(reply.account, c.owner);
     assert.equal(c.broker.state.principals.get(b).state, 'pending');
-    await assert.rejects(callPrincipal(c.paths, { principal: a, secret: 'synthetic-secret', brokerUid: currentUid(), mode: 'single-account' }, { op: 'principal-approve', code: 'SAME12', expectedPrincipal: b }));
+    await assert.rejects(callPrincipal(c.paths, { principal: a, secret: 'synthetic-secret', brokerUid: currentUid(), mode: 'single-account' }, { op: 'principal-approve-exact', code: 'SAME12', expectedPrincipal: b }));
     assert.equal(c.broker.state.principals.get(b).state, 'pending');
   }, { brokerOptions: { mode: 'single-account' } });
 });
