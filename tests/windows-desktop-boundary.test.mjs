@@ -163,3 +163,31 @@ test('unchanged CI child refuses mismatched SID before cloning or marker issuanc
   assert.deepEqual((await readdir(root)).sort(), ['child.ps1','inputs.json','results']);
   assert.deepEqual(await readdir(path.join(root, 'results')), ['bootstrap.json']);
 });
+// Debugger timing is diagnostic only. The direct unchanged SID test above is
+// still the acceptance predicate and keeps its original deadline.
+test('diagnostic-only copied SID stage localization', {
+  skip: process.platform !== 'win32', timeout: 30000,
+}, async t => {
+  const root = await scratch(t, 'comms-ci-child-diagnostic-');
+  await mkdir(path.join(root, 'results'));
+  const original = await readFile(path.join(repo, 'scripts/windows-acceptance-child.ps1'));
+  const copied = path.join(root, 'child.ps1'); await writeFile(copied, original, { flag: 'wx' });
+  await writeFile(path.join(root, 'inputs.json'), JSON.stringify({ sid: 'S-1-0-0', mode: 'candidate-compiler' }), { flag: 'wx' });
+  const stage = path.join(root, 'stages.txt');
+  const evidence = { kind: 'diagnostic-only-sid-stages', acceptanceSubstitute: false, completed: false, owned: null, stages: [] };
+  try {
+    const result = await owned(shell(), [...args('tests/windows-desktop-sid-diagnostic.ps1'), '-Child', copied, '-Stage', stage], clean(root));
+    evidence.completed = true; evidence.exitCode = result.code;
+  } catch (error) { evidence.owned = error.ownedState ?? null; }
+  try {
+    const file = await open(stage, 'r'); const bytes = Buffer.alloc(2049); let bytesRead;
+    try { ({ bytesRead } = await file.read(bytes, 0, bytes.length, 0)); } finally { await file.close(); }
+    if (bytesRead <= 2048) {
+      const stages = bytes.subarray(0, bytesRead).toString('utf8').trim().split(/\r?\n/);
+      const allowed = new Set(['driver-start','breakpoints-ready','input-parse','identity','sid-compare','catch','receipt','exit']);
+      if (stages.length <= 32 && stages.every(value => allowed.has(value))) evidence.stages = stages;
+    }
+  } catch { /* Unavailable stage evidence never supplies an inferred phase. */ }
+  assert.deepEqual(await readFile(copied), original);
+  t.diagnostic(JSON.stringify(evidence));
+});
