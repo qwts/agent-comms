@@ -27,7 +27,8 @@ test('real producer records roundtrip closed tuples, exact details, and observed
   const stream = new EventEmitter(); const lines = [];
   stream.write = (line, done) => { lines.push(line); done(); return true; };
   const sink = createDiagnosticSink(stream); t.after(() => stream.emit('close'));
-  const tokens = ['mailbox-admitted', 'mailbox-duplicate', 'mailbox-read', 'mailbox-acked', 'broker-started', 'broker-start-failed',
+  const tokens = ['pair-account-pending', 'pair-daemon-pending', 'pair-principal-pending',
+    'pair-account-approved', 'pair-daemon-approved', 'pair-principal-approved', 'soul-joined', 'mailbox-admitted', 'mailbox-duplicate', 'mailbox-read', 'mailbox-acked', 'broker-started', 'broker-start-failed',
     'broker-stopped', 'broker-stop-failed', 'transport-ready', 'transport-reconnected', 'request-internal', 'storage-append',
     'storage-compact', 'maintenance-internal', 'maintenance-storage', 'traceparent-dropped', 'transport-unreachable',
     'transport-timeout', 'transport-custody', 'transport-proof', 'transport-retry'];
@@ -36,6 +37,10 @@ test('real producer records roundtrip closed tuples, exact details, and observed
   for (let i = 0; i < 100 && (sink.stats().queued || sink.stats().inFlight || !lines.length); i += 1) await new Promise((resolve) => setImmediate(resolve));
   const { artifact, output } = exportBytes(Buffer.from(lines.join('')));
   assert.equal(artifact.events.length, tokens.length + 1);
+  for (const event of artifact.events.filter(event => event.event.startsWith('pairing.') || event.event === 'membership.joined')) {
+    assert.equal(projectDiagnosticRecord({ ...event, details: { account: 'CANARY-private-account' } }), null);
+    assert.equal(projectDiagnosticRecord({ ...event, stage: 'CANARY-invalid-stage' }), null);
+  }
   assert.deepEqual(artifact.events, lines.map(JSON.parse));
   assert.equal(artifact.status, 'input-processed'); assert.equal(artifact.diagnosticCompleteness, 'unknown');
   assert.deepEqual(artifact.source, { kind: 'stdin', authenticity: 'unverified' });

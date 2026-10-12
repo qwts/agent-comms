@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add bounded private account/daemon/principal pairing request and approval observations plus authenticated join completion, with strict export reconstruction and no identifying details. Pending approval, registration, connectivity and task completion remain distinct; combined-producer numeric overhead remains pending (#164).
 - Add process-start `AGENT_COMMS_DIAGNOSTICS=off` to disable built-in broker/client diagnostic sink activity and helper creation, while preserving explicit offline export and canonical security/delivery behavior. Existing instrumentation calls remain; no zero-overhead claim (#164).
 - Explicit debug source receipt fixtures connect both actual native processes to the same scanned enrollment bindings, with independent signer lock ownership and bounded framing. Production provenance, custody and daemon authorization remain disabled (#77).
 - Add explicit bounded local diagnostic export from a selected file or stdin, with strict private-profile reconstruction, selected time range and qualified coverage metadata. No automatic capture, persistence, credentials or network route is added; optional OTLP and live host consumption remain pending (#164).

@@ -96,9 +96,13 @@ test('principal traceparent reaches the real account watch unchanged but never d
 
 test('malformed and wrong-type launch context silently drops with only a local cumulative primitive counter', async () => {
   const diagnostics = [];
+  const drops = () => diagnostics.filter(([event]) => event === 'traceparent-dropped');
   await withBroker(async (c) => {
     assert.equal(diagnostics.shift()[0], 'broker-started');
     const { client, credential } = await setup(c), d = await daemon(c);
+    assert.deepEqual(diagnostics.filter(([event]) => event.startsWith('pair-') || event === 'soul-joined').map(([event]) => event),
+      ['pair-account-pending', 'pair-account-approved', 'soul-joined', 'soul-joined',
+        'pair-principal-pending', 'pair-principal-approved', 'pair-daemon-pending', 'pair-daemon-approved']);
     const invalid = ['', null, 42, true, [], { secret: 'CANARY-private-path/body', traceparent: TRACEPARENT },
       TRACEPARENT.toUpperCase(), '01' + TRACEPARENT.slice(2),
       '00-' + '0'.repeat(32) + TRACEPARENT.slice(35), TRACEPARENT.slice(0, 36) + '0'.repeat(16) + '-01',
@@ -108,13 +112,13 @@ test('malformed and wrong-type launch context silently drops with only a local c
       const sent = await callPrincipal(c.paths, credential, { op: 'launch', ...target(c), traceparent });
       assert.equal(sent.status, 'pending');
       assert.deepEqual(await d.next(), { event: 'launch', requestId: sent.requestId, principal: client.principal, ...target(c) });
-      assert.deepEqual(diagnostics[index], ['traceparent-dropped', undefined, index + 1]);
+      assert.deepEqual(drops()[index], ['traceparent-dropped', undefined, index + 1]);
       await d.report({ requestId: sent.requestId, status: 'failed' });
     }
     const omitted = await client.launch(target(c));
     assert.equal(Object.hasOwn(await d.next(), 'traceparent'), false);
     await d.report({ requestId: omitted.requestId, status: 'failed' });
-    assert.equal(diagnostics.length, invalid.length);
+    assert.equal(drops().length, invalid.length);
     const audit = readFileSync(c.broker.log.file, 'utf8');
     assert.ok(!audit.includes('traceparent') && !audit.includes('CANARY-private-path/body'));
     assert.ok(!JSON.stringify(diagnostics).includes(TRACEPARENT));
@@ -123,6 +127,7 @@ test('malformed and wrong-type launch context silently drops with only a local c
 
 test('launch context cannot bypass approval, credentials or grants, and throwing drop diagnostics cannot refuse launch', async () => {
   const diagnostics = [];
+  const drops = () => diagnostics.filter(([event]) => event === 'traceparent-dropped');
   await withBroker(async (c) => {
     assert.equal(diagnostics.shift()[0], 'broker-started');
     const { client, credential, pending } = await setup(c, [c.accounts.bob], false);
@@ -130,16 +135,19 @@ test('launch context cannot bypass approval, credentials or grants, and throwing
     await assert.rejects(client.launch(launch), { code: 'not-approved' });
     await admin(c.paths, { op: 'principal-approve', code: pending.code, grant: [c.accounts.bob] });
     const d = await daemon(c);
+    assert.deepEqual(diagnostics.filter(([event]) => event.startsWith('pair-') || event === 'soul-joined').map(([event]) => event),
+      ['pair-account-pending', 'pair-account-approved', 'soul-joined', 'soul-joined',
+        'pair-principal-pending', 'pair-principal-approved', 'pair-daemon-pending', 'pair-daemon-approved']);
     await assert.rejects(callPrincipal(c.paths, { ...credential, secret: 'wrong' }, { op: 'launch', ...launch }), { code: 'unauthenticated' });
     await assert.rejects(client.launch({ ...launch, soul: c.accounts.alice }), { code: 'unknown-recipient' });
-    assert.deepEqual(diagnostics, []);
+    assert.deepEqual(drops(), []);
     const sent = await client.launch(launch);
     assert.equal(sent.status, 'pending');
     assert.equal(Object.hasOwn(await d.next(), 'traceparent'), false);
-    assert.deepEqual(diagnostics, [['traceparent-dropped', undefined, 1]]);
+    assert.deepEqual(drops(), [['traceparent-dropped', undefined, 1]]);
     await admin(c.paths, { op: 'principal-revoke', principal: client.principal });
     await assert.rejects(client.launch(launch), { code: 'unauthenticated' });
-    assert.equal(diagnostics.length, 1);
+    assert.equal(drops().length, 1);
   }, { brokerOptions: { mode: 'single-account', diagnostic: (...args) => {
     diagnostics.push(args); throw new Error('CANARY-diagnostic-failure');
   } } });

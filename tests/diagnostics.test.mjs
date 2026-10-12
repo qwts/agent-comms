@@ -217,7 +217,7 @@ for (const mode of ['capture', 'blocked', 'throwing', 'callback-error']) {
       const persisted = readFileSync(broker.log.file, 'utf8');
       await assert.rejects(call(paths, { ...credential, secret: SECRET }, request), { code: 'unauthenticated' });
       assert.equal(readFileSync(broker.log.file, 'utf8'), persisted, 'permission refusal must not write state');
-      assert.ok(output.lines.every((line) => ['broker.started', 'mailbox.admitted'].includes(JSON.parse(line).event)), 'expected refusals add no implementation diagnostics');
+      assert.ok(output.lines.every((line) => ['broker.started', 'pairing.account-pending', 'pairing.account-approved', 'membership.joined', 'mailbox.admitted'].includes(JSON.parse(line).event)), 'expected refusals add no implementation diagnostics');
 
       const now = broker.now;
       broker.now = () => { throw sensitiveError(); };
@@ -249,7 +249,9 @@ for (const mode of ['capture', 'blocked', 'throwing', 'callback-error']) {
       if (mode === 'capture') {
         await flushed(sink);
         assert.deepEqual(safeLines(output.lines).map((record) => [record.event, record.code]), [
-          ['broker.started', 'ready'], ['mailbox.admitted', 'admitted'], ['broker.request-failure', 'internal'],
+          ['broker.started', 'ready'], ['pairing.account-pending', 'pending'], ['pairing.account-approved', 'approved'],
+          ['membership.joined', 'joined'], ['membership.joined', 'joined'],
+          ['mailbox.admitted', 'admitted'], ['broker.request-failure', 'internal'],
           ['mailbox.read', 'read'], ['mailbox.acked', 'acknowledged'], ['broker.storage-failure', 'storage-failed'],
         ]);
       }
