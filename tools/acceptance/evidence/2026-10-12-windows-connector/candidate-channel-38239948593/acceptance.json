@@ -1,0 +1,166 @@
+{
+  "v": 1,
+  "scope": "hosted standard-user exact corrected-source channel-prepare-and-stale-probes only; actual default channel; no Broker.start, EventLog, replay, maintenance, listeners, delivery or offered rates",
+  "storageType": "not-measured",
+  "nodeArchiveSha256": "158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541",
+  "node": "v24.21.0",
+  "nodeExecutableSha256": "ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32",
+  "osRelease": "10.0.26100",
+  "arch": "x64",
+  "logicalCpus": 4,
+  "physicalMemoryBytes": 17174360064,
+  "commitLimitBytes": 2147483648,
+  "runnerSha256": "2ac860f9a30989ddfd0c536605bbd44fec188d685ebe8b3034dd5eaea50a0402",
+  "policySha256": "3f63c0be9bc54bc527c1111d6e4fc3aea4fb7d44f904386ff845d4c5207634f8",
+  "supervisorSha256": "adff4d760d97c212e0b39b52ddf655ceaebe023b79d5e40428803a24db9cc7f8",
+  "controlSha256": "7a3c86c07ea2b7dac9108dad7a460631dd3b312167a6d3556841c15cb7254b5f",
+  "lifecycleSha256": "ad35a80cffb4d32fc48515261125a6df1ef9e7fb7e48f1673282fe46413b35f3",
+  "custodySha256": "60ec225d64566323a78b55d12cea7dece0c3176091cdf1dc96d116469206998b",
+  "channelSha256": "941eb75322d97e1d67bdb85ee781ee374624b51cc922436f4b3dc844521ee10c",
+  "connectorSha256": "9e3356eedff14a726b2dc4da437e429e876700fbfbb7e17c1578b2a2e367b13a",
+  "timingSha256": "b74246f7436a0ccbe120f32e6df9d6335a0cab22ab0959f39240e2ae9cc684bc",
+  "timingProfile": {
+    "mode": "candidate-channel",
+    "requestDeadlineMs": 180000,
+    "timingCapMs": 240000
+  },
+  "timingScope": "parent start-request duration and independent child relative fixed-phase observations; explicit trusted-mode deadline/reporting cap; observational, not performance acceptance",
+  "storageSha256": "15b599824dcbb4189aad7c5d5756b940e9a4b1e7121651eb19257bc61bb0c3bd",
+  "correctedStartupSha256": "32fc2c0c1de0714fc96edc42389966f63817e427afd51e06c251eda5a6bc463a",
+  "archives": {
+    "candidate": {
+      "pin": "2d94b16a17f7d0a8625e6151e97fee844232aab1",
+      "tree": "9c1719821d656e17eb04dc477cc9415e4697f12f",
+      "archiveSha256": "d3465c40e5e11561f22f3aa720f74146aa70b2091dcd09c34c1c4046daea6853"
+    }
+  },
+  "runs": [
+    {
+      "revision": "candidate",
+      "preflight": "channel",
+      "stages": [],
+      "deployment": "channel-prepare-and-stale-probes; no Broker, listener, EventLog, replay, maintenance or workload",
+      "requestedRates": [],
+      "skippedRates": [
+        1,
+        10,
+        100
+      ],
+      "baselinePermittedRates": [],
+      "skipReason": "preflight-no-offers",
+      "diagnosticBytes": 0,
+      "commitLimitBytes": 2147483648,
+      "samples": [
+        {
+          "main": {
+            "workingSetBytes": 43253760,
+            "count": 1,
+            "cpu100ns": 1406250
+          },
+          "compiler": {
+            "workingSetBytes": 0,
+            "count": 0,
+            "cpu100ns": 0
+          },
+          "diagnostic": {
+            "workingSetBytes": 0,
+            "count": 0,
+            "cpu100ns": 0
+          },
+          "relay": {
+            "workingSetBytes": 0,
+            "count": 0,
+            "cpu100ns": 0
+          },
+          "jobPeakCommitBytes": 332578816,
+          "jobCpu100ns": 725781250,
+          "observer": {
+            "workingSetBytes": 102735872,
+            "cpu100ns": 4687500
+          }
+        }
+      ],
+      "powershellVersion": [
+        5,
+        1,
+        26100
+      ],
+      "timingProfile": {
+        "mode": "candidate-channel",
+        "requestDeadlineMs": 180000,
+        "timingCapMs": 240000
+      },
+      "controlTiming": {
+        "elapsedMs": 81449
+      },
+      "phaseTimings": [
+        {
+          "phase": "channel-imports",
+          "elapsedMs": 0
+        },
+        {
+          "phase": "channel-prepare",
+          "elapsedMs": 7
+        },
+        {
+          "phase": "channel-prepared",
+          "elapsedMs": 61423
+        },
+        {
+          "phase": "channel-stale-main",
+          "elapsedMs": 61423
+        },
+        {
+          "phase": "channel-stale-main-returned",
+          "elapsedMs": 61427
+        },
+        {
+          "phase": "channel-stale-main-checked",
+          "elapsedMs": 71440
+        },
+        {
+          "phase": "channel-stale-admin",
+          "elapsedMs": 71440
+        },
+        {
+          "phase": "channel-stale-admin-returned",
+          "elapsedMs": 71445
+        },
+        {
+          "phase": "channel-stale-admin-checked",
+          "elapsedMs": 81447
+        },
+        {
+          "phase": "channel-ready",
+          "elapsedMs": 81447
+        }
+      ],
+      "deliveryChecks": 0,
+      "sampledPeakJobWorkingSetBytes": 43253760,
+      "accountingScope": "sampled private-job WorkingSet is not instantaneous peak; job CPU/peak committed bytes include short-lived descendants; observer excluded and separately reported",
+      "ownedTerminalConfirmed": true,
+      "cleanup": {
+        "jobEmptyConfirmed": true,
+        "scratchRemoved": true,
+        "naturalJobEmptyConfirmed": true,
+        "id": 4,
+        "ok": true,
+        "peakJobCommitBytes": 332578816,
+        "finalJobCpu100ns": 725937500,
+        "closed": true
+      }
+    }
+  ],
+  "status": "passed",
+  "standardUser": {
+    "profileLoaded": true,
+    "sessionId": 2,
+    "interactiveTaskGate": "not-reached",
+    "status": "passed",
+    "administrator": false
+  },
+  "bootstrapCleanup": {
+    "errors": [],
+    "removed": true
+  }
+}

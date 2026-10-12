@@ -88,3 +88,70 @@ operation failures survive. Larger allowed timing is observational and cannot
 turn the retained first failure into a pass or establish performance acceptance.
 The revised source requires exact-head/native CI and separate authorization
 before one new run; no completion is implied here.
+
+
+## Revised scoped channel pass
+
+The reviewed finite-window correction at signed
+`a615952dc4902b4708cf83b0965852ec9406ddf6`, tree
+`e4254edbe99eb562b09c71d818a3914df98340c9`, passed
+[exact-head/native CI 38239738933](https://github.com/qwts/agent-comms/actions/runs/38239738933).
+Final local full tests passed 630 total / 618 pass / twelve existing native
+skips / zero failures or cancellations; focused tests passed 44/44. Tests cover
+closed trusted profile selection, unchanged default budgets, refused IPC cap
+fields, larger bounded observations, unavailable semantics and correlated real
+fixture failure through cleanup. Root independently reproduced fifteen timing
+and fixture IPC tests. No production source or immutable baseline changed.
+
+One authorized [candidate-channel run 38239948593](https://github.com/qwts/agent-comms/actions/runs/38239948593)
+passed at that exact head, using the trusted 180-second request deadline and
+240-second reporting cap. All eleven CRLF tool hashes, the same fixed correction
+archive and checksum-verified Node tuple match. Actual prepare and both actual
+stale APIs completed. The driver required readiness and three completed API
+checks. The parent start request took 81,449ms; fixed child observations were:
+
+| Child fixed phase | Relative elapsed ms |
+| --- | ---: |
+| channel-imports | 0 |
+| channel-prepare | 7 |
+| channel-prepared | 61,423 |
+| channel-stale-main | 61,423 |
+| channel-stale-main-returned | 61,427 |
+| channel-stale-main-checked | 71,440 |
+| channel-stale-admin | 71,440 |
+| channel-stale-admin-returned | 71,445 |
+| channel-stale-admin-checked | 81,447 |
+| channel-ready | 81,447 |
+
+Prepare took 61,416ms in this run. Main/admin awaits completed after 10,013ms
+and 10,002ms respectively. The shorter prepare duration does not disprove the
+prior 78,854ms observation or establish that the deadline adjustment alone
+caused this pass. Both outcomes remain visible; this is neither a performance
+budget nor an inference about earlier whole-startup failure.
+
+The one candidate/channel report has no requested rates or stages, zero delivery
+checks and zero diagnostic bytes. Natural fixture exit0 was asserted by the
+driver; owned terminal, natural empty job, closed empty job and tool scratch
+removal are confirmed. The shared cleanup path awaited both owned terminals
+and stdio closures. Parent profile/account/stage removal is true with zero
+errors. No individual relay/compiler terminal observation is implied by job
+cumulative accounting. CPU is recorded, not gated; sampled WorkingSet is not
+instantaneous peak RSS, and committed memory is not RSS.
+
+Original reports remain byte-identical:
+
+- [Acceptance](../tools/acceptance/evidence/2026-10-12-windows-connector/candidate-channel-38239948593/acceptance.json):
+  `3f66282dd60bc66debddd5802fe8fcc11e4888b4c101c08462def8450f1e3dc3`.
+- [Capacity](../tools/acceptance/evidence/2026-10-12-windows-connector/candidate-channel-38239948593/capacity/capacity.json):
+  `e6912ac4847caa41b439eec846fcf57bc1e9428c2e9b2c8a652501b2a0e71657`.
+- [Partial sample](../tools/acceptance/evidence/2026-10-12-windows-connector/candidate-channel-38239948593/capacity/partial-run.json):
+  `4bd72dd7ef60b6db7e331a5b95b66c933ea28bce0b2e2801445a0c072ccb02b0`.
+- Full run log: `a764df380ad229a5e2ee944e0cb18aafc038a838048f18f96d6a71ef87ab7ad1`.
+
+This establishes the defined corrected channel path in one hosted standard-user
+run. It excludes Broker.start, EventLog/replay/maintenance, listener creation,
+A2A startup, pairing, delivery and rate offers. The storage-prefix pass remains
+separate, with no per-phase wall-time record; its cumulative CPU cannot be added
+to this request duration as a wall-time estimate. Whole corrected startup,
+Windows capacity, desktop and host acceptance remain open. No redundant channel
+run or broader startup/preflight/pilot followed this scoped receipt.

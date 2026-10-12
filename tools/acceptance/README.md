@@ -50,7 +50,9 @@ only candidate-channel selects 180s requests and 240s reporting, from a closed
 trusted mode. Production connector and old/new diagnostic budgets are unchanged. Missing/invalid timing cannot qualify a pass.
 The [first retained channel failure](../../docs/windows-candidate-channel-evidence.md)
 records the actual prepare/main durations and incomplete admin window without
-claiming a stall or capacity. See the [control and timing scope](../../docs/windows-candidate-startup-evidence.md#fixed-source-channel-control-and-timing).
+claiming a stall or capacity. The [subsequent scoped pass](../../docs/windows-candidate-channel-evidence.md#revised-scoped-channel-pass)
+records both completed stale APIs and proven cleanup, leaving whole startup
+separate. See the [control and timing scope](../../docs/windows-candidate-startup-evidence.md#fixed-source-channel-control-and-timing).
 
 ## Total instrumentation comparison with actual source archives
 
