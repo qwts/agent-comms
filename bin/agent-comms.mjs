@@ -22,6 +22,7 @@ import { taskEventPlan } from '../lib/worker/task-turn.mjs';
 import { taskPrompt } from '../lib/worker/prompt.mjs';
 import { runWorker } from '../lib/worker/index.mjs';
 import { sha256 } from '../lib/broker/shared.mjs';
+import { OWNER_GRANT_LIMITS } from '../lib/owner-scoped-grants.mjs';
 import * as skill from '../lib/skill.mjs';
 
 const VERSION = '0.4.4';
@@ -63,6 +64,7 @@ const COMMANDS = [
   { name: 'admin principals', args: [], flags: [] },
   { name: 'admin principal-approve', args: ['CODE'], flags: ['grant'] },
   { name: 'admin principal-owner-grant', args: ['PRINCIPAL'], flags: ['operations'] },
+  { name: 'admin principal-owner-grants', args: ['PRINCIPAL'], flags: ['grants-json', 'grants'] },
   { name: 'admin principal-revoke', args: ['PRINCIPAL'], flags: [] },
   { name: 'admin channel-grant', args: ['PRINCIPAL'], flags: ['capabilities-file'] },
   { name: 'admin channel-manager', args: ['CHANNEL', 'TO'], flags: [] },
@@ -442,8 +444,20 @@ async function run(argv, env) {
       if (sub === 'principals') return print(await admin(paths, { op: 'principals' }));
       if (sub === 'principal-owner-grant') {
         if (flags.operations === undefined) fail('usage', 'principal-owner-grant requires --operations (use none to clear)');
+        process.stderr.write('Deprecated: ownerOperations is nonauthorizing; use principal-owner-grants for explicit scopes.\n');
         return print(await admin(paths, { op: 'principal-owner-grant', principal: rest[0],
           operations: flags.operations === 'none' ? [] : flags.operations.split(',').map(value => value.trim()) }));
+      }
+      if (sub === 'principal-owner-grants') {
+        if ((flags['grants-json'] === undefined) === (flags.grants === undefined) || (flags.grants !== undefined && flags.grants !== 'none'))
+          fail('usage', 'principal-owner-grants requires either --grants-json JSON or --grants none');
+        let grants = [];
+        if (flags['grants-json'] !== undefined) {
+          if (Buffer.byteLength(flags['grants-json']) > OWNER_GRANT_LIMITS.bytes) fail('usage', 'grants JSON exceeds the byte limit');
+          try { grants = JSON.parse(flags['grants-json']); }
+          catch { fail('usage', 'grants JSON is invalid'); }
+        }
+        return print(await admin(paths, { op: 'principal-owner-grants', principal: rest[0], grants }));
       }
       if (sub === 'principal-approve') return print(await admin(paths, {
         op: 'principal-approve', code: rest[0],
