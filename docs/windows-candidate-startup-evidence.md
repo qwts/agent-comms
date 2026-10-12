@@ -92,3 +92,35 @@ Native CI exercises those mechanics; only a separately authorized manual
 standard-user run can test the actual candidate storage APIs. The subsequent
 [storage-only pass](windows-candidate-storage-evidence.md) validates that defined
 prefix without changing the failed whole-startup result.
+
+
+## Fixed-source channel control and timing
+
+The manual `candidate-channel` control reuses the actual channel probe with the
+same hardcoded correction commit/tree/Windows archive approval. It calls actual
+prepare and then each actual main/admin removeStaleSocket API, preserving call,
+Promise-return and completion order. It registers actual channel.stop before
+prepare acquires a lock. No Broker.start, EventLog, replay, maintenance, listener,
+A2A startup, delivery or rate offer runs. This is distinct from the immutable
+old/new capacity baselines and does not claim complete startup or throughput.
+
+Fixed-candidate startup, storage and channel controls now record the parent
+start-request duration and an independently relative child phase timeline.
+Parent time includes the request/response wait; child time begins on receipt of
+the start request. Neither covers job attachment, post-start process sampling or
+cleanup. A timeline has at most 64 allowlisted phase observations, in received
+order, with integer monotonic nondecreasing milliseconds. Private snapshots are
+retained before cleanup; original failure classification and cleanup receipts
+remain separate. No paths, commands, request content or exception text enter
+these observations.
+
+The reporting cap is 120 seconds, separate from the unchanged ninety-second
+request deadline. Out-of-range/nonfinite actual duration is explicitly
+unavailable, never clamped; it does not replace an original operation failure.
+A normally successful operation with unavailable timing fails diagnostic
+qualification. Malformed, missing, regressing, arbitrary or excessive IPC timing
+is refused. Old/new controls retain their existing untimed schema. Timing is
+observational, not a performance budget gate; cumulative job CPU is not elapsed
+wall time and cannot reconstruct the earlier storage run's request duration.
+The standard-user channel run requires separate exact-head/native CI and manual
+authorization. No new startup, six-case preflight or pilot is implied.

@@ -8,7 +8,7 @@ on:
       task:
         description: 'Engine acceptance or finite production-connector capacity evidence'
         type: choice
-        options: [engine, candidate-startup, candidate-storage, capacity-supervisor, capacity-attach, capacity-sample, capacity-startup, capacity-custody, capacity-channel, capacity-connector, capacity-preflight, capacity-pilot]
+        options: [engine, candidate-startup, candidate-storage, candidate-channel, capacity-supervisor, capacity-attach, capacity-sample, capacity-startup, capacity-custody, capacity-channel, capacity-connector, capacity-preflight, capacity-pilot]
         default: engine
 
 permissions:
@@ -40,7 +40,7 @@ jobs:
           path: .windows-fixtures/agent-comms
           persist-credentials: false
       - name: Fetch exact pre-instrumentation capacity source
-        if: inputs.task != 'engine' && inputs.task != 'candidate-startup' && inputs.task != 'candidate-storage'
+        if: inputs.task != 'engine' && inputs.task != 'candidate-startup' && inputs.task != 'candidate-storage' && inputs.task != 'candidate-channel'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: qwts/agent-comms
@@ -48,7 +48,7 @@ jobs:
           path: .windows-fixtures/observability-old
           persist-credentials: false
       - name: Fetch exact instrumented capacity source
-        if: inputs.task != 'engine' && inputs.task != 'candidate-startup' && inputs.task != 'candidate-storage'
+        if: inputs.task != 'engine' && inputs.task != 'candidate-startup' && inputs.task != 'candidate-storage' && inputs.task != 'candidate-channel'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: qwts/agent-comms
@@ -56,7 +56,7 @@ jobs:
           path: .windows-fixtures/observability-new
           persist-credentials: false
       - name: Fetch exact reviewed stale-probe correction source
-        if: inputs.task == 'candidate-startup' || inputs.task == 'candidate-storage'
+        if: inputs.task == 'candidate-startup' || inputs.task == 'candidate-storage' || inputs.task == 'candidate-channel'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: qwts/agent-comms

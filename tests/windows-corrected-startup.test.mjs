@@ -29,8 +29,8 @@ test('candidate failure receipt retains the scoped revision and known code while
   assert.equal(retainCapacityFailure({ stage: 'production-startup', check: 'operation-failed', brokerCode: 'CANARY-private-code' }, {}, {}).brokerCode, undefined);
 });
 
-for (const [code, probe] of [['broker-probe-failed', undefined], ['CANARY-private-code', undefined], ['storage-failed', 'storage']]) {
-  test(`actual fixture IPC reports ${probe === 'storage' ? 'storage failure' : code === 'broker-probe-failed' ? 'known refusal' : 'unknown failure'} and still performs owned cleanup`, async () => {
+for (const [code, probe] of [['broker-probe-failed', undefined], ['CANARY-private-code', undefined], ['storage-failed', 'storage'], ['broker-probe-failed', 'channel']]) {
+  test(`actual fixture IPC reports ${probe === 'channel' ? 'channel refusal' : probe === 'storage' ? 'storage failure' : code === 'broker-probe-failed' ? 'known refusal' : 'unknown failure'} and still performs owned cleanup`, async () => {
     // Harness regression only: the manual acceptance mode always verifies and
     // imports the pinned production archive. This stub makes failure deterministic.
     const scratch = mkdtempSync(path.join(os.tmpdir(), 'comms-candidate-ipc-'));
@@ -43,18 +43,18 @@ for (const [code, probe] of [['broker-probe-failed', undefined], ['CANARY-privat
     writeFileSync(path.join(scratch, 'lib/retention.mjs'), 'export function nextExpiry(){return Infinity}');
     mkdirSync(path.join(scratch, 'lib/platform'));
     writeFileSync(path.join(scratch, 'lib/platform/account-isolation.mjs'), 'export function assertLogFile(){}');
-    writeFileSync(path.join(scratch, 'lib/platform/local-channel.mjs'), 'export function prepare(){return "private"}');
+    writeFileSync(path.join(scratch, 'lib/platform/local-channel.mjs'), `import {writeFileSync} from 'node:fs';export function prepare(){return 'private'}export async function removeStaleSocket(){throw Object.assign(new Error('CANARY-channel-secret'),{code:${JSON.stringify(code)}})}export function stop(){writeFileSync(${JSON.stringify(cleaned)},'stopped')}`);
     const child = spawn(process.execPath, [fileURLToPath(new URL('../tools/acceptance/windows-connector-capacity.mjs', import.meta.url)), '--fixture', scratch], { stdio: ['ignore','pipe','pipe','ipc'] });
     let stdout = '', stderr = '', failure;
     child.stdout.on('data', chunk => { stdout += chunk; }); child.stderr.on('data', chunk => { stderr += chunk; });
     const terminal = new Promise((resolve, reject) => { child.once('error', reject); child.once('close', (exitCode, signal) => resolve({ exitCode, signal })); });
     child.on('message', record => { if (record.id === 1) failure = record; });
-    const control = createCapacityController({ child, exited: terminal, terminal: () => child.exitCode !== null }, { ipc: true,
+    const control = createCapacityController({ child, exited: terminal, terminal: () => child.exitCode !== null }, { ipc: true, capturePhaseTimings: true,
       classifyFailure: record => classifyFixtureFailure(record, new Set(['operation-failed'])) });
     const timer = setTimeout(() => child.kill(), 5000);
     try {
       assert.equal((await control.startup).paused, true);
-      await assert.rejects(control.request('start', probe ? { probe } : {}), error => {
+      await assert.rejects(control.request('start', { ...(probe ? { probe } : {}), phaseTimings: true }), error => {
         assert.equal(error.message, 'operation-failed');
         assert.equal(error.brokerCode, code !== 'CANARY-private-code' ? code : undefined);
         assert.equal(JSON.stringify(error).includes('CANARY'), false);
@@ -64,7 +64,10 @@ for (const [code, probe] of [['broker-probe-failed', undefined], ['CANARY-privat
       assert.equal(readFileSync(cleaned, 'utf8'), 'stopped');
       assert.deepEqual(failure, { id: 1, ok: false, failure: { stage: 'fixture-startup', check: 'operation-failed',
         ...(code !== 'CANARY-private-code' ? { brokerCode: code } : {}) } });
-      assert.equal(control.state().phase, probe === 'storage' ? 'storage-maintain' : 'fixture-broker-start');
+      assert.equal(control.state().phase, probe === 'channel' ? 'channel-stale-main-returned' : probe === 'storage' ? 'storage-maintain' : 'fixture-broker-start');
+      const timeline = control.state().phaseTimings;
+      assert.ok(timeline.length >= 2); assert.equal(timeline.at(-1).phase, control.state().phase);
+      assert.ok(timeline.every((row, index) => Number.isSafeInteger(row.elapsedMs) && row.elapsedMs >= (timeline[index - 1]?.elapsedMs ?? 0)));
       assert.equal(stdout, ''); assert.equal(stderr, ''); assert.equal(JSON.stringify(failure).includes('CANARY'), false);
     } finally { clearTimeout(timer); if (child.exitCode === null && child.signalCode === null) child.kill(); rmSync(scratch, { recursive: true, force: true }); }
   });

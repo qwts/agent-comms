@@ -42,6 +42,13 @@ child timeout does not establish terminal/stdio closure. Only owned-handle/job
 receipts establish cleanup. Its [retained storage-only pass](../../docs/windows-candidate-storage-evidence.md)
 does not establish whole Broker startup, delivery or capacity.
 
+The manual `candidate-channel` task uses that same approved correction archive
+for actual prepare and both stale APIs, with no Broker.start, storage or load.
+Fixed candidate controls retain bounded parent request duration and relative
+fixed child phase timing; the 120-second reporting cap does not change the
+ninety-second request deadline. Missing/invalid timing cannot qualify a pass.
+See the [control and timing scope](../../docs/windows-candidate-startup-evidence.md#fixed-source-channel-control-and-timing).
+
 ## Total instrumentation comparison with actual source archives
 
 The separate macOS-only probe compares complete unmodified production trees:

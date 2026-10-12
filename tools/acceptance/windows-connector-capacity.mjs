@@ -11,6 +11,8 @@ import { promisify } from 'node:util';
 import { admissionStage, RATES } from './windows-capacity-policy.mjs';
 import { collectSupervisorProbes, createCapacityController, encodingSignature, FIXTURE_PHASES, snapshotCapacityPhases } from './windows-capacity-control.mjs';
 
+import { createCapacityPhaseTiming, timeCapacityRequest } from './windows-capacity-timing.mjs';
+
 import { cleanupCapacityRun, retainCapacityFailure } from './windows-capacity-lifecycle.mjs';
 
 import { probePinnedStorage } from './windows-capacity-storage.mjs';
@@ -30,7 +32,7 @@ const supervisorPhases = new Set(['script-entry','compile-supervisor','superviso
 const checks = new Set(['fixture-terminal', 'fixture-deadline', 'control-deadline', 'control-closed',
   'control-output-bound', 'control-invalid', 'job-supervisor-failed', 'natural-exit-unconfirmed',
   'relay-exit-unconfirmed', 'scratch-retained', 'job-exit-unconfirmed', 'diagnostic-output-invalid',
-  'owned-startup-fault', 'owned-forced-cleanup', 'policy-failed', 'memory-headroom-insufficient', 'candidate-source-mismatch', 'operation-failed', 'assertion-failed']);
+  'owned-startup-fault', 'owned-forced-cleanup', 'policy-failed', 'memory-headroom-insufficient', 'candidate-source-mismatch', 'operation-failed', 'assertion-failed', 'timing-unavailable']);
 function failure(error) {
   return { stage: activeStage, check: checks.has(error?.message) ? error.message : error?.code === 'ERR_ASSERTION' ? 'assertion-failed' : 'operation-failed',
     ...(boundedBrokerCode(error?.brokerCode ?? error?.code) ? { brokerCode: boundedBrokerCode(error.brokerCode ?? error.code) } : {}),
@@ -70,8 +72,9 @@ async function fixture(source) {
   assert.equal(start.op, 'start');
   fixtureRequestId = start.id;
   activeStage = 'fixture-startup';
+  const phaseTiming = start.phaseTimings === true ? createCapacityPhaseTiming() : () => ({});
   const phase = (value, progress) => {
-    if (process.connected) process.send({ id: -1, phase: value, ...(progress ?? {}) }, () => {});
+    if (process.connected) process.send({ id: -1, phase: value, ...(progress ?? {}), ...phaseTiming() }, () => {});
   };
   const load = (name) => import(pathToFileURL(path.join(source, name)).href);
   if (['channel','connector','storage'].includes(start.probe)) {
@@ -286,12 +289,12 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
     AGENT_COMMS_SHARED_DIR: path.join(root, 'shared'), AGENT_COMMS_BROKER_STATE_DIR: path.join(root, 'broker'),
     AGENT_COMMS_CLIENT_STATE_DIR: path.join(root, 'client'), AGENT_COMMS_SERVICE_LABEL: `test.capacity.${randomUUID()}`,
   }), stdio: ['ignore', 'ignore', 'pipe', 'ipc'], windowsHide: true });
-  const control = createCapacityController(fixtureOwned, { ipc: true, classifyFailure: (record) => classifyFixtureFailure(record, checks) });
+  const control = createCapacityController(fixtureOwned, { ipc: true, capturePhaseTimings: revision === 'candidate', classifyFailure: (record) => classifyFixtureFailure(record, checks) });
   const supervisorOwned = ownedChild(shell, ['-NoLogo', '-NoProfile', '-NonInteractive', '-File', JOB], {
     env: environment(), stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
   const supervisor = createCapacityController(supervisorOwned, { classifyFailure: supervisorFailure });
   let attached = false, disposed = false, sampler, sampling, sampleFailure, outputFailure = false, diagnosticBytes = 0, original, originalError, originalFixturePhase;
-  let powershellVersion, connectorObservation;
+  let powershellVersion, connectorObservation, controlTiming, operationPhaseTimings;
   const samples = [], stages = [], cleanupReceipt = { jobEmptyConfirmed: false, scratchRemoved: false };
   async function closeJob() {
     const receipt = await supervisor.request('close', {}, 10_000);
@@ -343,7 +346,15 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
       compilerTemp: realpathSync(process.env.TEMP) }, Math.max(1, 15_000 - (performance.now() - attachStarted)));
     attached = true; powershellVersion = attachment.powershellVersion;
     activeStage = preflight === 'storage' ? 'candidate-storage-prefix' : preflight === 'connector' ? 'actual-connector-events' : preflight === 'channel' ? 'channel-prepare-and-stale-probes' : preflight === 'custody' ? 'custody-api' : 'production-startup';
-    const startup = await control.request('start', ['custody','channel','connector','storage'].includes(preflight) ? { probe: preflight } : {}, 90_000);
+    const startFields = { ...(['custody','channel','connector','storage'].includes(preflight) ? { probe: preflight } : {}),
+      ...(revision === 'candidate' ? { phaseTimings: true } : {}) };
+    const startup = revision === 'candidate'
+      ? await timeCapacityRequest(() => control.request('start', startFields, 90_000), timing => { controlTiming = timing; })
+      : await control.request('start', startFields, 90_000);
+    if (revision === 'candidate') {
+      operationPhaseTimings = control.state().phaseTimings;
+      if (!operationPhaseTimings.length || controlTiming.timingUnavailable || operationPhaseTimings.some(row => row.timingUnavailable)) throw new Error('timing-unavailable');
+    }
     assert.equal(startup.ready, true);
     assert.equal(preflight === 'storage' ? startup.startupStorageChecks : preflight === 'connector' ? startup.startupConnectorChecks : preflight === 'channel' ? startup.startupChannelChecks : preflight === 'custody' ? startup.startupCustodyChecks : startup.startupDeliveryChecks, preflight === 'storage' ? 6 : ['channel','connector'].includes(preflight) ? 3 : preflight === 'custody' ? 4 : 1);
     if (preflight === 'connector') { assert.equal(validConnectorObservation(startup.connectorObservation), true); connectorObservation = startup.connectorObservation; }
@@ -398,6 +409,7 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
       skipReason: preflight ? 'preflight-no-offers' : stages.some((stage) => !stage.qualified) ? 'preceding-stage-unqualified' : rates.length < RATES.length ? 'baseline-did-not-reach-higher-stage' : null,
       diagnosticBytes, commitLimitBytes, samples, powershellVersion,
       ...(connectorObservation ? { connectorObservation } : {}),
+      ...(controlTiming ? { controlTiming, phaseTimings: operationPhaseTimings } : {}),
       deliveryChecks: ['custody','channel','connector','storage'].includes(preflight) ? 0 : preflight === 'candidate-startup' ? 1 : preflight === 'fault' || preflight === 'forced' ? 1 : 2,
       sampledPeakJobWorkingSetBytes: Math.max(...samples.map((sample) => ['main','relay','diagnostic','compiler'].reduce((sum, kind) => sum + sample[kind].workingSetBytes, 0))),
       accountingScope: 'sampled private-job WorkingSet is not instantaneous peak; job CPU/peak committed bytes include short-lived descendants; observer excluded and separately reported',
@@ -406,7 +418,8 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
     if (!error.supervisorPhase && supervisorPhases.has(supervisor.state().phase)) error.supervisorPhase = supervisor.state().phase;
     const phases = snapshotCapacityPhases(supervisor, control);
     original = { ...failure(error), ...(phases.supervisorPhase ? { supervisorPhase: phases.supervisorPhase } : {}),
-      ...(phases.connectorProgress ? { connectorProgress: phases.connectorProgress } : {}) };
+      ...(phases.connectorProgress ? { connectorProgress: phases.connectorProgress } : {}),
+      ...(controlTiming ? { controlTiming } : {}), ...(phases.phaseTimings ? { phaseTimings: phases.phaseTimings } : {}) };
     originalFixturePhase = phases.fixturePhase; originalError = error; throw error;
   }
   finally {
@@ -417,7 +430,9 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
     if (originalError) originalError.capacityFailure = retainCapacityFailure(original, { revision, preflight, fixturePhase }, ownedCleanup);
     else if (ownedCleanup.errors.length) {
       const error = new Error('scratch-retained');
-      error.capacityFailure = retainCapacityFailure(failure(error), { revision, preflight, fixturePhase }, ownedCleanup);
+      error.capacityFailure = retainCapacityFailure({ ...failure(error),
+        ...(controlTiming ? { controlTiming } : {}), ...(operationPhaseTimings ? { phaseTimings: operationPhaseTimings } : {}) },
+      { revision, preflight, fixturePhase }, ownedCleanup);
       throw error;
     }
   }
@@ -430,9 +445,10 @@ async function main() {
   const components = JSON.parse(readFileSync(new URL('../../tests/fixtures/windows-host-components.json', import.meta.url)));
   assert.equal(process.version, `v${components.node.version}`);
   assert.equal(process.env.AGENT_COMMS_NODE_ARCHIVE_SHA256, components.node.sha256['win-x64']);
+  const candidateChannel = process.argv[2] === '--candidate-channel';
   const candidateStorage = process.argv[2] === '--candidate-storage';
   const candidateStartup = process.argv[2] === '--candidate';
-  const candidateOnly = candidateStartup || candidateStorage;
+  const candidateOnly = candidateStartup || candidateStorage || candidateChannel;
   if (candidateOnly) { assert.equal(process.argv.length, 6); assert.equal(process.argv[4], '--output'); }
   else {
     assert.equal(process.argv[2], '--old'); assert.equal(process.argv[4], '--new'); assert.equal(process.argv[6], '--output');
@@ -483,7 +499,7 @@ async function main() {
     await exec('tar.exe', ['-xf', archive, '-C', source], { windowsHide: true });
     archives[revision] = { source, pin, tree: tree.trim(), archiveSha256: hash(bytes) };
   }
-  const result = { v: 1, scope: candidateStorage ? 'hosted standard-user exact corrected-source fresh storage prefix only; actual prepare, EventLog custody/replay and compacting maintenance; no Broker.start, stale probes, listeners, delivery or offered rates' : candidateStartup ? 'hosted standard-user exact corrected-source Broker startup, one delivery and disposal only; no offered-rate stages, capacity comparison, desktop or host acceptance' : connectorOnly ? 'actual-connector-events; prepare/main stale probe then unconsumed admin connector; no Broker, listener, EventLog, replay, maintenance or workload' : channelOnly ? 'channel-prepare-and-stale-probes; actual pinned default channel; no Broker, listener, EventLog, replay, maintenance or workload' : custodyOnly ? 'hosted standard-user Windows pinned custody API only; no Broker or connector or offered-rate stages' : startupOnly ? 'hosted standard-user Windows old-pin production startup and disposal only; no offered-rate stages or capacity acceptance' : 'hosted standard-user Windows finite capacity pilot; no benchmark, desktop, host or 100/s support acceptance',
+  const result = { v: 1, scope: candidateChannel ? 'hosted standard-user exact corrected-source channel-prepare-and-stale-probes only; actual default channel; no Broker.start, EventLog, replay, maintenance, listeners, delivery or offered rates' : candidateStorage ? 'hosted standard-user exact corrected-source fresh storage prefix only; actual prepare, EventLog custody/replay and compacting maintenance; no Broker.start, stale probes, listeners, delivery or offered rates' : candidateStartup ? 'hosted standard-user exact corrected-source Broker startup, one delivery and disposal only; no offered-rate stages, capacity comparison, desktop or host acceptance' : connectorOnly ? 'actual-connector-events; prepare/main stale probe then unconsumed admin connector; no Broker, listener, EventLog, replay, maintenance or workload' : channelOnly ? 'channel-prepare-and-stale-probes; actual pinned default channel; no Broker, listener, EventLog, replay, maintenance or workload' : custodyOnly ? 'hosted standard-user Windows pinned custody API only; no Broker or connector or offered-rate stages' : startupOnly ? 'hosted standard-user Windows old-pin production startup and disposal only; no offered-rate stages or capacity acceptance' : 'hosted standard-user Windows finite capacity pilot; no benchmark, desktop, host or 100/s support acceptance',
     ...(candidateStorage ? { storageHelperLifetime: 'actual production subprocesses belong to private job; configured timeout is not exit proof; no individual helper terminal observation' } : {}),
     storageType: 'not-measured', nodeArchiveSha256: components.node.sha256['win-x64'],
     node: process.version, nodeExecutableSha256: hash(readFileSync(process.execPath)),
@@ -494,13 +510,16 @@ async function main() {
     custodySha256: hash(readFileSync(new URL('./windows-capacity-custody.mjs', import.meta.url))),
     channelSha256: hash(readFileSync(new URL('./windows-capacity-channel.mjs', import.meta.url))),
     connectorSha256: hash(readFileSync(new URL('./windows-capacity-connector.mjs', import.meta.url))),
+    timingSha256: hash(readFileSync(new URL('./windows-capacity-timing.mjs', import.meta.url))),
+    ...(candidateOnly ? { timingScope: 'parent start-request duration and independent child relative fixed-phase observations; reporting cap120s, request deadline90s unchanged; observational, not performance acceptance' } : {}),
     storageSha256: hash(readFileSync(new URL('./windows-capacity-storage.mjs', import.meta.url))),
     correctedStartupSha256: hash(readFileSync(new URL('./windows-corrected-startup.mjs', import.meta.url))),
     archives: Object.fromEntries(Object.entries(archives).map(([key, { source, ...value }]) => [key, value])), runs: [] };
   const persist = () => writeFileSync(path.join(output, 'capacity.json'), `${JSON.stringify(result, null, 2)}\n`);
   persist();
   for (const revision of candidateOnly ? ['candidate'] : startupOnly || custodyOnly || channelOnly || connectorOnly ? ['old'] : ['old', 'new']) {
-    if (candidateStorage) { result.runs.push(await run(archives[revision].source, revision, [], 'storage', commitLimitBytes)); persist(); }
+    if (candidateChannel) { result.runs.push(await run(archives[revision].source, revision, [], 'channel', commitLimitBytes)); persist(); }
+    else if (candidateStorage) { result.runs.push(await run(archives[revision].source, revision, [], 'storage', commitLimitBytes)); persist(); }
     else if (candidateStartup) { result.runs.push(await run(archives[revision].source, revision, [], 'candidate-startup', commitLimitBytes)); persist(); }
     else if (connectorOnly) { result.runs.push(await run(archives[revision].source, revision, [], 'connector', commitLimitBytes)); persist(); }
     else if (channelOnly) { result.runs.push(await run(archives[revision].source, revision, [], 'channel', commitLimitBytes)); persist(); }
@@ -514,7 +533,7 @@ async function main() {
     }
   }
   result.status = candidateOnly || preflight || startupOnly || custodyOnly || channelOnly || connectorOnly || result.runs.every((entry) => entry.stages.length === 3 && entry.stages.every((stage) => stage.qualified)) ? 'passed' : 'capacity-not-qualified';
-  persist(); process.stdout.write(`${JSON.stringify({ status: result.status, candidateStartup, candidateStorage, preflight, startupOnly, custodyOnly, channelOnly, connectorOnly, runs: result.runs.length })}\n`);
+  persist(); process.stdout.write(`${JSON.stringify({ status: result.status, candidateStartup, candidateStorage, candidateChannel, preflight, startupOnly, custodyOnly, channelOnly, connectorOnly, runs: result.runs.length })}\n`);
   if (result.status !== 'passed') process.exitCode = 1;
 }
 try {
