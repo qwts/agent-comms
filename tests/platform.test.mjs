@@ -24,7 +24,7 @@ const seams = { 'local-channel': createLocalChannel, 'secret-store': createSecre
 // native contention/crash/inheritance and the unsupported-platform boundary.
 // Production owner readiness inspects fixed Darwin service/native predicates;
 // protected producer and physical support remain unavailable on every platform.
-const platformSources = [...Object.keys(seams), 'durable-file', 'diagnostic-stderr', 'owner-journal-lock', 'owner-journal-native', 'owner-decision-readiness'];
+const platformSources = [...Object.keys(seams), 'durable-file', 'diagnostic-stderr', 'owner-journal-lock', 'owner-journal-native', 'owner-decision-readiness', 'owner-enrollment-source'];
 
 // GeniusBar ADR-0046: every seam has a Windows branch, exercised with fake
 // runners in tests/platform-win32.test.mjs (secret store, service startup)
