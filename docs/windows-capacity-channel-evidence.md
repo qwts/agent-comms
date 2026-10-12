@@ -82,3 +82,32 @@ return before awaiting its unchanged Promise. This separates synchronous call/sp
 stall from a returned but unresolved Promise, without altering production source,
 connector parameters, environment, policy, guards or deadlines. No further run is
 authorized by these retained results.
+
+The return-marker head `74dafeb423019b38635c953436de469b1fb77235` passed
+[native/overall CI 38225733425](https://github.com/qwts/agent-comms/actions/runs/38225733425).
+The one [channel-only run 38225963055](https://github.com/qwts/agent-comms/actions/runs/38225963055)
+failed at `channel-stale-admin-returned`, with the same control deadline and
+supervisor phase. Prepare and the main stale probe completed; the admin call
+returned its Promise, but awaiting it did not complete. This excludes a
+synchronous call/spawn stall in this run, without establishing the asynchronous
+event/timer cause. All seven source hashes match the signed Windows checkout.
+
+Empty job, both owned terminal/stdio closures, scratch removal and zero cleanup
+errors are confirmed. No direct forced termination was requested; job disposal
+is not a natural-exit claim. Parent profile/account/stage remain retained because
+failure.json exists. No Broker/listener/EventLog/replay/maintenance/workload ran.
+Original raw hashes:
+
+- [Acceptance](../tools/acceptance/evidence/2026-10-12-windows-connector/channel-38225963055/acceptance.json):
+  `baf7e8959c9966e2c934c985ad7b08103bc7cb04461423979830dd4d5cd68e7e`.
+- [Capacity](../tools/acceptance/evidence/2026-10-12-windows-connector/channel-38225963055/capacity/capacity.json):
+  `1ad31ea2a84331534a19d483cf457bb1d01a0bb717b528cf351f2a838c5c1a2e`.
+- [Failure](../tools/acceptance/evidence/2026-10-12-windows-connector/channel-38225963055/capacity/failure.json):
+  `a6e27015d160ad8bd3c2e2d0be366c15c2e689dae128e558fba06d83e940e1ba`.
+- Full run log: `bc4a957781550ceee9891c17d18b1c4d778850ad2f126ce5958e0b4a094dda68`.
+
+All original failures remain unchanged. No production correction, capacity
+qualification or further run is inferred from this result.
+
+The proposed next [connector event diagnostic](windows-connector-event-evidence.md)
+observes the actual unconsumed connector's bounded lifecycle without overrides.

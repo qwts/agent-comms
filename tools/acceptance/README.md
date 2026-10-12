@@ -7,7 +7,8 @@ The manual Windows workflow has separate no-workload `capacity-supervisor`
 production startup/disposal probe without offered requests, `capacity-channel`
 for actual pinned default channel prepare/stale probes without Broker/listener, and `capacity-custody`
 for the actual pinned current-account and three-directory custody API without a
-Broker or connector. These precede `capacity-preflight` and
+Broker or connector. The separate `capacity-connector` observes actual unconsumed connector events
+after prepare/main probe, without Broker/listener/workload. These precede `capacity-preflight` and
 `capacity-pilot` tasks. The [capacity pilot contract](../../docs/windows-connector-capacity.md)
 describes exact source pins, the actual Identification-level PowerShell connector,
 fixed 1/10/100 requests/s stages, bounded admission, owned job accounting and
