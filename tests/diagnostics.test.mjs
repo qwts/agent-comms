@@ -57,8 +57,12 @@ function safeLines(lines) {
     assert.ok(line.endsWith('\n'));
     assert.ok(Buffer.byteLength(line) <= DIAGNOSTIC_LIMITS.eventBytes);
     const record = JSON.parse(line);
-    assert.deepEqual(Object.keys(record).sort(), ['buildVersion', 'code', 'component', 'event', 'eventId', 'outcome', 'stage',
-      ...(record.event === 'diagnostics-dropped' ? ['droppedCount'] : [])].sort());
+    assert.deepEqual(Object.keys(record).sort(), ['v', 'buildVersion', 'buildSource', 'code', 'component', 'event', 'eventId',
+      'sessionId', 'operation', 'outcome', 'stage', 'observedAtUnixMs',
+      ...(record.durationMs === undefined ? [] : ['durationMs']),
+      ...(record.event === 'diagnostics.dropped' ? ['details'] : [])].sort());
+    assert.equal(record.v, 1);
+    assert.equal(record.buildSource, 'running');
     assert.equal(record.component, 'agent-comms-broker');
     assert.match(record.eventId, /^[a-f0-9-]{36}$/);
     assert.equal(record.buildVersion, JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version);
@@ -74,17 +78,20 @@ test('only fixed event tokens become diagnostics; arbitrary objects are never in
   const hostile = new Proxy({}, { get() { assert.fail('diagnostics inspected arbitrary input'); } });
   for (const value of [sensitiveError(), hostile, SECRET, 'toString', '__proto__', 'diagnostics-dropped', null, 42]) sink.report(value);
   sink.report('request-internal', { error: sensitiveError(), request: hostile });
+  sink.report('request-internal', 123);
   assert.equal(lines.length, 0, 'request-side reporting must defer the actual stderr write');
   await flushed(sink);
   assert.deepEqual(safeLines(lines).map(({ event, code, stage, outcome }) => ({ event, code, stage, outcome })), [
-    { event: 'request-internal', code: 'internal', stage: 'request', outcome: 'failed' },
+    { event: 'diagnostics.dropped', code: 'diagnostics-dropped', stage: 'queue', outcome: 'dropped' },
+    { event: 'broker.request-failure', code: 'internal', stage: 'handler', outcome: 'failed' },
   ]);
 });
 
 test('blocked stderr has one in-flight event, finite pending bytes/count and explicit recovered drop accounting', async () => {
   const stream = new ControlledStream();
   stream.accepted = false;
-  const sink = createDiagnosticSink(stream);
+  let clock = 0;
+  const sink = createDiagnosticSink(stream, { clock: () => { clock += 10; return clock; } });
   sink.report('request-internal');
   await tick();
   for (let index = 0; index < 10_000; index += 1) sink.report('storage-append');
@@ -109,7 +116,7 @@ test('blocked stderr has one in-flight event, finite pending bytes/count and exp
   assert.equal(sink.stats().inFlight, 0);
   assert.equal(sink.stats().written, DIAGNOSTIC_LIMITS.events + 1);
   const records = safeLines(stream.lines);
-  assert.deepEqual(records.filter((record) => record.event === 'diagnostics-dropped').map((record) => record.droppedCount), [blocked.dropped]);
+  assert.deepEqual(records.filter((record) => record.event === 'diagnostics.dropped').map((record) => record.details.droppedCount), [blocked.dropped]);
   stream.emit('close');
   assert.equal(stream.listenerCount('error'), 0);
   assert.equal(stream.listenerCount('drain'), 0);
@@ -185,7 +192,7 @@ test('default diagnostics write JSONL to stderr while preserving stdout', () => 
   `], { timeout: 3000, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.stdout, '{"ok":true}\n');
-  assert.equal(safeLines([result.stderr])[0].event, 'request-internal');
+  assert.equal(safeLines([result.stderr])[0].event, 'broker.request-failure');
 });
 
 for (const mode of ['capture', 'blocked', 'throwing', 'callback-error']) {
@@ -240,7 +247,7 @@ for (const mode of ['capture', 'blocked', 'throwing', 'callback-error']) {
       if (mode === 'capture') {
         await flushed(sink);
         assert.deepEqual(safeLines(output.lines).map((record) => [record.event, record.code]), [
-          ['request-internal', 'internal'], ['storage-append', 'storage-failed'],
+          ['broker.request-failure', 'internal'], ['broker.storage-failure', 'storage-failed'],
         ]);
       }
     }, { brokerOptions: { mode: 'single-account', now: () => 1000, diagnostic } });
@@ -255,7 +262,7 @@ test('maintenance timer and compaction report safe stage/code while preserving r
   await withBroker(async ({ broker, cli }) => {
     const now = broker.now;
     broker.now = () => { throw sensitiveError(); };
-    for (let attempt = 0; attempt < 100 && !lines.some((line) => JSON.parse(line).event === 'maintenance-internal'); attempt += 1) {
+    for (let attempt = 0; attempt < 100 && !lines.some((line) => JSON.parse(line).event === 'broker.maintenance-failure'); attempt += 1) {
       await new Promise((resolve) => setTimeout(resolve, 10));
     }
     broker.now = now;
@@ -265,7 +272,7 @@ test('maintenance timer and compaction report safe stage/code while preserving r
     broker.log.compact = () => { throw sensitiveError(); };
     broker.limits.compactAfterBytes = 1;
     clock = 2000;
-    for (let attempt = 0; attempt < 100 && !lines.some((line) => JSON.parse(line).event === 'maintenance-storage'); attempt += 1) {
+    for (let attempt = 0; attempt < 100 && !lines.some((line) => JSON.parse(line).event === 'broker.maintenance-storage'); attempt += 1) {
       await new Promise((resolve) => setTimeout(resolve, 10));
     }
     assert.equal(broker.log.poisoned, true);
@@ -273,9 +280,10 @@ test('maintenance timer and compaction report safe stage/code while preserving r
     broker.log.compact = compact;
     await flushed(sink);
     const records = safeLines(lines);
-    assert.ok(records.some((record) => record.event === 'maintenance-internal' && record.code === 'internal'));
-    assert.ok(records.some((record) => record.event === 'storage-compact' && record.stage === 'compact'));
+    assert.ok(records.some((record) => record.event === 'broker.maintenance-failure' && record.code === 'internal'));
+    assert.ok(records.some((record) => record.event === 'broker.storage-failure' && record.stage === 'compact'));
     assert.ok(records.some((record) => record.stage === 'maintenance' && record.code === 'storage-failed'));
+    assert.ok(records.every((record) => Number.isSafeInteger(record.durationMs) && record.durationMs >= 0));
   }, { brokerOptions: { mode: 'single-account', now: () => clock, diagnostic: sink.report,
     limits: { maintenanceIntervalMs: 20 } } });
 });

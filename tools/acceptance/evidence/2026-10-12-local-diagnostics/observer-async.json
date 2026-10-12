@@ -1,0 +1,671 @@
+{
+  "v": 1,
+  "platform": "darwin",
+  "arch": "arm64",
+  "osRelease": "27.0.0",
+  "node": "v26.11.1",
+  "logicalCpus": 18,
+  "workload": "100 requests/s60s then1000 diagnostic reports/s10s with100 requests/s",
+  "baseline": "same instrumentation with reporting disabled; request clock reads remain enabled",
+  "limits": {
+    "events": 64,
+    "bytes": 32768,
+    "eventBytes": 512,
+    "ratePerSecond": 100,
+    "burst": 64,
+    "summaryIntervalMs": 1000
+  },
+  "pairs": [
+    {
+      "mode": "healthy",
+      "disabled": {
+        "mode": "healthy",
+        "enabled": false,
+        "phases": [
+          {
+            "seconds": 60,
+            "completed": 6000,
+            "elapsedMs": 59999.875917,
+            "throughput": 100.0002068054277,
+            "p95Ms": 6.148042000000714,
+            "p99Ms": 12.880499999999302
+          },
+          {
+            "seconds": 10,
+            "completed": 1000,
+            "elapsedMs": 10000.80375,
+            "throughput": 99.99196314596215,
+            "p95Ms": 5.237166999999317,
+            "p99Ms": 7.948084000003291
+          }
+        ],
+        "outcomes": {
+          "success": 6930,
+          "refusal": 70
+        },
+        "deliveryChecks": 2,
+        "storageRefusals": 2,
+        "shutdownMs": 28.615374999993946,
+        "samples": 71,
+        "peakMainRssKiB": 79232,
+        "peakHelperRssKiB": 0,
+        "peakTotalRssKiB": 79232,
+        "mainCpuSeconds": 2.37,
+        "helperCpuSeconds": 0,
+        "maxQueued": 0,
+        "maxQueuedBytes": 0,
+        "dropped": 0,
+        "tail": [
+          {
+            "mainRssKiB": 77216,
+            "helperRssKiB": 0,
+            "mainCpuSeconds": 2.24,
+            "helperCpuSeconds": 0,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 0,
+            "dropped": 0
+          },
+          {
+            "mainRssKiB": 77216,
+            "helperRssKiB": 0,
+            "mainCpuSeconds": 2.28,
+            "helperCpuSeconds": 0,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 0,
+            "dropped": 0
+          },
+          {
+            "mainRssKiB": 77232,
+            "helperRssKiB": 0,
+            "mainCpuSeconds": 2.31,
+            "helperCpuSeconds": 0,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 0,
+            "dropped": 0
+          },
+          {
+            "mainRssKiB": 77168,
+            "helperRssKiB": 0,
+            "mainCpuSeconds": 2.34,
+            "helperCpuSeconds": 0,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 0,
+            "dropped": 0
+          },
+          {
+            "mainRssKiB": 77184,
+            "helperRssKiB": 0,
+            "mainCpuSeconds": 2.37,
+            "helperCpuSeconds": 0,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 0,
+            "dropped": 0
+          }
+        ]
+      },
+      "enabled": {
+        "mode": "healthy",
+        "enabled": true,
+        "phases": [
+          {
+            "seconds": 60,
+            "completed": 6000,
+            "elapsedMs": 60000.19408400002,
+            "throughput": 99.99967652771298,
+            "p95Ms": 2.7942909999983385,
+            "p99Ms": 5.155415999994148
+          },
+          {
+            "seconds": 10,
+            "completed": 1000,
+            "elapsedMs": 10000.625207999983,
+            "throughput": 99.99374831086078,
+            "p95Ms": 0.7880000000004657,
+            "p99Ms": 1.1562919999996666
+          }
+        ],
+        "outcomes": {
+          "success": 6930,
+          "refusal": 70
+        },
+        "deliveryChecks": 2,
+        "storageRefusals": 2,
+        "shutdownMs": 4.031291999999667,
+        "samples": 71,
+        "peakMainRssKiB": 77792,
+        "peakHelperRssKiB": 47264,
+        "peakTotalRssKiB": 123920,
+        "mainCpuSeconds": 2.28,
+        "helperCpuSeconds": 0.28,
+        "maxQueued": 1,
+        "maxQueuedBytes": 338,
+        "dropped": 8937,
+        "tail": [
+          {
+            "mainRssKiB": 76608,
+            "helperRssKiB": 47152,
+            "mainCpuSeconds": 2.14,
+            "helperCpuSeconds": 0.23,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 669,
+            "dropped": 5382
+          },
+          {
+            "mainRssKiB": 76624,
+            "helperRssKiB": 47184,
+            "mainCpuSeconds": 2.18,
+            "helperCpuSeconds": 0.24,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 769,
+            "dropped": 6282
+          },
+          {
+            "mainRssKiB": 76624,
+            "helperRssKiB": 47216,
+            "mainCpuSeconds": 2.21,
+            "helperCpuSeconds": 0.25,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 869,
+            "dropped": 7182
+          },
+          {
+            "mainRssKiB": 76624,
+            "helperRssKiB": 47216,
+            "mainCpuSeconds": 2.25,
+            "helperCpuSeconds": 0.27,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 968,
+            "dropped": 8083
+          },
+          {
+            "mainRssKiB": 76656,
+            "helperRssKiB": 47264,
+            "mainCpuSeconds": 2.28,
+            "helperCpuSeconds": 0.28,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 1064,
+            "dropped": 8937
+          }
+        ]
+      },
+      "deltas": [
+        {
+          "p95Ms": -3.353751000002376,
+          "p99Ms": -7.725084000005154,
+          "throughputRatio": 0.9999946972338193
+        },
+        {
+          "p95Ms": -4.449166999998852,
+          "p99Ms": -6.791792000003625,
+          "throughputRatio": 1.0000178530838126
+        }
+      ],
+      "additionalRssKiB": 44688,
+      "passes": true
+    },
+    {
+      "mode": "failed",
+      "disabled": {
+        "mode": "failed",
+        "enabled": false,
+        "phases": [
+          {
+            "seconds": 60,
+            "completed": 6000,
+            "elapsedMs": 60001.13458299998,
+            "throughput": 99.99810906409043,
+            "p95Ms": 1.8607909999846015,
+            "p99Ms": 4.160541000019293
+          },
+          {
+            "seconds": 10,
+            "completed": 1000,
+            "elapsedMs": 10000.270749999996,
+            "throughput": 99.99729257330361,
+            "p95Ms": 2.4804999999760184,
+            "p99Ms": 7.123416999995243
+          }
+        ],
+        "outcomes": {
+          "success": 6930,
+          "refusal": 70
+        },
+        "deliveryChecks": 2,
+        "storageRefusals": 2,
+        "shutdownMs": 16.218459000025177,
+        "samples": 71,
+        "peakMainRssKiB": 76720,
+        "peakHelperRssKiB": 0,
+        "peakTotalRssKiB": 76720,
+        "mainCpuSeconds": 2.19,
+        "helperCpuSeconds": 0,
+        "maxQueued": 0,
+        "maxQueuedBytes": 0,
+        "dropped": 0,
+        "tail": [
+          {
+            "mainRssKiB": 75088,
+            "helperRssKiB": 0,
+            "mainCpuSeconds": 2.03,
+            "helperCpuSeconds": 0,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 0,
+            "dropped": 0
+          },
+          {
+            "mainRssKiB": 75104,
+            "helperRssKiB": 0,
+            "mainCpuSeconds": 2.07,
+            "helperCpuSeconds": 0,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 0,
+            "dropped": 0
+          },
+          {
+            "mainRssKiB": 75104,
+            "helperRssKiB": 0,
+            "mainCpuSeconds": 2.11,
+            "helperCpuSeconds": 0,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 0,
+            "dropped": 0
+          },
+          {
+            "mainRssKiB": 75104,
+            "helperRssKiB": 0,
+            "mainCpuSeconds": 2.15,
+            "helperCpuSeconds": 0,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 0,
+            "dropped": 0
+          },
+          {
+            "mainRssKiB": 75136,
+            "helperRssKiB": 0,
+            "mainCpuSeconds": 2.19,
+            "helperCpuSeconds": 0,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 0,
+            "dropped": 0
+          }
+        ]
+      },
+      "enabled": {
+        "mode": "failed",
+        "enabled": true,
+        "phases": [
+          {
+            "seconds": 60,
+            "completed": 6000,
+            "elapsedMs": 60012.530791999976,
+            "throughput": 99.97911970744342,
+            "p95Ms": 2.579083000018727,
+            "p99Ms": 5.250916999997571
+          },
+          {
+            "seconds": 10,
+            "completed": 1000,
+            "elapsedMs": 9999.64045799995,
+            "throughput": 100.00359554927559,
+            "p95Ms": 4.404291999991983,
+            "p99Ms": 9.79387500003213
+          }
+        ],
+        "outcomes": {
+          "success": 6930,
+          "refusal": 70
+        },
+        "deliveryChecks": 2,
+        "storageRefusals": 2,
+        "shutdownMs": 7.012625000032131,
+        "samples": 71,
+        "peakMainRssKiB": 79200,
+        "peakHelperRssKiB": 43136,
+        "peakTotalRssKiB": 104720,
+        "mainCpuSeconds": 2.34,
+        "helperCpuSeconds": 0.15,
+        "maxQueued": 0,
+        "maxQueuedBytes": 0,
+        "dropped": 10000,
+        "tail": [
+          {
+            "mainRssKiB": 77216,
+            "helperRssKiB": 0,
+            "mainCpuSeconds": 2.21,
+            "helperCpuSeconds": 0,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 1,
+            "dropped": 6020
+          },
+          {
+            "mainRssKiB": 76192,
+            "helperRssKiB": 0,
+            "mainCpuSeconds": 2.24,
+            "helperCpuSeconds": 0,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 1,
+            "dropped": 7020
+          },
+          {
+            "mainRssKiB": 76272,
+            "helperRssKiB": 0,
+            "mainCpuSeconds": 2.27,
+            "helperCpuSeconds": 0,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 1,
+            "dropped": 8020
+          },
+          {
+            "mainRssKiB": 76832,
+            "helperRssKiB": 0,
+            "mainCpuSeconds": 2.31,
+            "helperCpuSeconds": 0,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 1,
+            "dropped": 9020
+          },
+          {
+            "mainRssKiB": 76880,
+            "helperRssKiB": 0,
+            "mainCpuSeconds": 2.34,
+            "helperCpuSeconds": 0,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 1,
+            "dropped": 10000
+          }
+        ]
+      },
+      "deltas": [
+        {
+          "p95Ms": 0.7182920000341255,
+          "p99Ms": 1.0903759999782778,
+          "throughputRatio": 0.9998101028426963
+        },
+        {
+          "p95Ms": 1.9237920000159647,
+          "p99Ms": 2.670458000036888,
+          "throughputRatio": 1.0000630314662504
+        }
+      ],
+      "additionalRssKiB": 28000,
+      "passes": true
+    },
+    {
+      "mode": "unread",
+      "disabled": {
+        "mode": "unread",
+        "enabled": false,
+        "phases": [
+          {
+            "seconds": 60,
+            "completed": 6000,
+            "elapsedMs": 60000.92091600003,
+            "throughput": 99.99846516355754,
+            "p95Ms": 2.2207499999785796,
+            "p99Ms": 4.865374999993946
+          },
+          {
+            "seconds": 10,
+            "completed": 1000,
+            "elapsedMs": 10000.44633299997,
+            "throughput": 99.99553686920454,
+            "p95Ms": 0.975291000038851,
+            "p99Ms": 2.9866669999901205
+          }
+        ],
+        "outcomes": {
+          "success": 6930,
+          "refusal": 70
+        },
+        "deliveryChecks": 2,
+        "storageRefusals": 2,
+        "shutdownMs": 15.148334000026807,
+        "samples": 71,
+        "peakMainRssKiB": 76416,
+        "peakHelperRssKiB": 0,
+        "peakTotalRssKiB": 76416,
+        "mainCpuSeconds": 2.28,
+        "helperCpuSeconds": 0,
+        "maxQueued": 0,
+        "maxQueuedBytes": 0,
+        "dropped": 0,
+        "tail": [
+          {
+            "mainRssKiB": 74640,
+            "helperRssKiB": 0,
+            "mainCpuSeconds": 2.16,
+            "helperCpuSeconds": 0,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 0,
+            "dropped": 0
+          },
+          {
+            "mainRssKiB": 74640,
+            "helperRssKiB": 0,
+            "mainCpuSeconds": 2.19,
+            "helperCpuSeconds": 0,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 0,
+            "dropped": 0
+          },
+          {
+            "mainRssKiB": 74640,
+            "helperRssKiB": 0,
+            "mainCpuSeconds": 2.22,
+            "helperCpuSeconds": 0,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 0,
+            "dropped": 0
+          },
+          {
+            "mainRssKiB": 74640,
+            "helperRssKiB": 0,
+            "mainCpuSeconds": 2.25,
+            "helperCpuSeconds": 0,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 0,
+            "dropped": 0
+          },
+          {
+            "mainRssKiB": 74704,
+            "helperRssKiB": 0,
+            "mainCpuSeconds": 2.28,
+            "helperCpuSeconds": 0,
+            "queued": 0,
+            "queuedBytes": 0,
+            "inFlight": 0,
+            "inFlightBytes": 0,
+            "written": 0,
+            "dropped": 0
+          }
+        ]
+      },
+      "enabled": {
+        "mode": "unread",
+        "enabled": true,
+        "phases": [
+          {
+            "seconds": 60,
+            "completed": 6000,
+            "elapsedMs": 60000.07716699998,
+            "throughput": 99.99987138849878,
+            "p95Ms": 1.644957999989856,
+            "p99Ms": 3.7883750000037253
+          },
+          {
+            "seconds": 10,
+            "completed": 1000,
+            "elapsedMs": 10000.456458,
+            "throughput": 99.9954356283444,
+            "p95Ms": 2.1657910000067204,
+            "p99Ms": 4.141125000023749
+          }
+        ],
+        "outcomes": {
+          "success": 6930,
+          "refusal": 70
+        },
+        "deliveryChecks": 2,
+        "storageRefusals": 2,
+        "shutdownMs": 14.013709000020754,
+        "samples": 71,
+        "peakMainRssKiB": 77568,
+        "peakHelperRssKiB": 46752,
+        "peakTotalRssKiB": 122304,
+        "mainCpuSeconds": 2.35,
+        "helperCpuSeconds": 0.21,
+        "maxQueued": 64,
+        "maxQueuedBytes": 21632,
+        "dropped": 9553,
+        "tail": [
+          {
+            "mainRssKiB": 75504,
+            "helperRssKiB": 46752,
+            "mainCpuSeconds": 2.22,
+            "helperCpuSeconds": 0.21,
+            "queued": 64,
+            "queuedBytes": 21632,
+            "inFlight": 1,
+            "inFlightBytes": 338,
+            "written": 383,
+            "dropped": 5573
+          },
+          {
+            "mainRssKiB": 75504,
+            "helperRssKiB": 46752,
+            "mainCpuSeconds": 2.25,
+            "helperCpuSeconds": 0.21,
+            "queued": 64,
+            "queuedBytes": 21632,
+            "inFlight": 1,
+            "inFlightBytes": 338,
+            "written": 383,
+            "dropped": 6573
+          },
+          {
+            "mainRssKiB": 75504,
+            "helperRssKiB": 46752,
+            "mainCpuSeconds": 2.29,
+            "helperCpuSeconds": 0.21,
+            "queued": 64,
+            "queuedBytes": 21632,
+            "inFlight": 1,
+            "inFlightBytes": 338,
+            "written": 383,
+            "dropped": 7573
+          },
+          {
+            "mainRssKiB": 75504,
+            "helperRssKiB": 46752,
+            "mainCpuSeconds": 2.32,
+            "helperCpuSeconds": 0.21,
+            "queued": 64,
+            "queuedBytes": 21632,
+            "inFlight": 1,
+            "inFlightBytes": 338,
+            "written": 383,
+            "dropped": 8573
+          },
+          {
+            "mainRssKiB": 75552,
+            "helperRssKiB": 46752,
+            "mainCpuSeconds": 2.35,
+            "helperCpuSeconds": 0.21,
+            "queued": 64,
+            "queuedBytes": 21632,
+            "inFlight": 1,
+            "inFlightBytes": 338,
+            "written": 383,
+            "dropped": 9553
+          }
+        ]
+      },
+      "deltas": [
+        {
+          "p95Ms": -0.5757919999887235,
+          "p99Ms": -1.0769999999902211,
+          "throughputRatio": 1.0000140624652483
+        },
+        {
+          "p95Ms": 1.1904999999678694,
+          "p99Ms": 1.1544580000336282,
+          "throughputRatio": 0.9999989875462114
+        }
+      ],
+      "additionalRssKiB": 45888,
+      "passes": true
+    }
+  ]
+}
