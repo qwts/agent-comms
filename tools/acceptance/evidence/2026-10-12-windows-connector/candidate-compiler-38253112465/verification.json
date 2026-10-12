@@ -1,0 +1,50 @@
+{
+  "v": 1,
+  "runId": 38253112465,
+  "runConclusion": "failure",
+  "runCompletedAt": "2026-10-12T13:05:38Z",
+  "reviewedHead": "4e17e3e20f491c0f10f96989a268bb2a9c03f2c5",
+  "reviewedTree": "e412408db43ef0ad1f9e87938e8ceefaf444ea9a",
+  "artifactId": 11748153598,
+  "artifactBytes": 2601,
+  "artifactSha256": "9f6396e4ebacb9edcfb9c00c9544dcea257e2f0946c9510dc258c58e91b28467",
+  "artifactDigestMatches": true,
+  "rawReportSha256": {
+    "acceptance.json": "3b3254dcd381ece5b6edd22f467bf2a4b6d7789f7b6c8a3746556f0072d551d6",
+    "capacity/capacity.json": "9d0d4dd79010f2f7b0c7d637f443cd7b71f756c2b1a7fa38a4e1ab5168af04d4"
+  },
+  "rawWorkflowLogSha256": "b5bcee072cd41421db45d210d4933b5d6991174e533cd95d9a0c61dd24eee041",
+  "sourceConversion": "git show reviewedHead:path bytes; replace CRLF with LF, then LF with CRLF; SHA256",
+  "sourceHashes": [
+    {
+      "path": "tools/acceptance/windows-connector-capacity.mjs",
+      "reportField": "runnerSha256",
+      "windowsCrlfSha256": "5e087e9fd404bdf59cd4e018012983ad3a26cd9f2daacb3f942fb9110374419b",
+      "matches": true
+    },
+    {
+      "path": "tools/acceptance/windows-capacity-compiler.mjs",
+      "reportField": "compilerSha256",
+      "windowsCrlfSha256": "b4ab89657e394c3a4f9965b4f4de449489e520722c815495487da8c6bcafb2a6",
+      "matches": true
+    },
+    {
+      "path": "tools/acceptance/windows-capacity-job.ps1",
+      "reportField": "supervisorSha256",
+      "windowsCrlfSha256": "adff4d760d97c212e0b39b52ddf655ceaebe023b79d5e40428803a24db9cc7f8",
+      "matches": true
+    },
+    {
+      "path": "tools/acceptance/windows-capacity-control.mjs",
+      "reportField": "controlSha256",
+      "windowsCrlfSha256": "7a3c86c07ea2b7dac9108dad7a460631dd3b312167a6d3556841c15cb7254b5f",
+      "matches": true
+    },
+    {
+      "path": "tools/acceptance/windows-capacity-lifecycle.mjs",
+      "reportField": "lifecycleSha256",
+      "windowsCrlfSha256": "0fdaedefcd6aebb5a3839bad18cf24e483f25c2f54bfe8b905725265270f6323",
+      "matches": true
+    }
+  ]
+}
