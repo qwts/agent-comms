@@ -41,7 +41,9 @@ the ten contract slots.
 | Commit trailer | 128 | magic `ODJCOM01` (8), version (u16), slot (u16), flags zero (u32), sequence (u64), payload length (u32), zero reserved (u32), frame SHA-256 (32), context digest (32), zero padding (32). |
 
 Context digest is SHA-256 of canonical local
-`{namespaceDigest,requestId,slot,v:1}`. Payload digest covers only its exact
+`{namespaceDigest,requestId,role,slot,v:1}`, with producer-owned role broker or
+daemon. The retained lab source/evidence used role-free synthetic framing; this
+corrected proposed context is distinct and enables no runtime. Payload digest covers only its exact
 un-padded bytes. Frame digest covers ASCII `owner-journal-frame-v1\n`, then
 the complete header and fixed padded payload. The trailer repeats bounded
 identity/sequence/length fields; all repetitions must match. Immutable slots
@@ -89,7 +91,9 @@ back to an older permission state. Recovery can validate and flush an identical
 committed destination, or retain the pending scratch as evidence of an unsettled
 replacement. It must not silently discard the newest observation or invent a
 resolution. Daemon observation plus preimage must occupy one combined frame;
-its two 2048-byte caps fit scratch. The exact recovery API and latest-observation
+each paired payload cap is 4352, including two unchanged 2048-byte component
+caps and at most 256 wrapper bytes, and fits scratch. Terminal record/preimage
+likewise use one immutable paired frame; no separate preimage file publishes. The exact recovery API and latest-observation
 availability semantics need review before claiming this replacement is complete.
 Original entered/completed/refused evidence and terminal resolution stay immutable.
 

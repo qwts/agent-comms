@@ -4,30 +4,31 @@
 the admission prefix in the [proposed journal contract](owner-decision-journal-capacity.md).
 No broker route, capability discovery or daemon adapter imports it. It does not
 reserve physical write capacity, authorize an operation or claim R1–R4 acceptance.
-The full challenge/proof/release/effect/reconciliation lifecycle remains future work.
+Later lifecycle phases remain future work.
 
 ## Supported storage findings
 
-`OwnerDecisionAdmissionStore(root, { namespaceDigest })` requires an existing,
+`OwnerDecisionAdmissionStore(root, { namespaceDigest, format })` requires an existing,
 private, owned 0700 directory in trusted ancestry. Its digest must come from the
 future independently enrolled stable broker namespace, never a request field.
-That enrollment adapter remains a prerequisite; synthetic tests supply a fixed
-value. The constructor pins the digest in immutable local metadata and rejects
-reopening with a different digest. Initial construction in an empty root creates the fixed lock, namespace metadata
-and request-container directory; it creates no request ID. Later inspect/read/admit
-calls only validate that metadata. Missing established files refuse without recreation.
+Enrollment remains a prerequisite; tests use a synthetic digest.
+`format` is trusted constructor configuration:
+`"scratch-v1"` remains the default existing experiment, and `"fixed-v1"` selects
+the fixed-name experiment. Immutable namespace metadata pins digest and format.
+Mismatches, inferred formats, conversion and mixed-format recovery refuse. Empty-root
+construction creates only the lock, namespace and request-container directory.
+Later calls validate these; missing established files refuse without recreation.
 
-All methods are synchronous and serialize on one kernel lock:
+Methods are synchronous under one kernel lock:
 
 - `admit(actionBytes, acceptanceBytes)` validates and snapshots the complete exact action and acceptance before creating a request artifact. It returns only `{requestId,finding:"admission-complete",duplicate}`. An exact duplicate reads the original bytes; changed bytes conflict. It does not forward or acknowledge any protocol preparation.
 - `inspect()` returns retained-ID count, full logical reservation charge and bounded per-ID admission/orphan findings. `physicalAllocationSupported` and `authorizationSupported` are always false.
-- `read(requestId)` returns absent/orphan/admission-complete and copies of any saved original action/acceptance bytes. These findings never imply a lifecycle state, reusable permission or a mutation outcome.
+- `read(requestId)` returns absent/orphan/admission-visible/admission-complete and copies of any saved original action/acceptance bytes. `admission-visible` is specific to fixed-v1 and requires explicit recovery before duplicate acknowledgement. These findings never imply a lifecycle state, reusable permission or a mutation outcome.
+- `recover(requestId)` is fixed-v1 only. It returns absent for an unknown ID, refuses an orphan, or explicitly flushes and revalidates a complete visible pair and all eleven initialized slots. Its admission-complete result always includes `authorizationSupported:false` and `physicalAllocationSupported:false`. It performs no delivery or effect.
 
-Acceptance has the contract's exact fields and primitive types, with full
-cross-binding to the action's request, principal, account, soul, operation and
-original-byte digest, plus the configured namespace. The reservation is exactly
-262144 bytes, including empty future slots. Selected daemon/watch/epoch and time
-fields are structurally checked; current authority, enrollment and live deadline
+Acceptance uses exact contract fields/types, bound to the action's request,
+principal, account, soul, operation, original-byte digest and namespace. The reservation is exactly
+262144 bytes, including future slots. Daemon/watch/epoch/time fields are structurally checked; current authority, enrollment and live deadline
 validation remain the future caller's responsibility.
 
 There are at most 4096 retained request directories. Empty/action-only interrupted
@@ -37,32 +38,69 @@ artifacts refuse writes; none are silently freed or reused. Later lifecycle slot
 names explicitly return `owner-journal-unsupported-phase`; the core does not
 accept opaque future records or fall back to an earlier permission state.
 
-## Experimental framing and publication
+## Existing scratch-v1 framing and publication
 
-This disabled backend uses one canonical JSON header followed by LF and exact
-payload bytes. The header is exactly `{bytes,sha256,slot,v:1}`, with safe positive
-payload length, lowercase SHA-256 and fixed slot action/acceptance/namespace.
-Header plus LF is at most 256 bytes. The payload caps are 32768/4096/4096 bytes.
-This is local experimental framing, not a production wire encoding selection.
+The default scratch-v1 experiment frames exact payload bytes with a canonical
+JSON `{bytes,sha256,slot,v:1}` header and LF. Header plus LF is at most 256 bytes;
+action/acceptance/namespace payload caps are 32768/4096/4096 bytes.
+This experimental format selects no wire encoding.
 
-One fixed `pending` scratch entry publishes exclusively through write-all,
-file fsync, `linkSync` to the immutable target, directory fsync, scratch unlink
-and directory fsync. `EEXIST` never overwrites a target, even if bytes match.
-Every exception after writing starts retains artifacts and requires reopening
-before further writes. Reads validate bounded framing, exact schemas/digests,
-private ownership/modes, regular files, inode identity and original bindings.
-They reject unsupported types and unknown entries. Directory iteration stops at
-count plus one, rather than allocating an unbounded listing.
+Its fixed `pending` scratch publishes through write-all, file fsync, exclusive
+hard link, directory fsync, scratch unlink and directory fsync. `EEXIST` never
+overwrites, even for identical bytes. Exceptions retain artifacts and require
+reopen. Reads check bounded frames, exact schemas/digests, private regular-file
+ownership/modes, identity and original bindings. Directory iteration is bounded.
 
-A surviving scratch with complete valid bytes remains charged. A redundant
-hard-link scratch and target are separate named entries, although they share an
-inode; reading/replay never deletes either. Any surviving request scratch makes that ID
-an orphan and prevents duplicate acknowledgement: a visible target is not proof
-that its directory flush completed. A partial/unknown scratch blocks
-recovery writes and remains for inspection. A complete pair discovered after
-restart is a storage finding only; restart never forwards it automatically.
-No multi-file atomicity, automatic mutation retry or missing-marker effect proof
-is claimed.
+Scratch and target hard links are separately charged names; replay deletes
+neither. Any surviving scratch makes the ID an orphan and prevents duplicate
+acknowledgement: visible links do not prove directory flush. Partial/unknown
+scratch refuses recovery writes. Restart never forwards a complete saved pair.
+No multi-file atomicity, mutation retry or missing-marker effect proof is claimed.
+
+## Disabled fixed-v1 framing and publication
+
+The fixed-name experiment implements the [proposed frame and slot set](owner-decision-journal-fixed-slots.md).
+Its pure frame codec checks fixed cap/EOF, raw magic, primitives,
+broker-role context/payload/frame digests, sequence 1 and padding. It snapshots inputs and reports empty/uncommitted/committed integrity; it does not validate payload schemas or authority. The
+admission store separately applies the existing exact action/acceptance validator
+and complete namespace/request/digest binding to committed payloads.
+
+After charging and flushing the request directory, the disabled initializer
+exclusively creates the ten final broker slot files and scratch inode, sets each
+fixed EOF, writes its full contents as zeros, flushes/closes/reopens it, and
+flushes the directory. It rechecks all eleven complete blank files before any
+action write. These ordinary full-zero writes are test mechanics, **not persistent
+physical reservation**. No allocator bridge or physical-support option exists.
+Original-action and acceptance then publish in that order through positional
+header/padded-body write, file fsync, trailer write, file fsync, close and exact
+readback. Every destination must be a complete all-zero, private, regular file
+with one link. No record creation, link, unlink, rename or truncate follows
+initialization. This is multi-file ordering, not an atomic group.
+
+Each store open starts without flush evidence. A valid visible pair is
+`admission-visible`, never an implicit duplicate acknowledgement. `admit` refuses
+that exact pair with `owner-journal-recovery-required`; different bytes conflict.
+Explicit `recover` validates all eleven files, flushes each existing inode and
+both request/parent directories, then revalidates the namespace, every name,
+frame, schema and exact byte/inode stamp before recording success. Interrupted
+recovery never resumes or forwards automatically. An orphan remains fully
+charged and permanently spent; recovery cannot complete or rewrite it.
+
+The volatile flush cache is instance-scoped and bounded by retained IDs. Every
+operation still acquires the kernel lock and rereads the complete graph. Stamps
+include every slot's device/inode, EOF, times and exact frame hash; changed
+identity/bytes invalidates them. Reopening requires recovery again. Corruption, unsafe ownership/link/EOF, unknown names or any nonzero
+unsupported lifecycle/scratch slot refuses; corruption/unsupported phase also
+poisons that instance until reopen. No older success image is selected. Deleting
+or shortening a blank slot leaves a spent orphan, never a recreated file. Cache
+maintenance retires no durable IDs or evidence.
+
+Storage errors retain the prefix and require reopen. A partial trailer write
+can already equal its complete bytes when the unwritten suffix is zeros; visible
+validity proves no final flush. Recovery requires its own successful flush.
+The Node fsync caveat below precludes power-loss or unconditional-write claims.
+All later lifecycle slots must remain entirely zero. Their typed graph validators
+and observation replacement/recovery are separate prerequisites.
 
 ## Darwin boundary and remaining prerequisites
 
@@ -100,6 +138,6 @@ on every platform; native storage/lock tests skip outside Darwin. Tests cover
 all operation schemas, immutable binding, byte snapshots, quota including
 orphans, fixed-name scans, hard-linked scratch, short/zero writes, fsync/ENOSPC
 failure, exclusive conflicts, corrupt/future records and SIGKILL at publication
-boundaries. Children have finite lifetimes, bounded output and awaited cleanup.
+boundaries. Fixed-v1 adds every initialization/admission/recovery phase, torn body/trailer writes, all slot corruption/EOF/link checks, explicit recovery before exact duplicates, and EIO/ENOSPC/EDQUOT at every flush boundary. Children have finite lifetimes, bounded output and awaited cleanup.
 Trusted `io`/`fault` injection exists only for internal failure tests; it is not
 request-selectable authority or a production allocation adapter.

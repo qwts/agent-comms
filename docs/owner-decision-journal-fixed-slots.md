@@ -42,9 +42,14 @@ the selected slot; a stored length never chooses its allocation or schema.
 Broker slot numbers 1–10 are acceptance, original-action, prepared-challenge,
 presence, receipt, authorization, release, initial-outcome,
 observation-reference and terminal-reference, in the existing budget order.
-Daemon numbering follows its sixteen-slot budget order and belongs to its own
-producer implementation. Context digest is SHA-256 of canonical local
-`{namespaceDigest,requestId,slot,v:1}`, using these full contract slot names.
+Daemon IDs 1–14 and exact full names are fixed by the
+[producer slot table](owner-decision-journal-records.md#producer-owned-slots);
+its own implementation validates that role and table. Context digest is SHA-256 of canonical local
+`{namespaceDigest,requestId,role,slot,v:1}`, using these full contract slot names.
+`role` is the fixed producer literal broker or daemon, selected by its owned
+implementation, never caller input. Equal namespace/request/slot values across
+stores must still reject each other's frames. Role-free lab framing remains
+historical synthetic evidence, not this corrected proposed format.
 The lab's shortened aliases and synthetic maximal patterns are fixture details,
 not production record encodings or accepted authority.
 
@@ -93,15 +98,20 @@ invalidating the destination trailer, then flush body, trailer and final equalit
 before zeroing/flushing scratch. A crash with nonzero scratch freezes ordinary
 writes. Exact recovery/retrieval semantics for an interrupted replacement remain
 an explicit prerequisite; no routine cleanup may discard the newest unresolved
-observation. Daemon observation/preimage must be one combined bounded frame.
+observation. Daemon observation-pair and terminal-pair each reserve 4352 payload bytes,
+including the exact bounded wrapper; no separate preimage slot exists. Terminal
+pair publication is immutable and follows durable completed/refused proof,
+before terminal outcome/report. Observation replacement remains unfinished.
 Original entered/completed/refused evidence and terminal resolution never change.
 
 ## Next disabled integration and required tests
 
-The next broker slice should add a strict frame reader/writer and fixed-name
-admission-prefix backend behind the existing unconsumed journal module. Reuse
-its exact acceptance/action validator, namespace binding, count accounting,
-Darwin lock lifetime and sanitized errors. Keep unsupported lifecycle phases
+The [disabled broker admission core](owner-decision-journal-core.md) now includes
+a strict frame reader/writer and an explicitly selected fixed-v1 admission-prefix
+experiment behind the existing unconsumed journal module. It reuses the exact
+acceptance/action validator, namespace binding, count accounting, Darwin lock
+lifetime and sanitized errors. Its ordinary full-zero initialization is test
+mechanics and supplies no persistent physical reservation. Keep unsupported lifecycle phases
 explicitly refused until their graph validators are implemented. No daemon files,
 request-selectable authority callback or owner-decision route belongs in this
 slice. A reviewed Darwin allocation bridge is still required before supported

@@ -56,7 +56,12 @@ failed cleanup cannot bypass these counts.
 | Store | Slot payload sum | Slot framing | Scratch | Metadata accounting | Required charge | Reservation |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Broker, 10 slots | 94208 | 2560 | 33024 | 131072 | 260864 | 262144 |
-| Daemon, 16 slots | 126976 | 4096 | 33024 | 131072 | 295168 | 524288 |
+| Daemon, 14 slots | 127488 | 3584 | 33024 | 131072 | 295168 | 524288 |
+
+Daemon reconciliation pairs include their wrapper allowance while preserving
+exactly 131072 slot payload+framing bytes (127488+3584, formerly 126976+4096).
+There are 15 fixed daemon file names including scratch, and 11 broker names;
+extra per-request artifacts must still fit the 24-entry bound.
 
 Metadata accounting charges 4096 bytes for each of the 32 permitted named file/
 directory entries. It is a conservative **logical accounting unit**, not a

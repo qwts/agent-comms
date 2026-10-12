@@ -55,7 +55,7 @@ assert.deepEqual(data.limits, { acceptedIds: 4096, framingBytes: 256, scratchPay
 // These independently specified tables must agree with the checked-in fixtures.
 const slots = {
   broker: [['acceptance',4096],['original-action',32768],['prepared-challenge',32768],['presence',4096],['receipt',4096],['authorization',4096],['release',4096],['initial-outcome',4096],['observation-reference',2048],['terminal-reference',2048]],
-  daemon: [['acceptance-context',4096],['original-action',32768],['prepared-challenge',32768],['presence',4096],['receipt',4096],['preparation',4096],['successful-check',4096],['pre-effect-refused',4096],['entered',4096],['completed',4096],['observation-reconciliation',2048],['terminal-reconciliation',2048],['observation-preimage',2048],['resolution-preimage',2048],['linked-authoritative-event',16384],['local-lifecycle-outcome',4096]],
+  daemon: [['acceptance-context',4096],['original-action',32768],['prepared-challenge',32768],['presence',4096],['receipt',4096],['preparation',4096],['successful-check',4096],['pre-effect-refused',4096],['entered',4096],['completed',4096],['observation-pair',4352],['terminal-pair',4352],['linked-authoritative-event',16384],['local-lifecycle-outcome',4096]],
 };
 const l = data.limits;
 for (const [name, pairs] of Object.entries(slots)) {
@@ -70,6 +70,9 @@ for (const [name, pairs] of Object.entries(slots)) {
   const globalRequiredBytes = l.globalPayloadBytes + l.globalNamedFileEntries * l.framingBytes + (l.globalNamedFileEntries + l.globalNamedDirectories) * l.entryCharge;
   const installationRequestBytes = l.acceptedIds * s.reservationBytes;
   assert.deepEqual(s.expected, { payloadBytes, slotFramingBytes, scratchBytes, metadataBytes, requiredBytes, installationRequestBytes, globalRequiredBytes, installationReservedBytes: installationRequestBytes + l.globalReservationBytes });
+  assert.equal(payloadBytes + slotFramingBytes, name === 'broker' ? 96768 : 131072);
+  assert.equal(pairs.length + 1, name === 'broker' ? 11 : 15); // all final names plus scratch
+  assert(pairs.length + 1 <= l.namedFileEntries);
   assert(requiredBytes <= s.reservationBytes); assert(globalRequiredBytes <= l.globalReservationBytes);
 }
 const ids = new Set(); const maximum = {}; const covered = new Set();
@@ -87,4 +90,43 @@ assert.equal(data.administrativeRecords.find(v => v.id === 'acceptance-daemon').
 for (const [state, values] of Object.entries(codes)) for (const code of values) assert(data.administrativeRecords.some(v => v.record.state === state && v.record.outcome.code === code));
 for (const finding of ['applied', 'refused', 'indeterminate']) assert(data.administrativeRecords.some(v => v.record.finding === finding));
 assert.deepEqual(maximum, { acceptance: 682, authorization: 734, outcome: 553, 'reconciliation-reference': 610 });
-console.log(JSON.stringify({ specificationOnly: true, stores: Object.fromEntries(Object.entries(data.stores).map(([k, v]) => [k, v.expected])), administrativeRecords: ids.size, maximum }, null, 2));
+const revision = v => match(v, /^sha256:[a-f0-9]{64}$/);
+const sequence = v => { number(v); assert(v <= 9999999999); };
+const head = v => { exact(v, 'seq revision'); sequence(v.seq); revision(v.revision); };
+function preimage(v) {
+  assert.equal(v.v, 1);
+  if (Object.hasOwn(v, 'head')) {
+    exact(v, 'v head proposal working'); nullable(v.head, head);
+    nullable(v.proposal, p => { exact(p, 'proposalId seq revision parentRevision'); uuid(p.proposalId); sequence(p.seq); revision(p.revision); revision(p.parentRevision); });
+    nullable(v.working, w => { exact(w, 'rootDigest inventoryDigest'); hash(w.rootDigest); hash(w.inventoryDigest); });
+  } else {
+    exact(v, 'v setting webhookDigest resume'); nullable(v.webhookDigest, hash);
+    assert(['off', 'on', 'resume', 'webhook'].includes(v.setting.mode));
+    exact(v.setting, v.setting.mode === 'resume' ? 'mode policy' : 'mode');
+    if (v.setting.mode === 'resume') assert(['read-only', 'workspace'].includes(v.setting.policy));
+    nullable(v.resume, r => { exact(r, 'harness sessionDigest toolHomeDigest destinationDigest');
+      assert(['codex', 'opencode', 'devin', 'grok'].includes(r.harness)); nullable(r.sessionDigest, hash); hash(r.toolHomeDigest); hash(r.destinationDigest); });
+  }
+}
+const pairIds = new Set(), pairKinds = new Set(); const pairMaximum = { record: 0, preimage: 0, wrapper: 0, pair: 0 };
+for (const v of data.reconciliationPairs) {
+  assert(!pairIds.has(v.id)); pairIds.add(v.id); exact(v.record, 'v record preimage'); assert.equal(v.record.v, 1);
+  const r = v.record.record; exact(r, 'v kind requestId payloadDigest effectId auditId originalDaemonKey originalDaemonEpoch reportingDaemonKey reportingDaemonEpoch at finding basisDigest observedDigest');
+  assert.equal(r.v, 1); assert.equal(r.kind, 'reconciliation'); uuid(r.requestId); uuid(r.auditId);
+  for (const k of ['payloadDigest', 'originalDaemonKey', 'reportingDaemonKey', 'observedDigest']) hash(r[k]);
+  epoch(r.originalDaemonEpoch); epoch(r.reportingDaemonEpoch); number(r.at);
+  assert(['indeterminate', 'applied', 'refused'].includes(r.finding)); nullable(r.effectId, uuid); nullable(r.basisDigest, hash);
+  if (r.finding !== 'indeterminate') { assert.notEqual(r.effectId, null); assert.notEqual(r.basisDigest, null); }
+  preimage(v.record.preimage);
+  const text = canonical(v.record), recordBytes = Buffer.byteLength(canonical(r)), preimageText = canonical(v.record.preimage);
+  const preimageBytes = Buffer.byteLength(preimageText), wrapper = Buffer.byteLength(text) - recordBytes - preimageBytes;
+  assert.equal(createHash('sha256').update(preimageText).digest('hex'), r.observedDigest);
+  assert.equal(text, v.canonicalJson); assert.equal(createHash('sha256').update(text).digest('hex'), v.sha256);
+  assert.equal(v.cap, 4352); assert.equal(v.utf8Bytes, Buffer.byteLength(text)); assert.deepEqual(v.componentBytes, { record: recordBytes, preimage: preimageBytes });
+  assert.equal(v.wrapperBytes, wrapper); assert(recordBytes <= 2048); assert(preimageBytes <= 2048); assert(wrapper <= 256); assert(v.utf8Bytes <= 4352);
+  assert.equal(v.slot, r.finding === 'indeterminate' ? 'observation-pair' : 'terminal-pair');
+  pairKinds.add(`${Object.hasOwn(v.record.preimage, 'head') ? 'revision' : 'cold'}:${r.finding}`);
+  for (const [k, length] of Object.entries({ record: recordBytes, preimage: preimageBytes, wrapper, pair: v.utf8Bytes })) pairMaximum[k] = Math.max(pairMaximum[k], length);
+}
+assert.equal(pairIds.size, 6); assert.equal(pairKinds.size, 6); assert.equal(pairMaximum.wrapper, 29);
+console.log(JSON.stringify({ specificationOnly: true, stores: Object.fromEntries(Object.entries(data.stores).map(([k, v]) => [k, v.expected])), administrativeRecords: ids.size, maximum, reconciliationPairs: pairIds.size, pairMaximum }, null, 2));
