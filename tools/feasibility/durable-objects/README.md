@@ -52,9 +52,22 @@ subprocess regression also verifies that an earlier assertion remains primary.
 Restart is orderly
 Miniflare disposal/recreation with the same storage directory. No supported
 public Miniflare API was used to abruptly terminate only its workerd child;
-abrupt termination and power-loss durability remain next evidence gates, not
-claims from this test. A future separately scoped supervisor can own that process
-explicitly without generic process discovery or kills.
+abrupt termination is exercised separately with `npm run test:crash`. That test
+launches the pinned native workerd executable directly through its public `serve`
+CLI and control descriptor, with one loopback socket and private SQLite disk
+service. It confirms denied outbound fetches, abruptly sends `SIGKILL` only through
+its owned ChildProcess handle, waits for that exact child exit, and starts a new
+child against the same scratch. An unrelated sentinel survives. Original committed
+body/evidence and body-removed outcomes survive; injected transaction writes stay
+absent and retry results remain duplicate/conflict. Cleanup has finite exit waits
+and retains scratch if the owned runtime cannot be confirmed stopped. Missing
+binary and invalid-config regressions verify bounded cleanup and preserved startup
+failures. Reports include Node/workerd versions and worker/test/lock hashes.
+
+This is a local process-crash observation, not power-loss durability or Cloudflare
+replication evidence. The pinned workerd schema explicitly marks `localDisk`
+experimental; it is used only for this opt-in synthetic probe. No process scanning,
+generic kills, inspector port or private Miniflare API is used.
 
 This bounded slice does not test actual federation messages, crypto/codec,
 revocation, expiry clocks, hibernation, alarms, PITR, cloud billing/replication,
