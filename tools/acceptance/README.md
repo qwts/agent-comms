@@ -4,7 +4,9 @@
 
 The manual Windows workflow has separate no-workload `capacity-supervisor`
 and `capacity-attach` diagnostics, the single-old-pin `capacity-startup`
-production startup/disposal probe without offered requests, then `capacity-preflight` and
+production startup/disposal probe without offered requests, and `capacity-custody`
+for the actual pinned current-account and three-directory custody API without a
+Broker or connector. These precede `capacity-preflight` and
 `capacity-pilot` tasks. The [capacity pilot contract](../../docs/windows-connector-capacity.md)
 describes exact source pins, the actual Identification-level PowerShell connector,
 fixed 1/10/100 requests/s stages, bounded admission, owned job accounting and

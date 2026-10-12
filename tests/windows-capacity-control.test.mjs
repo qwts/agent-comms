@@ -154,7 +154,7 @@ test('startup fixture IPC phases preserve pending request and refuse arbitrary m
   const control = createCapacityController(owned, { ipc: true });
   owned.child.emit('message', { id: 0, paused: true }); await control.startup;
   const started = control.request('start');
-  for (const phase of ['fixture-imports','fixture-broker-start','fixture-pair','fixture-approve','fixture-join-first','fixture-join-second','fixture-delivery-send','fixture-delivery-read','fixture-delivery-ack','fixture-delivery-empty','fixture-ready']) {
+  for (const phase of ['fixture-imports','fixture-broker-start','fixture-pair','fixture-approve','fixture-join-first','fixture-join-second','fixture-delivery-send','fixture-delivery-read','fixture-delivery-ack','fixture-delivery-empty','fixture-ready','custody-imports','custody-current-uid','custody-uid-checked','custody-shared','custody-shared-checked','custody-proofs','custody-proofs-checked','custody-state','custody-state-checked','custody-ready']) {
     owned.child.emit('message', { id: -1, phase });
     assert.equal(control.state().phase, phase);
   }

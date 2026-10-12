@@ -52,6 +52,6 @@ export function retainCapacityFailure(original, { revision, preflight, fixturePh
   return { status: 'failed', stage: original.stage, check: original.check,
     ...(original.supervisorPhase ? { supervisorPhase: original.supervisorPhase } : {}),
     ...(revision === 'old' || revision === 'new' ? { revision } : {}),
-    ...(preflight === 'normal' || preflight === 'fault' || preflight === 'forced' ? { preflight } : {}),
+    ...(preflight === 'normal' || preflight === 'fault' || preflight === 'forced' || preflight === 'custody' ? { preflight } : {}),
     ...(fixturePhase ? { fixturePhase } : {}), ownedCleanup };
 }
