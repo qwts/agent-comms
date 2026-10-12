@@ -1,0 +1,61 @@
+{
+  "v": 1,
+  "id": "initial-command-failure",
+  "rawSha256": "cec69ac5a694cfc1cfb5097c81fec684ef670c268671b827f99d6968420cb4dc",
+  "rawRecordCount": 10,
+  "projection": "Selected owned native/statistics/terminal records; global disk-image inventory and local argument paths omitted.",
+  "physicalCapacitySupported": false,
+  "powerLossTested": false,
+  "records": [
+    {
+      "at": "2026-10-12T03:22:26.817Z",
+      "event": "limits",
+      "imageMiB": 128,
+      "liveAllocatedCeilingMiB": 192,
+      "overallTimeoutSeconds": 600,
+      "snapshot": false,
+      "physicalCapacitySupported": false,
+      "powerLossTested": false
+    },
+    {
+      "at": "2026-10-12T03:22:26.818Z",
+      "event": "contract-cap-comparison",
+      "framingBytes": 256,
+      "slots": {
+        "acceptance": 4096,
+        "action": 32768,
+        "challenge": 32768,
+        "presence": 4096,
+        "receipt": 4096,
+        "authorization": 4096,
+        "release": 4096,
+        "outcome": 4096,
+        "observation": 2048,
+        "resolution": 2048,
+        "scratch": 32768
+      }
+    },
+    {
+      "at": "2026-10-12T03:22:26.923Z",
+      "event": "creation-command-refusal",
+      "code": 1,
+      "stderr": "hdiutil: create: -format requires -srcfolder or -srcdevice\nhdiutil: WARNING: 'hdiutil create ...' is deprecated. Please use 'diskutil image create ...' instead.\nUsage:\thdiutil create <sizespec> [options] <imagepath>\n\thdiutil create -help\n"
+    },
+    {
+      "at": "2026-10-12T03:22:26.923Z",
+      "event": "lab-failed",
+      "code": "command-failed"
+    },
+    {
+      "at": "2026-10-12T03:22:26.923Z",
+      "event": "lab-terminal",
+      "outcome": "failed",
+      "attached": null,
+      "attachmentMayExist": false,
+      "allocatedLiveBytes": 86016,
+      "limits": "reported task-owned live allocation; excludes host APFS metadata/external snapshots",
+      "physicalCapacitySupported": false,
+      "powerLossTested": false
+    }
+  ]
+}

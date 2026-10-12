@@ -1,0 +1,50 @@
+{
+  "v": 1,
+  "exitCode": 0,
+  "aggregateBeforeBytes": 203759616,
+  "aggregateAfterBytes": 2441216,
+  "reportedNetFreedBytes": 201318400,
+  "archivesAndAllLogsRetained": true,
+  "receipts": [
+    {
+      "archive": "/private/tmp/owner-journal-apfs-90f39813-6e22-4ed2-abee-90edfbdec6fa/journal.dmg.gz",
+      "attachmentConfirmedAbsent": true,
+      "compressedSha256": "3fc965c37596dcb918010dbb803de58a1d3e5fc7055c863b4f6a8ad2b26254cb",
+      "image": "/private/tmp/owner-journal-apfs-90f39813-6e22-4ed2-abee-90edfbdec6fa/journal.dmg",
+      "originalIdentity": [
+        16777231,
+        106098202,
+        134217728,
+        262144,
+        1791775441500435404,
+        1791775441500435404
+      ],
+      "originalSha256": "33cd8c2a33810128757807de987f4c6cd2571d4e8275d41cecc590f7d54496fc",
+      "physicalCapacitySupported": false,
+      "priorVerificationReceiptPreserved": true,
+      "reportedOriginalAllocatedBytes": 134217728,
+      "status": "removed",
+      "v": 1
+    },
+    {
+      "archive": "/private/tmp/owner-journal-apfs-d2d00fbf-0fa1-4785-bfbf-668d313cbd36/journal.dmg.gz",
+      "attachmentConfirmedAbsent": true,
+      "compressedSha256": "1fbd052baa987a973616068cec7c0f3ca49e5cf7cf994af85c3c7531fe1e50e4",
+      "image": "/private/tmp/owner-journal-apfs-d2d00fbf-0fa1-4785-bfbf-668d313cbd36/journal.dmg",
+      "originalIdentity": [
+        16777231,
+        106101052,
+        67108864,
+        131072,
+        1791776131980991632,
+        1791776131980991632
+      ],
+      "originalSha256": "724dcf37003b95d7c2e3e983c7ac9bcd681431dde2e92411d78b696098e7e2d6",
+      "physicalCapacitySupported": false,
+      "priorVerificationReceiptPreserved": true,
+      "reportedOriginalAllocatedBytes": 67108864,
+      "status": "removed",
+      "v": 1
+    }
+  ]
+}

@@ -1,0 +1,1118 @@
+{
+  "v": 1,
+  "id": "no-snapshot-qualified-pass",
+  "rawSha256": "07378af19717c1f03d120a5d84377e88cf4b85df0a3459cc867453998281b318",
+  "rawRecordCount": 232,
+  "projection": "Selected owned native/statistics/terminal records; global disk-image inventory and local argument paths omitted.",
+  "physicalCapacitySupported": false,
+  "powerLossTested": false,
+  "records": [
+    {
+      "at": "2026-10-12T03:23:42.427Z",
+      "event": "limits",
+      "imageMiB": 128,
+      "liveAllocatedCeilingMiB": 192,
+      "overallTimeoutSeconds": 600,
+      "snapshot": false,
+      "physicalCapacitySupported": false,
+      "powerLossTested": false
+    },
+    {
+      "at": "2026-10-12T03:23:42.427Z",
+      "event": "contract-cap-comparison",
+      "framingBytes": 256,
+      "slots": {
+        "acceptance": 4096,
+        "action": 32768,
+        "challenge": 32768,
+        "presence": 4096,
+        "receipt": 4096,
+        "authorization": 4096,
+        "release": 4096,
+        "outcome": 4096,
+        "observation": 2048,
+        "resolution": 2048,
+        "scratch": 32768
+      }
+    },
+    {
+      "at": "2026-10-12T03:23:44.224Z",
+      "event": "native-command-terminal",
+      "code": null,
+      "signal": "SIGKILL",
+      "cause": null,
+      "stdout": "{\"event\":\"inode\",\"phase\":\"allocated-eof-zero\",\"slot\":\"acceptance\",\"dev\":16777242,\"ino\":18,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"closed-reopened\",\"slot\":\"acceptance\",\"dev\":16777242,\"ino\":18,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"allocated-eof-zero\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":0,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"closed-reopened\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":0,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"allocated-eof-zero\",\"slot\":\"challenge\",\"dev\":16777242,\"ino\":20,\"bytes\":0,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"closed-reopened\",\"slot\":\"challenge\",\"dev\":16777242,\"ino\":20,\"bytes\":0,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"allocated-eof-zero\",\"slot\":\"presence\",\"dev\":16777242,\"ino\":21,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"closed-reopened\",\"slot\":\"presence\",\"dev\":16777242,\"ino\":21,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"allocated-eof-zero\",\"slot\":\"receipt\",\"dev\":16777242,\"ino\":22,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"closed-reopened\",\"slot\":\"receipt\",\"dev\":16777242,\"ino\":22,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"allocated-eof-zero\",\"slot\":\"authorization\",\"dev\":16777242,\"ino\":23,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"closed-reopened\",\"slot\":\"authorization\",\"dev\":16777242,\"ino\":23,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"allocated-eof-zero\",\"slot\":\"release\",\"dev\":16777242,\"ino\":24,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"closed-reopened\",\"slot\":\"release\",\"dev\":16777242,\"ino\":24,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"allocated-eof-zero\",\"slot\":\"outcome\",\"dev\":16777242,\"ino\":25,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"closed-reopened\",\"slot\":\"outcome\",\"dev\":16777242,\"ino\":25,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"allocated-eof-zero\",\"slot\":\"observation\",\"dev\":16777242,\"ino\":26,\"bytes\":0,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"closed-reopened\",\"slot\":\"observation\",\"dev\":16777242,\"ino\":26,\"bytes\":0,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"allocated-eof-zero\",\"slot\":\"resolution\",\"dev\":16777242,\"ino\":27,\"bytes\":0,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"closed-reopened\",\"slot\":\"resolution\",\"dev\":16777242,\"ino\":27,\"bytes\":0,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"allocated-eof-zero\",\"slot\":\"scratch\",\"dev\":16777242,\"ino\":28,\"bytes\":0,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"closed-reopened\",\"slot\":\"scratch\",\"dev\":16777242,\"ino\":28,\"bytes\":0,\"blocks512\":72,\"links\":1}\n{\"event\":\"ready\",\"phase\":\"all-reservations-closed\"}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T03:23:44.330Z",
+      "event": "native-command-terminal",
+      "code": 0,
+      "signal": null,
+      "cause": null,
+      "stdout": "{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"acceptance\",\"dev\":16777242,\"ino\":18,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":0,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"challenge\",\"dev\":16777242,\"ino\":20,\"bytes\":0,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"presence\",\"dev\":16777242,\"ino\":21,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"receipt\",\"dev\":16777242,\"ino\":22,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"authorization\",\"dev\":16777242,\"ino\":23,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"release\",\"dev\":16777242,\"ino\":24,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"outcome\",\"dev\":16777242,\"ino\":25,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"observation\",\"dev\":16777242,\"ino\":26,\"bytes\":0,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"resolution\",\"dev\":16777242,\"ino\":27,\"bytes\":0,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"scratch\",\"dev\":16777242,\"ino\":28,\"bytes\":0,\"blocks512\":72,\"links\":1}\n{\"event\":\"space\",\"blockSize\":4096,\"freeBlocks\":32381,\"availableBlocks\":32381}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T03:23:44.330Z",
+      "event": "observations-validated",
+      "label": "after-child-sigkill-eof-zero",
+      "slots": [
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "acceptance",
+          "dev": 16777242,
+          "ino": 18,
+          "bytes": 0,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "action",
+          "dev": 16777242,
+          "ino": 19,
+          "bytes": 0,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "challenge",
+          "dev": 16777242,
+          "ino": 20,
+          "bytes": 0,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "presence",
+          "dev": 16777242,
+          "ino": 21,
+          "bytes": 0,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "receipt",
+          "dev": 16777242,
+          "ino": 22,
+          "bytes": 0,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "authorization",
+          "dev": 16777242,
+          "ino": 23,
+          "bytes": 0,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "release",
+          "dev": 16777242,
+          "ino": 24,
+          "bytes": 0,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "outcome",
+          "dev": 16777242,
+          "ino": 25,
+          "bytes": 0,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "observation",
+          "dev": 16777242,
+          "ino": 26,
+          "bytes": 0,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "resolution",
+          "dev": 16777242,
+          "ino": 27,
+          "bytes": 0,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "scratch",
+          "dev": 16777242,
+          "ino": 28,
+          "bytes": 0,
+          "blocks512": 72,
+          "links": 1
+        }
+      ]
+    },
+    {
+      "at": "2026-10-12T03:23:55.104Z",
+      "event": "detached",
+      "device": "/dev/disk6"
+    },
+    {
+      "at": "2026-10-12T03:23:55.545Z",
+      "event": "native-command-terminal",
+      "code": 0,
+      "signal": null,
+      "cause": null,
+      "stdout": "{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"acceptance\",\"dev\":16777242,\"ino\":18,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":0,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"challenge\",\"dev\":16777242,\"ino\":20,\"bytes\":0,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"presence\",\"dev\":16777242,\"ino\":21,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"receipt\",\"dev\":16777242,\"ino\":22,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"authorization\",\"dev\":16777242,\"ino\":23,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"release\",\"dev\":16777242,\"ino\":24,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"outcome\",\"dev\":16777242,\"ino\":25,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"observation\",\"dev\":16777242,\"ino\":26,\"bytes\":0,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"resolution\",\"dev\":16777242,\"ino\":27,\"bytes\":0,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"scratch\",\"dev\":16777242,\"ino\":28,\"bytes\":0,\"blocks512\":72,\"links\":1}\n{\"event\":\"space\",\"blockSize\":4096,\"freeBlocks\":32381,\"availableBlocks\":32381}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T03:23:55.545Z",
+      "event": "observations-validated",
+      "label": "after-detach-remount-eof-zero",
+      "slots": [
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "acceptance",
+          "dev": 16777242,
+          "ino": 18,
+          "bytes": 0,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "action",
+          "dev": 16777242,
+          "ino": 19,
+          "bytes": 0,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "challenge",
+          "dev": 16777242,
+          "ino": 20,
+          "bytes": 0,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "presence",
+          "dev": 16777242,
+          "ino": 21,
+          "bytes": 0,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "receipt",
+          "dev": 16777242,
+          "ino": 22,
+          "bytes": 0,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "authorization",
+          "dev": 16777242,
+          "ino": 23,
+          "bytes": 0,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "release",
+          "dev": 16777242,
+          "ino": 24,
+          "bytes": 0,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "outcome",
+          "dev": 16777242,
+          "ino": 25,
+          "bytes": 0,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "observation",
+          "dev": 16777242,
+          "ino": 26,
+          "bytes": 0,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "resolution",
+          "dev": 16777242,
+          "ino": 27,
+          "bytes": 0,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "scratch",
+          "dev": 16777242,
+          "ino": 28,
+          "bytes": 0,
+          "blocks512": 72,
+          "links": 1
+        }
+      ]
+    },
+    {
+      "at": "2026-10-12T03:23:59.806Z",
+      "event": "native-command-terminal",
+      "code": 0,
+      "signal": null,
+      "cause": null,
+      "stdout": "{\"event\":\"fill-result\",\"bytes\":118489088,\"exhausted\":true}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T03:23:59.937Z",
+      "event": "native-command-terminal",
+      "code": 0,
+      "signal": null,
+      "cause": null,
+      "stdout": "{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"acceptance\",\"dev\":16777242,\"ino\":18,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":0,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"challenge\",\"dev\":16777242,\"ino\":20,\"bytes\":0,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"presence\",\"dev\":16777242,\"ino\":21,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"receipt\",\"dev\":16777242,\"ino\":22,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"authorization\",\"dev\":16777242,\"ino\":23,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"release\",\"dev\":16777242,\"ino\":24,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"outcome\",\"dev\":16777242,\"ino\":25,\"bytes\":0,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"observation\",\"dev\":16777242,\"ino\":26,\"bytes\":0,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"resolution\",\"dev\":16777242,\"ino\":27,\"bytes\":0,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"scratch\",\"dev\":16777242,\"ino\":28,\"bytes\":0,\"blocks512\":72,\"links\":1}\n{\"event\":\"space\",\"blockSize\":4096,\"freeBlocks\":3445,\"availableBlocks\":3445}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T03:23:59.937Z",
+      "event": "observations-validated",
+      "label": "after-fill-before-first-write",
+      "slots": [
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "acceptance",
+          "dev": 16777242,
+          "ino": 18,
+          "bytes": 0,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "action",
+          "dev": 16777242,
+          "ino": 19,
+          "bytes": 0,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "challenge",
+          "dev": 16777242,
+          "ino": 20,
+          "bytes": 0,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "presence",
+          "dev": 16777242,
+          "ino": 21,
+          "bytes": 0,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "receipt",
+          "dev": 16777242,
+          "ino": 22,
+          "bytes": 0,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "authorization",
+          "dev": 16777242,
+          "ino": 23,
+          "bytes": 0,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "release",
+          "dev": 16777242,
+          "ino": 24,
+          "bytes": 0,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "outcome",
+          "dev": 16777242,
+          "ino": 25,
+          "bytes": 0,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "observation",
+          "dev": 16777242,
+          "ino": 26,
+          "bytes": 0,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "resolution",
+          "dev": 16777242,
+          "ino": 27,
+          "bytes": 0,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "scratch",
+          "dev": 16777242,
+          "ino": 28,
+          "bytes": 0,
+          "blocks512": 72,
+          "links": 1
+        }
+      ]
+    },
+    {
+      "at": "2026-10-12T03:24:00.130Z",
+      "event": "native-command-terminal",
+      "code": 0,
+      "signal": null,
+      "cause": null,
+      "stdout": "{\"event\":\"inode\",\"phase\":\"seed-max\",\"slot\":\"acceptance\",\"dev\":16777242,\"ino\":18,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"seed-max\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"seed-max\",\"slot\":\"challenge\",\"dev\":16777242,\"ino\":20,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"seed-max\",\"slot\":\"presence\",\"dev\":16777242,\"ino\":21,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"seed-max\",\"slot\":\"receipt\",\"dev\":16777242,\"ino\":22,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"seed-max\",\"slot\":\"authorization\",\"dev\":16777242,\"ino\":23,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"seed-max\",\"slot\":\"release\",\"dev\":16777242,\"ino\":24,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"seed-max\",\"slot\":\"outcome\",\"dev\":16777242,\"ino\":25,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"seed-max\",\"slot\":\"observation\",\"dev\":16777242,\"ino\":26,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"seed-max\",\"slot\":\"resolution\",\"dev\":16777242,\"ino\":27,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"seed-max\",\"slot\":\"scratch\",\"dev\":16777242,\"ino\":28,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T03:24:00.232Z",
+      "event": "native-command-terminal",
+      "code": 0,
+      "signal": null,
+      "cause": null,
+      "stdout": "{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"acceptance\",\"dev\":16777242,\"ino\":18,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"challenge\",\"dev\":16777242,\"ino\":20,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"presence\",\"dev\":16777242,\"ino\":21,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"receipt\",\"dev\":16777242,\"ino\":22,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"authorization\",\"dev\":16777242,\"ino\":23,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"release\",\"dev\":16777242,\"ino\":24,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"outcome\",\"dev\":16777242,\"ino\":25,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"observation\",\"dev\":16777242,\"ino\":26,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"resolution\",\"dev\":16777242,\"ino\":27,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"scratch\",\"dev\":16777242,\"ino\":28,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"space\",\"blockSize\":4096,\"freeBlocks\":3448,\"availableBlocks\":3448}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T03:24:00.232Z",
+      "event": "observations-validated",
+      "label": "after-first-max-write",
+      "slots": [
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "acceptance",
+          "dev": 16777242,
+          "ino": 18,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "action",
+          "dev": 16777242,
+          "ino": 19,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "challenge",
+          "dev": 16777242,
+          "ino": 20,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "presence",
+          "dev": 16777242,
+          "ino": 21,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "receipt",
+          "dev": 16777242,
+          "ino": 22,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "authorization",
+          "dev": 16777242,
+          "ino": 23,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "release",
+          "dev": 16777242,
+          "ino": 24,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "outcome",
+          "dev": 16777242,
+          "ino": 25,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "observation",
+          "dev": 16777242,
+          "ino": 26,
+          "bytes": 2304,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "resolution",
+          "dev": 16777242,
+          "ino": 27,
+          "bytes": 2304,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "scratch",
+          "dev": 16777242,
+          "ino": 28,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        }
+      ]
+    },
+    {
+      "at": "2026-10-12T03:24:00.428Z",
+      "event": "native-command-terminal",
+      "code": 0,
+      "signal": null,
+      "cause": null,
+      "stdout": "{\"event\":\"inode\",\"phase\":\"overwrite-max-low-space\",\"slot\":\"acceptance\",\"dev\":16777242,\"ino\":18,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"overwrite-max-low-space\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"overwrite-max-low-space\",\"slot\":\"challenge\",\"dev\":16777242,\"ino\":20,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"overwrite-max-low-space\",\"slot\":\"presence\",\"dev\":16777242,\"ino\":21,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"overwrite-max-low-space\",\"slot\":\"receipt\",\"dev\":16777242,\"ino\":22,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"overwrite-max-low-space\",\"slot\":\"authorization\",\"dev\":16777242,\"ino\":23,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"overwrite-max-low-space\",\"slot\":\"release\",\"dev\":16777242,\"ino\":24,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"overwrite-max-low-space\",\"slot\":\"outcome\",\"dev\":16777242,\"ino\":25,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"overwrite-max-low-space\",\"slot\":\"observation\",\"dev\":16777242,\"ino\":26,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"overwrite-max-low-space\",\"slot\":\"resolution\",\"dev\":16777242,\"ino\":27,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"overwrite-max-low-space\",\"slot\":\"scratch\",\"dev\":16777242,\"ino\":28,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T03:24:00.525Z",
+      "event": "native-command-terminal",
+      "code": 0,
+      "signal": null,
+      "cause": null,
+      "stdout": "{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"acceptance\",\"dev\":16777242,\"ino\":18,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"challenge\",\"dev\":16777242,\"ino\":20,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"presence\",\"dev\":16777242,\"ino\":21,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"receipt\",\"dev\":16777242,\"ino\":22,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"authorization\",\"dev\":16777242,\"ino\":23,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"release\",\"dev\":16777242,\"ino\":24,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"outcome\",\"dev\":16777242,\"ino\":25,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"observation\",\"dev\":16777242,\"ino\":26,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"resolution\",\"dev\":16777242,\"ino\":27,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"scratch\",\"dev\":16777242,\"ino\":28,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"space\",\"blockSize\":4096,\"freeBlocks\":3448,\"availableBlocks\":3448}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T03:24:00.525Z",
+      "event": "observations-validated",
+      "label": "after-whole-file-max-overwrite",
+      "slots": [
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "acceptance",
+          "dev": 16777242,
+          "ino": 18,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "action",
+          "dev": 16777242,
+          "ino": 19,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "challenge",
+          "dev": 16777242,
+          "ino": 20,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "presence",
+          "dev": 16777242,
+          "ino": 21,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "receipt",
+          "dev": 16777242,
+          "ino": 22,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "authorization",
+          "dev": 16777242,
+          "ino": 23,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "release",
+          "dev": 16777242,
+          "ino": 24,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "outcome",
+          "dev": 16777242,
+          "ino": 25,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "observation",
+          "dev": 16777242,
+          "ino": 26,
+          "bytes": 2304,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "resolution",
+          "dev": 16777242,
+          "ino": 27,
+          "bytes": 2304,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "scratch",
+          "dev": 16777242,
+          "ino": 28,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        }
+      ]
+    },
+    {
+      "at": "2026-10-12T03:24:00.623Z",
+      "event": "native-command-terminal",
+      "code": 0,
+      "signal": null,
+      "cause": null,
+      "stdout": "{\"event\":\"inode\",\"phase\":\"before-link\",\"slot\":\"acceptance\",\"dev\":16777242,\"ino\":18,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"published\",\"slot\":\"acceptance\",\"dev\":16777242,\"ino\":18,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"before-link\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"published\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"before-link\",\"slot\":\"challenge\",\"dev\":16777242,\"ino\":20,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"published\",\"slot\":\"challenge\",\"dev\":16777242,\"ino\":20,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"before-link\",\"slot\":\"presence\",\"dev\":16777242,\"ino\":21,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"published\",\"slot\":\"presence\",\"dev\":16777242,\"ino\":21,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"before-link\",\"slot\":\"receipt\",\"dev\":16777242,\"ino\":22,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"published\",\"slot\":\"receipt\",\"dev\":16777242,\"ino\":22,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"before-link\",\"slot\":\"authorization\",\"dev\":16777242,\"ino\":23,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"published\",\"slot\":\"authorization\",\"dev\":16777242,\"ino\":23,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"before-link\",\"slot\":\"release\",\"dev\":16777242,\"ino\":24,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"published\",\"slot\":\"release\",\"dev\":16777242,\"ino\":24,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"before-link\",\"slot\":\"outcome\",\"dev\":16777242,\"ino\":25,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"published\",\"slot\":\"outcome\",\"dev\":16777242,\"ino\":25,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"before-link\",\"slot\":\"observation\",\"dev\":16777242,\"ino\":26,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"published\",\"slot\":\"observation\",\"dev\":16777242,\"ino\":26,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"before-link\",\"slot\":\"resolution\",\"dev\":16777242,\"ino\":27,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"published\",\"slot\":\"resolution\",\"dev\":16777242,\"ino\":27,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T03:24:00.720Z",
+      "event": "native-command-terminal",
+      "code": 0,
+      "signal": null,
+      "cause": null,
+      "stdout": "{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"acceptance\",\"dev\":16777242,\"ino\":18,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"challenge\",\"dev\":16777242,\"ino\":20,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"presence\",\"dev\":16777242,\"ino\":21,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"receipt\",\"dev\":16777242,\"ino\":22,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"authorization\",\"dev\":16777242,\"ino\":23,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"release\",\"dev\":16777242,\"ino\":24,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"outcome\",\"dev\":16777242,\"ino\":25,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"observation\",\"dev\":16777242,\"ino\":26,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"resolution\",\"dev\":16777242,\"ino\":27,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"scratch\",\"dev\":16777242,\"ino\":28,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"space\",\"blockSize\":4096,\"freeBlocks\":3443,\"availableBlocks\":3443}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T03:24:00.720Z",
+      "event": "observations-validated",
+      "label": "after-exclusive-link-publication",
+      "slots": [
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "acceptance",
+          "dev": 16777242,
+          "ino": 18,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "action",
+          "dev": 16777242,
+          "ino": 19,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "challenge",
+          "dev": 16777242,
+          "ino": 20,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "presence",
+          "dev": 16777242,
+          "ino": 21,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "receipt",
+          "dev": 16777242,
+          "ino": 22,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "authorization",
+          "dev": 16777242,
+          "ino": 23,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "release",
+          "dev": 16777242,
+          "ino": 24,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "outcome",
+          "dev": 16777242,
+          "ino": 25,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "observation",
+          "dev": 16777242,
+          "ino": 26,
+          "bytes": 2304,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "resolution",
+          "dev": 16777242,
+          "ino": 27,
+          "bytes": 2304,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "scratch",
+          "dev": 16777242,
+          "ino": 28,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        }
+      ]
+    },
+    {
+      "at": "2026-10-12T03:24:00.918Z",
+      "event": "detached",
+      "device": "/dev/disk6"
+    },
+    {
+      "at": "2026-10-12T03:24:01.368Z",
+      "event": "native-command-terminal",
+      "code": 0,
+      "signal": null,
+      "cause": null,
+      "stdout": "{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"acceptance\",\"dev\":16777242,\"ino\":18,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"challenge\",\"dev\":16777242,\"ino\":20,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"presence\",\"dev\":16777242,\"ino\":21,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"receipt\",\"dev\":16777242,\"ino\":22,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"authorization\",\"dev\":16777242,\"ino\":23,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"release\",\"dev\":16777242,\"ino\":24,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"outcome\",\"dev\":16777242,\"ino\":25,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"observation\",\"dev\":16777242,\"ino\":26,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"resolution\",\"dev\":16777242,\"ino\":27,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"observe\",\"slot\":\"scratch\",\"dev\":16777242,\"ino\":28,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"space\",\"blockSize\":4096,\"freeBlocks\":3448,\"availableBlocks\":3448}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T03:24:01.369Z",
+      "event": "observations-validated",
+      "label": "after-published-remount",
+      "slots": [
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "acceptance",
+          "dev": 16777242,
+          "ino": 18,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "action",
+          "dev": 16777242,
+          "ino": 19,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "challenge",
+          "dev": 16777242,
+          "ino": 20,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "presence",
+          "dev": 16777242,
+          "ino": 21,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "receipt",
+          "dev": 16777242,
+          "ino": 22,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "authorization",
+          "dev": 16777242,
+          "ino": 23,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "release",
+          "dev": 16777242,
+          "ino": 24,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "outcome",
+          "dev": 16777242,
+          "ino": 25,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "observation",
+          "dev": 16777242,
+          "ino": 26,
+          "bytes": 2304,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "resolution",
+          "dev": 16777242,
+          "ino": 27,
+          "bytes": 2304,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "observe",
+          "slot": "scratch",
+          "dev": 16777242,
+          "ino": 28,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        }
+      ]
+    },
+    {
+      "at": "2026-10-12T03:24:01.464Z",
+      "event": "native-command-terminal",
+      "code": 0,
+      "signal": null,
+      "cause": null,
+      "stdout": "{\"event\":\"inode\",\"phase\":\"verified-generation-two\",\"slot\":\"acceptance\",\"dev\":16777242,\"ino\":18,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"verified-generation-two\",\"slot\":\"action\",\"dev\":16777242,\"ino\":19,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"verified-generation-two\",\"slot\":\"challenge\",\"dev\":16777242,\"ino\":20,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"verified-generation-two\",\"slot\":\"presence\",\"dev\":16777242,\"ino\":21,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"verified-generation-two\",\"slot\":\"receipt\",\"dev\":16777242,\"ino\":22,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"verified-generation-two\",\"slot\":\"authorization\",\"dev\":16777242,\"ino\":23,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"verified-generation-two\",\"slot\":\"release\",\"dev\":16777242,\"ino\":24,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"verified-generation-two\",\"slot\":\"outcome\",\"dev\":16777242,\"ino\":25,\"bytes\":4352,\"blocks512\":16,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"verified-generation-two\",\"slot\":\"observation\",\"dev\":16777242,\"ino\":26,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"verified-generation-two\",\"slot\":\"resolution\",\"dev\":16777242,\"ino\":27,\"bytes\":2304,\"blocks512\":8,\"links\":1}\n{\"event\":\"inode\",\"phase\":\"verified-generation-two\",\"slot\":\"scratch\",\"dev\":16777242,\"ino\":28,\"bytes\":33024,\"blocks512\":72,\"links\":1}\n",
+      "stderr": ""
+    },
+    {
+      "at": "2026-10-12T03:24:01.464Z",
+      "event": "observations-validated",
+      "label": "after-published-remount-generation-two-content",
+      "slots": [
+        {
+          "event": "inode",
+          "phase": "verified-generation-two",
+          "slot": "acceptance",
+          "dev": 16777242,
+          "ino": 18,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "verified-generation-two",
+          "slot": "action",
+          "dev": 16777242,
+          "ino": 19,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "verified-generation-two",
+          "slot": "challenge",
+          "dev": 16777242,
+          "ino": 20,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "verified-generation-two",
+          "slot": "presence",
+          "dev": 16777242,
+          "ino": 21,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "verified-generation-two",
+          "slot": "receipt",
+          "dev": 16777242,
+          "ino": 22,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "verified-generation-two",
+          "slot": "authorization",
+          "dev": 16777242,
+          "ino": 23,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "verified-generation-two",
+          "slot": "release",
+          "dev": 16777242,
+          "ino": 24,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "verified-generation-two",
+          "slot": "outcome",
+          "dev": 16777242,
+          "ino": 25,
+          "bytes": 4352,
+          "blocks512": 16,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "verified-generation-two",
+          "slot": "observation",
+          "dev": 16777242,
+          "ino": 26,
+          "bytes": 2304,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "verified-generation-two",
+          "slot": "resolution",
+          "dev": 16777242,
+          "ino": 27,
+          "bytes": 2304,
+          "blocks512": 8,
+          "links": 1
+        },
+        {
+          "event": "inode",
+          "phase": "verified-generation-two",
+          "slot": "scratch",
+          "dev": 16777242,
+          "ino": 28,
+          "bytes": 33024,
+          "blocks512": 72,
+          "links": 1
+        }
+      ]
+    },
+    {
+      "at": "2026-10-12T03:24:01.605Z",
+      "event": "detached",
+      "device": "/dev/disk6"
+    },
+    {
+      "at": "2026-10-12T03:24:01.605Z",
+      "event": "lab-terminal",
+      "outcome": "observed-pass",
+      "attached": null,
+      "attachmentMayExist": false,
+      "allocatedLiveBytes": 134631424,
+      "limits": "reported task-owned live allocation; excludes host APFS metadata/external snapshots",
+      "physicalCapacitySupported": false,
+      "powerLossTested": false
+    }
+  ]
+}
