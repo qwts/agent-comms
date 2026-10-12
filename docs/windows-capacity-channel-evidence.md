@@ -49,3 +49,36 @@ Unit tests use stand-ins explicitly to check refusal propagation, ordered async
 boundaries, cleanup registration and path/error canaries; they are not native
 production evidence. Native CI and one separately reviewed hosted run are
 required before any result claim; no startup/preflight/pilot retry is queued.
+
+The signed channel head `8da5b88ffffd56b4427b2320f273557a6dd8d2fb` passed
+[native/overall CI 38224400047](https://github.com/qwts/agent-comms/actions/runs/38224400047).
+Its single [channel-only run 38224601406](https://github.com/qwts/agent-comms/actions/runs/38224601406)
+failed `channel-prepare-and-stale-probes/control-deadline` at
+`channel-stale-admin`, supervisor `private-job-assigned`. Actual default
+prepare and the first main-pipe stale probe completed. The second admin stale
+probe did not emit its completion marker. This does not distinguish synchronous
+call/spawn delay from asynchronous event/timer liveness. All seven tool source
+hashes match that signed Windows checkout. No Broker, listener, EventLog, replay,
+maintenance or workload ran.
+
+Owned cleanup confirms empty job, both child terminal/stdio closures, scratch
+removal and zero errors, with no direct forced termination requested. Job disposal
+may terminate members; natural fixture exit is not claimed. Parent profile/account/
+stage remain retained conservatively because failure.json exists. Raw hashes:
+
+- [Acceptance](../tools/acceptance/evidence/2026-10-12-windows-connector/channel-38224601406/acceptance.json):
+  `29d224fe55f062273bd4437711df4edb7a72b806a47d150c02368bd122564dcc`.
+- [Capacity](../tools/acceptance/evidence/2026-10-12-windows-connector/channel-38224601406/capacity/capacity.json):
+  `0597e281d68d83e3e7619fd74c4ecb442402be82befc6869a155f17ce088fc00`.
+- [Failure](../tools/acceptance/evidence/2026-10-12-windows-connector/channel-38224601406/capacity/failure.json):
+  `a4f0ab15bdc47075b538288325840246fd05874ebe311a6f921529e84cf5b1a1`.
+- Full run log: `60ac28fd7a26ad887ccb332491a21cd8bde0da29e029ef4de0a944dc4e3111bd`.
+
+Exact old-pin source inspection shows removeStaleSocket awaits only connect/error.
+Its production connector installs its ten-second timer after spawning the relay,
+and the same channel caches currentUid during prepare. Neither observation proves
+the failure cause. The next minimal marker records each actual stale API call's
+return before awaiting its unchanged Promise. This separates synchronous call/spawn
+stall from a returned but unresolved Promise, without altering production source,
+connector parameters, environment, policy, guards or deadlines. No further run is
+authorized by these retained results.

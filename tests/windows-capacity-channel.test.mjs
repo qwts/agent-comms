@@ -36,7 +36,7 @@ test('channel discriminant calls default prepare and both production stale APIs 
 
 test('every actual channel refusal stays original, prevents later calls and preserves registered owned cleanup', async () => {
   for (const [at, lastPhase, count] of [['prepare','channel-prepare',1],
-    ['CANARY-private-main','channel-stale-main',2], ['CANARY-private-admin','channel-stale-admin',3]]) {
+    ['CANARY-private-main','channel-stale-main-returned',2], ['CANARY-private-admin','channel-stale-admin-returned',3]]) {
     const f = fixture(at);
     await assert.rejects(f.run(), error => error === f.fault);
     assert.equal(f.calls.length, count); assert.equal(f.phases.at(-1), lastPhase);
@@ -55,7 +55,7 @@ test('pending actual stale probe cannot emit completion or begin the next probe 
     prepare() {}, stop() {}, async removeStaleSocket(file) { calls.push(file); if (file === 'main') { entered(); await heldProbe; } },
   }, phase => phases.push(phase), () => {});
   await enteredProbe;
-  assert.deepEqual(calls, ['main']); assert.equal(phases.at(-1), 'channel-stale-main');
+  assert.deepEqual(calls, ['main']); assert.equal(phases.at(-1), 'channel-stale-main-returned');
   release(); assert.deepEqual(await result, { ready: true, startupChannelChecks: 3 });
   assert.deepEqual(calls, ['main','admin']);
 });

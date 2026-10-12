@@ -13,10 +13,14 @@ export async function probePinnedChannel(load, phase, registerCleanup) {
   channel.prepare(context);
   phase('channel-prepared');
   phase('channel-stale-main');
-  await channel.removeStaleSocket(paths.socket);
+  const mainProbe = channel.removeStaleSocket(paths.socket);
+  phase('channel-stale-main-returned');
+  await mainProbe;
   phase('channel-stale-main-checked');
   phase('channel-stale-admin');
-  await channel.removeStaleSocket(paths.admin);
+  const adminProbe = channel.removeStaleSocket(paths.admin);
+  phase('channel-stale-admin-returned');
+  await adminProbe;
   phase('channel-stale-admin-checked');
   phase('channel-ready');
   return { ready: true, startupChannelChecks: 3 };
