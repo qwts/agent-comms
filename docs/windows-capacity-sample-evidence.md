@@ -96,3 +96,28 @@ existing native paused-fixture test exercises actual sampling and natural
 disposal; the sanitized standard-user path still needs separately reviewed
 evidence. No production startup, capacity, or underlying autoload fix is claimed.
 All failed reports remain unchanged; no broader run is authorized here.
+
+The corrected signed head `fa11e009bd8963351aeac04e1cf1692306858c4d` passed
+[native/overall CI 38222576440](https://github.com/qwts/agent-comms/actions/runs/38222576440).
+Its single [standard-user sample control 38222789010](https://github.com/qwts/agent-comms/actions/runs/38222789010)
+passed in 1,655ms: actual attachment and `sampleValidated=true`, natural empty
+private job, fixture and supervisor natural exit0, and both owned terminal/stdio
+closures confirmed. No EOF, forced termination or stderr occurred. No workload
+scratch was created. Parent profile/account/stage removal completed with no
+errors. All five source hashes match the exact signed Windows checkout.
+
+- [Acceptance](../tools/acceptance/evidence/2026-10-12-windows-connector/sample-38222789010/acceptance.json):
+  `3f31c5193ee66c674b004cdf9c85d4aa56da82263423c4075b0a58059c5311a0`.
+- [Capacity](../tools/acceptance/evidence/2026-10-12-windows-connector/sample-38222789010/capacity/capacity.json):
+  `665bc69f586eb027fb7f52b405275f353db59cc0d8c14e64d6f2379023f7c7ac`.
+- Full run log: `613b372875475343cd0db3b883f9126cd498a01595136fa0666da16311397a80`.
+
+This establishes the corrected observer control for one paused fixture under
+the sanitized standard-user environment. It imported no production runtime or
+connector, offered no workload and does not qualify Broker startup or numeric
+capacity. It avoids the observed cmdlet interval without proving its underlying
+mechanism. All earlier failure receipts and cleanup qualifications remain intact;
+no broader run follows automatically.
+
+The separate production startup result and next pinned channel discriminant are
+recorded in [channel preparation evidence](windows-capacity-channel-evidence.md).

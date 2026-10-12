@@ -4,7 +4,8 @@
 
 The manual Windows workflow has separate no-workload `capacity-supervisor`
 `capacity-attach` and one-sample `capacity-sample` diagnostics, the single-old-pin `capacity-startup`
-production startup/disposal probe without offered requests, and `capacity-custody`
+production startup/disposal probe without offered requests, `capacity-channel`
+for actual pinned default channel prepare/stale probes without Broker/listener, and `capacity-custody`
 for the actual pinned current-account and three-directory custody API without a
 Broker or connector. These precede `capacity-preflight` and
 `capacity-pilot` tasks. The [capacity pilot contract](../../docs/windows-connector-capacity.md)

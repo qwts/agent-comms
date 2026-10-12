@@ -1,0 +1,63 @@
+{
+  "v": 1,
+  "scope": "standard-user sanitized-environment paused-fixture observer sample only; no production imports or workload",
+  "node": "v24.21.0",
+  "runnerSha256": "21fae2da796d13cfcdd6db2687abcbe83c2b36ce647404eb552564f50a4d746c",
+  "supervisorSha256": "adff4d760d97c212e0b39b52ddf655ceaebe023b79d5e40428803a24db9cc7f8",
+  "controlSha256": "16fad28ea880cfe01d25bad50f99677da7e77df7b6fba421fc76a68622bedd85",
+  "lifecycleSha256": "196d826589ea5ef7aaae1385300c3d9451074e3cbcfc37989fc551fe1c4cfcdc",
+  "custodySha256": "60ec225d64566323a78b55d12cea7dece0c3176091cdf1dc96d116469206998b",
+  "runs": [
+    {
+      "runType": "supervisor-sample-no-workload",
+      "variant": "supervisor-sample",
+      "productionImported": false,
+      "executionPolicyObservation": "not-queried",
+      "environmentParity": {
+        "inheritedExecutionPolicy": false,
+        "inheritedModulePath": false,
+        "explicitExecutionPolicyArgument": false
+      },
+      "stderrBytes": 0,
+      "stderrByteCountCapped": false,
+      "stderrEncoding": null,
+      "control": {
+        "phase": "close-job",
+        "encoding": "ascii-compatible",
+        "moduleObservation": {
+          "manifestPresent": true,
+          "expectedPSHome": true
+        },
+        "cimModuleObservation": {
+          "manifestPresent": true
+        }
+      },
+      "eofSent": false,
+      "forcedTerminationRequested": false,
+      "terminal": {
+        "code": 0,
+        "signal": null
+      },
+      "stdioClosedConfirmed": true,
+      "ownedTerminalConfirmed": true,
+      "attached": true,
+      "sampleValidated": true,
+      "cleanup": {
+        "jobEmptyConfirmed": true,
+        "naturalJobEmptyConfirmed": true,
+        "jobCreated": true,
+        "scratchRemoved": true,
+        "scratchCreated": false
+      },
+      "fixtureTerminal": {
+        "code": 0,
+        "signal": null
+      },
+      "fixtureOwnedTerminalConfirmed": true,
+      "fixtureStdioClosedConfirmed": true,
+      "elapsedMs": 1655,
+      "status": "passed"
+    }
+  ],
+  "status": "passed"
+}
