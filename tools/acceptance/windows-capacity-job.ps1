@@ -13,6 +13,7 @@ $fixtureCreation = $null
 $known = @{}
 $maximumRows = 128 # private-job membership, including compiler descendants
 $phase = 'script-entry'
+$utilityLoaded = $false
 
 function Reply($Value) {
     [Console]::Out.WriteLine(($Value | ConvertTo-Json -Depth 8 -Compress))
@@ -20,6 +21,27 @@ function Reply($Value) {
 }
 
 try {
+    # This dev-only observer must not depend on implicit Utility autoload.
+    $phase = 'module-observation'
+    $manifest = [IO.Path]::Combine($PSHOME, 'Modules\Microsoft.PowerShell.Utility\Microsoft.PowerShell.Utility.psd1')
+    $present = [IO.File]::Exists($manifest)
+    $expected = [string]::Equals([IO.Path]::GetFullPath($PSHOME), [IO.Path]::GetFullPath([IO.Path]::Combine([Environment]::GetEnvironmentVariable('SystemRoot'), 'System32\WindowsPowerShell\v1.0')), [StringComparison]::OrdinalIgnoreCase)
+    if (-not $ValidateOnly) {
+        [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"module-observation","manifestPresent":' + $present.ToString().ToLowerInvariant() + ',"expectedPSHome":' + $expected.ToString().ToLowerInvariant() + '}')
+        [Console]::Out.Flush()
+    }
+    if (-not $present -or -not $expected) { throw 'invalid-built-in-utility' }
+    $phase = 'import-utility'
+    if (-not $ValidateOnly) {
+        [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"import-utility"}')
+        [Console]::Out.Flush()
+    }
+    Import-Module -Name $manifest -ErrorAction Stop
+    $utilityLoaded = $true
+    if (-not $ValidateOnly) {
+        [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"utility-imported"}')
+        [Console]::Out.Flush()
+    }
     $phase = 'compile-supervisor'
     if (-not $ValidateOnly) {
         [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"compile-supervisor"}')
@@ -254,7 +276,11 @@ public static class CapacityJob {
 } catch {
     # A fixed failure record, never PowerShell errors, command lines or stacks.
     $failureId = if ($null -eq $requestId) { 0 } else { $requestId }
-    Reply @{id=$failureId;ok=$false;failure=@{check='job-supervisor-failed';phase=$phase}}
+    if (-not $utilityLoaded) {
+        # Startup refusal must not retry the unavailable JSON cmdlet.
+        [Console]::Out.WriteLine('{"id":0,"ok":false,"failure":{"check":"job-supervisor-failed","phase":"' + $phase + '"}}')
+        [Console]::Out.Flush()
+    } else { Reply @{id=$failureId;ok=$false;failure=@{check='job-supervisor-failed';phase=$phase}} }
     exit 1
 } finally {
     if ($job -ne [IntPtr]::Zero) { [void][CapacityJob]::CloseHandle($job) }

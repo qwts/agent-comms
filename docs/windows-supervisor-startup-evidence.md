@@ -90,3 +90,32 @@ explicit import refuses an unexpected home or absent manifest. Fixed phases
 bracket import and serialization. Environment, policy, startup/lifecycle
 budgets and the first-child cleanup guard remain unchanged. It runs no
 supervisor job, production imports or workload and does not qualify capacity.
+
+The fourth run,
+[38210228385](https://github.com/qwts/agent-comms/actions/runs/38210228385), at
+`86209e19e9ddf6fd569f50c5f7100c8dc35294d5`, found both the expected classic
+shell home and Utility manifest present. Implicit JSON loading timed out
+after `serialize-ready` (20,021 ms total), with EOF/forced `SIGTERM` requested.
+Explicit manifest import followed by JSON passed in 326 ms, with natural
+exit zero, no EOF/force, and `ready-serialized` observed. Both owned terminals
+and stdio closures were confirmed. The parent retained account/profile/stage
+because the combined diagnostic failed. Original SHA256 values:
+
+- [Acceptance](../tools/acceptance/evidence/2026-10-12-windows-connector/supervisor-38210228385/acceptance.json):
+  `0884faa6864d1426cbf61444c9c99f69db1735fddb55d8b2e4c4b2799a042f11`.
+- [Capacity](../tools/acceptance/evidence/2026-10-12-windows-connector/supervisor-38210228385/capacity/capacity.json):
+  `eee7fbfd6acba01e4eedeec5161167c4b949d6809d1d6b0758da59996a415963`.
+- [Failure](../tools/acceptance/evidence/2026-10-12-windows-connector/supervisor-38210228385/capacity/failure.json):
+  `466ec3bb3c16bb1cf01758b4760a44192cf4a4931b135d5f6cf42a73d70b7498`.
+- Failed-step log: `92c32f87d7bee7849f4eb4ed38712b29680bdd61c7f75d6725420d64ecd70dc3`.
+
+Explicit loading avoids the observed implicit-autoload failure in this
+environment; the underlying autoload mechanism remains undiagnosed. The
+dev-only supervisor now preloads that exact manifest before compilation,
+with fixed home/presence refusal and literal import phases. Startup refusals
+use literal JSON without attempting the unavailable serializer. The next
+diagnostic runs only the full supervisor, with unchanged fifteen-second
+readiness and 29-second lifetime bounds; it does not repeat the evidenced
+implicit failure. This is observer setup, not a change to either pinned
+production connector or runtime. A supervisor pass must precede six-case
+preflight; capacity remains unqualified until those actual controls pass.

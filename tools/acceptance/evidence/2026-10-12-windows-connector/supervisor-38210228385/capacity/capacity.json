@@ -1,0 +1,87 @@
+{
+  "v": 1,
+  "scope": "standard-user sanitized-environment supervisor control only; no production workload",
+  "node": "v24.21.0",
+  "runnerSha256": "50da22bdb939f127ccfbf6620db83ffde6b9d7c697368c78e27f8c48b7b285af",
+  "supervisorSha256": "6232ef63b3374473d1f1319c84f660bf440584d13aab621717240655d33d7b36",
+  "controlSha256": "0fbc486c081d33674fb4b2c59b1c0006ac30f54d05ab2017566d34cc5e01c460",
+  "runs": [
+    {
+      "runType": "supervisor-only-no-workload",
+      "variant": "json-command",
+      "productionImported": false,
+      "executionPolicyObservation": "not-queried",
+      "environmentParity": {
+        "inheritedExecutionPolicy": false,
+        "inheritedModulePath": false,
+        "explicitExecutionPolicyArgument": false
+      },
+      "stderrBytes": 0,
+      "stderrByteCountCapped": false,
+      "stderrEncoding": null,
+      "control": {
+        "phase": "serialize-ready",
+        "encoding": "ascii-compatible",
+        "moduleObservation": {
+          "manifestPresent": true,
+          "expectedPSHome": true
+        }
+      },
+      "eofSent": true,
+      "forcedTerminationRequested": true,
+      "terminal": {
+        "code": null,
+        "signal": "SIGTERM"
+      },
+      "stdioClosedConfirmed": true,
+      "ownedTerminalConfirmed": true,
+      "elapsedMs": 20021,
+      "status": "failed",
+      "failure": {
+        "stage": "supervisor-json-startup",
+        "check": "control-deadline",
+        "supervisorPhase": "serialize-ready"
+      }
+    },
+    {
+      "runType": "supervisor-only-no-workload",
+      "variant": "explicit-utility-command",
+      "productionImported": false,
+      "executionPolicyObservation": "not-queried",
+      "environmentParity": {
+        "inheritedExecutionPolicy": false,
+        "inheritedModulePath": false,
+        "explicitExecutionPolicyArgument": false
+      },
+      "stderrBytes": 0,
+      "stderrByteCountCapped": false,
+      "stderrEncoding": null,
+      "control": {
+        "phase": "ready-serialized",
+        "encoding": "ascii-compatible",
+        "moduleObservation": {
+          "manifestPresent": true,
+          "expectedPSHome": true
+        }
+      },
+      "eofSent": false,
+      "forcedTerminationRequested": false,
+      "terminal": {
+        "code": 0,
+        "signal": null
+      },
+      "stdioClosedConfirmed": true,
+      "ownedTerminalConfirmed": true,
+      "cleanup": {
+        "jobEmptyConfirmed": true,
+        "naturalJobEmptyConfirmed": true,
+        "jobCreated": false,
+        "scratchRemoved": true,
+        "scratchCreated": false
+      },
+      "elapsedMs": 326,
+      "status": "passed"
+    }
+  ],
+  "status": "failed"
+}

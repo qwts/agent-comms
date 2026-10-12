@@ -15,9 +15,12 @@ export function encodingSignature(chunk) {
   return chunk.subarray(0, 16).every((byte) => byte < 128) ? 'ascii-compatible' : 'other';
 }
 // A subsequent diagnostic must not overlap a child whose lifetime is unknown.
-export async function collectSupervisorProbes(probe, record) {
+export async function collectSupervisorProbes(probe, record, variants = ['supervisor-script']) {
+  if (!Array.isArray(variants) || variants.length < 1 || variants.length > 2
+      || new Set(variants).size !== variants.length
+      || variants.some(variant => !['json-command','explicit-utility-command','supervisor-script'].includes(variant))) throw new Error('control-invalid');
   let mayContinue = true;
-  for (const variant of ['json-command','explicit-utility-command']) {
+  for (const variant of variants) {
     if (!mayContinue) {
       await record({ runType: 'supervisor-only-no-workload', variant, productionImported: false,
         status: 'not-run', reason: 'prior-cleanup-unconfirmed' });

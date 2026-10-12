@@ -85,9 +85,9 @@ lines, credentials or message bodies.
 The manual `Windows desktop diagnostics` workflow offers four tasks:
 `engine` retains existing acceptance; `capacity-supervisor` checks supervisor
 control under the actual sanitized standard-user environment without importing
-production code. It compares implicit JSON cmdlet loading with explicit loading
-of the classic shell's built-in Utility manifest, preserving both outcomes and EOF/forced-exit/stdio-close
-receipts within a combined 58-second process budget; `capacity-preflight` and
+production code. It checks the full supervisor after explicit loading of the
+classic shell's built-in Utility manifest, preserving EOF/forced-exit/stdio-close
+receipts within a 29-second process budget; `capacity-preflight` and
 `capacity-pilot` select this separate foreground-library probe. Capacity modes
 use the disposable standard-user account/profile bootstrap and install no
 scheduled task, daemon or host. The workflow remains manual; normal CI runs

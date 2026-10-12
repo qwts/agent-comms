@@ -107,7 +107,7 @@ test('supervisor variants never start a second process after uncertain exit or s
     const calls = [], records = [];
     await collectSupervisorProbes(async (variant) => {
       calls.push(variant); return { variant, status: 'failed', ...receipt };
-    }, (record) => records.push(record));
+    }, (record) => records.push(record), ['json-command','explicit-utility-command']);
     assert.deepEqual(calls, ['json-command']);
     assert.equal(records[0].status, 'failed');
     assert.deepEqual(records[1], { runType: 'supervisor-only-no-workload', variant: 'explicit-utility-command',
@@ -119,7 +119,17 @@ test('a failed but fully disposed first probe allows a matched second diagnostic
   await collectSupervisorProbes(async (variant) => {
     calls.push(variant); return { variant, status: calls.length === 1 ? 'failed' : 'passed',
       ownedTerminalConfirmed: true, stdioClosedConfirmed: true };
-  }, (record) => records.push(record));
+  }, (record) => records.push(record), ['json-command','explicit-utility-command']);
   assert.deepEqual(calls, ['json-command','explicit-utility-command']);
   assert.deepEqual(records.map((record) => record.status), ['failed','passed']);
+});
+test('default supervisor diagnostic runs one full script without repeating failed implicit control', async () => {
+  const calls = [], records = [];
+  await collectSupervisorProbes(async (variant) => {
+    calls.push(variant); return { variant, status: 'passed', ownedTerminalConfirmed: true, stdioClosedConfirmed: true };
+  }, (record) => records.push(record));
+  assert.deepEqual(calls, ['supervisor-script']); assert.equal(records.length, 1);
+  for (const variants of [[], ['supervisor-script','supervisor-script'], ['CANARY-private-path'], ['json-command','explicit-utility-command','supervisor-script']]) {
+    await assert.rejects(collectSupervisorProbes(() => assert.fail('unbounded or unreviewed process start'), () => {}, variants), { message: 'control-invalid' });
+  }
 });
