@@ -1,0 +1,76 @@
+{
+  "observedAtUtc": "2026-10-12T12:43:55.030407+00:00",
+  "platform": "Darwin",
+  "osRelease": "27.0.0",
+  "machine": "arm64",
+  "logicalCpus": 18,
+  "loadAverages": [
+    3.8974609375,
+    3.95458984375,
+    4.1337890625
+  ],
+  "topObservedProcesses": [
+    {
+      "cpuPercent": 38.9,
+      "processBasename": "WindowServer"
+    },
+    {
+      "cpuPercent": 16.9,
+      "processBasename": "com.apple.WebKit.WebContent"
+    },
+    {
+      "cpuPercent": 15.5,
+      "processBasename": "Brave Browser Helper (Renderer)"
+    },
+    {
+      "cpuPercent": 9.5,
+      "processBasename": "com.apple.WebKit.GPU"
+    },
+    {
+      "cpuPercent": 8.0,
+      "processBasename": "Terminal"
+    },
+    {
+      "cpuPercent": 6.0,
+      "processBasename": "codex"
+    },
+    {
+      "cpuPercent": 4.7,
+      "processBasename": "geniusbar"
+    },
+    {
+      "cpuPercent": 4.1,
+      "processBasename": "codex"
+    },
+    {
+      "cpuPercent": 3.5,
+      "processBasename": "WindowManager"
+    },
+    {
+      "cpuPercent": 2.7,
+      "processBasename": "spotlightknowledged.updater"
+    },
+    {
+      "cpuPercent": 2.1,
+      "processBasename": "syspolicyd"
+    },
+    {
+      "cpuPercent": 1.7,
+      "processBasename": "opendirectoryd"
+    },
+    {
+      "cpuPercent": 1.7,
+      "processBasename": "Brave Browser Helper"
+    },
+    {
+      "cpuPercent": 1.5,
+      "processBasename": "AppleCentauriAlpha"
+    },
+    {
+      "cpuPercent": 1.4,
+      "processBasename": "codex-code-mode-host"
+    }
+  ],
+  "coordination": "Root authorizes unread only, all agents hold local tests/builds/performance. Source editing permitted.",
+  "limitations": "Start observation only; OS/UI/browser, other sessions and external activity uncontrolled; unread configuration does not inspect queue occupancy or prove a stalled write."
+}

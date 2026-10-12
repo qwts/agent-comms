@@ -1,0 +1,41 @@
+[
+  {
+    "mode": "healthy",
+    "runsSha256": "a65779afba3fc30a0a9eeba0ea74d8396270c048ad42ae021f6151afec2ecf4f",
+    "resultsSha256": "778e90f3532e88edfccbcb4d4a03e331782ff0a4674bd346f6d66a973121e336",
+    "pairsRecomputed": 2,
+    "watchOutcomes": {
+      "churnReady": 70,
+      "persistentReady": 1,
+      "reconnectReady": 7,
+      "refusal": 1
+    },
+    "maxDriverLatenessMs": 256.85854200000085
+  },
+  {
+    "mode": "failed",
+    "runsSha256": "9432831b7a1766d1c959515846c996716de360e0a401dfd959427e2b07cbf19c",
+    "resultsSha256": "5400a106f9a9e4fc28022df4dc8298e96903d924c3455e11da6bac3b3ce00d22",
+    "pairsRecomputed": 2,
+    "watchOutcomes": {
+      "churnReady": 70,
+      "persistentReady": 1,
+      "reconnectReady": 7,
+      "refusal": 1
+    },
+    "maxDriverLatenessMs": 256.55758400000013
+  },
+  {
+    "mode": "unread",
+    "runsSha256": "8a2ede2f843ec0a9f3f829be9a0aaf475aded94eab934af2e2e5d69dbd18e805",
+    "resultsSha256": "d210aef7b50fe44440b8148caf08a25c523f3962ca783eed9f3326143a48a448",
+    "pairsRecomputed": 2,
+    "watchOutcomes": {
+      "churnReady": 70,
+      "persistentReady": 1,
+      "reconnectReady": 7,
+      "refusal": 1
+    },
+    "maxDriverLatenessMs": 255.52304099999947
+  }
+]

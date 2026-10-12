@@ -1,0 +1,38 @@
+{
+  "benchmarkBaseline": "a618508ab4c4d7185b198c89b1befce513a66b8e",
+  "benchmarkCandidate": "5276f77d6bbcc68e42ef6ba5654495d2df56bc35",
+  "benchmarkCandidateTree": "ab47a9e728bda86d22b28980bd9312c158e0ecc2",
+  "rebaseBase": "da9c2c67f879aa8c7929c886d849127c6758a2d9",
+  "rebasedLocalHead": "8b4f7f8c0b55d544a2f132e70cbec4f79c72dcd0",
+  "rebasedTree": "6554cca1e36298bc15fa542997dcf390104b5fc3",
+  "runtimeFileHashes": {
+    "lib/broker.mjs": {
+      "measuredSha256": "0a5dd1a2ca58d2c490440bc5ef2382c586adc730d34829bfa8294436298c8fdd",
+      "rebasedSha256": "0a5dd1a2ca58d2c490440bc5ef2382c586adc730d34829bfa8294436298c8fdd"
+    },
+    "lib/client.mjs": {
+      "measuredSha256": "aeea641aabfe34f5b16bc0ceb75760143256b5dbda4556acdb96c5df6884db33",
+      "rebasedSha256": "aeea641aabfe34f5b16bc0ceb75760143256b5dbda4556acdb96c5df6884db33"
+    },
+    "lib/diagnostics.mjs": {
+      "measuredSha256": "ec701072a4380f68285237171dba30c04f8f5e580c1e6b60927f49fb4f635cfd",
+      "rebasedSha256": "ec701072a4380f68285237171dba30c04f8f5e580c1e6b60927f49fb4f635cfd"
+    }
+  },
+  "measuredRuntimeDeltaSha256": "b873303737ca67669c2cac99c756160bdb8af4166e920a7d7f7c4f5a18ca304a",
+  "rebasedRuntimeDeltaSha256": "b873303737ca67669c2cac99c756160bdb8af4166e920a7d7f7c4f5a18ca304a",
+  "addedRuntimeFilesBetweenBaselineAndMain": [
+    "lib/platform/owner-receipt-native.mjs",
+    "lib/platform/owner-receipt-wire.mjs"
+  ],
+  "consumerAudit": "owner-receipt-native imports owner-receipt-wire; all external consumers are explicit fixture tests. No production lib/bin entrypoint imports the new adapter.",
+  "applicability": "The measured runtime modules and exact three-file diagnostic delta are byte-identical after rebase. Only main-added private, unimported fixture adapters differ in lib/bin/package. This supports applicability to unchanged measured paths, not a benchmark run on the rebased archive. Archive pins/hashes remain original; new owner adapter execution, Windows and packaged-host acceptance are excluded.",
+  "rebasedSignedHead": "a8dfc9636604f0e9a6bd9583b0fa58d09000216d",
+  "signedHeadVerification": {
+    "author": "qwts-codex-agent[bot]",
+    "verified": true,
+    "reason": "valid",
+    "tree": "6554cca1e36298bc15fa542997dcf390104b5fc3",
+    "parent": "da9c2c67f879aa8c7929c886d849127c6758a2d9"
+  }
+}

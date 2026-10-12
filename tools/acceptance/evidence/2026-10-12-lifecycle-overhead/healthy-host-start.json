@@ -1,0 +1,76 @@
+{
+  "observedAtUtc": "2026-10-12T12:26:45.264315+00:00",
+  "platform": "Darwin",
+  "osRelease": "27.0.0",
+  "machine": "arm64",
+  "logicalCpus": 18,
+  "loadAverages": [
+    3.04296875,
+    3.85498046875,
+    4.70556640625
+  ],
+  "topObservedProcesses": [
+    {
+      "cpuPercent": 49.3,
+      "processBasename": "WindowServer"
+    },
+    {
+      "cpuPercent": 16.8,
+      "processBasename": "com.apple.WebKit.WebContent"
+    },
+    {
+      "cpuPercent": 15.9,
+      "processBasename": "Brave Browser Helper (Renderer)"
+    },
+    {
+      "cpuPercent": 10.0,
+      "processBasename": "com.apple.WebKit.GPU"
+    },
+    {
+      "cpuPercent": 9.4,
+      "processBasename": "Terminal"
+    },
+    {
+      "cpuPercent": 6.6,
+      "processBasename": "Python"
+    },
+    {
+      "cpuPercent": 5.0,
+      "processBasename": "geniusbar"
+    },
+    {
+      "cpuPercent": 4.4,
+      "processBasename": "codex"
+    },
+    {
+      "cpuPercent": 4.3,
+      "processBasename": "codex"
+    },
+    {
+      "cpuPercent": 3.8,
+      "processBasename": "WindowManager"
+    },
+    {
+      "cpuPercent": 3.2,
+      "processBasename": "opendirectoryd"
+    },
+    {
+      "cpuPercent": 3.0,
+      "processBasename": "AppleCentauriAlpha"
+    },
+    {
+      "cpuPercent": 2.9,
+      "processBasename": "syspolicyd"
+    },
+    {
+      "cpuPercent": 1.9,
+      "processBasename": "Brave Browser Helper"
+    },
+    {
+      "cpuPercent": 1.8,
+      "processBasename": "logd"
+    }
+  ],
+  "coordination": "Root and both other agents hold local tests/builds/performance work; root restricted to remote GitHub operations.",
+  "limitations": "Single start observation; OS, UI/browser, other sessions and external activity remain uncontrolled. This is not a claim of absolute machine quiet."
+}

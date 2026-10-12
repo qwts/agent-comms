@@ -1,0 +1,98 @@
+{
+  "terminalObservedAtUtc": "2026-10-12T12:31:48.082589+00:00",
+  "exitCode": 0,
+  "runCount": 4,
+  "allCanonicalOutcomesEqual": true,
+  "allWatchOutcomesEqual": true,
+  "allOwnedTerminalConfirmed": true,
+  "allHelperExitConfirmed": true,
+  "allStdioClosureConfirmed": true,
+  "runs": [
+    {
+      "revision": "old",
+      "shutdownMs": 4.596166000002995,
+      "recoveryMs": 19.43124999999418,
+      "mainCpuSeconds": 4.76,
+      "helperCpuSeconds": 0.24,
+      "observedEvents": {
+        "broker.started": 0,
+        "broker.stopped": 0,
+        "transport.ready": 0,
+        "transport.reconnected": 0
+      },
+      "peakTotalRssKiB": 175904,
+      "watchOutcomes": {
+        "churnReady": 70,
+        "persistentReady": 1,
+        "reconnectReady": 7,
+        "refusal": 1
+      }
+    },
+    {
+      "revision": "new",
+      "shutdownMs": 5.175542000011774,
+      "recoveryMs": 22.831375000008848,
+      "mainCpuSeconds": 5.29,
+      "helperCpuSeconds": 0.26,
+      "observedEvents": {
+        "broker.started": 2,
+        "broker.stopped": 1,
+        "transport.ready": 62,
+        "transport.reconnected": 6
+      },
+      "peakTotalRssKiB": 176480,
+      "watchOutcomes": {
+        "churnReady": 70,
+        "persistentReady": 1,
+        "reconnectReady": 7,
+        "refusal": 1
+      }
+    },
+    {
+      "revision": "new",
+      "shutdownMs": 6.161666999978479,
+      "recoveryMs": 18.678040999991936,
+      "mainCpuSeconds": 4.99,
+      "helperCpuSeconds": 0.25,
+      "observedEvents": {
+        "broker.started": 2,
+        "broker.stopped": 1,
+        "transport.ready": 62,
+        "transport.reconnected": 6
+      },
+      "peakTotalRssKiB": 174896,
+      "watchOutcomes": {
+        "churnReady": 70,
+        "persistentReady": 1,
+        "reconnectReady": 7,
+        "refusal": 1
+      }
+    },
+    {
+      "revision": "old",
+      "shutdownMs": 5.950792000046931,
+      "recoveryMs": 20.29725000000326,
+      "mainCpuSeconds": 4.44,
+      "helperCpuSeconds": 0.2,
+      "observedEvents": {
+        "broker.started": 0,
+        "broker.stopped": 0,
+        "transport.ready": 0,
+        "transport.reconnected": 0
+      },
+      "peakTotalRssKiB": 176000,
+      "watchOutcomes": {
+        "churnReady": 70,
+        "persistentReady": 1,
+        "reconnectReady": 7,
+        "refusal": 1
+      }
+    }
+  ],
+  "loadAverages": [
+    2.75439453125,
+    3.28955078125,
+    4.19091796875
+  ],
+  "limitations": "Agent tests/builds held by agreement; OS/UI/browser and external activity uncontrolled. End observation is not continuous quiet proof."
+}

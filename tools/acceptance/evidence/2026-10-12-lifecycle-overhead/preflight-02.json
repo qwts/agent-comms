@@ -1,0 +1,371 @@
+{
+  "v": 1,
+  "stage": "startup-normal-and-fault-cleanup-preflight",
+  "timedWorkloadRun": false,
+  "node": "v26.11.1",
+  "runnerSha256": "4a76a5f5e00a77c541cb6e45794a41b355acab2556e16e5a3949e8c6be727408",
+  "archives": {
+    "old": {
+      "pin": "a618508ab4c4d7185b198c89b1befce513a66b8e",
+      "tree": "d5ecc16b35b8b1a5757a508658c5b0a9ed6716a7",
+      "archiveSha256": "b150eff66249a6204bb4af3a15641d4057c25a1dbb93a7478df3a66caf1c1cb2"
+    },
+    "new": {
+      "pin": "5276f77d6bbcc68e42ef6ba5654495d2df56bc35",
+      "tree": "ab47a9e728bda86d22b28980bd9312c158e0ecc2",
+      "archiveSha256": "f8075d3d848e141999c5a466041d2bf879d2139bb051c0f3dba98abbe64c7c0b"
+    }
+  },
+  "runs": [
+    {
+      "revision": "old",
+      "mode": "healthy",
+      "deployment": "one embedded Broker/client process; default callbacks",
+      "preflight": true,
+      "importMs": 14.961042,
+      "brokerStartMs": 23.094042,
+      "warmupMs": 102.90962499999999,
+      "actualLocalFailureWarmup": 1,
+      "watchOutcomes": {
+        "churnReady": 1,
+        "persistentReady": 1,
+        "reconnectReady": 1,
+        "refusal": 1
+      },
+      "shutdownMs": 2.6999159999999165,
+      "stdioClosureConfirmed": true,
+      "stderrDisposition": "consumed through child close",
+      "shutdownDiagnosticObserved": false,
+      "ownedTerminalConfirmed": true,
+      "helperWasPresent": true,
+      "helperExitConfirmed": true,
+      "diagnosticBytes": 1110,
+      "diagnosticLines": 3,
+      "observedEvents": {
+        "broker.started": 0,
+        "broker.stopped": 0,
+        "transport.ready": 0,
+        "transport.reconnected": 0
+      },
+      "destination": "healthy",
+      "failedHelperApplicable": false,
+      "peakMainRssKiB": 63200,
+      "peakHelperRssKiB": 42752,
+      "peakTotalRssKiB": 105952,
+      "mainCpuSeconds": 0.11,
+      "helperCpuSeconds": 0.07,
+      "tail": [
+        {
+          "mainRssKiB": 62976,
+          "helperRssKiB": 42688,
+          "mainCpuSeconds": 0.1,
+          "helperCpuSeconds": 0.07
+        },
+        {
+          "mainRssKiB": 63200,
+          "helperRssKiB": 42752,
+          "mainCpuSeconds": 0.11,
+          "helperCpuSeconds": 0.07
+        }
+      ]
+    },
+    {
+      "revision": "old",
+      "mode": "healthy",
+      "preflight": true,
+      "startupFault": true,
+      "timedWorkloadRun": false,
+      "stdioClosureConfirmed": true,
+      "stderrDisposition": "consumed through child close",
+      "importMs": 15.747958999999998,
+      "brokerStartMs": 17.934207999999998,
+      "warmupMs": 102.97254099999999,
+      "fixtureFailure": {
+        "stage": "fixture-startup-fault",
+        "check": "startup-injected-fault"
+      },
+      "ownedTerminalConfirmed": true,
+      "helperWasPresent": true,
+      "helperExitConfirmed": true
+    },
+    {
+      "revision": "old",
+      "mode": "failed",
+      "deployment": "one embedded Broker/client process; default callbacks",
+      "preflight": true,
+      "importMs": 15.066083999999998,
+      "brokerStartMs": 18.010959,
+      "warmupMs": 102.38154100000001,
+      "actualLocalFailureWarmup": 1,
+      "watchOutcomes": {
+        "churnReady": 1,
+        "persistentReady": 1,
+        "reconnectReady": 1,
+        "refusal": 1
+      },
+      "shutdownMs": 5.338292000000138,
+      "stdioClosureConfirmed": true,
+      "stderrDisposition": "consumed through child close",
+      "shutdownDiagnosticObserved": false,
+      "ownedTerminalConfirmed": true,
+      "helperWasPresent": true,
+      "helperExitConfirmed": true,
+      "diagnosticBytes": 365,
+      "diagnosticLines": 1,
+      "observedEvents": {
+        "broker.started": 0,
+        "broker.stopped": 0,
+        "transport.ready": 0,
+        "transport.reconnected": 0
+      },
+      "destination": "failed",
+      "failedHelperApplicable": true,
+      "peakMainRssKiB": 62560,
+      "peakHelperRssKiB": 42768,
+      "peakTotalRssKiB": 104880,
+      "mainCpuSeconds": 0.11,
+      "helperCpuSeconds": 0.07,
+      "tail": [
+        {
+          "mainRssKiB": 62112,
+          "helperRssKiB": 42768,
+          "mainCpuSeconds": 0.1,
+          "helperCpuSeconds": 0.07
+        },
+        {
+          "mainRssKiB": 62560,
+          "helperRssKiB": 0,
+          "mainCpuSeconds": 0.11,
+          "helperCpuSeconds": 0
+        }
+      ]
+    },
+    {
+      "revision": "old",
+      "mode": "unread",
+      "deployment": "one embedded Broker/client process; default callbacks",
+      "preflight": true,
+      "importMs": 14.883416999999998,
+      "brokerStartMs": 18.993542,
+      "warmupMs": 102.30570900000001,
+      "actualLocalFailureWarmup": 1,
+      "watchOutcomes": {
+        "churnReady": 1,
+        "persistentReady": 1,
+        "reconnectReady": 1,
+        "refusal": 1
+      },
+      "shutdownMs": 3.8577919999997903,
+      "stdioClosureConfirmed": true,
+      "stderrDisposition": "owned unread pipe disposed after fixture/helper exit",
+      "shutdownDiagnosticObserved": false,
+      "ownedTerminalConfirmed": true,
+      "helperWasPresent": true,
+      "helperExitConfirmed": true,
+      "diagnosticBytes": 0,
+      "diagnosticLines": 0,
+      "observedEvents": {
+        "broker.started": 0,
+        "broker.stopped": 0,
+        "transport.ready": 0,
+        "transport.reconnected": 0
+      },
+      "destination": "configured unread; queue not inspected",
+      "failedHelperApplicable": false,
+      "peakMainRssKiB": 62688,
+      "peakHelperRssKiB": 42816,
+      "peakTotalRssKiB": 105504,
+      "mainCpuSeconds": 0.12,
+      "helperCpuSeconds": 0.07,
+      "tail": [
+        {
+          "mainRssKiB": 62256,
+          "helperRssKiB": 42768,
+          "mainCpuSeconds": 0.11,
+          "helperCpuSeconds": 0.07
+        },
+        {
+          "mainRssKiB": 62688,
+          "helperRssKiB": 42816,
+          "mainCpuSeconds": 0.12,
+          "helperCpuSeconds": 0.07
+        }
+      ]
+    },
+    {
+      "revision": "new",
+      "mode": "healthy",
+      "deployment": "one embedded Broker/client process; default callbacks",
+      "preflight": true,
+      "importMs": 14.972459,
+      "brokerStartMs": 18.117583999999997,
+      "warmupMs": 102.34141699999999,
+      "actualLocalFailureWarmup": 1,
+      "watchOutcomes": {
+        "churnReady": 1,
+        "persistentReady": 1,
+        "reconnectReady": 1,
+        "refusal": 1
+      },
+      "shutdownMs": 4.186999999999898,
+      "stdioClosureConfirmed": true,
+      "stderrDisposition": "consumed through child close",
+      "shutdownDiagnosticObserved": false,
+      "ownedTerminalConfirmed": true,
+      "helperWasPresent": true,
+      "helperExitConfirmed": true,
+      "diagnosticBytes": 2505,
+      "diagnosticLines": 7,
+      "observedEvents": {
+        "broker.started": 1,
+        "broker.stopped": 0,
+        "transport.ready": 2,
+        "transport.reconnected": 1
+      },
+      "destination": "healthy",
+      "failedHelperApplicable": false,
+      "peakMainRssKiB": 62736,
+      "peakHelperRssKiB": 42864,
+      "peakTotalRssKiB": 105600,
+      "mainCpuSeconds": 0.11,
+      "helperCpuSeconds": 0.07,
+      "tail": [
+        {
+          "mainRssKiB": 62240,
+          "helperRssKiB": 42816,
+          "mainCpuSeconds": 0.1,
+          "helperCpuSeconds": 0.07
+        },
+        {
+          "mainRssKiB": 62736,
+          "helperRssKiB": 42864,
+          "mainCpuSeconds": 0.11,
+          "helperCpuSeconds": 0.07
+        }
+      ]
+    },
+    {
+      "revision": "new",
+      "mode": "healthy",
+      "preflight": true,
+      "startupFault": true,
+      "timedWorkloadRun": false,
+      "stdioClosureConfirmed": true,
+      "stderrDisposition": "consumed through child close",
+      "importMs": 14.637667,
+      "brokerStartMs": 18.067415999999998,
+      "warmupMs": 102.21033299999999,
+      "fixtureFailure": {
+        "stage": "fixture-startup-fault",
+        "check": "startup-injected-fault"
+      },
+      "ownedTerminalConfirmed": true,
+      "helperWasPresent": true,
+      "helperExitConfirmed": true
+    },
+    {
+      "revision": "new",
+      "mode": "failed",
+      "deployment": "one embedded Broker/client process; default callbacks",
+      "preflight": true,
+      "importMs": 15.123792,
+      "brokerStartMs": 18.197041,
+      "warmupMs": 102.510583,
+      "actualLocalFailureWarmup": 1,
+      "watchOutcomes": {
+        "churnReady": 1,
+        "persistentReady": 1,
+        "reconnectReady": 1,
+        "refusal": 1
+      },
+      "shutdownMs": 5.436125000000175,
+      "stdioClosureConfirmed": true,
+      "stderrDisposition": "consumed through child close",
+      "shutdownDiagnosticObserved": false,
+      "ownedTerminalConfirmed": true,
+      "helperWasPresent": true,
+      "helperExitConfirmed": true,
+      "diagnosticBytes": 713,
+      "diagnosticLines": 2,
+      "observedEvents": {
+        "broker.started": 1,
+        "broker.stopped": 0,
+        "transport.ready": 0,
+        "transport.reconnected": 0
+      },
+      "destination": "failed",
+      "failedHelperApplicable": true,
+      "peakMainRssKiB": 63200,
+      "peakHelperRssKiB": 42880,
+      "peakTotalRssKiB": 105872,
+      "mainCpuSeconds": 0.11,
+      "helperCpuSeconds": 0.07,
+      "tail": [
+        {
+          "mainRssKiB": 62992,
+          "helperRssKiB": 42880,
+          "mainCpuSeconds": 0.1,
+          "helperCpuSeconds": 0.07
+        },
+        {
+          "mainRssKiB": 63200,
+          "helperRssKiB": 0,
+          "mainCpuSeconds": 0.11,
+          "helperCpuSeconds": 0
+        }
+      ]
+    },
+    {
+      "revision": "new",
+      "mode": "unread",
+      "deployment": "one embedded Broker/client process; default callbacks",
+      "preflight": true,
+      "importMs": 15.055375,
+      "brokerStartMs": 18.105541999999996,
+      "warmupMs": 102.38679200000001,
+      "actualLocalFailureWarmup": 1,
+      "watchOutcomes": {
+        "churnReady": 1,
+        "persistentReady": 1,
+        "reconnectReady": 1,
+        "refusal": 1
+      },
+      "shutdownMs": 3.060958999999457,
+      "stdioClosureConfirmed": true,
+      "stderrDisposition": "owned unread pipe disposed after fixture/helper exit",
+      "shutdownDiagnosticObserved": false,
+      "ownedTerminalConfirmed": true,
+      "helperWasPresent": true,
+      "helperExitConfirmed": true,
+      "diagnosticBytes": 0,
+      "diagnosticLines": 0,
+      "observedEvents": {
+        "broker.started": 0,
+        "broker.stopped": 0,
+        "transport.ready": 0,
+        "transport.reconnected": 0
+      },
+      "destination": "configured unread; queue not inspected",
+      "failedHelperApplicable": false,
+      "peakMainRssKiB": 62640,
+      "peakHelperRssKiB": 42880,
+      "peakTotalRssKiB": 105520,
+      "mainCpuSeconds": 0.12,
+      "helperCpuSeconds": 0.07,
+      "tail": [
+        {
+          "mainRssKiB": 62096,
+          "helperRssKiB": 42832,
+          "mainCpuSeconds": 0.11,
+          "helperCpuSeconds": 0.07
+        },
+        {
+          "mainRssKiB": 62640,
+          "helperRssKiB": 42880,
+          "mainCpuSeconds": 0.12,
+          "helperCpuSeconds": 0.07
+        }
+      ]
+    }
+  ]
+}

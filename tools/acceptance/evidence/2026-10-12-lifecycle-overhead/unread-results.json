@@ -1,0 +1,61 @@
+{
+  "v": 1,
+  "platform": "darwin",
+  "arch": "arm64",
+  "osRelease": "27.0.0",
+  "node": "v26.11.1",
+  "nodeExecutableSha256": "f75a79e4c96954709a130427e452d6720b35c90318ca8293727a4c6376198453",
+  "runnerSha256": "4a76a5f5e00a77c541cb6e45794a41b355acab2556e16e5a3949e8c6be727408",
+  "logicalCpus": 18,
+  "scope": "incremental lifecycle instrumentation in one embedded production Broker/client macOS workload; 1/s authenticated watch churn and one owned watch reconnect/10s; 1000/s burst is client failures, not lifecycle completions; startup/import/recovery separate; no Windows/host/compaction/arbitrary-error claim",
+  "archives": {
+    "old": {
+      "pin": "a618508ab4c4d7185b198c89b1befce513a66b8e",
+      "tree": "d5ecc16b35b8b1a5757a508658c5b0a9ed6716a7",
+      "archiveSha256": "b150eff66249a6204bb4af3a15641d4057c25a1dbb93a7478df3a66caf1c1cb2"
+    },
+    "new": {
+      "pin": "5276f77d6bbcc68e42ef6ba5654495d2df56bc35",
+      "tree": "ab47a9e728bda86d22b28980bd9312c158e0ecc2",
+      "archiveSha256": "f8075d3d848e141999c5a466041d2bf879d2139bb051c0f3dba98abbe64c7c0b"
+    }
+  },
+  "pairs": [
+    {
+      "mode": "unread",
+      "order": "old-new",
+      "deltas": [
+        {
+          "p95Ms": -0.018958999999540538,
+          "p99Ms": -0.02787499999612919,
+          "throughputRatio": 1.0000172456125735
+        },
+        {
+          "p95Ms": -0.2177500000107102,
+          "p99Ms": -0.16716699999233242,
+          "throughputRatio": 1.0000653449177543
+        }
+      ],
+      "additionalRssKiB": 2576,
+      "passes": true
+    },
+    {
+      "mode": "unread",
+      "order": "new-old",
+      "deltas": [
+        {
+          "p95Ms": -0.013958000000002357,
+          "p99Ms": -0.032415999990917044,
+          "throughputRatio": 0.9999941946212824
+        },
+        {
+          "p95Ms": 0.021374000003561378,
+          "p99Ms": 0.12137500000244472,
+          "throughputRatio": 0.9999844064044787
+        }
+      ],
+      "additionalRssKiB": -1712,
+      "passes": true
+    }
+  ]
+}

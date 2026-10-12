@@ -1,0 +1,78 @@
+{
+  "terminalObservedAtUtc": "2026-10-12T12:49:07.632420+00:00",
+  "exitCode": 0,
+  "runCount": 4,
+  "allCanonicalOutcomesEqual": true,
+  "allWatchOutcomesEqual": true,
+  "allOwnedTerminalConfirmed": true,
+  "allHelperExitConfirmed": true,
+  "allStdioClosureConfirmed": true,
+  "runs": [
+    {
+      "revision": "old",
+      "shutdownMs": 6.012249999999767,
+      "mainCpuSeconds": 4.66,
+      "helperCpuSeconds": 0.12,
+      "destination": "configured unread; queue not inspected",
+      "stderrDisposition": "owned unread pipe disposed after fixture/helper exit",
+      "diagnosticBytes": 0,
+      "watchOutcomes": {
+        "churnReady": 70,
+        "persistentReady": 1,
+        "reconnectReady": 7,
+        "refusal": 1
+      }
+    },
+    {
+      "revision": "new",
+      "shutdownMs": 4.66158300000825,
+      "mainCpuSeconds": 4.68,
+      "helperCpuSeconds": 0.12,
+      "destination": "configured unread; queue not inspected",
+      "stderrDisposition": "owned unread pipe disposed after fixture/helper exit",
+      "diagnosticBytes": 0,
+      "watchOutcomes": {
+        "churnReady": 70,
+        "persistentReady": 1,
+        "reconnectReady": 7,
+        "refusal": 1
+      }
+    },
+    {
+      "revision": "new",
+      "shutdownMs": 4.992792000004556,
+      "mainCpuSeconds": 4.35,
+      "helperCpuSeconds": 0.12,
+      "destination": "configured unread; queue not inspected",
+      "stderrDisposition": "owned unread pipe disposed after fixture/helper exit",
+      "diagnosticBytes": 0,
+      "watchOutcomes": {
+        "churnReady": 70,
+        "persistentReady": 1,
+        "reconnectReady": 7,
+        "refusal": 1
+      }
+    },
+    {
+      "revision": "old",
+      "shutdownMs": 7.277916999999434,
+      "mainCpuSeconds": 4.7,
+      "helperCpuSeconds": 0.13,
+      "destination": "configured unread; queue not inspected",
+      "stderrDisposition": "owned unread pipe disposed after fixture/helper exit",
+      "diagnosticBytes": 0,
+      "watchOutcomes": {
+        "churnReady": 70,
+        "persistentReady": 1,
+        "reconnectReady": 7,
+        "refusal": 1
+      }
+    }
+  ],
+  "loadAverages": [
+    2.98828125,
+    3.4208984375,
+    3.8232421875
+  ],
+  "limitations": "Coordinated agent hold; OS/UI/browser and external activity uncontrolled. Unread stderr explicitly disposed only after verified fixture/helper exit; output not consumed or queue occupancy inspected."
+}
