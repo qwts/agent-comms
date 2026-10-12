@@ -254,3 +254,18 @@ test('desktop start diagnostics preserve first failure and separate cleanup evid
     'forged-fullname-failure-refused','binding-unavailable','foreign-record-refused','invalid-limit-no-native',
   ], nativeInvoked: false, profileAttested: false, rootRetained: true });
 });
+
+test('classic desktop environment preserves strict strings and reproduces original cmdlet cast', {
+  skip: process.platform !== 'win32', timeout: 30000,
+}, async t => {
+  const root = await scratch(t, 'comms-desktop-environment-');
+  const result = await owned(shell(), [...args('tests/windows-desktop-environment.ps1'), '-Root', root], clean(root));
+  assert.equal(result.code, 0, 'fixed environment serialization proof failed');
+  const bytes = await readFile(path.join(root, 'environment.json')); assert.ok(bytes.length <= 2048);
+  assert.deepEqual(JSON.parse(bytes.toString('utf8')), { v: 1, status: 'passed', cases: [
+    'original-join-path-invalid-cast-reproduced','actual-wrapper-typed-map-admitted',
+    'fixed-temp-tmp-and-allowlist-preserved','non-string-value-refused','non-string-key-refused',
+    'empty-key-refused','equals-key-refused','nul-key-refused','nul-value-refused','null-value-refused',
+    'oversized-block-refused','ordinal-ignore-case-order-and-double-nul-preserved',
+  ], nativeInvoked: false, processCreated: false, rootRetained: true });
+});

@@ -40,8 +40,10 @@ try {
     . (Join-Path $repo 'tools/acceptance/windows-desktop-job.ps1')
     $allowed = @('PATH','SystemRoot','WINDIR','COMSPEC','USERPROFILE','LOCALAPPDATA','APPDATA','USERNAME','USERDOMAIN','USERDNSDOMAIN','PROCESSOR_ARCHITECTURE','PROGRAMDATA','PROGRAMFILES','PROGRAMFILES(X86)','COMMONPROGRAMFILES','COMMONPROGRAMFILES(X86)')
     $clean = @{}
-    foreach ($key in $allowed) { $value = [Environment]::GetEnvironmentVariable($key); if ($null -ne $value) { $clean[$key] = $value } }
-    $clean['TEMP'] = Join-Path $root 'temp'; $clean['TMP'] = Join-Path $root 'temp'
+    foreach ($key in $allowed) { $value = [Environment]::GetEnvironmentVariable($key); if ($null -ne $value) { $clean[[string]$key] = [string]$value } }
+    # Cmdlet results can retain PSObject wrappers inside an untyped Hashtable.
+    # The strict native serializer accepts actual strings only.
+    $clean['TEMP'] = [string](Join-Path $root 'temp'); $clean['TMP'] = [string](Join-Path $root 'temp')
     $memory = Get-CimInstance Win32_OperatingSystem -OperationTimeoutSec 2
     $commitLimit = [uint64][Math]::Min(2147483648,[Math]::Floor(([double]$memory.TotalVisibleMemorySize * 1024) / 4))
     if ($commitLimit -lt 536870912 -or ([double]$memory.FreePhysicalMemory * 1024) -lt ($commitLimit + 536870912)) { throw 'desktop-memory-refused' }

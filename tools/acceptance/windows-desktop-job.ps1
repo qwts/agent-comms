@@ -133,6 +133,17 @@ public sealed class DesktopOwnedJob : IDisposable {
         if(String.IsNullOrEmpty(value)||value.IndexOf('"')>=0||value.IndexOf((char)0)>=0) throw Refusal();
         return "\""+value+"\"";
     }
+    // Strict shared serializer; no arbitrary object-to-string conversion.
+    internal static string BuildEnvironment(IDictionary environment) {
+        var entries=new SortedDictionary<string,string>(StringComparer.OrdinalIgnoreCase);
+        foreach(DictionaryEntry entry in environment) {
+            string key=(string)entry.Key,value=(string)entry.Value;
+            if(String.IsNullOrEmpty(key)||key.IndexOfAny(new char[]{'=', (char)0})>=0||value==null||value.IndexOf((char)0)>=0) throw Refusal();
+            entries.Add(key,value);
+        }
+        var env=new StringBuilder(); foreach(var entry in entries) env.Append(entry.Key).Append('=').Append(entry.Value).Append((char)0); env.Append((char)0);
+        if(env.Length>32767) throw Refusal(); return env.ToString();
+    }
     public static DesktopOwnedJob Start(string executable,string runner,string cwd,IDictionary environment,ulong commitLimitBytes) {
         var owned=new DesktopOwnedJob(); owned.CommitLimitBytes=commitLimitBytes;
         IntPtr inputRead=IntPtr.Zero,inputWrite=IntPtr.Zero,outputRead=IntPtr.Zero,outputWrite=IntPtr.Zero,errorRead=IntPtr.Zero,errorWrite=IntPtr.Zero;
@@ -176,14 +187,7 @@ public sealed class DesktopOwnedJob : IDisposable {
             // CreateProcess and AssignProcessToJobObject. No uncontained suspended child.
             stage="attribute-job"; jobList=Marshal.AllocHGlobal(IntPtr.Size); Marshal.WriteIntPtr(jobList,owned.job);
             if(!UpdateProcThreadAttribute(attributes,0,new IntPtr(JOB_LIST),jobList,new UIntPtr((uint)IntPtr.Size),IntPtr.Zero,IntPtr.Zero)) throw NativeRefusal();
-            stage="environment"; var entries=new SortedDictionary<string,string>(StringComparer.OrdinalIgnoreCase);
-            foreach(DictionaryEntry entry in environment) {
-                string key=(string)entry.Key,value=(string)entry.Value;
-                if(String.IsNullOrEmpty(key)||key.IndexOfAny(new char[]{'=', (char)0})>=0||value==null||value.IndexOf((char)0)>=0) throw Refusal();
-                entries.Add(key,value);
-            }
-            var env=new StringBuilder(); foreach(var entry in entries) env.Append(entry.Key).Append('=').Append(entry.Value).Append((char)0); env.Append((char)0);
-            if(env.Length>32767) throw Refusal(); block=Marshal.StringToHGlobalUni(env.ToString());
+            stage="environment"; block=Marshal.StringToHGlobalUni(BuildEnvironment(environment));
             var startup=new STARTUPINFOEX(); startup.startup.cb=Marshal.SizeOf(typeof(STARTUPINFOEX)); startup.attributes=attributes;
             startup.startup.flags=STARTF_USESTDHANDLES; startup.startup.input=inputRead; startup.startup.output=outputWrite; startup.startup.error=errorWrite;
             stage="create-suspended"; PROCESS_INFORMATION info;
