@@ -146,6 +146,10 @@ jobs:
           exit $LASTEXITCODE
       - name: Verify classic capacity supervisor duplex control without workload
         run: node --test tests/windows-capacity-supervisor-control.test.mjs tests/windows-corrected-startup.test.mjs tests/windows-capacity-storage.test.mjs tests/windows-capacity-timing.test.mjs tests/windows-capacity-compiler.test.mjs tests/windows-capacity-classification.test.mjs
+      - name: Verify dev-only desktop outer containment without profile bootstrap
+        run: >-
+          node --test tests/windows-desktop-context.test.mjs
+          tests/windows-desktop-job-native.test.mjs tests/windows-desktop-boundary.test.mjs
       - name: Verify native custody and DPAPI through inherited PowerShell 7 environment
         run: node --test tests/platform-win32-custody-native.test.mjs
 

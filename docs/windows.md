@@ -146,15 +146,18 @@ principal custody and signed owner decisions.
 
 ## Disposable acceptance
 
-The [Windows acceptance evidence](windows-acceptance.md) records exact candidate
-pins, report hashes and limits alongside the runnable CLI/library, DPAPI and
-scheduled-task harness. Hosted diagnostics and signed-in desktop results are
-distinct evidence; neither establishes complete Windows host support alone.
+[Windows acceptance evidence](windows-acceptance.md) records exact pins, hashes
+and CLI/library, DPAPI and task limits. Hosted diagnostics and signed-in desktop
+results are distinct; neither establishes complete Windows host support.
 
-The separate [production-connector capacity pilot](windows-connector-capacity.md)
-adds manual standard-user hosted preflight and finite offered-load stages using
-unmodified production archives. Its implementation does not claim executed
-capacity evidence, numeric diagnostic budgets or signed-in desktop acceptance.
+The [production-connector capacity pilot](windows-connector-capacity.md) provides
+manual hosted standard-user preflight and finite load stages over unchanged
+production archives; implementation alone proves no capacity, diagnostic-budget
+or desktop acceptance.
 The [derived compiler-control failure](windows-candidate-compiler-evidence.md)
 retains the first existing-classifier refusal and incomplete cleanup proofs;
 remaining controls skipped without establishing a compiler cause or comparison.
+
+The dev-only [desktop candidate](windows-desktop-acceptance.md) and
+[native proof tooling](windows-desktop-job-proof.md) preserve production guards;
+source and portable tests establish no Windows desktop acceptance.
