@@ -4,6 +4,12 @@ name: Windows desktop diagnostics
 
 on:
   workflow_dispatch:
+    inputs:
+      task:
+        description: 'Engine acceptance or finite production-connector capacity evidence'
+        type: choice
+        options: [engine, capacity-preflight, capacity-pilot]
+        default: engine
 
 permissions:
   contents: read
@@ -33,6 +39,22 @@ jobs:
           ref: 98a0abb1d507563655fad435bdd26b047bbc9586
           path: .windows-fixtures/agent-comms
           persist-credentials: false
+      - name: Fetch exact pre-instrumentation capacity source
+        if: inputs.task != 'engine'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: qwts/agent-comms
+          ref: 25dfa8362401489503f704c7322ad1314b7e6ddb
+          path: .windows-fixtures/observability-old
+          persist-credentials: false
+      - name: Fetch exact instrumented capacity source
+        if: inputs.task != 'engine'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: qwts/agent-comms
+          ref: e648d71277da72fc50c70ebcbb94c3c8f53c7cf3
+          path: .windows-fixtures/observability-new
+          persist-credentials: false
       - name: Download and verify the host-selected Windows Node sidecar
         shell: pwsh
         run: |
@@ -51,8 +73,9 @@ jobs:
         shell: pwsh
         env:
           AGENT_COMMS_DISPOSABLE_WINDOWS: '1'
+          AGENT_COMMS_ACCEPTANCE_TASK: ${{ inputs.task }}
         run: |
-          ./scripts/windows-acceptance-user.ps1 -Report .windows-results/acceptance.json
+          ./scripts/windows-acceptance-user.ps1 -Report .windows-results/acceptance.json -Mode $env:AGENT_COMMS_ACCEPTANCE_TASK
           exit $LASTEXITCODE
       - name: Publish exact native-engine acceptance matrix
         if: always()
@@ -68,5 +91,5 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: windows-engine-acceptance
-          path: .windows-results/acceptance.json
+          path: .windows-results/
           if-no-files-found: warn

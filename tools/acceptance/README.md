@@ -1,5 +1,14 @@
 # Opt-in local acceptance tools
 
+## Windows production-connector capacity pilot
+
+The manual Windows workflow has separate `capacity-preflight` and
+`capacity-pilot` tasks. The [capacity pilot contract](../../docs/windows-connector-capacity.md)
+describes exact source pins, the actual Identification-level PowerShell connector,
+fixed 1/10/100 requests/s stages, bounded admission, owned job accounting and
+cleanup. These are hosted standard-user finite capacity observations, not
+benchmark, signed-in desktop or host acceptance. No load runs in normal CI.
+
 ## Total instrumentation comparison with actual source archives
 
 The separate macOS-only probe compares complete unmodified production trees:
