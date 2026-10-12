@@ -10,6 +10,10 @@ independent crypto and provider review gates remain. Deployment and spending
 need separate authorization. #120/#122 acceptance does not establish federation
 runtime acceptance.
 
+The [provider feasibility review](federation-provider-feasibility.md) records
+Cloudflare candidate limits, cost assumptions and bounded local probes. It is
+proposed engineering analysis, not provider approval or runtime evidence.
+
 ## Existing seams and migration review
 
 These anchors pin the inspected [main revision](https://github.com/qwts/agent-comms/tree/0393530c323895f4395040fdd84447b1d7f57bb8).
