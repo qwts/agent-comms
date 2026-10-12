@@ -2,12 +2,12 @@
 
 **Proposed protocol** for accepted
 [ADR-0077](decisions/ADR-0077-owner-decisions-through-the-broker.md), not a
-released API. The issue remains [#77](https://github.com/qwts/agent-comms/issues/77).
+released API; [#77](https://github.com/qwts/agent-comms/issues/77).
 Agent-comms owns broker authorization/receipts; agent-bot owns mutation and
 presence semantics; the native host owns credential custody and prompting.
 The [wire schemas and state machine](owner-decision-wire.md) define envelopes,
-display and adapter boundaries. Every field/fixture needs joint review before
-implementation; no runtime, migration or capability advertisement is authorized.
+display and adapter boundaries. Joint review precedes implementation; migration
+and capability advertisement remain disabled.
 
 ## Prepare and confirm
 
@@ -72,11 +72,12 @@ added by preparation.
 
 ## Serialization, human action and receipt
 
-The immutable action payload is
+Immutable action:
 `{ v, requestId, principal, account, soul, operation, parameters }` with `v: 1`.
 Action and decoded `d1` receipt payloads use the strict
 [canonical UTF-8 encoding](owner-decision-serialization.md). Hash the exact
 canonical action bytes with SHA-256; alternate representations refuse.
+[Disabled issuer](owner-decision-receipt-issuer.md).
 
 The presence action is the one-line text
 `Owner decision <operation> for <account>/<soul>: <summary>; request <requestId>; payload sha256:<digest>`.
