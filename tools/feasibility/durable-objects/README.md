@@ -115,3 +115,51 @@ Node runner RSS nor proof that a Worker isolate meets Cloudflare's 128 MiB limit
 Database size and serialized evidence are reported separately. The observation
 covers the entire-relay body/outcome budgets, not route, broker, multihub, soul,
 mailbox, provider-cloud or production protocol acceptance.
+
+## Opt-in inspector capability experiment
+
+Run `npm run test:inspector` separately from the storage probes. This starts the
+pinned workerd child with a loopback-only inspector, verifies the exact configured
+service target and loopback WebSocket endpoint, and takes three bounded
+`Runtime.getHeapUsage` observations after one synthetic request. It records
+unsupported methods explicitly. The inspector is privileged and is never bound
+to an external interface. Cleanup kills only the owned ChildProcess and confirms
+its exit; scratch is retained if exit cannot be confirmed.
+
+These measurements describe the local V8 inspector fields, including available
+embedder/backing storage fields. They do not establish Cloudflare accounted
+isolate memory, native or SQLite allocations, full-cap memory use, production
+limits or compliance with the provider 128 MB memory limit. The separate full-cap mode samples the identified target during the existing
+workload and records instrumented process RSS; the capability probe itself
+does not fill storage. No provider account or network deployment is
+used.
+
+`npm run test:full-cap-inspector` opts the existing full-cap workload into the
+same inspector client. It records at most twenty observations of the exact
+`main` service target at admission and lifecycle checkpoints, alongside process
+RSS. Sampling can miss transient peaks. Target selection does not prove that all
+provider-accounted allocations or every production isolate are represented.
+Compare this instrumented run with the separately reported uninstrumented run;
+workload timing and native process overhead may differ.
+
+The inspector port is reserved and released before workerd binds it, leaving a
+local port allocation race. This experiment trusts the local synthetic test
+host; exact target ID, loopback URL and live owned-child checks are diagnostics,
+not cryptographic endpoint authentication against a malicious local process.
+Do not use this inspector interface with production keys or private messages.
+
+A local Node 26.11.1 / workerd 1.20260730.1 run observed fourteen full-cap
+inspector samples. Maximum `usedSize` was 39,629,868 bytes, `totalSize`
+83,361,792 bytes, `embedderHeapUsedSize` 7,033,104 bytes and
+`backingStorageSize` 3,967,988 bytes; these maxima occurred at different
+checkpoints and must not be added as a simultaneous peak. Native process RSS
+reached 395,018,240 bytes over 352 samples. The original body/evidence hashes
+and full-cap/expiry assertions passed. This is local sampled evidence, not a
+provider-accounted isolate maximum.
+
+A matched run of the revised harness with the inspector disabled passed the
+same assertions and recorded a maximum process RSS of 391,593,984 bytes over
+322 samples (19,992 ms versus 15,618 ms instrumented). These single runs do
+not establish a causal performance improvement or a stable overhead estimate;
+filesystem caching, scheduling and sampling differ. Both recorded a
+325,394,432-byte SQLite database at full admission.
