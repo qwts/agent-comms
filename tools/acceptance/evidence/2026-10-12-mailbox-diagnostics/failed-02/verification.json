@@ -1,0 +1,173 @@
+{
+  "actualExitCode": 0,
+  "bothPairsPass": true,
+  "runCount": 4,
+  "allRawQuantilesRecomputedExact": true,
+  "allExpectedCanonicalCountsExact": true,
+  "checkpointReceipts": 48,
+  "rawSamples": 288000,
+  "details": [
+    {
+      "revision": "old",
+      "shutdownMs": 4.140999999945052,
+      "ownedTerminalConfirmed": true,
+      "stdioClosureConfirmed": true,
+      "helperWasPresent": false,
+      "helperExitConfirmed": null,
+      "checkpointCompleted": 72000,
+      "checkpointReceipts": 12,
+      "driverLatenessMaxMs": 1351.1480420000153
+    },
+    {
+      "revision": "new",
+      "shutdownMs": 3.9307089999783784,
+      "ownedTerminalConfirmed": true,
+      "stdioClosureConfirmed": true,
+      "helperWasPresent": true,
+      "helperExitConfirmed": true,
+      "checkpointCompleted": 72000,
+      "checkpointReceipts": 12,
+      "driverLatenessMaxMs": 1344.842874999973
+    },
+    {
+      "revision": "new",
+      "shutdownMs": 4.422958999872208,
+      "ownedTerminalConfirmed": true,
+      "stdioClosureConfirmed": true,
+      "helperWasPresent": true,
+      "helperExitConfirmed": true,
+      "checkpointCompleted": 72000,
+      "checkpointReceipts": 12,
+      "driverLatenessMaxMs": 1003.9855410000309
+    },
+    {
+      "revision": "old",
+      "shutdownMs": 4.437334000132978,
+      "ownedTerminalConfirmed": true,
+      "stdioClosureConfirmed": true,
+      "helperWasPresent": false,
+      "helperExitConfirmed": null,
+      "checkpointCompleted": 72000,
+      "checkpointReceipts": 12,
+      "driverLatenessMaxMs": 1370.9780829999363
+    }
+  ],
+  "runnerSha256": "c0caf7dae5358c6ef20cf761347cc4a48c1807d9987d0d01fd4442b3343bfe65",
+  "pairModuleSha256": "37290b1872c809df0104e9f4551884de5ad35f3822ec0ae27a0e4c095c3473bb",
+  "archives": {
+    "old": {
+      "pin": "f0eafb4faffa757b46310c25792dd126ea611f76",
+      "tree": "902aee03358f482f382c2b830822b4cbde5f71fe",
+      "archiveSha256": "f89a7ab7d0af897893fefc728910e75263ec17cedf69d0a62e3b05b0eebac5d6"
+    },
+    "new": {
+      "pin": "f0eafb4faffa757b46310c25792dd126ea611f76",
+      "tree": "902aee03358f482f382c2b830822b4cbde5f71fe",
+      "archiveSha256": "f89a7ab7d0af897893fefc728910e75263ec17cedf69d0a62e3b05b0eebac5d6"
+    }
+  },
+  "pairs": [
+    {
+      "mode": "failed",
+      "order": "old-new",
+      "deltas": [
+        {
+          "p95Ms": -0.02237400005105883,
+          "p99Ms": -0.2152510000159964,
+          "throughputRatio": 1.0000815241116994,
+          "operations": {
+            "send": {
+              "count": 1200,
+              "p95Ms": 0.055748999991919845,
+              "p99Ms": 0.30262499989476055
+            },
+            "deliveredRead": {
+              "count": 1200,
+              "p95Ms": 0.006999999997788109,
+              "p99Ms": 0.021791999947708973
+            },
+            "ack": {
+              "count": 1200,
+              "p95Ms": -0.06224999998812564,
+              "p99Ms": -0.18520799998077564
+            },
+            "census": {
+              "count": 1200,
+              "p95Ms": 0.016207999986363575,
+              "p99Ms": 0.03929099993547425
+            },
+            "emptyRead": {
+              "count": 66480,
+              "p95Ms": -0.002916000026743859,
+              "p99Ms": -0.04937400000198977
+            },
+            "refusal": {
+              "count": 720,
+              "p95Ms": -0.020834000017202925,
+              "p99Ms": -0.03816600004211068
+            }
+          }
+        }
+      ],
+      "additionalRssKiB": -4704,
+      "passes": true
+    },
+    {
+      "mode": "failed",
+      "order": "new-old",
+      "deltas": [
+        {
+          "p95Ms": -0.08095900000989786,
+          "p99Ms": -0.46654100000159815,
+          "throughputRatio": 1.0005340141886065,
+          "operations": {
+            "send": {
+              "count": 1200,
+              "p95Ms": -3.6322500000242144,
+              "p99Ms": -9.42941699991934
+            },
+            "deliveredRead": {
+              "count": 1200,
+              "p95Ms": -0.046917000006942544,
+              "p99Ms": -0.004875000013271347
+            },
+            "ack": {
+              "count": 1200,
+              "p95Ms": -6.140750999999,
+              "p99Ms": -8.207832999993116
+            },
+            "census": {
+              "count": 1200,
+              "p95Ms": -0.00779099999635946,
+              "p99Ms": -0.1952080000191927
+            },
+            "emptyRead": {
+              "count": 66480,
+              "p95Ms": -0.018708000017795712,
+              "p99Ms": -0.12487500004135654
+            },
+            "refusal": {
+              "count": 720,
+              "p95Ms": 0.05687499999476131,
+              "p99Ms": 0.030750000005355105
+            }
+          }
+        }
+      ],
+      "additionalRssKiB": 496,
+      "passes": true
+    }
+  ],
+  "hashes": {
+    "/tmp/comms-mailbox-overhead-failed-02/results.json": "9c4258c045572ce4b83b3f247c3ebaae5ed3f88a479b1a1d2157a41f44773258",
+    "/tmp/comms-mailbox-overhead-failed-02/runs.json": "0d5cc30f5a52929e8ae8f9061e19ec8eceec1ba976318d9c4ce6ef5cb70c6409",
+    "/tmp/comms-mailbox-overhead-failed-02/pairs.json": "5f6ebea3c540c3487ad102fd1ef59ba571ce22c13d41d353cfea133edbac6f8e",
+    "/tmp/comms-mailbox-overhead-failed-02/old.tar": "f89a7ab7d0af897893fefc728910e75263ec17cedf69d0a62e3b05b0eebac5d6",
+    "/tmp/comms-mailbox-overhead-failed-02/new.tar": "f89a7ab7d0af897893fefc728910e75263ec17cedf69d0a62e3b05b0eebac5d6",
+    "/tmp/comms-mailbox-overhead-failed-02/partial-01-old-failed.ndjson": "9b275552901955452bd45acafb8f4c2af8261b834871a627a5701248ae37942e",
+    "/tmp/comms-mailbox-overhead-failed-02/partial-02-new-failed.ndjson": "749f69ec77e84c7c42d93d3c14bc8dfc645ace434643ccd4b1c2ccfb7d9abf35",
+    "/tmp/comms-mailbox-overhead-failed-02/partial-03-new-failed.ndjson": "4605217c53f618cadb85be143959c589e8b356b9e80f2f7621ef1df6222adb99",
+    "/tmp/comms-mailbox-overhead-failed-02/partial-04-old-failed.ndjson": "df07e723823f7fc629057841e107ea941d85990e77e906701de91c3fec2312ad",
+    "/tmp/comms-mailbox-overhead-failed-02-host-start.json": "27bf55efd46cfab44191ac442cb2daaddf0d5e262055d7e5bfb1eb60c0dae4fe"
+  }
+}

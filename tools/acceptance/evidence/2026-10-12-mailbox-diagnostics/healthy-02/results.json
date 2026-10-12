@@ -1,0 +1,115 @@
+{
+  "v": 1,
+  "platform": "darwin",
+  "arch": "arm64",
+  "osRelease": "27.0.0",
+  "node": "v26.11.1",
+  "nodeExecutableSha256": "f75a79e4c96954709a130427e452d6720b35c90318ca8293727a4c6376198453",
+  "runnerSha256": "90d33f58a97eb4fb3d1bc18e7b23fc0547c965fecd6a4145af56da352f05591b",
+  "logicalCpus": 18,
+  "scope": "same current production archive opted-out versus enabled reporting; 1200 fresh sends/read/census/acks over720s, aggregate100requests/s, 1/s watch churn and reconnect/10s; includes existing instrumentation timing in both; no Windows/native/host/OTLP/export-command or isolated append latency claim",
+  "archives": {
+    "old": {
+      "pin": "f5195ee0894b8b2c8d3f9f5946948b20f82a5b12",
+      "tree": "6132b0d7eed3ff6c16e4440b025b8b6889940560",
+      "archiveSha256": "cece6a1d97361a2178c5ffda7e9e653aa0e470e00a5f59f73b4f10c9ab4a1b06"
+    },
+    "new": {
+      "pin": "f5195ee0894b8b2c8d3f9f5946948b20f82a5b12",
+      "tree": "6132b0d7eed3ff6c16e4440b025b8b6889940560",
+      "archiveSha256": "cece6a1d97361a2178c5ffda7e9e653aa0e470e00a5f59f73b4f10c9ab4a1b06"
+    }
+  },
+  "pairs": [
+    {
+      "mode": "healthy",
+      "order": "old-new",
+      "deltas": [
+        {
+          "p95Ms": 0.11241700003301958,
+          "p99Ms": 0.40229199998429976,
+          "throughputRatio": 0.9995821434209645,
+          "operations": {
+            "send": {
+              "count": 1200,
+              "p95Ms": 0.6568330000154674,
+              "p99Ms": -0.18416600005002692
+            },
+            "deliveredRead": {
+              "count": 1200,
+              "p95Ms": 0.07645799999590963,
+              "p99Ms": 3.8522919999668375
+            },
+            "ack": {
+              "count": 1200,
+              "p95Ms": -0.1443339999532327,
+              "p99Ms": -0.494751000078395
+            },
+            "census": {
+              "count": 1200,
+              "p95Ms": 0.009499999898253009,
+              "p99Ms": 0.7320000000181608
+            },
+            "emptyRead": {
+              "count": 66480,
+              "p95Ms": 0.0444590000261087,
+              "p99Ms": 0.28129200000080345
+            },
+            "refusal": {
+              "count": 720,
+              "p95Ms": -0.044374999992214725,
+              "p99Ms": 0.011207999996258877
+            }
+          }
+        }
+      ],
+      "additionalRssKiB": 53072,
+      "passes": true
+    },
+    {
+      "mode": "healthy",
+      "order": "new-old",
+      "deltas": [
+        {
+          "p95Ms": 0.05541599997650337,
+          "p99Ms": -1.115209000010509,
+          "throughputRatio": 1.000029098953938,
+          "operations": {
+            "send": {
+              "count": 1200,
+              "p95Ms": 0.0878740000189282,
+              "p99Ms": -0.3477910000601696
+            },
+            "deliveredRead": {
+              "count": 1200,
+              "p95Ms": 0.031041999929584563,
+              "p99Ms": -0.14758300012908876
+            },
+            "ack": {
+              "count": 1200,
+              "p95Ms": 0.1799170000012964,
+              "p99Ms": 1.2438749999678294
+            },
+            "census": {
+              "count": 1200,
+              "p95Ms": 0.005625999998301268,
+              "p99Ms": -1.917959000078099
+            },
+            "emptyRead": {
+              "count": 66480,
+              "p95Ms": 0.09395799999765586,
+              "p99Ms": -0.8208329999961279
+            },
+            "refusal": {
+              "count": 720,
+              "p95Ms": -0.006625999994867016,
+              "p99Ms": -1.3005000000121072
+            }
+          }
+        }
+      ],
+      "additionalRssKiB": 40016,
+      "passes": true
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "actualExitReportedByOwningAgent": 0,
+  "rootRehashedArtifacts": 10,
+  "rootRecomputedEveryRawOperationAndAggregateQuantile": true,
+  "runs": [
+    {
+      "revision": "old",
+      "rawSamples": 72000,
+      "checkpoints": 12,
+      "shutdownMs": 4.140999999945052
+    },
+    {
+      "revision": "new",
+      "rawSamples": 72000,
+      "checkpoints": 12,
+      "shutdownMs": 3.9307089999783784
+    },
+    {
+      "revision": "new",
+      "rawSamples": 72000,
+      "checkpoints": 12,
+      "shutdownMs": 4.422958999872208
+    },
+    {
+      "revision": "old",
+      "rawSamples": 72000,
+      "checkpoints": 12,
+      "shutdownMs": 4.437334000132978
+    }
+  ],
+  "bothPairsPass": true,
+  "scope": "macOS reporting/sink cost only; producer timing retained; external activity uncontrolled; failed01 immutable"
+}
