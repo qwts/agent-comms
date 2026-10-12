@@ -106,6 +106,12 @@ they are not reachable maxima under those UTF-16 limits.
 | Constructed lossless run-array witness, validation reply shape | 54,110 | 54,773 |
 | Constructed lossless run-array witness, actual reply ID | 53,765 | 54,428 |
 
+The subsequent [lossless size-bound proof](federation-lossless-bound.md) corrects
+these nonmaximal witnesses: alternating three-byte BMP characters and lone
+surrogates increases metadata size. Its assumptions yield 56,284 plaintext /
+56,947 wire bytes, or 55,876 / 56,539 with actual generated reply IDs. The earlier
+54,110 example was never a proven upper bound.
+
 ## Recommendations requiring review
 
 Keep the accepted 32 KiB **body** cap and separately bound encrypted metadata
@@ -130,18 +136,22 @@ be reused for this union.
 
 The constructed 54,110-byte witness includes a 40,963-byte run-array body and
 maximum native metadata. It does not prove a global maximum over every legal
-run pattern; that proof and parser element bounds remain required before
-adopting 54,110 as a production cap. The existing maximum header adds 663 bytes including
+run pattern; the linked proof supplies a larger maximum and parser bounds under its stated
+canonical-run assumptions; 54,110 must not become a production cap. The existing maximum header adds 663 bytes including
 encapsulation, tag, signature and CBOR framing, yielding 54,773 wire bytes.
 Endpoint unions, channel context or additional proofs require recalculation.
 A narrowly scoped direct soul adapter can avoid implying principal/channel
 federation support, but must explicitly declare that limitation and preserve
 existing local behavior.
 
-For the constructed 54,773-byte envelope scenario, a 256 MiB relay body budget holds at most
+For the earlier nonmaximal 54,773-byte envelope scenario, a 256 MiB relay body budget holds at most
 4,900 envelopes, a 32 MiB route budget 612, and a 64 MiB local-per-relay budget
 1,225, before any other charged serialized custody metadata. Those byte limits
 can bind before their count limits. Charge actual retained bytes, reserve
 outcomes atomically, reject growth without eviction, and do not use this
 arithmetic as permission to raise caps. Receipt/outcome proof budgets remain
 separate as described in the [receipt candidate](federation-receipt-candidate.md).
+
+The proved 56,947-byte scenario instead fits 4,713 relay bodies, 589 per-route
+envelopes and 1,178 local-per-relay envelopes before additional metadata. The
+proof does not approve the encoding, parser or federation implementation.

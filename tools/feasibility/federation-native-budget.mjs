@@ -21,6 +21,7 @@ const witnesses=[];
 for(const [name,body,ref,correlation] of [
  ['well-formed','a'.repeat(32768),'\u0800'.repeat(256),'\u0800'.repeat(128)],
  ['lone-surrogate','a\ud800'.repeat(8192),'\ud800'.repeat(256),'\ud800'.repeat(128)],
+ ['mixed-run-maximum','a\ud800'.repeat(8192),'\u0800\ud800'.repeat(128),'\u0800\ud800'.repeat(64)],
 ]){
  const payload=admission.payload({key:'synthetic-audit',kind:'a'.repeat(32),body,refs:Array(16).fill(ref),correlation,replyTo:reply});
  const message=admission.message(from,to,payload,{depth:8});
@@ -46,5 +47,18 @@ for(const lossless of [false,true])for(const actualReply of [false,true]){
   relayBodySlots:Math.floor(256*1024*1024/wire),routeSlots:Math.floor(32*1024*1024/wire),localRelaySlots:Math.floor(64*1024*1024/wire)});
 }
 assert.deepEqual(bounds.map(({plain,wire})=>[plain,wire]),[[45918,46581],[45573,46236],[54110,54773],[53765,54428]]);
+// Corrected maximum witnesses; Python companion independently checks bounds.
+const maximal=['a'.repeat(32),Array.from({length:16384},(_,i)=>i%2===0?'a':0xd800),
+ Array.from({length:16},()=>Array.from({length:256},(_,i)=>i%2===0?'\u0800':0xd800)),
+ Array.from({length:128},(_,i)=>i%2===0?'\u0800':0xd800),
+ Array.from({length:128},(_,i)=>i%2===0?'\u0800':0xd800),8];
+const corrected=[];
+for(const actualReply of [false,true]){
+ const shape=structuredClone(maximal);if(actualReply)shape[4]=reply;
+ const plain=cborSize(shape),h=[...header];h[16]=plain;
+ const wire=cborSize([h,b32,Buffer.alloc(plain+16),Buffer.alloc(64)]);
+ corrected.push({actualReplyIdShape:actualReply,plain,wire});
+}
+assert.deepEqual(corrected.map(({plain,wire})=>[plain,wire]),[[56284,56947],[55876,56539]]);
 const sourceHashes={};for(const name of ['../../lib/broker/message-admission.mjs','../../lib/broker/shared.mjs','../../lib/wire.mjs','../../lib/retention.mjs','federation-native-budget.mjs'])sourceHashes[name]=createHash('sha256').update(await readFile(new URL(name,import.meta.url))).digest('hex');
-console.log(JSON.stringify({scope:'synthetic-validator-and-structural-size-only',fullAuthenticatedSendOrPersistenceTested:false,cryptoOrSerializerImplemented:false,pageBudget:PAGE_BUDGET,witnesses,bounds,sourceHashes}));
+console.log(JSON.stringify({scope:'synthetic-validator-and-structural-size-only',fullAuthenticatedSendOrPersistenceTested:false,cryptoOrSerializerImplemented:false,pageBudget:PAGE_BUDGET,witnesses,nonmaximalWitnesses:bounds,correctedMaximumWitnesses:corrected,sourceHashes}));
