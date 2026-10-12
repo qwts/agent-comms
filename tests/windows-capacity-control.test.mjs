@@ -148,3 +148,23 @@ test('attach phase boundaries and CIM observations remain fixed metadata with no
   await assert.rejects(control.startup, { message: 'control-invalid' });
   assert.equal(JSON.stringify(control.state()).includes('CANARY'), false); owned.close();
 });
+
+test('startup fixture IPC phases preserve pending request and refuse arbitrary metadata without leakage', async () => {
+  const owned = transport(); owned.child.send = () => {};
+  const control = createCapacityController(owned, { ipc: true });
+  owned.child.emit('message', { id: 0, paused: true }); await control.startup;
+  const started = control.request('start');
+  for (const phase of ['fixture-imports','fixture-broker-start','fixture-pair','fixture-approve','fixture-join-first','fixture-join-second','fixture-delivery-send','fixture-delivery-read','fixture-delivery-ack','fixture-delivery-empty','fixture-ready']) {
+    owned.child.emit('message', { id: -1, phase });
+    assert.equal(control.state().phase, phase);
+  }
+  owned.child.emit('message', { id: 1, ok: true, ready: true }); assert.equal((await started).ready, true);
+  owned.child.emit('message', { id: -1, phase: 'fixture-pair', path: 'CANARY-private-path' });
+  await assert.rejects(control.request('finish'), { message: 'control-invalid' });
+  assert.equal(JSON.stringify(control.state()).includes('CANARY'), false); owned.close();
+  const invalid = transport(); invalid.child.send = () => {};
+  const other = createCapacityController(invalid, { ipc: true });
+  invalid.child.emit('message', { id: -1, phase: 'CANARY-untrusted-body' });
+  await assert.rejects(other.startup, { message: 'control-invalid' });
+  assert.equal(other.state().phase, null); invalid.close();
+});

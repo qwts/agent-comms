@@ -1,5 +1,6 @@
 // Dev-only finite control transport. Failure records never contain child output.
 const PHASES = new Set(['bootstrap-ready','script-entry','compile-supervisor','supervisor-compiled','module-observation','import-utility','utility-imported','serialize-ready','ready-serialized','control-read','parse-control','control-parsed','cim-module-observation','verify-fixture-existence','verify-fixture-parent','verify-fixture-executable','parse-fixture-command','verify-fixture-argument-count','verify-fixture-arguments','convert-fixture-creation','verify-job-limit','cim-module-refused','import-cim','cim-imported','query-fixture','fixture-queried','create-private-job','private-job-assigned','read-control','verify-fixture','assign-private-job','sample-job','query-members','close-job']);
+export const FIXTURE_PHASES = new Set(['fixture-imports','fixture-broker-start','fixture-pair','fixture-approve','fixture-join-first','fixture-join-second','fixture-delivery-send','fixture-delivery-read','fixture-delivery-ack','fixture-delivery-empty','fixture-ready']);
 // Diagnostic-only comparison: never used by the production connector.
 export function utilityProbeCommand(explicit = false) {
   const observe = `$manifest=[IO.Path]::Combine($PSHOME,'Modules\\Microsoft.PowerShell.Utility\\Microsoft.PowerShell.Utility.psd1');$present=[IO.File]::Exists($manifest);$expected=[string]::Equals([IO.Path]::GetFullPath($PSHOME),[IO.Path]::GetFullPath([IO.Path]::Combine([Environment]::GetEnvironmentVariable('SystemRoot'),'System32\\WindowsPowerShell\\v1.0')),[StringComparison]::OrdinalIgnoreCase);[Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"module-observation","manifestPresent":'+$present.ToString().ToLowerInvariant()+',"expectedPSHome":'+$expected.ToString().ToLowerInvariant()+'}');[Console]::Out.Flush();`;
@@ -45,7 +46,10 @@ export function createCapacityController(owned, { ipc = false, classifyFailure =
   }
   function receive(record) {
     if (!record || typeof record !== 'object' || !Number.isSafeInteger(record.id)) { fail('control-invalid'); return; }
-    if (record.id === -1 && !ipc) {
+    if (record.id === -1 && ipc) {
+      if (!FIXTURE_PHASES.has(record.phase) || Object.keys(record).some(key => !['id','phase'].includes(key))) { fail('control-invalid'); return; }
+      phase = record.phase;
+    } else if (record.id === -1 && !ipc) {
       if (!PHASES.has(record.phase)) { fail('control-invalid'); return; }
       if (record.phase === 'module-observation') {
         if (typeof record.manifestPresent !== 'boolean' || typeof record.expectedPSHome !== 'boolean'

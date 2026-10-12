@@ -9,7 +9,9 @@ import { performance } from 'node:perf_hooks';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 import { admissionStage, RATES } from './windows-capacity-policy.mjs';
-import { collectSupervisorProbes, createCapacityController, encodingSignature } from './windows-capacity-control.mjs';
+import { collectSupervisorProbes, createCapacityController, encodingSignature, FIXTURE_PHASES } from './windows-capacity-control.mjs';
+
+import { cleanupCapacityRun, retainCapacityFailure } from './windows-capacity-lifecycle.mjs';
 
 const exec = promisify(execFile), SELF = fileURLToPath(import.meta.url);
 const JOB = fileURLToPath(new URL('./windows-capacity-job.ps1', import.meta.url));
@@ -60,26 +62,41 @@ async function fixture(source) {
   const start = await new Promise((resolve) => process.once('message', resolve));
   assert.equal(start.op, 'start');
   activeStage = 'fixture-startup';
+  const phase = (value) => {
+    if (process.connected) process.send({ id: -1, phase: value }, () => {});
+  };
+  phase('fixture-imports');
   const load = (name) => import(pathToFileURL(path.join(source, name)).href);
   const [{ Broker }, client, pathsModule] = await Promise.all([load('lib/broker.mjs'), load('lib/client.mjs'), load('lib/paths.mjs')]);
   const paths = pathsModule.brokerPaths(), clientPaths = pathsModule.clientPaths();
   const broker = new Broker({ paths, mode: 'single-account' });
   fixtureCleanup = async () => { await broker.stop(); if (process.connected) process.disconnect(); };
   process.once('disconnect', () => fixtureCleanup().catch(() => { process.exitCode = 1; }));
+  phase('fixture-broker-start');
   await broker.start();
+  phase('fixture-pair');
   const pairing = await client.pair(paths, clientPaths, undefined, os.userInfo().username, 'single-account');
+  phase('fixture-approve');
   await client.admin(paths, { op: 'approve', code: pairing.code });
   const credential = client.loadCredential(clientPaths), alice = `agent_${randomUUID()}`, bob = `agent_${randomUUID()}`;
   const call = (body, options) => client.call(paths, credential, body, options);
-  for (const agentId of [alice, bob]) await call({ op: 'join', agentId });
+  for (const [index, agentId] of [alice, bob].entries()) {
+    phase(index === 0 ? 'fixture-join-first' : 'fixture-join-second');
+    await call({ op: 'join', agentId });
+  }
   async function delivery(key) {
+    phase('fixture-delivery-send');
     const sent = await call({ op: 'send', agentId: alice, to: bob, body: CANARY, key });
+    phase('fixture-delivery-read');
     const read = await call({ op: 'read', agentId: bob });
     assert.equal(read.messages.length, 1); assert.equal(read.messages[0].id, sent.messageId); assert.equal(read.messages[0].body, CANARY);
+    phase('fixture-delivery-ack');
     await call({ op: 'ack', agentId: bob, ids: [sent.messageId] });
+    phase('fixture-delivery-empty');
     assert.equal((await call({ op: 'read', agentId: bob })).messages.length, 0);
   }
   await delivery('before');
+  phase('fixture-ready');
   process.send({ id: start.id, ok: true, ready: true, startupDeliveryChecks: 1 });
   process.on('message', async ({ id, op, rate }) => {
     try {
@@ -226,7 +243,7 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
   const supervisorOwned = ownedChild(shell, ['-NoLogo', '-NoProfile', '-NonInteractive', '-File', JOB], {
     env: environment(), stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
   const supervisor = createCapacityController(supervisorOwned, { classifyFailure: supervisorFailure });
-  let attached = false, disposed = false, sampler, sampling, sampleFailure, outputFailure = false, diagnosticBytes = 0, original;
+  let attached = false, disposed = false, sampler, sampling, sampleFailure, outputFailure = false, diagnosticBytes = 0, original, originalError;
   let powershellVersion;
   const samples = [], stages = [], cleanupReceipt = { jobEmptyConfirmed: false, scratchRemoved: false };
   async function closeJob() {
@@ -330,31 +347,19 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
       ownedTerminalConfirmed: fixtureOwned.terminal(), cleanup: cleanupReceipt };
   } catch (error) {
     if (!error.supervisorPhase && supervisorPhases.has(supervisor.state().phase)) error.supervisorPhase = supervisor.state().phase;
-    original = failure(error); throw error;
+    original = failure(error); originalError = error; throw error;
   }
   finally {
     clearInterval(sampler); if (sampling) await sampling;
-    const errors = [];
-    if (!disposed) {
-      try { await closeJob(); } catch { errors.push({ stage: 'cleanup', check: 'job-exit-unconfirmed' }); }
+    const ownedCleanup = await cleanupCapacityRun({ fixture: fixtureOwned, supervisor: supervisorOwned,
+      attached, disposed, closeJob, receipt: cleanupReceipt, removeScratch: () => rmSync(root, { recursive: true, force: true }) });
+    const fixturePhase = FIXTURE_PHASES.has(control.state().phase) ? control.state().phase : undefined;
+    if (originalError) originalError.capacityFailure = retainCapacityFailure(original, { revision, preflight, fixturePhase }, ownedCleanup);
+    else if (ownedCleanup.errors.length) {
+      const error = new Error('scratch-retained');
+      error.capacityFailure = retainCapacityFailure(failure(error), { revision, preflight, fixturePhase }, ownedCleanup);
+      throw error;
     }
-    // Only owned handles are signalled. No PID kill occurs after fixture exit.
-    if (!supervisorOwned.terminal()) supervisorOwned.child.stdin.end();
-    try { await deadline(supervisorOwned.exited, 5000, 'job-exit-unconfirmed'); }
-    catch {
-      errors.push({ stage: 'cleanup', check: 'job-exit-unconfirmed' });
-      supervisorOwned.child.kill();
-      try { await deadline(supervisorOwned.exited, 5000, 'job-exit-unconfirmed'); }
-      catch { errors.push({ stage: 'cleanup', check: 'forced-job-exit-unconfirmed' }); }
-    }
-    if (!attached && !fixtureOwned.terminal()) fixtureOwned.child.kill(); // paused: no runtime descendants yet
-    try { await deadline(fixtureOwned.exited, 5000, 'natural-exit-unconfirmed'); }
-    catch { errors.push({ stage: 'cleanup', check: 'natural-exit-unconfirmed' }); }
-    if (errors.length) {
-      const error = new Error('scratch-retained'); error.cleanup = errors; error.original = original; throw error;
-    }
-    assert.equal(cleanupReceipt.jobEmptyConfirmed, true, 'job-exit-unconfirmed');
-    rmSync(root, { recursive: true, force: true }); cleanupReceipt.scratchRemoved = true;
   }
 }
 
@@ -366,13 +371,15 @@ async function main() {
   assert.equal(process.version, `v${components.node.version}`);
   assert.equal(process.env.AGENT_COMMS_NODE_ARCHIVE_SHA256, components.node.sha256['win-x64']);
   assert.equal(process.argv[2], '--old'); assert.equal(process.argv[4], '--new'); assert.equal(process.argv[6], '--output');
-  assert.ok(process.argv.length === 8 || (process.argv.length === 9 && ['--preflight','--supervisor-preflight','--attach-preflight'].includes(process.argv[8])));
+  assert.ok(process.argv.length === 8 || (process.argv.length === 9 && ['--preflight','--supervisor-preflight','--attach-preflight','--startup-preflight'].includes(process.argv[8])));
   const preflight = process.argv[8] === '--preflight';
+  const startupOnly = process.argv[8] === '--startup-preflight';
   output = path.resolve(process.argv[7]); mkdirSync(output);
   if (['--supervisor-preflight','--attach-preflight'].includes(process.argv[8])) {
     const result = { v: 1, scope: process.argv[8] === '--attach-preflight' ? 'standard-user sanitized-environment paused-fixture attach only; no production imports or workload' : 'standard-user sanitized-environment supervisor control only; no production workload',
       node: process.version, runnerSha256: hash(readFileSync(SELF)), supervisorSha256: hash(readFileSync(JOB)),
-      controlSha256: hash(readFileSync(new URL('./windows-capacity-control.mjs', import.meta.url))), runs: [] };
+      controlSha256: hash(readFileSync(new URL('./windows-capacity-control.mjs', import.meta.url))),
+    lifecycleSha256: hash(readFileSync(new URL('./windows-capacity-lifecycle.mjs', import.meta.url))), runs: [] };
     const persist = () => writeFileSync(path.join(output, 'capacity.json'), `${JSON.stringify(result, null, 2)}\n`);
     persist(); let firstFailure;
     await collectSupervisorProbes(async (variant) => {
@@ -402,25 +409,27 @@ async function main() {
     await exec('tar.exe', ['-xf', archive, '-C', source], { windowsHide: true });
     archives[revision] = { source, pin: PINS[revision], tree: tree.trim(), archiveSha256: hash(bytes) };
   }
-  const result = { v: 1, scope: 'hosted standard-user Windows finite capacity pilot; no benchmark, desktop, host or 100/s support acceptance',
+  const result = { v: 1, scope: startupOnly ? 'hosted standard-user Windows old-pin production startup and disposal only; no offered-rate stages or capacity acceptance' : 'hosted standard-user Windows finite capacity pilot; no benchmark, desktop, host or 100/s support acceptance',
     storageType: 'not-measured', nodeArchiveSha256: components.node.sha256['win-x64'],
     node: process.version, nodeExecutableSha256: hash(readFileSync(process.execPath)),
     osRelease: os.release(), arch: process.arch, logicalCpus: os.availableParallelism(), physicalMemoryBytes: os.totalmem(), commitLimitBytes,
     runnerSha256: hash(readFileSync(SELF)), policySha256: hash(readFileSync(new URL('./windows-capacity-policy.mjs', import.meta.url))), supervisorSha256: hash(readFileSync(JOB)),
     controlSha256: hash(readFileSync(new URL('./windows-capacity-control.mjs', import.meta.url))),
+    lifecycleSha256: hash(readFileSync(new URL('./windows-capacity-lifecycle.mjs', import.meta.url))),
     archives: Object.fromEntries(Object.entries(archives).map(([key, { source, ...value }]) => [key, value])), runs: [] };
   const persist = () => writeFileSync(path.join(output, 'capacity.json'), `${JSON.stringify(result, null, 2)}\n`);
   persist();
-  for (const revision of ['old', 'new']) {
-    if (preflight) {
+  for (const revision of startupOnly ? ['old'] : ['old', 'new']) {
+    if (startupOnly) { result.runs.push(await run(archives[revision].source, revision, [], 'normal', commitLimitBytes)); persist(); }
+    else if (preflight) {
       for (const kind of ['normal', 'fault', 'forced']) { result.runs.push(await run(archives[revision].source, revision, [], kind, commitLimitBytes)); persist(); }
     } else {
       const rates = revision === 'old' ? RATES : result.runs[0].stages.map((stage) => stage.offeredRate);
       result.runs.push(await run(archives[revision].source, revision, rates, false, commitLimitBytes)); persist();
     }
   }
-  result.status = preflight || result.runs.every((entry) => entry.stages.length === 3 && entry.stages.every((stage) => stage.qualified)) ? 'passed' : 'capacity-not-qualified';
-  persist(); process.stdout.write(`${JSON.stringify({ status: result.status, preflight, runs: result.runs.length })}\n`);
+  result.status = preflight || startupOnly || result.runs.every((entry) => entry.stages.length === 3 && entry.stages.every((stage) => stage.qualified)) ? 'passed' : 'capacity-not-qualified';
+  persist(); process.stdout.write(`${JSON.stringify({ status: result.status, preflight, startupOnly, runs: result.runs.length })}\n`);
   if (result.status !== 'passed') process.exitCode = 1;
 }
 try {
@@ -433,7 +442,7 @@ try {
   } else if (process.argv[2] === '--fixture') await fixture(process.argv[3]); else await main();
 } catch (error) {
   if (fixtureCleanup) await fixtureCleanup().catch(() => {});
-  const result = { status: 'failed', ...failure(error), ...(error.cleanup ? { cleanup: error.cleanup, original: error.original ?? null } : {}),
+  const result = { status: 'failed', ...(error.capacityFailure ?? failure(error)), ...(error.cleanup ? { cleanup: error.cleanup, original: error.original ?? null } : {}),
     ...(error.supervisorProbe ? { supervisorProbe: error.supervisorProbe } : {}) };
   if (output) writeFileSync(path.join(output, 'failure.json'), `${JSON.stringify(result, null, 2)}\n`);
   if (process.argv[2] !== '--fixture') process.stderr.write(`${JSON.stringify(result)}\n`);

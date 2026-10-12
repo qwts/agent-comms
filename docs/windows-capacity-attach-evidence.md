@@ -1,9 +1,9 @@
 # Windows supervisor attach diagnosis
 
-This continues [supervisor startup evidence](windows-supervisor-startup-evidence.md)
-and [capacity preflight history](windows-connector-capacity-evidence.md), related
-to [#164](https://github.com/qwts/agent-comms/issues/164), which remains open.
-A supervisor control pass does not establish production connector capacity.
+This continues [startup](windows-supervisor-startup-evidence.md) and
+[preflight evidence](windows-connector-capacity-evidence.md) for
+[#164](https://github.com/qwts/agent-comms/issues/164), which remains open.
+Control passes do not establish capacity.
 
 The sixth [preflight 38212483791](https://github.com/qwts/agent-comms/actions/runs/38212483791),
 at `c549ec18cf6f52dce486e66448c8048dd2d8b8c0`, failed on the first supervisor
@@ -139,7 +139,7 @@ workload or scratch was created. Original CRLF reports:
   `886c68931aab257c5138b9e301c54be1cf27d4cf5c758d62e11f7ab944a9a780`.
 - Full run log: `bda1436160aa28274514747d3571f59cb913de182712e6735610030636fa8d1b`.
 
-The three source hashes in these receipts match the exact signed runner,
+Receipt source hashes match the signed runner,
 supervisor and controller after Windows checkout line-ending conversion.
 Explicit import completes the attach control that previously stalled in the
 first CIM query interval under the same sanitized environment. This establishes
@@ -148,3 +148,7 @@ underlying implicit-module-loading mechanism or production connector readiness.
 All failed receipts remain retained unchanged. The six production preflight
 cases remain outstanding; no capacity rate or numeric budget is qualified.
 Further preflight requires a separate reviewed result checkpoint and dispatch.
+
+
+[Production startup evidence](windows-capacity-startup-evidence.md) records
+the subsequent six-case preflight result after attachment passed.
