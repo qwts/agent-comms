@@ -31,7 +31,7 @@ codes are retained through correlated fixture IPC; error text and causes are
 excluded. Local stub IPC tests establish classification and cleanup mechanics,
 not production pipe acceptance.
 
-The proposed `candidate-storage` control uses the same fixed candidate source
+The separate `candidate-storage` control uses the same fixed candidate source
 and bootstrap to isolate actual prepare, EventLog construction, file custody,
 empty replay and public compacting maintenance, without calling Broker.start
 or creating listeners, stale probes, A2A startup, delivery or rate offers.
@@ -39,7 +39,8 @@ Fixed phases bracket each API; real child IPC regressions cover a maintenance
 failure and registered cleanup. The production storage subprocess stays in the
 private job without command, environment or timeout changes. Its configured
 child timeout does not establish terminal/stdio closure. Only owned-handle/job
-receipts establish cleanup. No manual storage-prefix result is claimed yet.
+receipts establish cleanup. Its [retained storage-only pass](../../docs/windows-candidate-storage-evidence.md)
+does not establish whole Broker startup, delivery or capacity.
 
 ## Total instrumentation comparison with actual source archives
 

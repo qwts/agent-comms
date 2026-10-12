@@ -60,7 +60,7 @@ source-level untested seam, not evidence of a particular failing call,
 PowerShell cause or remedy. Corrected native startup and capacity remain open.
 
 
-## Proposed fixed-source storage-prefix control
+## Fixed-source storage-prefix control
 
 The separate manual `candidate-storage` control loads the same hardcoded,
 verified correction archive and creates a real production Broker instance.
@@ -89,5 +89,6 @@ Focused stub tests verify sequence, fresh-state refusal, fixed phase privacy
 and cleanup registration at every boundary; real child/controller IPC verifies
 correlated maintenance failure survives channel close without raw error data.
 Native CI exercises those mechanics; only a separately authorized manual
-standard-user run can test the actual candidate storage APIs. No result is
-claimed before that run.
+standard-user run can test the actual candidate storage APIs. The subsequent
+[storage-only pass](windows-candidate-storage-evidence.md) validates that defined
+prefix without changing the failed whole-startup result.
