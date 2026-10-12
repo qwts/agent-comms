@@ -127,3 +127,21 @@ test('early terminal outcomes, request-linked daemon outcomes and reconciliation
   const refused = new Map(i.slots); refused.set('terminal-reference', bytes({ ...i.reference, finding: 'refused' }));
   assert.equal(validate(refused).state, 'refused');
 });
+
+test('storage refusal requires daemon origin and a retained pre-effect proof digest', () => {
+  const i = lifecycleInput();
+  const slots = new Map(i.slots);
+  slots.delete('observation-reference'); slots.delete('terminal-reference');
+  const outcome = { ...i.outcome, state: 'refused', source: 'daemon',
+    reportingDaemonKey: i.acceptance.daemonKey, reportingDaemonEpoch: i.acceptance.daemonEpoch,
+    outcome: { code: 'storage-refused', effectDigest: 'e'.repeat(64) } };
+  const check = value => { slots.set('initial-outcome', bytes(value)); return validate(slots); };
+  assert.equal(check(outcome).state, 'refused');
+  reject(() => check({ ...outcome, outcome: { ...outcome.outcome, effectDigest: null } }));
+  reject(() => check({ ...outcome, source: 'broker', reportingDaemonKey: null, reportingDaemonEpoch: null }));
+  for (const state of ['applied', 'indeterminate', 'cancelled', 'expired']) reject(() => check({ ...outcome, state }));
+  reject(() => check({ ...outcome, reportingDaemonEpoch: i.acceptance.daemonEpoch + 1 }));
+  reject(() => check({ ...outcome, receiptDigest: 'f'.repeat(64) }));
+  // Typed outcome validation supplies no effect permission.
+  assert.equal(check(outcome).authorizationSupported, false);
+});

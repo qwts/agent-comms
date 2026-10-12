@@ -48,7 +48,7 @@ function inspect(record) {
     exact(record, 'v kind requestId payloadDigest preparationDigest receiptDigest effectId phase at detail');
     hash(record.preparationDigest); nullable(record.receiptDigest, hash); uuid(record.effectId); number(record.at);
     const d = record.detail;
-    if (record.phase === 'refused') { exact(d, 'code'); assert(['expired', 'expected-state-changed', 'proposal-not-pending', 'stage-invalid', 'target-unavailable', 'validation-failed', 'storage-unavailable'].includes(d.code)); }
+    if (record.phase === 'refused') { exact(d, 'code'); assert(['expired', 'expected-state-changed', 'proposal-not-pending', 'stage-invalid', 'target-unavailable', 'validation-failed', 'storage-unavailable', 'trust-unavailable'].includes(d.code)); }
     else {
       assert(['entered', 'completed'].includes(record.phase)); assert.notEqual(record.receiptDigest, null);
       if (d.kind === 'revision') {
@@ -102,4 +102,57 @@ for (const c of data.recoveryCases) {
     : c.ownerCeremony && c.matchingState && c.entered && (c.completed || (recordOnly && c.linkedEvent)) ? 'applied' : 'indeterminate';
   assert.equal(finding, c.expected, c.id);
 }
-console.log(JSON.stringify({ status: 'specification-consistency-only', records: data.records.length, maximalRecords: data.maximalRecords.length, recoveryCases: data.recoveryCases.length, maximumBytes: maximum }));
+// Joint daemon producer mapping. Indeterminate permits wider broker storage
+// elsewhere, but this producer emits null: entered is not proof of an outcome.
+const outcomes = JSON.parse(readFileSync(new URL('../../tests/fixtures/owner-decisions/effect-outcomes-v1.json', import.meta.url)));
+exact(outcomes, 'version status sourceSha256 results refusalRecords');
+assert.equal(outcomes.version, 1); assert.equal(outcomes.status, 'disabled-producer-contract');
+assert.equal(outcomes.sourceSha256, digest(readFileSync(new URL('../../tests/fixtures/owner-decisions/effect-evidence-v1.json', import.meta.url))));
+for (const v of outcomes.refusalRecords) {
+  exact(v, 'id record canonicalJson sha256 utf8Bytes cap');
+  assert(!ids.has(v.id)); ids.add(v.id); inspect(v.record);
+  assert.equal(v.record.phase, 'refused'); assert.equal(v.cap, 4096);
+  assert.equal(v.canonicalJson, canonical(v.record)); assert.equal(v.sha256, digest(v.canonicalJson));
+  assert.equal(v.utf8Bytes, Buffer.byteLength(v.canonicalJson)); assert(v.utf8Bytes <= v.cap);
+  const prep = preparations.get(v.record.requestId); assert(prep);
+  assert.equal(v.record.preparationDigest, prep.sha256); assert.equal(v.record.payloadDigest, prep.record.payloadDigest);
+  assert.equal(v.record.effectId, prep.record.effectId);
+}
+const allEvidence = [...data.records, ...outcomes.refusalRecords];
+const evidenceById = new Map(allEvidence.map(v => [v.id, v]));
+const refusalCodes = { expired: 'deadline-expired', 'expected-state-changed': 'validation-refused',
+  'proposal-not-pending': 'validation-refused', 'stage-invalid': 'validation-refused',
+  'target-unavailable': 'validation-refused', 'validation-failed': 'validation-refused',
+  'storage-unavailable': 'storage-refused', 'trust-unavailable': 'authority-refused' };
+const coveredReasons = new Set();
+const resultIds = new Set(), covered = new Set(), earlyCodes = new Set();
+let absentProofCases = 0;
+for (const result of outcomes.results) {
+  exact(result, 'id evidenceRecord state outcome'); exact(result.outcome, 'code effectDigest');
+  assert(!resultIds.has(result.id)); resultIds.add(result.id);
+  const evidence = evidenceById.get(result.evidenceRecord);
+  if (result.evidenceRecord !== null) {
+    assert(evidence); assert.equal(evidence.record.kind, 'effect');
+    assert(!covered.has(evidence.id)); covered.add(evidence.id);
+    const phase = evidence.record.phase;
+    const expected = phase === 'completed' ? ['applied', 'applied', digest(Buffer.from(evidence.canonicalJson, 'utf8'))]
+      : phase === 'refused' ? ['refused', refusalCodes[evidence.record.detail.code], digest(Buffer.from(evidence.canonicalJson, 'utf8'))]
+      : ['indeterminate', 'effect-uncertain', null];
+    if (phase === 'refused') coveredReasons.add(evidence.record.detail.code);
+    assert.deepEqual([result.state, result.outcome.code, result.outcome.effectDigest], expected);
+  } else {
+    assert.equal(result.outcome.effectDigest, null);
+    if (result.state === 'refused') {
+      assert(['validation-refused', 'authority-refused', 'deadline-expired'].includes(result.outcome.code));
+      assert(!earlyCodes.has(result.outcome.code)); earlyCodes.add(result.outcome.code);
+    } else {
+      assert.equal(result.state, 'indeterminate'); assert.equal(result.outcome.code, 'effect-uncertain');
+      absentProofCases++;
+    }
+  }
+}
+assert.deepEqual([...covered].sort(), allEvidence.filter(v => v.record.kind === 'effect').map(v => v.id).sort());
+assert.deepEqual([...coveredReasons].sort(), Object.keys(refusalCodes).sort());
+assert.equal(earlyCodes.size, 3);
+assert.equal(absentProofCases, 1);
+console.log(JSON.stringify({ status: 'specification-consistency-only', records: data.records.length, maximalRecords: data.maximalRecords.length, recoveryCases: data.recoveryCases.length, outcomeMappings: outcomes.results.length, maximumBytes: maximum }));
