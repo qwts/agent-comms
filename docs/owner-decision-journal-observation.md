@@ -2,7 +2,8 @@
 
 This proposed [fixed-slot amendment](owner-decision-journal-fixed-slots.md)
 applies only to the broker; daemon scratch-pending, sequence-1 framing is
-unchanged. Disabled; authority/physical flags stay false. See the
+unchanged. Broker source is implemented but disabled; authority/physical flags
+stay false. See the
 [joint review receipt](owner-decision-journal-lifecycle.md#joint-observation-review).
 
 ## Exact bounds and typed context
@@ -11,7 +12,7 @@ Broker destination D is slot 9, `observation-reference`, with a 2048-byte payloa
 cap and fixed EOF 2304. Scratch S remains its precreated single-link 0600 inode,
 EOF 33024. S embeds the complete destination-bound 2304-byte frame at offset
 zero, followed by exactly 30720 zero bytes. Nonzero tail padding invalidates the
-whole scratch candidate; no embedded stored cap chooses allocation or decoding.
+scratch candidate; stored cap never chooses allocation or decoding.
 
 
 Only observation frames gain a generation: positive safe integer 1 through
@@ -122,15 +123,15 @@ observation replacement or recovery-copy mutation is allowed, including a
 previously valid scratch candidate. Terminal availability grants no effect retry, cleanup or authorization. Corrupt
 immutable records still refuse all writes.
 
-## Implementation checkpoint and adversarial tests
+## Disabled implementation and adversarial tests
 
-Reuse the broker core/codec/lock/helper/validator/quotas/stamps for replacement,
+The implementation reuses broker core/codec/lock/helper/validator/quotas/stamps for replacement,
 explicit candidate recovery and independent terminal publication. Older codecs refuse
 non-1 generations; no deployed replacements exist and no migration is inferred.
 
-After joint producer review, test every matrix row, generation bounds, payload
+Tests cover every matrix row, generation bounds, payload
 cap, scratch padding, cross-context bindings, terminal coexistence/freeze and
-changed cache stamps. Use actual SIGKILL plus short-write/EIO/ENOSPC/EDQUOT at
-every candidate/destination/flush boundary. Include historical torn-clear bytes,
+changed cache stamps, actual SIGKILL and short-write/EIO/ENOSPC/EDQUOT at
+candidate/destination/flush boundaries, historical torn-clear bytes,
 exact native slot 9/11 bindings and unchanged quotas/names. Tests establish
 neither physical support nor power-loss persistence.
