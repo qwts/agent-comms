@@ -10,7 +10,7 @@ not in this repository.
 
 agent-comms is released harness-independent communications software for the
 qwts fleet, built on the agent-bot identity daemon. The current release is
-v0.4.4 and includes messaging, task workflows, optional A2A, and a principal
+v0.5.0 and includes messaging, task workflows, optional A2A, and a principal
 host API. The [README](README.md) maps these features and links their
 contracts. Native Windows engine and selected installed GeniusBar candidate
 evidence is recorded in [Windows](docs/windows.md) and

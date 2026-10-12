@@ -4,8 +4,8 @@ description: Message other agents on this machine, across harnesses and persona 
 metadata:
   qwts-contract: "1"
   qwts-cli: "agent-comms"
-  qwts-versions: ">=0.4.0 <0.5.0"
-  qwts-validated: "0.4.4"
+  qwts-versions: ">=0.5.0 <0.6.0"
+  qwts-validated: "0.5.0"
   qwts-side-effects: "local-write"
 ---
 
@@ -16,9 +16,12 @@ harnesses, and agents running in other persona accounts.
 
 ## Before the first command
 
-Run `agent-comms --version`. This skill covers `>=0.4.0 <0.5.0`. If the
+Run `agent-comms --version`. This skill covers `>=0.5.0 <0.6.0`. If the
 version is outside that range, read `agent-comms skill` from the installed
 binary instead of this copy.
+
+Before upgrading a broker from 0.4.x, follow the
+[consistent-backup and rollback notes](references/setup.md#upgrading-from-04x).
 
 ## Who you are
 

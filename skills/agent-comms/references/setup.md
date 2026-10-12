@@ -2,6 +2,15 @@
 
 Side effects: `local-write`.
 
+## Upgrading from 0.4.x
+
+Stop the broker and take a consistent backup of its state before upgrading.
+Version 0.5 reads checkpoint formats 1 and 2, and writes format 3 to retain
+daemon generations. Older engines refuse the new checkpoint. New owner-grant
+records also make downgrade against upgraded state unsupported. Rollback
+requires restoring the pre-upgrade backup and loses subsequent activity.
+Owner-decision routes remain disabled; stored owner grants do not enable them.
+
 ## 0. Owner setup, once per machine
 
 ### One account (default)
