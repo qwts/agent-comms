@@ -24,8 +24,9 @@ export class Sink extends EventEmitter {
 export function fixture(t, vector = f.positive[0], journalOptions = {}, coordinatorOptions = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'comms-owner-coordinator-')); fs.chmodSync(root, 0o700);
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  const action = JSON.parse(vector.actionJson), brokerKeys = generateKeyPairSync('ed25519'),
-    presenceKeys = generateKeyPairSync('ed25519'), daemonKeys = generateKeyPairSync('ed25519');
+  const action = JSON.parse(vector.actionJson), brokerKeys = coordinatorOptions.fixtureKeys?.broker ?? generateKeyPairSync('ed25519'),
+    presenceKeys = coordinatorOptions.fixtureKeys?.presence ?? generateKeyPairSync('ed25519'), daemonKeys = generateKeyPairSync('ed25519');
+  const fixtureNamespace = coordinatorOptions.fixtureKeys?.namespaceDigest ?? namespaceDigest;
   let milliseconds = vector.receiptPayload.iat * 1000;
   const broker = new Broker({ paths: { state: path.join(root, 'broker'), socket: path.join(root, 'broker.sock'),
     admin: path.join(root, 'admin.sock'), proofs: path.join(root, 'proofs') }, now: () => milliseconds });
@@ -53,15 +54,16 @@ export function fixture(t, vector = f.positive[0], journalOptions = {}, coordina
     watches.accountWatch(request, sink, pairing.daemon(request)); return sink;
   };
   attach(socket);
-  const enrollment = new Enrollment({ namespaceDigest, service: { account: 'synthetic-broker', uid: process.getuid() } });
+  const enrollment = new Enrollment({ namespaceDigest: fixtureNamespace, service: { account: 'synthetic-broker', uid: process.getuid() } });
   enrollment.install({ revision: 1, brokerPrivateKey: brokerKeys.privateKey, presencePublicKey: presenceKeys.publicKey });
   const journalRoot = path.join(root, 'journal');
   fs.mkdirSync(journalRoot, { mode: 0o700 });
-  const open = () => new Store(journalRoot, { namespaceDigest, format: 'fixed-v1',
+  const open = () => new Store(journalRoot, { namespaceDigest: fixtureNamespace, format: 'fixed-v1',
     lifecycle: { brokerPublicKeys: [brokerKeys.publicKey], presencePublicKeys: [presenceKeys.publicKey] },
     now: () => milliseconds, ...journalOptions });
   const journal = open();
-  const options = { broker, pairing, watches, journal, enrollment, namespaceDigest, syntheticFixture: true, ...coordinatorOptions };
+  const options = { broker, pairing, watches, journal, enrollment, namespaceDigest: fixtureNamespace, syntheticFixture: true, ...coordinatorOptions };
+  delete options.fixtureKeys;
   if (coordinatorOptions.makeSigningCapability) {
     options.signingCapability = coordinatorOptions.makeSigningCapability(enrollment);
     delete options.makeSigningCapability;
