@@ -60,3 +60,39 @@ a trailing marker/terminal event. Failure reports retain original classified
 boundaries and all cleanup chronology; no unknown empty-job/scratch/profile
 state is reclassified as success. The original custody-run fields and bytes
 remain unchanged.
+
+The signed sample head `481acfa94d47018a8f548e5497ae7b019f71350a` passed
+[native and overall CI 38221534856](https://github.com/qwts/agent-comms/actions/runs/38221534856),
+including the actual paused-fixture sample. The single standard-user
+[sample-only run 38221743104](https://github.com/qwts/agent-comms/actions/runs/38221743104)
+then failed at `supervisor-only-sample/control-deadline`, last phase
+`sample-observer`. Attachment, job PID enumeration, filter construction, CIM
+query, fixture verification and workload classification completed. The next
+literal marker, `sample-observer-read`, was never reached: this isolates the
+existing `Get-Process -Id $PID` interval, not its underlying mechanism. No
+production runtime or workload ran. All five reported source hashes match that
+signed Windows checkout.
+
+Both owned fixture and supervisor terminal/stdio closures were confirmed after
+EOF and forced termination. Elapsed time including cleanup was 11,260ms; stderr
+was zero. No empty-job receipt exists. Parent profile/account/stage were retained
+with `capacity-tool-cleanup-unconfirmed` and `test-profile-cleanup`. Raw hashes:
+
+- [Acceptance](../tools/acceptance/evidence/2026-10-12-windows-connector/sample-38221743104/acceptance.json):
+  `4e622a9438ccfd95a5be79e550b05f4afe031c1a8efc0ac5cd4c00cd9231e6a1`.
+- [Capacity](../tools/acceptance/evidence/2026-10-12-windows-connector/sample-38221743104/capacity/capacity.json):
+  `92ec6766396f09934a72d07e114b1fb8d90109d9ca7bc4a9753b47a4b060567b`.
+- [Failure](../tools/acceptance/evidence/2026-10-12-windows-connector/sample-38221743104/capacity/failure.json):
+  `ede24f5e635cc310d60248e0ee954b3c98d58f744e6de321df2cfd66266bc238`.
+- Full run log: `4a27f33e692ca39e2bc25b3e07a97650afc26b20f9d9e1b92f2fdc2607772e46`.
+
+The narrow observer correction obtains a .NET process handle for the current
+supervisor directly, reads the same `WorkingSet64` and
+`TotalProcessorTime.Ticks` fields, and disposes the handle in `finally` before
+reply serialization. Observer accounting stays separate from the unchanged
+private-job workload accounting. No additional module import, policy,
+environment, identity check, process/memory bound or deadline changes. The
+existing native paused-fixture test exercises actual sampling and natural
+disposal; the sanitized standard-user path still needs separately reviewed
+evidence. No production startup, capacity, or underlying autoload fix is claimed.
+All failed reports remain unchanged; no broader run is authorized here.

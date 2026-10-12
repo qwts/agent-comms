@@ -319,12 +319,15 @@ public static class CapacityJob {
             if ($totals.relay.count -gt 32 -or $totals.diagnostic.count -gt 1) { throw 'owned-kind-bound' }
             $phase = 'sample-observer'
             [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"sample-observer"}'); [Console]::Out.Flush()
-            $observer = Get-Process -Id $PID
-            $phase = 'sample-observer-read'
-            [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"sample-observer-read"}'); [Console]::Out.Flush()
+            $observer = [Diagnostics.Process]::GetCurrentProcess()
+            try {
+                $observerValues = @{workingSetBytes=[uint64]$observer.WorkingSet64;cpu100ns=[uint64]$observer.TotalProcessorTime.Ticks}
+                $phase = 'sample-observer-read'
+                [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"sample-observer-read"}'); [Console]::Out.Flush()
+            } finally { $observer.Dispose() }
             $phase = 'sample-reply'
             [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"sample-reply"}'); [Console]::Out.Flush()
-            Reply @{id=$requestId;ok=$true;totals=$totals;jobPeakCommitBytes=[CapacityJob]::PeakCommit($job);jobCpu100ns=[CapacityJob]::Cpu100ns($job);observer=@{workingSetBytes=[uint64]$observer.WorkingSet64;cpu100ns=[uint64]$observer.TotalProcessorTime.Ticks}}
+            Reply @{id=$requestId;ok=$true;totals=$totals;jobPeakCommitBytes=[CapacityJob]::PeakCommit($job);jobCpu100ns=[CapacityJob]::Cpu100ns($job);observer=$observerValues}
             $phase = 'sample-replied'
             [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"sample-replied"}'); [Console]::Out.Flush()
         } elseif ($inputData.op -eq 'members' -and $attached) {
