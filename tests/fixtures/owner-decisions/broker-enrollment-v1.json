@@ -1,0 +1,33 @@
+{
+  "v": 1,
+  "scope": "Public synthetic codec vectors only; no signature, custody, installation or authority evidence",
+  "namespaceDigest": "d5fb6116009da33adf3cec3db1b46969367ee278cc928051c29b1d771aaa9448",
+  "daemonKey": "3532fb2b134488a2a18f2a07cd6db85b4c1b808ddb10972f0ad5526856177bd4",
+  "cases": [
+    {
+      "name": "enrollment",
+      "canonical": "{\"at\":1800000000,\"decisionEvidenceDigest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"kind\":\"broker-owner-enrollment\",\"namespaceDigest\":\"d5fb6116009da33adf3cec3db1b46969367ee278cc928051c29b1d771aaa9448\",\"presenceKey\":{\"alg\":\"ed25519\",\"keyId\":\"744f36cca67eb1912cb282e08e86bd2fe0d09004a28cf6e7c6bd56cdd6bf65aa\",\"publicKey\":\"oJql9HpnWYAv-VX43C0qFKXJnSO-l_hkEn_5ODRVpPA\"},\"previousDigest\":null,\"receiptKey\":{\"alg\":\"ed25519\",\"keyId\":\"503d8ee46d581c649966569ae095e27041de83322e8e0480e5539e00d2d5d874\",\"publicKey\":\"0EqyMnQrtKs6E2i9RhXk5tAiSrcaAWuvhSCjMsl3hzc\"},\"revision\":1,\"service\":{\"brokerUid\":502,\"platform\":\"darwin\"},\"transactionId\":\"11111111-1111-4111-8111-111111111111\",\"v\":1}",
+      "bytes": 700,
+      "sha256": "246575f9fc63f562a6feec8a2364a1e58ba6ebb8022b5f8891fb1c916dd83ad7"
+    },
+    {
+      "name": "audit",
+      "canonical": "{\"decisionEvidenceDigest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"kind\":\"broker-owner-audit\",\"namespaceDigest\":\"d5fb6116009da33adf3cec3db1b46969367ee278cc928051c29b1d771aaa9448\",\"recordDigest\":\"246575f9fc63f562a6feec8a2364a1e58ba6ebb8022b5f8891fb1c916dd83ad7\",\"revision\":1,\"transactionId\":\"11111111-1111-4111-8111-111111111111\",\"v\":1}",
+      "bytes": 362,
+      "sha256": "4875648339be1eb093c255629acf2f9e02f7fa937e6f8b3583f17bfd92eaa463"
+    },
+    {
+      "name": "confirmation",
+      "canonical": "{\"auditDigest\":\"4875648339be1eb093c255629acf2f9e02f7fa937e6f8b3583f17bfd92eaa463\",\"kind\":\"broker-owner-confirmation\",\"namespaceDigest\":\"d5fb6116009da33adf3cec3db1b46969367ee278cc928051c29b1d771aaa9448\",\"recordDigest\":\"246575f9fc63f562a6feec8a2364a1e58ba6ebb8022b5f8891fb1c916dd83ad7\",\"revision\":1,\"v\":1}",
+      "bytes": 303,
+      "sha256": "bf2c508cedaaf012d976868ccf46294f9d7240aefd5004a197c36952f0cadd04"
+    },
+    {
+      "name": "revocation",
+      "canonical": "{\"at\":1800000030,\"decisionEvidenceDigest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"enrollmentDigest\":\"246575f9fc63f562a6feec8a2364a1e58ba6ebb8022b5f8891fb1c916dd83ad7\",\"kind\":\"broker-owner-revocation\",\"namespaceDigest\":\"d5fb6116009da33adf3cec3db1b46969367ee278cc928051c29b1d771aaa9448\",\"previousDigest\":\"246575f9fc63f562a6feec8a2364a1e58ba6ebb8022b5f8891fb1c916dd83ad7\",\"revision\":2,\"service\":{\"brokerUid\":502,\"platform\":\"darwin\"},\"transactionId\":\"22222222-2222-4222-8222-222222222222\",\"v\":1}",
+      "bytes": 519,
+      "sha256": "9422db17b6ead23a788b1919cdb4374c13507442309c62b0e3dd123f08502566"
+    }
+  ],
+  "serviceUidNote": "UID 502 is illustrative codec data, not an installation UID or valid custody claim. Runtime must independently require the actual broker UID to be nonzero and different from the actual owner UID; never copy this fixture value into installation configuration."
+}
