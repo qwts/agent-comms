@@ -67,3 +67,32 @@ released component tuple for these cases in the
 [conformance evidence](owner-decision-conformance.md). Static consistency,
 documentation checks and existing target-query/transport tests cannot be used
 as substitutes for those implementation or live native results.
+
+
+## Additive display-policy rejection vectors
+
+[display-rejections-v1.json](../tests/fixtures/owner-decisions/display-rejections-v1.json)
+is a separate unsigned policy supplement pinned to the original v1 fixture
+SHA-256. It adds rejection cases for Unicode general categories `Cc`, `Cf`,
+`Zl` and `Zp`, including bidi overrides/isolates and supplementary format tags.
+The original signed v1 positives and canonical encoding are unchanged. This
+is a stricter owner-action admission/display policy, not a fixture rewrite or
+change to legacy keyd's p1 verifier. Both implementing repositories must adopt
+the same rejection policy before claiming compatible native display support.
+
+The codec test checks every frozen rejected scalar, each outside boundary and
+all four revision operations, alongside
+ordinary RTL letters, combining marks, variation selectors and distinct
+precomposed/decomposed spellings. Accepted strings retain exact bytes; this
+policy intentionally refuses even linguistically useful format controls such
+as ZWJ/ZWNJ rather than silently removing them. The supplement carries no
+signature, authority or new cryptographic serialization rule.
+
+
+The policy is frozen to [Unicode 17.0.0 DerivedGeneralCategory.txt](https://www.unicode.org/Public/17.0.0/ucd/extracted/DerivedGeneralCategory.txt),
+SHA-256 `d62e5bab70ca74f099343f71224fa051cb1fdd61a1ab45c0488c44cfc0b6102e`.
+The supplement lists inclusive scalar ranges; production uses those explicit
+ranges rather than runtime-dependent Unicode property tables. Native consumers
+must use the same ranges even when their OS Unicode version differs. A literal
+backslash followed by `u202E` is ordinary permitted text; do not interpret it
+as a Unicode escape after canonical JSON decoding.

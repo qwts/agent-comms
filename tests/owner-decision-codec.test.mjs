@@ -142,3 +142,42 @@ test('action digest stays bound to its private snapshot during concurrent source
     await worker.terminate();
   }
 });
+
+
+test('display policy rejects invisible controls without normalizing ordinary Unicode', () => {
+  const vectors = JSON.parse(readFileSync(new URL('./fixtures/owner-decisions/display-rejections-v1.json', import.meta.url)));
+  assert.equal(createHash('sha256').update(readFileSync(new URL('./fixtures/owner-decisions/v1.json', import.meta.url))).digest('hex'), vectors.sourceFixtureSha256);
+  const baseline = JSON.parse(f.positive[0].actionJson);
+  for (const vector of vectors.negative) {
+    assert.equal([...vector.scalar].length, 1, vector.id);
+    assert.equal(`U+${vector.scalar.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')}`, vector.codePoint);
+    assert.ok(vectors.rejectedRanges.some(r => vector.scalar.codePointAt(0) >= r.first && vector.scalar.codePointAt(0) <= r.last && vector.category === r.category), vector.id);
+    reject(() => action(bytes({ ...baseline, parameters: { ...baseline.parameters, reason: vector.reason } })));
+  }
+  for (const reason of vectors.positiveReasons) {
+    const input = bytes({ ...baseline, parameters: { ...baseline.parameters, reason } });
+    const result = action(input);
+    assert.ok(result.summary.includes(JSON.stringify(reason)));
+    assert.equal(result.payloadDigest, createHash('sha256').update(input).digest('hex'));
+  }
+  // Distinct canonical-equivalent spellings stay distinct signed bytes.
+  const digestFor = reason => action(bytes({ ...baseline, parameters: { ...baseline.parameters, reason } })).payloadDigest;
+  assert.notEqual(digestFor('e\u0301'), digestFor('\u00e9'));
+  // Explicit shared intervals are independent of the engine's Unicode tables.
+  const operations = f.positive.filter(v => ['revision.approve', 'revision.reject', 'revision.adopt', 'revision.edit'].includes(JSON.parse(v.actionJson).operation));
+  assert.deepEqual(new Set(operations.map(v => JSON.parse(v.actionJson).operation)), new Set(['revision.approve', 'revision.reject', 'revision.adopt', 'revision.edit']));
+  const blocked = cp => vectors.rejectedRanges.some(r => cp >= r.first && cp <= r.last);
+  for (const range of vectors.rejectedRanges) {
+    for (let cp = range.first; cp <= range.last; cp++) {
+      for (const vector of operations) {
+        const input = JSON.parse(vector.actionJson);
+        input.parameters.reason = `a${String.fromCodePoint(cp)}b`;
+        reject(() => action(bytes(input)));
+      }
+    }
+    for (const cp of [range.first - 1, range.last + 1]) {
+      if (cp < 0 || cp > 0x10ffff || blocked(cp)) continue;
+      action(bytes({ ...baseline, parameters: { ...baseline.parameters, reason: `a${String.fromCodePoint(cp)}b` } }));
+    }
+  }
+});

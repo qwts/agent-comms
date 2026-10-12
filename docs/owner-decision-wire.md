@@ -33,7 +33,7 @@ apply before allocating or decoding a body; nesting is at most 8 levels.
 | `nonce` | Exactly 32 random bytes encoded as 43 canonical unpadded base64url characters. |
 | Time | Nonnegative safe integer Unix seconds; floor milliseconds before comparing. |
 | `daemonEpoch` | Broker-assigned positive safe integer, durably increased for every daemon approval/replacement/revocation in this account; never reused or reset by recovery. |
-| `reason` | Nonblank string, at most 500 UTF-8 bytes, with no Unicode control scalar (U+0000–001F, U+007F–009F). Preserve bytes; do not trim or normalize. Preparation may refuse a shorter reason if the complete action does not fit. |
+| `reason` | Nonblank string, at most 500 UTF-8 bytes, with no Unicode general-category `Cc`, `Cf`, `Zl` or `Zp` scalar. Preserve bytes; do not trim or normalize. Preparation may refuse a shorter reason if the complete action does not fit. |
 | `host` | Canonical WHATWG HTTPS URL `.host`, including bracketed IPv6 and optional nondefault decimal port, from the validated webhook snapshot; nonempty lowercase ASCII, at most 253 bytes. Roundtrip `new URL("https://" + host + "/")` must preserve `.host` exactly and have only `/` as its path, with no query, fragment or credentials. Default ports, noncanonical spellings and other URL components refuse. This grammar check grants no staging or destination authority. |
 
 `parameters` has one of the exact shapes below. The `operation` selects the
@@ -107,8 +107,14 @@ application compares all those fields, not merely the desired resulting value.
 Never take expected state from an unverified host claim.
 
 The complete action must have 1–400 Unicode scalar values, at most 500 UTF-8
-bytes, and no control scalars, matching keyd's existing action acceptance plus
-the broker byte cap. Count after JSON string escaping. For example, quotes and
+bytes, and no Unicode `Cc`, `Cf`, `Zl` or `Zp` scalars. This owner-action
+display policy uses the frozen Unicode 17.0.0 ranges in the
+[display-policy supplement](owner-decision-fixtures.md#additive-display-policy-rejection-vectors),
+not ambient runtime tables, and is stricter than legacy keyd's C0/C1 check; it does not change
+legacy keyd semantics. Format controls (bidi overrides/isolates, joiners and marks), line/paragraph
+separators refuse
+in both the original reason and reconstructed complete display. RTL letters, combining marks and variation selectors remain permitted;
+preserve exact scalars without trimming, normalization or case folding. Count after JSON string escaping. For example, quotes and
 backslashes in a reason appear as the literal escaped characters the owner
 sees; a newline/control in the input is rejected rather than disguised. Include
 these cases in shared fixtures. Long account names and Unicode reasons can
