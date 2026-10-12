@@ -3,7 +3,9 @@
 The journal, issuer and asynchronous coordinator connect the existing reserved
 presence slot to a private signing attempt. This source remains disabled. The
 production [capability](../lib/platform/owner-receipt-capability.mjs) refuses;
-there is no native receipt key provider, installation, listener or activation.
+there is no accepted installed receipt provider, listener or activation. The
+[compiled native adapter tests](owner-decision-native-receipt-adapter.md) exercise
+the operation-specific native worker without establishing installed custody.
 The explicit synthetic capability tests real pairing, grants, watch bindings
 and filesystem journal behavior without establishing native custody, physical
 reservation, daemon effects or completed [#77 acceptance](owner-decisions.md).
