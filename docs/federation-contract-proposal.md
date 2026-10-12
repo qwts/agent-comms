@@ -1,11 +1,14 @@
-# Federation: proposed custody and delivery contract
+# Federation: accepted custody and delivery contract
 
-**Status:** Proposed, supporting [ADR-0028](decisions/ADR-0028-cross-machine-hubs-and-federation.md)
+**Status:** Accepted policy, supporting [ADR-0028](decisions/ADR-0028-cross-machine-hubs-and-federation.md)
 and [#28](https://github.com/qwts/agent-comms/issues/28),
 [#118](https://github.com/qwts/agent-comms/issues/118),
 [#119](https://github.com/qwts/agent-comms/issues/119).
-Choices await owner acceptance/review; no runtime is claimed. #120 channel and
-#122 retention approvals are separate from federation.
+Owner policy acceptance: 2026-10-11
+([receipt](https://github.com/qwts/agent-comms/issues/28#issuecomment-6115481556)).
+No runtime, deployment, spending or provider provisioning is authorized.
+Independent crypto and provider/persistence/cost review remain required.
+#120/#122 approvals are separate from federation.
 
 ## Identity, trust and custody
 
@@ -100,9 +103,11 @@ expected revisions; a partition leaves pending/uncertain state, never inferred
 acceptance or execution. Preserve immutable offer content and visible task/event
 access rules. Local inboxes retain cursor/ack semantics; no global order or exactly-once work.
 
-## Finite proposed defaults and isolation
+<a id="finite-proposed-defaults-and-isolation"></a>
 
-| Resource | Proposed admission cap |
+## Finite accepted defaults and isolation
+
+| Resource | Accepted admission cap |
 | --- | --- |
 | Broker hub configurations | 8, with separate credentials, grants, queues and discovery |
 | Reference relay enrollment | 32 brokers; 100 exported souls per broker |
@@ -137,8 +142,9 @@ and [transactional durable storage](https://developers.cloudflare.com/durable-ob
 These are candidate capabilities, not application guarantees. Deployment needs
 measured persistence, failure, storage/cost and key-custody evidence first.
 
-The [proposed acceptance plan](federation-acceptance-plan.md) maps existing code
+The [implementation acceptance plan](federation-acceptance-plan.md) maps existing code
 seams, migration checks, handoff failures and shared #118/#119 ownership. Its
-implementation sequence starts only after ADR acceptance and crypto review.
+implementation sequence remains gated on independent crypto review; provider
+suitability and persistence/cost evidence are required before deployment.
 Two-machine acceptance and #28's production sequencing gate remain required;
 keep all three issues open until their complete requirements have runtime evidence.
