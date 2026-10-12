@@ -1,6 +1,7 @@
 # Local broker and client diagnostics
 
-The broker writes bounded JSON lines to stderr for unexpected request-handler
+The broker writes bounded JSON lines to stderr for startup and shutdown outcomes,
+unexpected request-handler
 errors, uncertain storage appends or compaction, and background maintenance
 failures. The client records local custody/proof refusals, unreachable channels,
 request deadlines and scheduled watch retries. CLI stdout and the durable
@@ -39,6 +40,9 @@ request fields, arbitrary messages, paths, bodies or credentials are serialized.
 | `transport.untrusted` | `transport.connect` | `custody` or `proof` | `broker-untrusted` | `refused` |
 | `transport.retry` | `transport.watch` | `backoff` | `retry-scheduled` | `succeeded` |
 | `diagnostics.dropped` | `diagnostics` | `queue` | `diagnostics-dropped` | `dropped` |
+
+[Lifecycle diagnostics](lifecycle-diagnostics.md) extend this private registry
+with broker startup/shutdown and watch readiness/reconnection outcomes.
 
 `transport.retry` has exact `details: { attempt, delayMs }`. Attempt counts
 scheduled retries since the last ready event and saturates at
@@ -114,8 +118,7 @@ passing reporting/helper comparisons, a retained healthy p99 failure, exact
 provenance and baseline limitations. [Complete-runtime evidence](local-diagnostics-total-overhead.md) records the
 scoped macOS embedded Broker/client comparison against a pre-change runtime,
 including healthy, failed and unread diagnostic destinations. CPU remains
-ungated and sparse appends do not establish compaction performance. Native
-Windows numeric budgets and packaged host integration remain outstanding in
+ungated and sparse appends do not establish compaction performance. Native Windows numeric budgets and packaged host integration remain outstanding in
 [#164](https://github.com/qwts/agent-comms/issues/164).
 
 ## Private Windows connector stage

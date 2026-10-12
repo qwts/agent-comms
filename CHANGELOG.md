@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Fixture-only bounded process adapter connects an actual compiled operation-specific native receipt worker to the broker journal/coordinator, with exact response correlation, independent process-close ownership, eleven command integrations, raw p1 JSON parity, and cancellation/revocation tests. Production artifact provenance, protected native observation, installed signing custody and physical readiness remain prerequisites; no owner route is enabled (#77).
+- Private bounded broker startup/shutdown and client watch readiness/reconnection observations use fixed outcomes and local monotonic durations. Failed startup cleanup, repeated readiness, cancellation and permission refusal retain their existing semantics; lifecycle overhead and packaged-host acceptance remain outstanding (#164).
 - Disabled connected asynchronous receipt signing retains a durable presence intent before signing, verifies private candidates with a fresh clock, and requires one-use journal completion before dispatch. Bounded invocation lifetime, cancellation/revocation/restart tests and an operation-specific native contract advance integration without activating protected custody or physical support (#77).
 
 ### Fixed

@@ -97,6 +97,7 @@ test('principal traceparent reaches the real account watch unchanged but never d
 test('malformed and wrong-type launch context silently drops with only a local cumulative primitive counter', async () => {
   const diagnostics = [];
   await withBroker(async (c) => {
+    assert.equal(diagnostics.shift()[0], 'broker-started');
     const { client, credential } = await setup(c), d = await daemon(c);
     const invalid = ['', null, 42, true, [], { secret: 'CANARY-private-path/body', traceparent: TRACEPARENT },
       TRACEPARENT.toUpperCase(), '01' + TRACEPARENT.slice(2),
@@ -123,6 +124,7 @@ test('malformed and wrong-type launch context silently drops with only a local c
 test('launch context cannot bypass approval, credentials or grants, and throwing drop diagnostics cannot refuse launch', async () => {
   const diagnostics = [];
   await withBroker(async (c) => {
+    assert.equal(diagnostics.shift()[0], 'broker-started');
     const { client, credential, pending } = await setup(c, [c.accounts.bob], false);
     const launch = { ...target(c), traceparent: { secret: 'CANARY-private-context' } };
     await assert.rejects(client.launch(launch), { code: 'not-approved' });

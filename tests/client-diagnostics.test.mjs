@@ -153,3 +153,47 @@ test('watch retry records scheduling only, preserves backoff/cancellation, and r
   await assert.rejects(watch(paths, credential, { op: 'watch' }, () => assert.fail('refusal must not become a watch event'), { diagnostic: throwing }), { code: 'unauthenticated' });
   assert.equal(attempts, before + 1);
 });
+
+for (const mode of ['capture', 'blocked', 'throwing']) {
+  test(`watch readiness and recovered readiness survive ${mode} diagnostics`, { skip: process.platform === 'win32' }, async (t) => {
+    const output = capture(t, mode);
+    const { paths, credential, root } = fixture(t);
+    let connections = 0;
+    const reports = [];
+    let measuredNow = 0;
+    t.mock.method(performance, 'now', () => measuredNow);
+    await serve(t, paths.socket, (socket) => {
+      connections += 1;
+      const attempt = connections;
+      socket.once('data', () => {
+        // A transport connection alone must not report readiness.
+        assert.equal(reports.filter(([event]) => ['transport-ready', 'transport-reconnected'].includes(event)).length, attempt - 1);
+        socket.write(`${JSON.stringify({ event: 'ready', traceId: PEER_ID })}\n`);
+        socket.write(`${JSON.stringify({ event: 'ready', body: BODY })}\n`);
+        if (attempt === 1) setTimeout(() => socket.destroy(), 10);
+      });
+    });
+    const controller = new AbortController();
+    const events = [];
+    await watch(paths, credential, { op: 'watch', body: BODY }, (event) => {
+      events.push(event.event);
+      if (event.event === 'disconnected') measuredNow += 1234;
+      if (connections === 2 && event.event === 'ready') controller.abort();
+    }, { signal: controller.signal, diagnostic: (...args) => { reports.push(args); output.diagnostic(...args); } });
+    assert.equal(connections, 2);
+    assert.deepEqual(reports.filter(([event]) => ['transport-ready', 'transport-reconnected'].includes(event)).map(([event]) => event),
+      ['transport-ready', 'transport-reconnected']);
+    assert.ok(reports.filter(([event]) => ['transport-ready', 'transport-reconnected'].includes(event))
+      .every(([, duration]) => Number.isSafeInteger(duration) && duration >= 0));
+    assert.equal(reports.find(([event]) => event === 'transport-reconnected')[1], 1234,
+      'reconnection measurement includes time spent in the disconnected callback');
+    assert.deepEqual(events, ['ready', 'ready', 'disconnected', 'ready']);
+    if (mode === 'capture') {
+      const result = await records(output, root);
+      const ready = result.filter((record) => record.event === 'transport.ready' || record.event === 'transport.reconnected');
+      assert.deepEqual(ready.map(({ event, stage, outcome }) => [event, stage, outcome]),
+        [['transport.ready', 'ready', 'succeeded'], ['transport.reconnected', 'reconnect', 'succeeded']]);
+      assert.ok(ready.every((record) => !Object.hasOwn(record, 'details') && !Object.hasOwn(record, 'context')));
+    }
+  });
+}
