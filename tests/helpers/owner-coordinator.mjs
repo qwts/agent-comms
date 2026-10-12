@@ -68,6 +68,10 @@ export function fixture(t, vector = f.positive[0], journalOptions = {}, coordina
     options.signingCapability = coordinatorOptions.makeSigningCapability(enrollment);
     delete options.makeSigningCapability;
   }
+  if (coordinatorOptions.makeEnrollmentGuard) {
+    options.enrollmentGuard = coordinatorOptions.makeEnrollmentGuard(enrollment);
+    delete options.makeEnrollmentGuard;
+  }
   const core = coordinator(options);
   const prepareRequest = { v: 1, op: 'owner-decision-prepare', auth, requestId: action.requestId,
     account: action.account, soul: action.soul, operation: action.operation, parameters: action.parameters };

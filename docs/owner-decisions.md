@@ -5,9 +5,8 @@
 released API; [#77](https://github.com/qwts/agent-comms/issues/77).
 Agent-comms owns broker authorization/receipts; agent-bot owns mutation and
 presence semantics; the native host owns credential custody and prompting.
-The [wire schemas and state machine](owner-decision-wire.md) define envelopes,
-display and adapter boundaries. Joint review precedes implementation; migration
-and capability advertisement remain disabled.
+[Wire schemas](owner-decision-wire.md) define envelopes and boundaries. Joint review is required.
+[Observation guards](owner-observation-guard.md) remain private; activation is disabled.
 
 ## Prepare and confirm
 
