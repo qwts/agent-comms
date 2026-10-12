@@ -7,8 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-10-12
+
 ### Fixed
-- Broker readers enforce the owner-decision 32 KiB raw-frame and UTF-8 bounds before JSON payload parsing, including escaped and duplicate top-level operation fields. Ordinary comms retains its 128 KiB line limit; production owner authority remains unsupported (#77).
+- Broker readers enforce the owner-decision 32 KiB raw-frame and UTF-8 bounds before JSON payload parsing, including escaped and duplicate top-level operation fields. Ordinary comms retains its 128 KiB line limit; production owner authority remains unsupported (#77, #217).
+
+### Added
+- Immutable daemon-watch identity binding includes the daemon key, epoch and watch ID; reconnects receive a fresh binding and stale socket closure cannot remove its replacement (#210).
+- Owner-decision prerequisites now include observation recovery, typed effect/refusal mapping, a canonical receipt issuer, and a coordinator with durable one-shot release and current-authority checks. Their synthetic conformance coverage does not establish live daemon effects or native custody (#211–#214).
+- Authenticated owner-decision ingress and bounded prepare admission are connected to fixed production readiness checks. Production owner authority remains unsupported while protected enrollment, physical journal support and native acceptance are incomplete (#215).
+- A public enrollment-chain codec validates bounded canonical records, audit/confirmation links, role-separated public pins and terminal revocation capacity. Parsing does not establish custody, durability or enrollment authority (#216).
+
+### Upgrade notes
+- The 0.5.0 checkpoint and rollback guidance still applies when upgrading from 0.4.x. This patch introduces no new checkpoint format and performs no credential migration, key provisioning or installed service activation.
+- Windows numeric capacity remains unqualified. Native host custody, fresh presence, separate-account cutover and actual macOS 13 acceptance remain outstanding.
 
 ## [0.5.1] - 2026-10-12
 
