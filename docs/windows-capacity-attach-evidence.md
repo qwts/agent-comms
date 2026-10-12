@@ -70,3 +70,22 @@ not establish the earlier standard-user deadline's cause. Failed-step log:
 Literal phases now distinguish every existing guard in that interval, without
 printing values or exception text. All exact comparisons and the process-time
 tolerance remain unchanged; manual attach dispatch is still gated on native CI.
+
+The all-guard [native CI 38214498533](https://github.com/qwts/agent-comms/actions/runs/38214498533),
+at `866d493601f4a19eaba6ce0b49a0b7cc2c5776eb`, refused at `verify-job-limit`
+in 627 ms. All fixture existence/parent/executable/command/creation guards
+passed; job creation had not started. Failed-step log SHA256:
+`47177a0bab9f7c11f3fd9dbad85cdb609c152e671ec3396f5fc7e5e83e219b45`.
+
+That guard's first cast used `[ulong]`. Microsoft's
+[numeric type documentation](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_numeric_literals)
+records that alias was added in PowerShell 6.2; classic 5.1 supports the
+underlying `[uint64]` accelerator. The dev-only supervisor replaces every
+`[ulong]` cast, including later accounting paths, with the same `System.UInt64`
+type via `[uint64]`. The numeric comparisons, memory cap, process checks and
+time tolerance remain unchanged. The real classic-shell regression must
+confirm the old alias refuses, the supported cast produces `System.UInt64`,
+and both memory boundaries pass while adjacent values refuse. The actual
+fixture attach regression remains required; native validation is pending.
+This corrects a demonstrated classic-shell incompatibility, not the earlier
+standard-user attach deadline or production connector behavior.

@@ -241,7 +241,7 @@ public static class CapacityJob {
             $fixtureCreation = $main.CreationDate.ToUniversalTime().Ticks.ToString()
             $phase = 'verify-job-limit'
             [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"verify-job-limit"}'); [Console]::Out.Flush()
-            $limit = [ulong]$inputData.commitLimitBytes
+            $limit = [uint64]$inputData.commitLimitBytes
             if ($limit -lt 536870912 -or $limit -gt 2147483648) { throw 'invalid-memory-limit' }
             $phase = 'create-private-job'
             [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"create-private-job"}'); [Console]::Out.Flush()
@@ -262,7 +262,7 @@ public static class CapacityJob {
             if ($rows.Count -gt $maximumRows) { throw 'owned-child-bound-exceeded' }
             $main = $rows | Where-Object ProcessId -eq $fixtureId
             if (-not $main -or $main.ParentProcessId -ne $parentId -or $main.ExecutablePath -ine $nodeExecutable -or $main.CreationDate.ToUniversalTime().Ticks.ToString() -ne $fixtureCreation) { throw 'fixture-lifetime-unconfirmed' }
-            $totals = @{main=@{count=0;workingSetBytes=[ulong]0;cpu100ns=[ulong]0};relay=@{count=0;workingSetBytes=[ulong]0;cpu100ns=[ulong]0};diagnostic=@{count=0;workingSetBytes=[ulong]0;cpu100ns=[ulong]0};compiler=@{count=0;workingSetBytes=[ulong]0;cpu100ns=[ulong]0}}
+            $totals = @{main=@{count=0;workingSetBytes=[uint64]0;cpu100ns=[uint64]0};relay=@{count=0;workingSetBytes=[uint64]0;cpu100ns=[uint64]0};diagnostic=@{count=0;workingSetBytes=[uint64]0;cpu100ns=[uint64]0};compiler=@{count=0;workingSetBytes=[uint64]0;cpu100ns=[uint64]0}}
             foreach ($row in $rows) {
                 $kind = 'main'
                 if ($row.ProcessId -ne $fixtureId) {
@@ -289,12 +289,12 @@ public static class CapacityJob {
                 if ($known.Count -ge 1200 -and -not $known.ContainsKey($key)) { throw 'owned-history-bound' }
                 $known[$key] = $created
                 $totals[$kind].count++
-                $totals[$kind].workingSetBytes += [ulong]$row.WorkingSetSize
-                $totals[$kind].cpu100ns += [ulong]$row.UserModeTime + [ulong]$row.KernelModeTime
+                $totals[$kind].workingSetBytes += [uint64]$row.WorkingSetSize
+                $totals[$kind].cpu100ns += [uint64]$row.UserModeTime + [uint64]$row.KernelModeTime
             }
             if ($totals.relay.count -gt 32 -or $totals.diagnostic.count -gt 1) { throw 'owned-kind-bound' }
             $observer = Get-Process -Id $PID
-            Reply @{id=$requestId;ok=$true;totals=$totals;jobPeakCommitBytes=[CapacityJob]::PeakCommit($job);jobCpu100ns=[CapacityJob]::Cpu100ns($job);observer=@{workingSetBytes=[ulong]$observer.WorkingSet64;cpu100ns=[ulong]$observer.TotalProcessorTime.Ticks}}
+            Reply @{id=$requestId;ok=$true;totals=$totals;jobPeakCommitBytes=[CapacityJob]::PeakCommit($job);jobCpu100ns=[CapacityJob]::Cpu100ns($job);observer=@{workingSetBytes=[uint64]$observer.WorkingSet64;cpu100ns=[uint64]$observer.TotalProcessorTime.Ticks}}
         } elseif ($inputData.op -eq 'members' -and $attached) {
             $phase = 'query-members'
             Reply @{id=$requestId;ok=$true;activeMembers=@([CapacityJob]::Pids($job)).Count}

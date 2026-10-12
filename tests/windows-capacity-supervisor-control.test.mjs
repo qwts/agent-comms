@@ -14,6 +14,7 @@ async function within(promise, ms) {
 
 for (const [kind, command] of [
   ['bare literal', `[Console]::Out.WriteLine('{"id":0,"ok":true,"phase":"ready"}');[Console]::Out.Flush()`],
+  ['unsigned memory bounds', `$ErrorActionPreference='Stop';if ($PSVersionTable.PSVersion.Major -ne 5) {throw 'expected-classic-shell'};$oldAliasRefused=$false;try {$null=[ulong]536870912} catch {$oldAliasRefused=$true};if (-not $oldAliasRefused) {throw 'unexpected-unsigned-alias'};foreach ($entry in @(@{value=536870911;allowed=$false},@{value=536870912;allowed=$true},@{value=2147483648;allowed=$true},@{value=2147483649;allowed=$false})) {$limit=[uint64]$entry.value;if ($limit.GetType() -ne [System.UInt64]) {throw 'incorrect-unsigned-type'};$allowed=-not ($limit -lt 536870912 -or $limit -gt 2147483648);if ($allowed -ne $entry.allowed) {throw 'incorrect-memory-bound'}};[Console]::Out.WriteLine('{"id":0,"ok":true,"phase":"ready"}');[Console]::Out.Flush()`],
   ['JSON-only', utilityProbeCommand()],
   ['explicit built-in Utility', utilityProbeCommand(true)],
 ]) test(`${kind} classic shell emits control and exits naturally with stdin still open`, { skip: process.platform !== 'win32' }, async () => {
