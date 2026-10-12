@@ -36,7 +36,9 @@ test('host transport receives only typed operation payloads and preserves result
     sender: 'other', agentId: 'other', secret: 'do-not-forward' };
   assert.equal(await client.send({ ...hostile, to: 'target', body: 'hello', key: 'once' }), result);
   await client.inbox({ ...hostile, after: 7, limit: 2, channel: 'channel' });
-  await client.launch({ ...hostile, account: 'persona', soul: 'target', harness: 'test', parent: null });
+  const traceparent = '00-1234567890abcdef1234567890abcdef-1234567890abcdef-01';
+  await client.launch({ ...hostile, account: 'persona', soul: 'target', harness: 'test', parent: null, traceparent,
+    baggage: 'do-not-forward', tracestate: 'do-not-forward' });
   await client.postChannel({ ...hostile, channel: 'channel', body: 'hello', key: 'post' });
   await client.offerTask({ ...hostile, to: 'target', acceptanceCriteria: ['done'] });
   assert.deepEqual(calls.map(([payload]) => payload.op), ['send', 'read', 'launch', 'channel-post', 'task-offer']);
@@ -45,6 +47,8 @@ test('host transport receives only typed operation payloads and preserves result
     for (const key of ['auth', 'secret', 'sender', 'agentId']) assert.equal(Object.hasOwn(args[0], key), false);
   }
   assert.equal(calls[2][0].parent, null, 'explicit independent launch parent is preserved');
+  assert.equal(calls[2][0].traceparent, traceparent);
+  assert.equal(Object.hasOwn(calls[2][0], 'baggage'), false); assert.equal(Object.hasOwn(calls[2][0], 'tracestate'), false);
   const failure = Object.assign(new Error('native backend unavailable'), { code: 'broker-untrusted' });
   const failed = createPrincipalClientFromTransport({ principal, request: async () => { throw failure; } });
   await assert.rejects(failed.census(), (error) => error === failure);

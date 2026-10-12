@@ -54,6 +54,89 @@ async function daemon(c, account = c.owner) {
 }
 const options = { brokerOptions: { mode: 'single-account' } };
 const target = (c) => ({ account: c.owner, soul: c.accounts.bob, harness: 'test', name: 'Bob' });
+const TRACEPARENT = '00-1234567890abcdef1234567890abcdef-1234567890abcdef-01';
+
+test('principal traceparent reaches the real account watch unchanged but never durable state or return paths', async () => {
+  const diagnostics = [];
+  await withBroker(async (c) => {
+    const { client } = await setup(c), d = await daemon(c);
+    for (const traceparent of [TRACEPARENT, TRACEPARENT.slice(0, -2) + 'ff']) {
+      const sent = await client.launch({ ...target(c), traceparent, baggage: 'CANARY-private-baggage', tracestate: 'CANARY-private-state' });
+      assert.deepEqual(await d.next(), { event: 'launch', requestId: sent.requestId,
+        principal: client.principal, ...target(c), traceparent });
+      assert.equal(Object.hasOwn(sent, 'traceparent'), false);
+      const progress = await rpc(c.paths, { op: 'launch-progress', auth: d.auth,
+        requestId: sent.requestId, stage: 'checking', traceparent });
+      assert.equal(Object.hasOwn(progress, 'traceparent'), false);
+      const result = await d.report({ requestId: sent.requestId, status: 'launched', agentId: c.accounts.bob, traceparent });
+      assert.equal(Object.hasOwn(result, 'traceparent'), false);
+      const status = await client.launchStatus(sent.requestId);
+      assert.equal(status.status, 'launched'); assert.equal(Object.hasOwn(status, 'traceparent'), false);
+    }
+    const audit = readFileSync(c.broker.log.file, 'utf8');
+    for (const text of [audit, JSON.stringify([...c.broker.state.launches.values()]), JSON.stringify(diagnostics)]) {
+      for (const canary of ['traceparent', TRACEPARENT, 'CANARY-private-baggage', 'CANARY-private-state']) assert.ok(!text.includes(canary));
+    }
+    await c.broker.stop();
+    const restarted = await new Broker({ paths: c.paths, mode: 'single-account' }).start();
+    try {
+      assert.equal(restarted.state.launches.size, 2);
+      for (const launch of restarted.state.launches.values()) {
+        assert.equal(Object.hasOwn(launch, 'traceparent'), false);
+        assert.equal(Object.hasOwn(await client.launchStatus(launch.requestId), 'traceparent'), false);
+      }
+    } finally { await restarted.stop(); }
+  }, { brokerOptions: { mode: 'single-account', diagnostic: (...args) => diagnostics.push(args) } });
+});
+
+test('malformed and wrong-type launch context silently drops with only a local cumulative primitive counter', async () => {
+  const diagnostics = [];
+  await withBroker(async (c) => {
+    const { client, credential } = await setup(c), d = await daemon(c);
+    const invalid = ['', null, 42, true, [], { secret: 'CANARY-private-path/body', traceparent: TRACEPARENT },
+      TRACEPARENT.toUpperCase(), '01' + TRACEPARENT.slice(2),
+      '00-' + '0'.repeat(32) + TRACEPARENT.slice(35), TRACEPARENT.slice(0, 36) + '0'.repeat(16) + '-01',
+      TRACEPARENT + '-extra', ' ' + TRACEPARENT, TRACEPARENT + '\n', TRACEPARENT.slice(1), TRACEPARENT.slice(0, -2) + 'gg'];
+    for (const [index, traceparent] of invalid.entries()) {
+      // Direct wire coverage includes values that the SDK cannot type-check on a native transport.
+      const sent = await callPrincipal(c.paths, credential, { op: 'launch', ...target(c), traceparent });
+      assert.equal(sent.status, 'pending');
+      assert.deepEqual(await d.next(), { event: 'launch', requestId: sent.requestId, principal: client.principal, ...target(c) });
+      assert.deepEqual(diagnostics[index], ['traceparent-dropped', undefined, index + 1]);
+      await d.report({ requestId: sent.requestId, status: 'failed' });
+    }
+    const omitted = await client.launch(target(c));
+    assert.equal(Object.hasOwn(await d.next(), 'traceparent'), false);
+    await d.report({ requestId: omitted.requestId, status: 'failed' });
+    assert.equal(diagnostics.length, invalid.length);
+    const audit = readFileSync(c.broker.log.file, 'utf8');
+    assert.ok(!audit.includes('traceparent') && !audit.includes('CANARY-private-path/body'));
+    assert.ok(!JSON.stringify(diagnostics).includes(TRACEPARENT));
+  }, { brokerOptions: { mode: 'single-account', diagnostic: (...args) => diagnostics.push(args) } });
+});
+
+test('launch context cannot bypass approval, credentials or grants, and throwing drop diagnostics cannot refuse launch', async () => {
+  const diagnostics = [];
+  await withBroker(async (c) => {
+    const { client, credential, pending } = await setup(c, [c.accounts.bob], false);
+    const launch = { ...target(c), traceparent: { secret: 'CANARY-private-context' } };
+    await assert.rejects(client.launch(launch), { code: 'not-approved' });
+    await admin(c.paths, { op: 'principal-approve', code: pending.code, grant: [c.accounts.bob] });
+    const d = await daemon(c);
+    await assert.rejects(callPrincipal(c.paths, { ...credential, secret: 'wrong' }, { op: 'launch', ...launch }), { code: 'unauthenticated' });
+    await assert.rejects(client.launch({ ...launch, soul: c.accounts.alice }), { code: 'unknown-recipient' });
+    assert.deepEqual(diagnostics, []);
+    const sent = await client.launch(launch);
+    assert.equal(sent.status, 'pending');
+    assert.equal(Object.hasOwn(await d.next(), 'traceparent'), false);
+    assert.deepEqual(diagnostics, [['traceparent-dropped', undefined, 1]]);
+    await admin(c.paths, { op: 'principal-revoke', principal: client.principal });
+    await assert.rejects(client.launch(launch), { code: 'unauthenticated' });
+    assert.equal(diagnostics.length, 1);
+  }, { brokerOptions: { mode: 'single-account', diagnostic: (...args) => {
+    diagnostics.push(args); throw new Error('CANARY-diagnostic-failure');
+  } } });
+});
 
 test('principal launches existing and packaged souls through one fake daemon; results and audit survive restart', async () => {
   await withBroker(async (c) => {
