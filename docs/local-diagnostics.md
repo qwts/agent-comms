@@ -111,6 +111,31 @@ socket/client canary and unread-stderr delivery fixtures run on POSIX. This
 slice does not claim packaged host integration or complete numeric acceptance.
 [Local paired evidence](local-diagnostics-performance.md) records independently
 passing reporting/helper comparisons, a retained healthy p99 failure, exact
-provenance and baseline limitations. Total instrumentation overhead against a
-pre-change runtime and native Windows numeric budgets remain outstanding in
-[#164](https://github.com/qwts/agent-comms/issues/164).
+provenance and baseline limitations. [Pinned total-runtime evidence](local-diagnostics-total-overhead.md)
+covers the scoped embedded macOS workload against an actual pre-change runtime;
+it does not establish native Windows numeric budgets, which remain outstanding
+in [#164](https://github.com/qwts/agent-comms/issues/164).
+
+## Private Windows connector stage
+
+The Windows connector locally produces one optional fixed stage on connection
+refusal: `host-clixml`, `host-stderr`, `pipe-refused`, `process-error`,
+`premature-close` or `startup-timeout`. Generic client error wrapping preserves
+only that own primitive data property as nonenumerable internal metadata.
+One shared projector ignores unknown, inherited, accessor or nonprimitive
+values; it never reads exception messages, causes or arbitrary properties.
+Remote broker response fields are not projected into this metadata.
+
+This does not change the public `broker-unreachable` code, error/wire JSON,
+authentication, pin/proof validation, connection/request deadlines or retry
+policy. It does not serialize PowerShell output, paths, commands or secrets,
+and is not a new shared public event schema. A refused helper can now retain
+its existing local stage through the connector, handshake and client wrapper
+for separately reviewed internal evidence consumers. No underlying cause or
+platform acceptance follows merely from a stage label.
+
+The client preserves its first result or error before guarded stream disposal.
+A synchronous disposal throw or later close/error cannot replace that outcome.
+This is best-effort disposal, not confirmation that a stream, helper or descendant
+has exited; owned-process acceptance tools still need their independent terminal,
+stdio and job cleanup receipts.
