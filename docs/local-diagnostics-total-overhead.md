@@ -37,39 +37,59 @@ every internal-error path. Existing storage regressions remain separate.
 
 ## Results and limits
 
-The coordinated quiet interval started 2026-10-12 at 02:34:00 UTC; terminal
-completion and cleanup were observed at 02:38:51 UTC. The environment was
-Darwin 27.0.0 arm64, Node v26.11.1, 18 logical CPUs. Fresh processes ran in
-old/new/new/old order. Both opposite-order pairs independently passed unchanged
-candidate thresholds: delta p95 at most 2ms, delta p99 at most 5ms, throughput
+The healthy coordinated quiet interval started 2026-10-12 at 02:34:00 UTC;
+terminal completion and cleanup were observed at 02:38:51 UTC. A separate
+failed/unread interval started at 03:08:52 UTC and terminal cleanup was observed
+at 03:18:24 UTC. Root and both other agents held local runtime/tests/builds
+during each interval. The environment was Darwin 27.0.0 arm64, Node v26.11.1, 18 logical CPUs. Fresh processes ran in
+old/new/new/old order. All six opposite-order pairs independently passed
+unchanged candidate thresholds: delta p95 at most 2ms, delta p99 at most 5ms, throughput
 at least 98% of baseline, additional main-plus-helper RSS at most 64MiB and
 candidate natural exit within two seconds.
 
-| Pair | Quiet delta p95/p99, ms | Burst delta p95/p99, ms | Minimum throughput ratio | Additional RSS, MiB | Candidate exit, ms |
+| Mode and pair | Quiet delta p95/p99, ms | Burst delta p95/p99, ms | Minimum throughput ratio | Additional RSS, MiB | Candidate exit, ms |
 | --- | --- | --- | --- | --- | --- |
-| Old/new | -0.064 / -0.115 | 0.044 / 0.034 | 1.000002 | 46.359 | 5.510 |
-| New/old | 0.016 / 0.026 | 0.333 / 0.475 | 0.999995 | 46.203 | 5.573 |
+| Healthy old/new | -0.064 / -0.115 | 0.044 / 0.034 | 1.000002 | 46.359 | 5.510 |
+| Healthy new/old | 0.016 / 0.026 | 0.333 / 0.475 | 0.999995 | 46.203 | 5.573 |
+| Failed old/new | 0.014 / 0.015 | -0.049 / -0.045 | 0.999960 | 0.453 | 5.011 |
+| Failed new/old | -0.027 / -0.054 | 0.030 / 0.113 | 0.999959 | 0.000 | 6.125 |
+| Unread old/new | -0.020 / -0.039 | 0.045 / 0.017 | 0.999985 | 45.859 | 6.017 |
+| Unread new/old | -0.021 / -0.025 | 0.200 / 0.261 | 1.000025 | 44.859 | 5.158 |
 
 Every run completed identical timed outcomes: 6909 empty reads, seven sends,
 seven delivered reads, seven acks, 70 unauthenticated refusals and 10000 burst
 failures. A separate startup warmup failure brings the recorded local-failure
-count to 10001. Candidate diagnostic output passed body/secret/path canaries
-and bounded-profile checks. All four processes exited naturally and both
-candidate helpers were confirmed absent. No stale owned fixture remained.
+count to 10001. Consumed healthy/failed candidate diagnostic output passed
+body/secret/path canaries and bounded-profile checks. All twelve processes
+exited naturally and all six candidate helpers were confirmed absent. Each run
+passed two delivery checks and one ordinary recovery check. No stale owned
+fixture remained.
 
 This supports steady-state total new instrumentation overhead **for this
-defined embedded-process workload with a healthy destination**. Runtime import,
-broker startup and warmup are reported separately and are not assessed under
+defined embedded-process workload with healthy, failed and unread destinations**.
+Runtime import, broker startup and warmup are reported separately and are not assessed under
 the steady-state delta thresholds. CPU seconds are recorded as supporting OS
-accounting evidence; this probe has no CPU pass/fail threshold. The two passing
+accounting evidence; this probe has no CPU pass/fail threshold. The passing
 pairs do not disprove earlier reporting-only variability or accept every
 environment and operation.
 
-Failed and unread destinations have not run under this archive comparison.
-The earlier reporting-only measurements and bounded writer regressions remain
-their separate evidence. Unread destination RSS would not prove private queue
-counts or a stalled write without direct observation. Native Windows numeric
-evidence, packaged host evidence, other deployment variants, cross-repository
+The failed mode kills only the candidate's verified helper while its owning
+fixture is live. That helper stays absent throughout the workload; the old
+client had no helper and its helper-failure result remains not applicable.
+One warmup line was consumed before each candidate helper was killed. Peak
+RSS compares the highest simultaneously sampled main-plus-helper sum in each
+run, including the startup sample before failure. A zero peak difference does
+not mean instrumentation allocated no memory or that the helper had no startup
+cost.
+
+Unread stderr remains unread throughout each run. Its reported destination is
+configured unread; the tool does not inspect private queues or establish that
+a write blocked. Final five candidate main-plus-helper RSS samples ranged from
+176448–178080KiB and 176048–177696KiB in the two unread runs. These five
+samples do not establish a long-duration plateau. Numeric RSS evidence does
+not prove queue counts or a stalled write without direct observation. Earlier reporting-only measurements and
+bounded writer regressions retain those separate observations. Native Windows
+numeric evidence, packaged host evidence, other deployment variants, cross-repository
 adoption and the remaining #164 workstreams stay open. A Windows capacity pilot
 must retain the production Identification-level PowerShell/.NET connector and
 account for its relay processes before any 100-request/s budget claim; hosted
@@ -79,8 +99,8 @@ Windows and signed-in desktop evidence remain distinct.
 
 The [evidence index](../tools/acceptance/evidence/2026-10-12-total-instrumentation/README.md)
 retains all bounded preflight attempts, both successful and failed, plus the
-unchanged healthy results and individual runs. The first failure exposed the
-macOS `ps` executable-column truncation; the second exposed `/tmp` resolving to
+unchanged healthy and failed/unread results and individual runs. The first
+failure exposed the macOS `ps` executable-column truncation; the second exposed `/tmp` resolving to
 `/private/tmp` in the helper import. Both rejected mismatched identity checks
 before any timed workload. Their fixtures/helpers were independently verified
 and terminated; terminal exit was confirmed and credential scratch retained.

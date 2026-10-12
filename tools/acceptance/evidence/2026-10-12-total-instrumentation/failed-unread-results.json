@@ -1,0 +1,97 @@
+{
+  "v": 1,
+  "platform": "darwin",
+  "arch": "arm64",
+  "osRelease": "27.0.0",
+  "node": "v26.11.1",
+  "nodeExecutableSha256": "f75a79e4c96954709a130427e452d6720b35c90318ca8293727a4c6376198453",
+  "runnerSha256": "0437dcc8af4ce34a7e5fa7f7e16041bade7bbc63f2a0e0a80c2f8b25c253403a",
+  "logicalCpus": 18,
+  "scope": "steady-state total new instrumentation for this one embedded production Broker/client workload; startup/import separate; no isolated compaction or arbitrary internal-error overhead claim",
+  "archives": {
+    "old": {
+      "pin": "25dfa8362401489503f704c7322ad1314b7e6ddb",
+      "tree": "125c504a11148b2eec922f915683fb32d1366b48",
+      "archiveSha256": "03825d8bc712fdc1e844316635cca495c3d87ee884f255f81c9dfc731e68a67c"
+    },
+    "new": {
+      "pin": "e648d71277da72fc50c70ebcbb94c3c8f53c7cf3",
+      "tree": "a3bdaab0a6fa7068b293ab34dea66bba670b4e43",
+      "archiveSha256": "ca84dcec8c2a219025b936b953c3a48b3d387591fc114c8034af865fe711f25b"
+    }
+  },
+  "pairs": [
+    {
+      "mode": "failed",
+      "order": "old-new",
+      "deltas": [
+        {
+          "p95Ms": 0.013792000000194093,
+          "p99Ms": 0.015457999999625827,
+          "throughputRatio": 0.9999658585926828
+        },
+        {
+          "p95Ms": -0.0491249999977299,
+          "p99Ms": -0.044874999999592546,
+          "throughputRatio": 0.9999599386173144
+        }
+      ],
+      "additionalRssKiB": 464,
+      "passes": true
+    },
+    {
+      "mode": "failed",
+      "order": "new-old",
+      "deltas": [
+        {
+          "p95Ms": -0.02658299999529845,
+          "p99Ms": -0.053999999997131454,
+          "throughputRatio": 1.0000373571204302
+        },
+        {
+          "p95Ms": 0.030000000006111804,
+          "p99Ms": 0.11283299999922747,
+          "throughputRatio": 0.9999592937290765
+        }
+      ],
+      "additionalRssKiB": 0,
+      "passes": true
+    },
+    {
+      "mode": "unread",
+      "order": "old-new",
+      "deltas": [
+        {
+          "p95Ms": -0.020042000003741123,
+          "p99Ms": -0.03945800000656163,
+          "throughputRatio": 0.9999849600624887
+        },
+        {
+          "p95Ms": 0.04483299999992596,
+          "p99Ms": 0.016874999993888196,
+          "throughputRatio": 1.000050384015808
+        }
+      ],
+      "additionalRssKiB": 46960,
+      "passes": true
+    },
+    {
+      "mode": "unread",
+      "order": "new-old",
+      "deltas": [
+        {
+          "p95Ms": -0.020999000000756496,
+          "p99Ms": -0.025209000000359083,
+          "throughputRatio": 1.0000245839459752
+        },
+        {
+          "p95Ms": 0.19966699999349657,
+          "p99Ms": 0.26091700000688434,
+          "throughputRatio": 1.0000417686913092
+        }
+      ],
+      "additionalRssKiB": 45936,
+      "passes": true
+    }
+  ]
+}

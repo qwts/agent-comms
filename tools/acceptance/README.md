@@ -9,7 +9,8 @@ retains archive/tree/source-runner hashes, and loads each archive's default
 Broker and client in **one embedded process**. It does not replace diagnostic
 callbacks, patch runtime source or claim a separate daemon/CLI deployment.
 Both objects must already exist locally; extraction needs Git and `tar`.
-The scoped healthy result and all preflight attempts are retained in the
+The scoped healthy/failed/unread results and all preflight attempts are retained
+in the
 [total instrumentation evidence](evidence/2026-10-12-total-instrumentation/README.md),
 with [interpretation and remaining limits](../../docs/local-diagnostics-total-overhead.md).
 

@@ -38,5 +38,13 @@
   "runner.mjs.txt": {
     "sha256": "0437dcc8af4ce34a7e5fa7f7e16041bade7bbc63f2a0e0a80c2f8b25c253403a",
     "bytes": 25395
+  },
+  "failed-unread-results.json": {
+    "sha256": "b49c8d88c431052252bb49e2ae335722e3e34773db86728689530bdc2d825656",
+    "bytes": 2765
+  },
+  "failed-unread-runs.json": {
+    "sha256": "9ab0f673513e750043f5d3cf41b9d5a422828dc89f0fa2f82ad67fa676a94e0f",
+    "bytes": 125410
   }
 }
