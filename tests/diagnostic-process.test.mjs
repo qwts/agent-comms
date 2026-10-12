@@ -176,7 +176,7 @@ function send(child, command) {
   });
 }
 
-for (const mode of ['unread-stderr', 'stopped-helper']) {
+for (const mode of ['unread-stderr', 'stopped-helper', 'killed-helper']) {
   test(`spawned broker delivers and exits naturally with ${mode} and leaves no helper`, { skip: process.platform === 'win32' }, async (t) => {
     const root = mkdtempSync(path.join(os.tmpdir(), 'ac-diagnostic-broker-'));
     t.after(() => rmSync(root, { recursive: true, force: true }));
@@ -223,6 +223,20 @@ for (const mode of ['unread-stderr', 'stopped-helper']) {
     helper = stats.helper;
     assert.ok(helper && stats.written > 0, 'the actual production helper must have started and written');
     if (mode === 'stopped-helper') process.kill(helper, 'SIGSTOP');
+    if (mode === 'killed-helper') {
+      process.kill(helper, 'SIGKILL');
+      for (let attempt = 0; attempt < 100; attempt += 1) {
+        await delay(10); stats = await send(child, 'stats');
+        if (stats.disabled) break;
+      }
+      assert.equal(stats.disabled, true, 'actual helper exit must disable the sink');
+      let gone = false;
+      for (let attempt = 0; attempt < 100; attempt += 1) {
+        try { process.kill(helper, 0); } catch (error) { if (error.code === 'ESRCH') { gone = true; break; } throw error; }
+        await delay(10);
+      }
+      assert.equal(gone, true, 'killed helper must actually disappear before delivery');
+    }
     let previous = stats.written;
     let stalledChecks = 0;
     // The production rate cap is 100 events/s. Allow a finite ten-second
@@ -241,6 +255,14 @@ for (const mode of ['unread-stderr', 'stopped-helper']) {
     const page = await request({ op: 'read', agentId: bob });
     assert.equal(page.messages[0].id, sent.messageId);
     await request({ op: 'ack', agentId: bob, ids: [sent.messageId] });
+    if (mode === 'killed-helper') {
+      assert.deepEqual((await request({ op: 'read', agentId: bob })).messages, []);
+      const after = await send(child, 'stats');
+      assert.equal(after.disabled, true); assert.equal(after.helper, helper, 'no replacement helper');
+      assert.equal(after.written, stats.written); assert.ok(after.dropped > stats.dropped);
+      assert.equal(after.queued, 0); assert.equal(after.inFlight, 0);
+      assert.throws(() => process.kill(helper, 0), { code: 'ESRCH' });
+    }
     await assert.rejects(request({ op: 'read', agentId: bob }, { ...paired.credential, secret: 'CANARY-secret' }), { code: 'unauthenticated' });
     await send(child, 'stop');
     const result = await Promise.race([exited, delay(3000).then(() => { throw new Error('natural broker exit timed out'); })]);
