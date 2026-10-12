@@ -155,3 +155,6 @@ The separate [production-connector capacity pilot](windows-connector-capacity.md
 adds manual standard-user hosted preflight and finite offered-load stages using
 unmodified production archives. Its implementation does not claim executed
 capacity evidence, numeric diagnostic budgets or signed-in desktop acceptance.
+The [derived compiler-control failure](windows-candidate-compiler-evidence.md)
+retains the first existing-classifier refusal and incomplete cleanup proofs;
+remaining controls skipped without establishing a compiler cause or comparison.

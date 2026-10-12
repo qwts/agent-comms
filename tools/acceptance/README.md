@@ -83,6 +83,10 @@ The existing supervisor samples every 250ms with one request in flight and a
 required. Sampling failures stop the control, and the sampler drains before
 fixture/job cleanup. Samples cannot prove the command of every short-lived
 descendant; the private job contains all descendants regardless.
+The [first retained compiler-control failure](../../docs/windows-candidate-compiler-evidence.md)
+stopped at the existing descendant classifier before any compiler observation
+was retained; cleanup uncertainty skipped all remaining controls. It does not
+establish an implicit/explicit comparison or compiler cause.
 
 ## Incremental lifecycle instrumentation comparison
 

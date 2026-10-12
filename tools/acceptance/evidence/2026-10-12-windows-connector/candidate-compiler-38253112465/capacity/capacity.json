@@ -1,0 +1,78 @@
+{
+  "v": 1,
+  "compilerOnly": true,
+  "scope": "derived exact fixed worker compiler controls; implicit-explicit-explicit-implicit; no broker, pipe connection or workload",
+  "node": "v24.21.0",
+  "nodeArchiveSha256": "158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541",
+  "nodeExecutableSha256": "ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32",
+  "runnerSha256": "5e087e9fd404bdf59cd4e018012983ad3a26cd9f2daacb3f942fb9110374419b",
+  "compilerSha256": "b4ab89657e394c3a4f9965b4f4de449489e520722c815495487da8c6bcafb2a6",
+  "supervisorSha256": "adff4d760d97c212e0b39b52ddf655ceaebe023b79d5e40428803a24db9cc7f8",
+  "controlSha256": "7a3c86c07ea2b7dac9108dad7a460631dd3b312167a6d3556841c15cb7254b5f",
+  "lifecycleSha256": "0fdaedefcd6aebb5a3839bad18cf24e483f25c2f54bfe8b905725265270f6323",
+  "workerSource": {
+    "workerSha256": "fffc8e3fbe3ea2b47e0aa7c63ff1c4a5bec3104749f65c3d5c223098bc98a100",
+    "prefixSha256": "87008069206b02e19ac0c74a8aa672d05c51592c074ba3bc0b94b679ddf90f4d"
+  },
+  "requestDeadlineMs": 15000,
+  "archives": {
+    "candidate": {
+      "pin": "cb50469ca0b6757c4ab860de582b9b140fc525a0",
+      "tree": "34011276c3e651e6fd5bf7ba1e7c7f373053249e",
+      "archiveSha256": "85991a457b19c0f7367ca7a1d7fabbeadd7acb3bf15828f37594a5669c185ef6"
+    }
+  },
+  "runs": [
+    {
+      "status": "failed",
+      "failure": {
+        "stage": "derived-compiler-control",
+        "check": "job-supervisor-failed",
+        "supervisorPhase": "sample-classify"
+      },
+      "ownedTerminalConfirmed": false,
+      "stdioClosedConfirmed": false,
+      "descendantsEmptyConfirmed": false,
+      "cleanupConfirmed": false,
+      "relayCommandConfirmed": false,
+      "cleanup": {
+        "fixtureOwnedTerminalConfirmed": true,
+        "fixtureStdioClosedConfirmed": true,
+        "supervisorOwnedTerminalConfirmed": true,
+        "supervisorStdioClosedConfirmed": true,
+        "forcedSupervisorTerminationRequested": false,
+        "forcedFixtureTerminationRequested": false,
+        "jobEmptyConfirmed": false,
+        "scratchRemoved": false,
+        "errors": [
+          {
+            "stage": "cleanup",
+            "check": "job-exit-unconfirmed"
+          }
+        ],
+        "naturalJobEmptyConfirmed": false
+      },
+      "index": 0,
+      "variant": "implicit"
+    },
+    {
+      "index": 1,
+      "variant": "explicit",
+      "status": "not-run",
+      "reason": "prior-cleanup-unconfirmed"
+    },
+    {
+      "index": 2,
+      "variant": "explicit",
+      "status": "not-run",
+      "reason": "prior-cleanup-unconfirmed"
+    },
+    {
+      "index": 3,
+      "variant": "implicit",
+      "status": "not-run",
+      "reason": "prior-cleanup-unconfirmed"
+    }
+  ],
+  "status": "failed"
+}
