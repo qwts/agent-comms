@@ -112,3 +112,43 @@ test('Windows pipe startup diagnostics classify unexpected output without exposi
     assert.doesNotMatch(JSON.stringify(error), /private|secret|path/i);
   }
 });
+
+
+test('Windows pipe startup refuses silent relay EOF and exit before readiness', async () => {
+  const child = fakeChild();
+  const raw = connectWindowsPipe(PIPE, { spawnProcess: () => child });
+  let connected = false;
+  let failure;
+  raw.on('connect', () => { connected = true; });
+  raw.on('error', error => { failure = error; });
+  raw.resume();
+  const closed = new Promise(resolve => raw.once('close', resolve));
+  child.stdout.end();
+  await new Promise(resolve => setImmediate(resolve));
+  child.exitCode = 0;
+  child.stderr.end();
+  child.emit('close', 0, null);
+  await closed;
+  assert.equal(connected, false);
+  assert.equal(failure?.code, 'ECONNREFUSED');
+  assert.equal(failure?.windowsPipeStage, 'premature-close');
+  assert.equal(failure.message, 'named pipe connection failed');
+  assert.ok(child.stdin.destroyed && child.stdout.destroyed && child.stderr.destroyed);
+});
+
+test('Windows pipe startup preserves readiness arriving after stdout EOF', async () => {
+  const child = fakeChild();
+  const raw = connectWindowsPipe(PIPE, { spawnProcess: () => child });
+  const chunks = [];
+  raw.on('data', chunk => chunks.push(chunk));
+  const connected = once(raw, 'connect');
+  const ended = once(raw, 'end');
+  child.stdout.end(Buffer.from('final reply bytes'));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(raw.destroyed, false);
+  child.stderr.end('CONNECTED\n');
+  await connected;
+  await ended;
+  assert.equal(Buffer.concat(chunks).toString(), 'final reply bytes');
+  raw.destroy();
+});
