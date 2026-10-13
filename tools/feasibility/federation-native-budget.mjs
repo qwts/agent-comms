@@ -30,8 +30,8 @@ for(const [name,body,ref,correlation] of [
  witnesses.push({name,bodyBytes:Buffer.byteLength(body),wellFormed:body.isWellFormed(),escapedBytes,payloadAndMessageValidatorsPassed:true});
 }
 const b32=Buffer.alloc(32),b16=Buffer.alloc(16),max=Number.MAX_SAFE_INTEGER;
-const header=[1,[32,1,1],b32,b32,'a'.repeat(128),'a'.repeat(128),b32,b32,b16,b16,b16,b32,b16,b16,max-1,max,32768];
-assert.equal(cborSize(header),543);
+const header=[1,[32,1,1],'hub_ffffffff-ffff-ffff-ffff-ffffffffffff','hub_eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee','a'.repeat(128),'a'.repeat(128),b32,b32,b16,b16,b16,b32,b16,b16,max-1,max,32768];
+assert.equal(cborSize(header),559);
 const payload=['a'.repeat(32),'a'.repeat(32768),Array(16).fill('\u0800'.repeat(256)),'\u0800'.repeat(128),'\u0800'.repeat(128),8];
 assert.equal(cborSize(payload),45918);
 const bounds=[];
@@ -46,7 +46,7 @@ for(const lossless of [false,true])for(const actualReply of [false,true]){
  bounds.push({losslessRunArrayCandidate:lossless,globalMaximumProven:false,actualReplyIdShape:actualReply,plain,wire,
   relayBodySlots:Math.floor(256*1024*1024/wire),routeSlots:Math.floor(32*1024*1024/wire),localRelaySlots:Math.floor(64*1024*1024/wire)});
 }
-assert.deepEqual(bounds.map(({plain,wire})=>[plain,wire]),[[45918,46581],[45573,46236],[54110,54773],[53765,54428]]);
+assert.deepEqual(bounds.map(({plain,wire})=>[plain,wire]),[[45918,46597],[45573,46252],[54110,54789],[53765,54444]]);
 // Corrected maximum witnesses; Python companion independently checks bounds.
 const maximal=['a'.repeat(32),Array.from({length:16384},(_,i)=>i%2===0?'a':0xd800),
  Array.from({length:16},()=>Array.from({length:256},(_,i)=>i%2===0?'\u0800':0xd800)),
@@ -59,6 +59,6 @@ for(const actualReply of [false,true]){
  const wire=cborSize([h,b32,Buffer.alloc(plain+16),Buffer.alloc(64)]);
  corrected.push({actualReplyIdShape:actualReply,plain,wire});
 }
-assert.deepEqual(corrected.map(({plain,wire})=>[plain,wire]),[[56284,56947],[55876,56539]]);
+assert.deepEqual(corrected.map(({plain,wire})=>[plain,wire]),[[56284,56963],[55876,56555]]);
 const sourceHashes={};for(const name of ['../../lib/broker/message-admission.mjs','../../lib/broker/shared.mjs','../../lib/wire.mjs','../../lib/retention.mjs','federation-native-budget.mjs'])sourceHashes[name]=createHash('sha256').update(await readFile(new URL(name,import.meta.url))).digest('hex');
 console.log(JSON.stringify({scope:'synthetic-validator-and-structural-size-only',fullAuthenticatedSendOrPersistenceTested:false,cryptoOrSerializerImplemented:false,pageBudget:PAGE_BUDGET,witnesses,nonmaximalWitnesses:bounds,correctedMaximumWitnesses:corrected,sourceHashes}));

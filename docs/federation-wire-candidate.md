@@ -42,15 +42,14 @@ D_receipt = ASCII("agent-comms/federation/receipt/v1") || 0x00
 
 ## Immutable public header
 
-`H` is an array of seventeen elements, in the following order. Identifiers are opaque authenticated-enrollment bytes. Existing identity mapping
-and enrollment format remain review gates.
+`H` is an array of seventeen elements, in the following order. Broker IDs preserve the persisted `hub_UUID` identity (40 ASCII bytes, lowercase UUID); relay/key/enrollment IDs remain distinct authenticated-enrollment bytes. Enrollment and endpoint mapping remain review gates.
 
 | Index | Meaning | Exact candidate type and bounds |
 | --- | --- | --- |
 | 0 | Version | unsigned integer `1` |
 | 1 | HPKE suite | exact array `[32, 1, 1]` |
-| 2 | Origin hub ID | byte string, 32 bytes |
-| 3 | Destination hub ID | byte string, 32 bytes |
+| 2 | Origin hub ID | ASCII text, exactly 40 bytes, existing `hub_UUID` grammar |
+| 3 | Destination hub ID | same as index 2 |
 | 4 | Origin soul ID | ASCII text, 1–128 bytes, pattern `[A-Za-z0-9._:-]+` |
 | 5 | Destination soul ID | same as index 4 |
 | 6 | Origin signing-key ID | byte string, 32 bytes |
@@ -63,19 +62,18 @@ and enrollment format remain review gates.
 | 13 | Random logical envelope ID | byte string, 16 CSPRNG bytes |
 | 14 | Creation time | integer milliseconds since Unix epoch, `0..2^53-1` |
 | 15 | Expiry time | same range; greater than creation; lifetime at most 2,592,000,000 ms |
-| 16 | Encoded plaintext length | unsigned integer, `0..32768`, equal to actual decrypted byte length |
+| 16 | Encoded plaintext length | unsigned integer, `0..56284`, equal to actual decrypted byte length |
 
-Both peers explicitly authorize the origin/destination hub and soul pair,
-route, relay and key IDs. Hub A's key is not authority for hub B. Relays check origin signatures and their
-own scope; destinations check complete peer/recipient-key scope before admission.
-Moving an envelope to another relay or route changes signed context and is
-not a retry. No automatic fallback or rewrapping is inferred.
+Peers authorize the complete origin/destination soul, relay, route and key
+context. Relays check origin signatures and their scope; destinations check
+recipient-key and peer scope. Hub A's key grants no authority for hub B.
+Changed relay/route context is not a retry; no automatic fallback or rewrapping.
 
 ## Temporal admission candidate
 
 For **new** admission at trusted local time `now`, require `now < expiresMs`
 (expiry equality rejects) and `createdMs <= now + 120000`. The two-minute
-future-creation tolerance is proposed, not accepted policy; it permits only
+future-creation tolerance follows the accepted contract; it permits only
 bounded clock error, never extends expiry or the thirty-day lifetime. Reject
 outside this interval rather than refreshing signed times. Receipt commitment
 requires `createdMs - 120000 <= committedAtMs < expiresMs` and a commitment
@@ -96,19 +94,35 @@ The candidate plaintext `P` is `C([kind, body, refs, correlation, replyTo, depth
 | Element | Candidate requirement |
 | --- | --- |
 | `kind` | text matching `[a-z][a-z0-9-]{0,31}` |
-| `body` | well-formed UTF-8 text; at most 32,768 bytes |
-| `refs` | array of at most sixteen well-formed text strings; each at most 256 UTF-16 code units and 1,024 UTF-8 bytes |
-| `correlation` | null or text of at most 128 UTF-16 code units and 512 UTF-8 bytes |
+| `body` | lossless string below; at most 32,768 native UTF-8 replacement bytes |
+| `refs` | array of at most sixteen lossless strings; each at most 256 UTF-16 code units |
+| `correlation` | null or lossless string of at most 128 UTF-16 code units |
 | `replyTo` | same representation as correlation; destination resolves authorization separately |
 | `depth` | unsigned integer `0..8`; destination validates chain semantics |
 
-The entire encoded `P`, not only body text, must fit 32,768 bytes. This maps
-current message fields but is not evidence of native API compatibility: the
-current broker separately caps body bytes and escaped mailbox admission.
-For example a 32,768-byte body plus metadata does not fit this profile. Review
-must resolve this boundary explicitly before adopting the profile; do not
-silently narrow accepted forwarding semantics. Principal/channel addressing, reply provenance and soul-ID compatibility also
-require adapter review.
+A well-formed string is CBOR text, including empty text. An ill-formed string
+is a nonempty array of maximal nonempty well-formed text runs and unsigned
+integers representing unpaired surrogate code units `0xD800..0xDFFF` only.
+Reject empty/adjacent text runs, arrays without surrogate integers, nonmaximal
+runs and adjacent high/low surrogate integers: a valid pair belongs in text.
+Low/high and high/high unpaired sequences remain legal. Text uses strict UTF-8;
+reject malformed encodings, normalization and code-unit replacement.
+
+The entire encoded `P` fits **56,284 bytes**, independently of the unchanged
+32,768-byte native body cap and escaped mailbox admission. Check the input cap
+before copying/view construction. Parse the exact six-field grammar with at
+most **20,759 decoded nodes**, including root/arrays/nulls; body run arrays
+have at most 16,384 elements, ref run arrays 256, optional metadata run arrays
+128. There are at most three nested array containers; a scalar inside a ref
+run array has value depth four. Check declared lengths, cumulative native body
+bytes and UTF-16 units before allocation. The
+[lossless proof](federation-lossless-bound.md) and
+[development lab contract](../tools/feasibility/lossless-plaintext/CONTRACT.md)
+define the candidate grammar and bounds; neither is production adoption.
+
+Direct soul-only scope excludes principal/channel federation. Account mapping,
+reply provenance and depth require native adapter review; local behavior stays
+unchanged.
 
 ```text
 (enc, ct) = HPKE.SealBase(pkRecipient,
@@ -126,11 +140,8 @@ bytes. Verification uses the enrollment-selected public key, never an
 attacker-provided key. Relays cannot verify plaintext claims; destinations
 check plaintext length, strict decoding, native admission and declared context.
 An authenticated signature still does not authorize a revoked or foreign scope.
-
-The signature covers every header field, encapsulation and ciphertext; HPKE
-context/AAD also bind the header. No public plaintext commitment appears. Local
-retry evidence can retain a private fingerprint; recipients verify AEAD and
-signed ciphertext. Any additional commitment needs leakage/purpose review.
+No public plaintext commitment appears. Any additional commitment requires
+leakage/purpose review.
 
 Durably store `E` before handoff. Retries send identical bytes without
 reencryption, refreshed expiry, changed route/key or new signature, including
@@ -144,11 +155,16 @@ and enrollment mapping, outcome meaning and protected evidence accounting.
 
 ## Structural size vectors and review gates
 
-Structural budgets include CBOR headers, not crypto vectors or base64/JSON.
-At maximum header bounds, `C(H)` is 543 bytes. The four-element envelope is:
+CBOR-only structural bounds, excluding transport wrappers: `C(H)` is 559 bytes:
 
 ```text
-1 + 543 + (2 + 32) + (3 + 32784) + (2 + 64) = 33431 bytes
+1 + 1 + 5 + 2*42 + 2*130 + 2*34 + 3*17 + 34 + 17 + 17 + 2*9 + 3 = 559
+```
+
+Terms follow header order. The four-element envelope is:
+
+```text
+1 + 559 + (2 + 32) + (3 + 56300) + (2 + 64) = 56963 bytes
 ```
 
 Reject wire input above 65,536 bytes before decoding. Transport framing or
@@ -156,15 +172,14 @@ wrappers require separate accounting; this calculation includes neither.
 
 | Structural vector | Required result |
 | --- | --- |
-| `P=C(["message", "a" repeated 32752, [], null, null, 0])` | exactly 32,768 bytes; fits plaintext cap |
-| Same vector with body length 32,753 | 32,769 bytes; refused before encryption |
-| Body length 32,768 with otherwise minimal metadata | 32,784 bytes; refused; native compatibility question exposed |
-| Maximum header, `ct` length 32,784, `enc` 32, signature 64 | exactly 33,431 bytes |
+| `P=C(["message", "a" repeated 32752, [], null, null, 0])` | 32,768 bytes; accepted |
+| Same vector with body length 32,753 | 32,769 bytes; accepted |
+| Body length 32,768 with otherwise minimal metadata | 32,784 bytes; accepted; body plus one byte is refused |
+| Maximum header, `ct` length 56,300, `enc` 32, signature 64 | exactly 56,963 bytes |
 | Same header with nonminimal integer encoding or altered array length | refused, even if cryptographic verification could otherwise succeed |
-| Receipt at maximum types/times | `C(R)` 277 bytes; signed receipt 344 bytes |
+| Receipt at maximum types/times | relay `C(R)` 293 / signed 360; destination `C(R)` 301 / signed 368 bytes |
 
-The signed receipt is 344 bytes; its separate profile explains why real outcome
-byte capacity can bind before the 100,000-entry count cap.
+Receipt byte capacity can bind before the outcome count cap.
 
 Required negative vectors cover each header/receipt field changed alone,
 wrong hub/recipient key/enrollment/relay, cross-domain signature reuse,
@@ -172,5 +187,5 @@ unknown suite/version, low-order/invalid KEM inputs as required by RFC 9180,
 invalid Ed25519 signatures, malformed UTF-8, trailing bytes, type confusion,
 all integer/length boundaries, exact expiry/protection boundaries and
 byte-identical lost-response retries. Pin versions and require two implementations to agree on RFC and application
-crypto vectors. None of the application crypto vectors, codec or deployment has
-been executed here.
+crypto vectors. The lab tests plaintext/structure only; crypto, enrollment and runtime remain
+unproven.

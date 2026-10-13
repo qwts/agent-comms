@@ -20,8 +20,10 @@ on `D_receipt || C(R)`. `R` is exactly fourteen elements:
 
 `kind=1,outcome=1` means relay custody admitted; `kind=2,outcome=2` means
 destination mailbox admitted. Other pairs are refused in this candidate.
-`signerId`, `signerKeyId`, both hub IDs, `relayId` and `envDigest` are 32-byte
-strings. Enrollment, route and envelope IDs are 16-byte strings. Times have the
+Both broker hub IDs are exact 40-byte `hub_UUID` ASCII text. For kind 1,
+`signerId` is the 32-byte relay ID; for kind 2 it is the destination hub text.
+`signerKeyId`, `relayId` and `envDigest` are 32-byte strings. Enrollment, route
+and envelope IDs are 16-byte strings. Times have the
 header's integer bounds; expiry matches `H[15]`. Match every scope/envelope field to the header and authenticated enrollment,
 including receipt purpose; foreign receipts are refused.
 
@@ -36,9 +38,10 @@ after atomic body/outcome reservation. Mailbox admission does not prove reading
 or acknowledgement. Forwarded native outcomes, signed refusal, expiry/loss proof
 and uncertainty queries remain completeness gates, not invented successes.
 
-Outcome lookup is scoped by origin hub, origin soul and envelope ID, with the
+Outcome lookup is scoped by relay ID, origin hub and logical envelope ID, with the
 immutable digest stored to detect changes to any destination/route/relay field.
-Changing those fields must not evade conflict detection. Both origin and
+The complete digest binds origin soul as well as destination/route/relay.
+Changing any of these fields must not evade conflict detection. Both origin and
 custody holders retain the relevant replay evidence through expiry plus 120
 seconds. Revocation prevents new authorization but must not silently erase
 historical outcome evidence. Snapshot/PITR rollback cannot be detected by a
@@ -47,11 +50,19 @@ to independently maintained monotonic authorization state, pending review.
 
 ## Evidence byte accounting
 
-The 344-byte receipt alone already exceeds the synthetic full-cap probe's
-335/336-byte outcome labels. At most 97,541 such receipts fit 32 MiB before
-any extra outcome data; actual storage charges must include all retained
-serialized proof/key metadata. The count and byte limits apply together, so a
-real admission may reach byte capacity before 100,000 outcomes. No eviction or
-larger cap follows from this calculation. A smaller stored digest is not a
-substitute for a promised recoverable proof without an explicit design decision.
+The maximum relay receipt has `C(R)=293` bytes and signed size 360 bytes.
+The destination receipt has `C(R)=301` and signed size **368 bytes**. This
+includes exact 40-byte broker identities and purpose-dependent signer identity:
 
+```text
+relay R: 1+1+1+34+34+17+42+42+34+17+17+34+9+9+1 = 293
+destination R: 293 - 34 + 42 = 301
+signed receipt: 1 + C(R) + (2+64) = 360 or 368
+```
+
+At most **91,180** maximum-size receipts fit 32 MiB before additional retained
+outcome/proof/key metadata. This is byte arithmetic, not a guaranteed outcome
+capacity or permission to evict protected evidence. Count and byte limits apply
+together. A smaller digest cannot replace a promised recoverable proof without
+an explicit design decision. Mechanical structural tests cover both purposes;
+crypto signatures and physical durability remain unproven.

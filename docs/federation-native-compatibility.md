@@ -4,7 +4,8 @@
 
 Related to #28, #118 and #119; issues remain open. This audits current native
 semantics against the [candidate wire profile](federation-wire-candidate.md).
-It does not change that profile, accepted caps or production behavior. Proposed
+The wire candidate now incorporates the lossless option and existing origin IDs;
+accepted caps and production behavior are unchanged. Proposed
 alternatives below require independent encoding/crypto and native adapter review.
 
 ## Current admitted semantics
@@ -90,26 +91,26 @@ Both well-formed and lone-surrogate bodies reach exactly 32,768 native body
 bytes and pass payload/message-construction checks. The lone-surrogate witness
 uses `("a" + lone high surrogate)` repeated 8,192 times, sixteen 256-surrogate
 refs and a 128-surrogate correlation. Its escaped message is 83,168 bytes,
-below 126,976. It is an actual validator counterexample to the candidate's
+below 126,976. It is an actual validator counterexample to the earlier candidate's
 well-formed-only text rule, not a claim of authenticated/persisted acceptance.
 
 The calculator computes structural CBOR sizes without implementing a serializer,
 crypto, network or storage. Maximum metadata uses three-byte BMP characters:
 256 UTF-16 units encode to 768 UTF-8 bytes per ref, and 128 units to 384 bytes
-for correlation/reply. Candidate bounds of 1,024/512 bytes are conservative;
-they are not reachable maxima under those UTF-16 limits.
+for correlation/reply. The earlier candidate bounds of 1,024/512 bytes were conservative UTF-8
+allowances, not reachable maxima; the revised candidate uses lossless strings.
 
 | Proposed representation | Encoded plaintext | Candidate wire with maximum header |
 | --- | ---: | ---: |
-| Well-formed text, payload-validation reply bound | 45,918 | 46,581 |
-| Well-formed text, actual forty-byte reply ID | 45,573 | 46,236 |
-| Constructed lossless run-array witness, validation reply shape | 54,110 | 54,773 |
-| Constructed lossless run-array witness, actual reply ID | 53,765 | 54,428 |
+| Well-formed text, payload-validation reply bound | 45,918 | 46,597 |
+| Well-formed text, actual forty-byte reply ID | 45,573 | 46,252 |
+| Constructed lossless run-array witness, validation reply shape | 54,110 | 54,789 |
+| Constructed lossless run-array witness, actual reply ID | 53,765 | 54,444 |
 
 The subsequent [lossless size-bound proof](federation-lossless-bound.md) corrects
 these nonmaximal witnesses: alternating three-byte BMP characters and lone
 surrogates increases metadata size. Its assumptions yield 56,284 plaintext /
-56,947 wire bytes, or 55,876 / 56,539 with actual generated reply IDs. The earlier
+56,963 wire bytes, or 55,876 / 56,555 with actual generated reply IDs. The earlier
 54,110 example was never a proven upper bound.
 
 ## Recommendations requiring review
@@ -131,27 +132,26 @@ supplementary characters. Reassembly must preserve code units without silently
 normalizing valid pairs. Bound nesting and every array's element count before
 allocation: a body can contain 16,384 alternating text/surrogate elements in the
 worst-size witness; a conservative parser element ceiling still needs review
-for all legal run patterns. The profile's current text-only limits cannot simply
-be reused for this union.
+for all legal run patterns. The revised profile explicitly specifies these proposed parser bounds.
 
 The constructed 54,110-byte witness includes a 40,963-byte run-array body and
 maximum native metadata. It does not prove a global maximum over every legal
 run pattern; the linked proof supplies a larger maximum and parser bounds under its stated
-canonical-run assumptions; 54,110 must not become a production cap. The existing maximum header adds 663 bytes including
-encapsulation, tag, signature and CBOR framing, yielding 54,773 wire bytes.
+canonical-run assumptions; 54,110 must not become a production cap. The existing maximum header adds 679 bytes including
+encapsulation, tag, signature and CBOR framing, yielding 54,789 wire bytes.
 Endpoint unions, channel context or additional proofs require recalculation.
 A narrowly scoped direct soul adapter can avoid implying principal/channel
 federation support, but must explicitly declare that limitation and preserve
 existing local behavior.
 
-For the earlier nonmaximal 54,773-byte envelope scenario, a 256 MiB relay body budget holds at most
-4,900 envelopes, a 32 MiB route budget 612, and a 64 MiB local-per-relay budget
-1,225, before any other charged serialized custody metadata. Those byte limits
+For the earlier nonmaximal 54,789-byte envelope scenario, a 256 MiB relay body budget holds at most
+4,899 envelopes, a 32 MiB route budget 612, and a 64 MiB local-per-relay budget
+1,224, before any other charged serialized custody metadata. Those byte limits
 can bind before their count limits. Charge actual retained bytes, reserve
 outcomes atomically, reject growth without eviction, and do not use this
 arithmetic as permission to raise caps. Receipt/outcome proof budgets remain
 separate as described in the [receipt candidate](federation-receipt-candidate.md).
 
-The proved 56,947-byte scenario instead fits 4,713 relay bodies, 589 per-route
+The proved 56,963-byte scenario instead fits 4,712 relay bodies, 589 per-route
 envelopes and 1,178 local-per-relay envelopes before additional metadata. The
 proof does not approve the encoding, parser or federation implementation.

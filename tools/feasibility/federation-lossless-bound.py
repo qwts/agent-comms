@@ -59,9 +59,19 @@ assert (body,ref,corr)==(40963,899,450)
 P=1+34+body+(1+16*ref)+corr+corr+1
 actual=P-corr+42
 assert (P,actual)==(56284,55876)
+# Header terms follow the seventeen-field schema; broker IDs are40 ASCII bytes.
+header=h(17)+h(1)+(h(3)+h(32)+h(1)+h(1))+2*(h(40)+40)+2*(h(128)+128)+2*(h(32)+32)+3*(h(16)+16)+(h(32)+32)+2*(h(16)+16)+2*h(2**53-1)+h(P)
+assert header==559
 for name,p in [('validated-shape',P),('actual-reply',actual)]:
- wire=p+663
+ wire=h(4)+header+(h(32)+32)+(h(p+16)+p+16)+(h(64)+64)
  print(name,{'plaintext':p,'wire':wire,'relaySlots':268435456//wire,'routeSlots':33554432//wire,'localRelaySlots':67108864//wire})
+# Receipt fields: purpose-dependent signer, key/enrollment, both broker IDs,
+# relay/route/logicalID/digest, two times and outcome; no signature operations.
+for kind,signer_bytes,expected in [(1,32,360),(2,40,368)]:
+ r=h(14)+h(1)+h(kind)+(h(signer_bytes)+signer_bytes)+(h(32)+32)+(h(16)+16)+2*(h(40)+40)+(h(32)+32)+2*(h(16)+16)+(h(32)+32)+2*h(2**53-1)+h(kind)
+ signed=h(2)+r+(h(64)+64)
+ assert signed==expected
+ print('receipt',{'kind':kind,'statementBytes':r,'signedBytes':signed,'maximumCountBeforeOtherMetadata':33554432//signed})
 assert 6+16384+16+16*256+128+128==20758
 print({'bodyElements':16384,'referenceElementsEach':256,'correlationElements':128,'allPlaintextArrayElements':20758,'decodedNodesIncludingRoot':20759,'maxPlaintextDepth':3})
 # Exact header transitions used by both mathematical bounds.

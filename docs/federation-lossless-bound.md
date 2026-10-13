@@ -4,8 +4,8 @@
 
 Related to #28, #118 and #119; issues remain open. This corrects the nonmaximal
 witnesses in the [native compatibility audit](federation-native-compatibility.md).
-It neither changes the [wire candidate](federation-wire-candidate.md) nor approves
-a serializer, crypto construction or federation runtime.
+The [wire candidate](federation-wire-candidate.md) now incorporates this proposed
+grammar; neither document approves a serializer, crypto or federation runtime.
 
 ## Exact assumptions
 
@@ -15,7 +15,8 @@ array of maximal nonempty well-formed text runs and unsigned integers for
 **unpaired** surrogate code units. There are no empty or adjacent text runs;
 a high/low pair must appear in a well-formed text run, not as two integers.
 Integers representing other scalars are refused. All integers/lengths use
-shortest CBOR encodings. This is a candidate encoding, not an implemented codec.
+shortest CBOR encodings. This is a candidate encoding with development-only references, not a
+production codec.
 
 Native body budget is `Buffer.byteLength(s) <= 32768`. A BMP scalar costs one,
 two or three UTF-8 bytes; a valid surrogate pair costs four; an unpaired
@@ -90,8 +91,8 @@ bytes, reducing plaintext to **55,876**. The 56,284 bound conservatively retains
 the payload validator's 128-unit reply allowance, including possible legacy
 state; it is not a claim that a new arbitrary reply ID passes parent lookup.
 
-Keeping the candidate's maximum 543-byte header gives total wire overhead of
-663 bytes, hence **56,947** and **56,539** bytes respectively, below 65,536.
+Keeping the candidate's maximum 559-byte header gives total wire overhead of
+679 bytes, hence **56,963** and **56,555** bytes respectively, below 65,536.
 Actual 42-byte native soul IDs would shrink the header, but this calculation
 retains the candidate's conservative allowance. Native escaped-page admission,
 address authorization and reply provenance remain separate gates.
@@ -109,8 +110,8 @@ array at most 256, correlation/reply at most 128. Bounds must be checked before
 allocation; this analysis is not evidence that an existing decoder enforces them.
 Outer envelope/header/suite parsing is a separate tree, also at depth three.
 
-At 56,947 bytes per retained envelope, the 256 MiB relay body cap permits at
-most 4,713 such envelopes, the 32 MiB route cap 589, and the 64 MiB
+At 56,963 bytes per retained envelope, the 256 MiB relay body cap permits at
+most 4,712 such envelopes, the 32 MiB route cap 589, and the 64 MiB
 local-per-relay cap 1,178, before additional charged custody metadata. Count and
 byte caps both apply; nothing here authorizes eviction or higher caps. The
 receipt/outcome evidence budget remains independent.
@@ -138,3 +139,19 @@ string pattern produce 76,832 escaped bytes, below 126,976. These checks do not
 exercise authenticated send, parent existence, commit, parser interoperability
 or crypto. Independent implementations and canonical rejection vectors remain
 required before any production adoption.
+
+## Fresh consistency checks versus retained evidence
+
+The historical 4,069-state and 4,700-message results above describe the earlier
+candidate. The consistency revision freshly passed six Node laboratory tests,
+five Python tests, 4,700-message bidirectional agreement with 29 malformed
+inputs/four invalid values, the finite bound checker and synthetic current
+native validator witnesses. No authenticated send, parent lookup, provider
+persistence or application crypto was tested.
+
+`node --test tools/feasibility/lossless-plaintext/envelope-budget.test.mjs`
+mechanically serializes the entire candidate header, envelope and both receipt
+purposes. It checks 559-byte header, 56,963-byte maximum envelope, 56,555-byte
+actual-reply scenario and 360/368-byte receipts. The accompanying arithmetic
+checks 4,712/589/1,178 body slots and at most 91,180 largest receipts before
+other metadata. These are structural bounds, not promised service capacity.

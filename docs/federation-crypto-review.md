@@ -116,9 +116,9 @@ credential reuse or cross-hub bridging follows from recovery support.
 
 Calculate bytes from the selected encoded representation, not character counts:
 plaintext including its metadata/commitment, encapsulation, AEAD tag, public
-header, key identifiers, signature, framing and any base64 expansion. Demonstrate
-that the accepted 32 KiB plaintext and 64 KiB wire limits include the intended
-fields; escaped mailbox admission remains independently enforced. Bound parsing
+header, key identifiers, signature, framing and any base64 expansion. Preserve
+the accepted 32 KiB native body and 64 KiB wire limits. The proposed lossless
+encoded plaintext cap is 56,284 bytes, including metadata; escaped mailbox admission remains independently enforced. Bound parsing
 before allocation and reject unsupported lengths/types, duplicate fields,
 noncanonical forms and trailing data. Outcomes must account for the actual
 serialized proof/key metadata inside the 32 MiB evidence budget; the synthetic
