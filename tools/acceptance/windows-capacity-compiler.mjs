@@ -68,8 +68,42 @@ export function compilerControlArgs(prefix, variant) {
   const command = "$ErrorActionPreference='Stop';$ProgressPreference='SilentlyContinue';" + phase('compiler-entry')
     + 'try {' + observe + load + phase('compiler-compile') + prefix + phase('compiler-compiled')
     + literal({ id: 0, ok: true, phase: 'ready' })
+    + `if ([Console]::In.ReadLine() -cne 'compiler-release') {throw 'compiler-release-refused'};`
     + `} catch {[Console]::Out.WriteLine('{"id":0,"ok":false,"failure":{"check":"compiler-control-failed","phase":"'+$phase+'"}}');[Console]::Out.Flush();exit 1}`;
   return [...ARGS, command];
+}
+
+// A capability for this already-owned child's private stdin, never a PID or
+// caller-selected byte stream. The compiler's existing work deadline bounds
+// waiting for release; terminal/stdio confirmation remains in the observer.
+export function compilerReleaseRequestId(request, startId) {
+  const invalid = () => { throw new Error('control-invalid'); };
+  if (!request || typeof request !== 'object' || Array.isArray(request)
+      || !Number.isSafeInteger(startId) || startId <= 0) invalid();
+  const keys = Reflect.ownKeys(request);
+  if (keys.length !== 2 || !keys.includes('id') || !keys.includes('op')) invalid();
+  const id = Object.getOwnPropertyDescriptor(request,'id');
+  const op = Object.getOwnPropertyDescriptor(request,'op');
+  if (!id || !Object.hasOwn(id,'value') || !op || !Object.hasOwn(op,'value')
+      || !Number.isSafeInteger(id.value) || id.value <= startId || op.value !== 'release') invalid();
+  return id.value;
+}
+
+export function createCompilerRelease(owned) {
+  let used = false, streamFailed = false;
+  owned.child.stdin.on('error', () => { streamFailed = true; });
+  return async () => {
+    if (used || streamFailed || owned.terminal() || owned.child.stdin.destroyed || owned.child.stdin.writableEnded) {
+      throw new Error('control-closed');
+    }
+    used = true;
+    await new Promise((resolve, reject) => {
+      owned.child.stdin.end('compiler-release\n', error => {
+        if (error || streamFailed) reject(new Error('control-closed'));
+        else resolve();
+      });
+    });
+  };
 }
 
 export async function collectCompilerControls(probe, record) {
@@ -88,15 +122,18 @@ export async function collectCompilerControls(probe, record) {
 
 // The existing supervisor owns all command classification. Drain its one
 // in-flight request before the caller stops the fixture or closes the job.
-export async function sampleCompilerControl(job, started, { intervalMs = 250, onReply = () => {} } = {}) {
+export async function sampleCompilerControl(job, started, { intervalMs = 250, onReply = () => {}, onRelayConfirmed = async () => {} } = {}) {
   let sampling, timer, relayCommandConfirmed = false, rejectGuard, guardError;
   const guardFailed = new Promise((resolve,reject) => {rejectGuard=reject;});
   function sample() {
     if (sampling) return;
-    sampling = Promise.resolve().then(() => job.request('sample',{},5000)).then(value => {
+    sampling = Promise.resolve().then(() => job.request('sample',{},5000)).then(async value => {
       const count = value.totals?.relay?.count;
       if (!Number.isSafeInteger(count) || count < 0) throw new Error('control-invalid');
-      relayCommandConfirmed ||= count > 0;
+      if (count > 0 && !relayCommandConfirmed) {
+        relayCommandConfirmed = true;
+        await onRelayConfirmed();
+      }
     }).catch(error => {guardError ??= error;rejectGuard(guardError);}).finally(() => {sampling=undefined;});
   }
   timer = setInterval(sample,intervalMs);

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { connectWindowsPipe } from '../lib/platform/windows-pipe-client.mjs';
-import { captureCompilerPrefix, deriveCompilerPrefix, compilerControlArgs, collectCompilerControls, sampleCompilerControl, COMPILER_ORDER, COMPILER_DEADLINE_MS } from '../tools/acceptance/windows-capacity-compiler.mjs';
+import { captureCompilerPrefix, deriveCompilerPrefix, compilerControlArgs, collectCompilerControls, sampleCompilerControl, compilerReleaseRequestId, createCompilerRelease, COMPILER_ORDER, COMPILER_DEADLINE_MS } from '../tools/acceptance/windows-capacity-compiler.mjs';
 
 const prefix = captureCompilerPrefix(connectWindowsPipe, { PSModulePath: 'CANARY-private-path' });
 test('derived control uses the exact actual production worker compile prefix without invoking pipe Run', () => {
@@ -114,8 +114,8 @@ test('compiler parser refuses duplicate completion and unterminated trailing out
     assert.equal(JSON.stringify(control.state()).includes('CANARY'),false);
   }
 });
-function actualOwned(script){
-  const child=spawn(process.execPath,['--input-type=module','-e',script],{stdio:['ignore','pipe','pipe']});let terminal=false;
+function actualOwned(script,{stdin='ignore'}={}){
+  const child=spawn(process.execPath,['--input-type=module','-e',script],{stdio:[stdin,'pipe','pipe']});let terminal=false;
   const exited=new Promise(resolve=>{child.once('error',()=>{if(!child.pid){terminal=true;resolve({code:null,signal:null});}});child.once('exit',(code,signal)=>{terminal=true;resolve({code,signal});});});
   const stdioClosed=new Promise(resolve=>child.once('close',resolve));return{child,exited,stdioClosed,terminal:()=>terminal};
 }
@@ -174,4 +174,80 @@ test('sampling refusal retains only projected owned diagnostics and still blocks
       assert.equal(retained.phases[0].elapsedMs,1);
     } else assert.equal(retained,undefined);
   }
+});
+
+
+test('derived compiler holds the same exact command after ready for one private release',()=>{
+  for(const variant of ['implicit','explicit']) {
+    const command=compilerControlArgs(prefix,variant).at(-1);
+    assert.ok(command.indexOf("[Console]::In.ReadLine() -cne 'compiler-release'") > command.indexOf('"phase":"ready"'));
+    assert.equal(command.split('[Console]::In.ReadLine()').length,2);
+    assert.equal(command.includes('[AgentCommsPipeClient]::Run('),false);
+  }
+});
+
+test('positive exact-relay sampling releases one owned child and still requires terminal observation',async()=>{
+  const text=records.map(row=>JSON.stringify(row)+'\n').join('');
+  const owned=actualOwned(`process.stdout.write(${JSON.stringify(text)});let input='';process.stdin.on('data',d=>input+=d);process.stdin.on('end',()=>{process.exitCode=input==='compiler-release\\n'?0:1;});`,{stdin:'pipe'});
+  const release=createCompilerRelease(owned);let samples=0,releases=0;
+  const observation=observeCompilerControl(owned,'implicit',{deadlineMs:2000,cleanupMs:1000});
+  const result=await sampleCompilerControl({async request(){
+    samples++;assert.equal(owned.terminal(),false);
+    return {totals:{relay:{count:samples===1?0:1}}};
+  }},observation,{intervalMs:10,async onRelayConfirmed(){
+    assert.ok(samples>=2);assert.equal(owned.terminal(),false);releases++;await release();
+  }});
+  assert.equal(releases,1);assert.equal(result.status,'passed');assert.equal(result.terminal.code,0);
+  assert.equal(result.ownedTerminalConfirmed,true);assert.equal(result.stdioClosedConfirmed,true);
+  await assert.rejects(release(),{message:'control-closed'});
+});
+
+test('sampling classification refusal never releases; missing release retains bounded owned cleanup',async()=>{
+  const started=deferred();let releases=0;
+  const failure=new Error('job-supervisor-failed');
+  await assert.rejects(sampleCompilerControl({async request(){throw failure;}},started.promise,
+    {intervalMs:1,async onRelayConfirmed(){releases++;}}),error=>error===failure);
+  assert.equal(releases,0);started.reject(new Error('CANARY-late'));
+  const text=records.map(row=>JSON.stringify(row)+'\n').join('');
+  const owned=actualOwned(`process.stdout.write(${JSON.stringify(text)});process.stdin.resume();`,{stdin:'pipe'});
+  const release=createCompilerRelease(owned);
+  const result=await observeCompilerControl(owned,'implicit',{deadlineMs:150,cleanupMs:1000});
+  assert.equal(result.status,'failed');assert.equal(result.check,'compiler-deadline');
+  assert.equal(result.forcedTerminationRequested,true);assert.equal(result.ownedTerminalConfirmed,true);
+  assert.equal(result.stdioClosedConfirmed,true);
+  await assert.rejects(release(),{message:'control-closed'});
+  assert.equal(JSON.stringify(result).includes('CANARY'),false);
+});
+
+
+test('private compiler release accepts only its closed request and refuses invocation mismatches without reading getters',()=>{
+  assert.equal(compilerReleaseRequestId({id:2,op:'release'},1),2);
+  const getter={id:2};Object.defineProperty(getter,'op',{get(){assert.fail('getter executed');},enumerable:true});
+  for(const request of [null,undefined,[],1,'CANARY',{id:1,op:'release'},{id:0,op:'release'},
+    {id:2,op:'stop'},{id:2,op:'release',raw:'CANARY'},getter]) {
+    assert.throws(()=>compilerReleaseRequestId(request,1),{message:'control-invalid'});
+  }
+});
+
+test('release callback failure remains the guard failure and drains the in-flight callback',async()=>{
+  const started=deferred(),entered=deferred(),release=deferred();let replies=0,settled=false,calls=0;
+  const failure=new Error('control-closed');
+  const pending=sampleCompilerControl({async request(){calls++;return {totals:{relay:{count:1}}};}},started.promise,
+    {intervalMs:1,onReply(){replies++;},async onRelayConfirmed(){entered.resolve();await release.promise;}});
+  const refused=assert.rejects(pending,error=>error===failure).then(()=>{settled=true;});
+  await entered.promise;started.resolve({compilerObservation:{status:'passed'}});
+  await new Promise(resolve=>setTimeout(resolve,10));assert.equal(settled,false);assert.equal(replies,1);assert.equal(calls,1);
+  release.reject(failure);await refused;
+  await new Promise(resolve=>setTimeout(resolve,10));assert.equal(calls,1);
+});
+
+test('positive sample and successful one-shot release never replace a failed compiler result',async()=>{
+  const text=records.map(row=>JSON.stringify(row)+'\n').join('');
+  const owned=actualOwned(`process.stdout.write(${JSON.stringify(text)});process.stdin.resume();process.stdin.on('end',()=>{process.exitCode=1;});`,{stdin:'pipe'});
+  const release=createCompilerRelease(owned);let releases=0;
+  const observation=observeCompilerControl(owned,'implicit',{deadlineMs:2000,cleanupMs:1000});
+  const result=await sampleCompilerControl({async request(){return {totals:{relay:{count:1}}};}},observation,
+    {intervalMs:10,async onRelayConfirmed(){releases++;const first=release();await assert.rejects(release(),{message:'control-closed'});await first;}});
+  assert.equal(releases,1);assert.equal(result.status,'failed');assert.equal(result.check,'compiler-control-failed');
+  assert.equal(result.terminal.code,1);assert.equal(result.ownedTerminalConfirmed,true);assert.equal(result.stdioClosedConfirmed,true);
 });

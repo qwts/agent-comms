@@ -92,3 +92,24 @@ the terminal or stdio continuation gates. Subsequent controls remain blocked
 when those gates are unconfirmed. Private jobs, cleanup, worker source pins,
 candidate archive selection and deadlines are unchanged. This source change
 provides no new desktop acceptance result and authorizes no rerun.
+
+
+## Keeping the derived compiler observable to its owned supervisor
+
+The derived compiler command now waits after its existing ready record for one
+fixed token on its private inherited stdin. The fixture releases that same
+owned child only after the existing supervisor sample has classified a positive
+relay count using its exact command, ancestry and unexpected-process checks.
+This removes the requirement that a naturally short compiler invocation overlap
+the first 250 ms sample. It does not alter that interval or accept a compiler
+result on the strength of a sample alone.
+
+The unchanged 15-second compiler work deadline includes the hold. Missing
+release, classification refusal or failed IPC still refuses and uses the
+existing owned terminal, stdio and private-job cleanup checks. The final result
+still requires compiler success and confirmed terminal/stdio closure. Phase
+measurements precede the hold; total elapsed time includes it and is not a pure
+compilation duration. Worker source/prefix pins and candidate selection remain
+unchanged. This fixture correction provides no new Windows acceptance result;
+retained failures remain evidence. Any next run must use reviewed changed
+source and satisfy the existing gates; an unchanged retry is not acceptance.
