@@ -202,6 +202,8 @@ jobs:
         uses: qwts/qwts-agent-ci/.github/actions/ci-runtime-check@d9f8cf9dbab9adafaccbc743bc44efba5c07d1b1
       - name: Lint
         run: npm run lint:markdown
+      - name: Verify proposed computer-use candidate vectors
+        run: node tools/acceptance/owner-decision-computer-use-candidate-vectors.mjs
       - name: Test
         run: npm test
       # ENG-0282: every first-party pin in this repository's workflows must be
