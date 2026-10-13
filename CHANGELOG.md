@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.4] - 2026-10-13
+
 ### Added
 - Add a private inherited native-supervisor session and dedicated broker entrypoint with bounded canonical framing, synchronous native observation scopes, poison/EOF handling and production-factory observation. Installation trust remains external to JavaScript; receipt, coordinator and physical activation remain refused (#77).
 - Strengthen actual-process diagnostic backpressure acceptance with separate live blocked-writer plateau and terminal-failure predicates, bounded sanitized receipts, and owned exit/helper/stdio checks. This is functional evidence, not numeric unread saturation or performance acceptance (#164).
@@ -26,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Canonicalize the fixed Windows candidate Git archive to LF bytes and update its archive digest; retain the source commit/tree and exact extracted component checks. The earlier digest admitted Git CRLF conversion (#164).
-- Store fixed desktop environment keys and values as actual strings before the strict native serializer, retaining allowlist, NUL/key/size refusals and ordering. A no-process classic-shell regression requires original cmdlet-result cast failure and corrected-map admission; execution remains pending (#164).
+- Store fixed desktop environment keys and values as actual strings before the strict native serializer, retaining allowlist, NUL/key/size refusals and ordering. A no-process classic-shell regression passed original cmdlet-result cast failure and corrected-map admission in Windows CI; desktop workload acceptance remains pending (#164).
 - Refuse desktop Node archive response lengths below the sole unknown-length sentinel `-1`; the fixed HTTPS origin, checksum pins, 128 MiB cap and 60-second deadline remain unchanged (#164).
 - Avoid detail allocation and rate-clock work after terminal diagnostic destination failure, while retaining bounded drops for recognized observations. This does not establish the cause of the failed-helper p95 result or performance acceptance (#164).
 - Preserve the Windows connector's closed local refusal stage through generic client error wrapping as nonenumerable internal metadata. Unknown/accessor and remote-response fields are excluded; public errors, authentication and deadlines remain unchanged (#164).
@@ -34,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Validation
 - Retain fixed per-invocation Windows desktop start-failure stages and valid native error codes separately from bounded cleanup observations. Original failure and unknown terminal/EOF/close evidence remain distinct; no launch fallback or acceptance predicate changes (#164).
-- Add compile-time-only deterministic desktop downloader proofs through the shared production transfer and owned-file cleanup implementation, including exact-cap streaming hash/content checks, metadata/body refusals and collision/sibling preservation. Native execution, real HTTP abort and native close confirmation remain pending (#164).
+- Add compile-time-only deterministic desktop downloader proofs through the shared production transfer and owned-file cleanup implementation, including exact-cap streaming hash/content checks, metadata/body refusals and collision/sibling preservation. Sixteen deterministic Windows CI downloader cases passed; real HTTP abort and native close confirmation remain pending (#164).
 - Retain distinct macOS mailbox reporting observations: earlier healthy pairs, the failed helper-loss p95 pair, and changed-source helper-loss pairs passing unchanged budgets. This does not establish causation, total instrumentation cost, Windows/host or unread acceptance (#164).
 - Add separate disabled daemon-local preparation v2 vectors with bounded odd trust versions, entry mismatch refusals and rebound effect/reconciliation digests. V1 fixtures, schemas and public challenges remain unchanged; these specification checks do not implement daemon runtime entry (#77).
 - Development-only Windows classifier tests distinguish fixture-only and post-child samples. Existing executable refusals retain five fixed executable/parent booleans through a strict projector; parent executable matches do not prove argv acceptance. The merged-main and post-child console-host refusals remain retained. The inert argv canary requests console detachment while preserving private-job containment and whole-job acceptance; production launches, accepted categories and guards are unchanged (#164).
@@ -43,6 +45,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add an opt-in Windows derived compiler control with exact worker/argv hashes, opposite-order implicit and explicit built-in Utility imports, fixed stage markers and a 15-second work deadline. Existing private-job and descendant guards apply; cleanup uncertainty stops further controls. This does not establish actual connector, capacity or host acceptance (#164).
 - Add an opt-in incremental lifecycle overhead runner using exact production archives, symmetric broker/helper accounting, and bounded authenticated watch churn/recovery. Retained healthy, failed-helper and configured-unread paired results pass the scoped macOS workload budgets; native Windows and packaged-host acceptance remain outstanding (#164).
 - Development-only Windows startup evidence can preserve the existing closed local connector stage through correlated fixture failure IPC, using an explicitly pinned reviewed source. Historical failures remain retained; native Windows capacity and installed host acceptance remain unqualified (#164).
+
+### Upgrade notes
+- Authenticated health metadata is additive. Existing public errors, durable formats, credential custody and mailbox delivery guarantees remain unchanged; this release adds no automatic retry, credential migration or installed service activation.
+- Private owner-decision observations, native-supervisor sessions and fixtures do not enable production owner authority, receipt custody, coordinator or physical activation. Protected installation and runtime/import closure, fresh presence and separate-account acceptance remain prerequisites.
+- Windows CI validates bounded development tooling and inert/native regressions. Desktop compiler, startup/delivery, matched capacity and supported host-release acceptance remain outstanding; retained failed attempts are not performance or readiness evidence (#164).
 
 ## [0.5.3] - 2026-10-12
 

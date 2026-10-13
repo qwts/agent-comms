@@ -26,7 +26,7 @@ import { sha256 } from '../lib/broker/shared.mjs';
 import { OWNER_GRANT_LIMITS } from '../lib/owner-scoped-grants.mjs';
 import * as skill from '../lib/skill.mjs';
 
-const VERSION = '0.5.3';
+const VERSION = '0.5.4';
 
 // Each row owns its positional arity and value flags; help uses the same schema.
 const COMMANDS = [
