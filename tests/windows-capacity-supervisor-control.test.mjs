@@ -16,6 +16,19 @@ const diagnosticParserCases = [
 ];
 const diagnosticFailureCases = ['startup-or-unknown', ...diagnosticParserCases];
 const diagnosticFailurePhases = ['script-entry','module-observation','import-utility','compile-supervisor','supervisor-compiled','startup-or-unknown'];
+const diagnosticParentBooleanFields = [
+  'parentCurrentRowFound','parentRelayPathMatch','parentRelayArgsParsed','parentRelayArgsEqualExpected',
+  'parentParentIsFixture','parentCreationDatePresent','parentCreationAtOrAfterFixtureObserved',
+  'consoleHostCreationDatePresent','consoleHostCreationAtOrAfterParentObserved',
+];
+const diagnosticParentClassFields = ['parentRelayCommandLineClass','consoleHostCommandLineClass'];
+const diagnosticCommandLineClasses = ['not-checked','missing','wrong-type','over-bound','parse-refused','no-arguments','one-argument','multiple-arguments'];
+const diagnosticCommandShapes = ['unparsed','legacy-handle-only-candidate','legacy-handle-force-v1-candidate','other'];
+const diagnosticParentFields = [
+  ...diagnosticParentBooleanFields,
+  ...diagnosticParentClassFields,
+  'parentRelayArgumentCount','consoleHostArgumentCount','consoleHostCommandShape',
+];
 
 function projectDiagnosticParserOutput(stdout, stderrBytes) {
   const boundedStderrBytes = Number.isSafeInteger(stderrBytes) && stderrBytes >= 0 ? Math.min(stderrBytes, 65535) : 65535;
@@ -37,6 +50,25 @@ function projectDiagnosticParserOutput(stdout, stderrBytes) {
       && diagnosticFailureCases.includes(record.failure.case)) {
     return { kind: 'failure', phase: record.failure.phase, case: record.failure.case, stderrBytes: boundedStderrBytes };
   }
+  if (hasExactKeys(record, ['id','ok','failure']) && record.id === 0 && record.ok === false
+      && hasExactKeys(record.failure, ['check','phase','case','stage','parent'])
+      && record.failure.check === 'diagnostic-parser-test-failed'
+      && record.failure.phase === 'supervisor-compiled'
+      && record.failure.case === 'production-relay-args-exact-and-current-parent-correlation'
+      && ['precondition','redaction-guard'].includes(record.failure.stage)
+      && hasExactKeys(record.failure.parent, diagnosticParentFields)
+      && diagnosticParentBooleanFields.every((key) => typeof record.failure.parent[key] === 'boolean')
+      && diagnosticParentClassFields.every((key) => diagnosticCommandLineClasses.includes(record.failure.parent[key]))
+      && ['parentRelayArgumentCount','consoleHostArgumentCount'].every((key) =>
+        record.failure.parent[key] === null || (Number.isInteger(record.failure.parent[key]) && record.failure.parent[key] >= 0 && record.failure.parent[key] <= 12))
+      && diagnosticCommandShapes.includes(record.failure.parent.consoleHostCommandShape)) {
+    return {
+      kind: 'failure', phase: record.failure.phase, case: record.failure.case,
+      stage: record.failure.stage,
+      parent: Object.fromEntries(diagnosticParentFields.map((key) => [key, record.failure.parent[key]])),
+      stderrBytes: boundedStderrBytes,
+    };
+  }
   return { kind: 'invalid', stderrBytes: boundedStderrBytes };
 }
 
@@ -49,10 +81,30 @@ test('native diagnostic-parser receipt case order matches the PowerShell probe',
 test('native diagnostic-parser failure projection retains only closed IDs and bounded stderr count', () => {
   const failure = JSON.stringify({ id: 0, ok: false, failure: { check: 'diagnostic-parser-test-failed', phase: 'supervisor-compiled', case: 'wrong-fixture-parent-not-exact' } });
   assert.deepEqual(projectDiagnosticParserOutput(failure, 7), { kind: 'failure', phase: 'supervisor-compiled', case: 'wrong-fixture-parent-not-exact', stderrBytes: 7 });
+  const parent = Object.fromEntries([
+    ...diagnosticParentBooleanFields.map((key) => [key, true]),
+    ['parentRelayCommandLineClass','multiple-arguments'],['consoleHostCommandLineClass','multiple-arguments'],
+    ['parentRelayArgumentCount',7],['consoleHostArgumentCount',2],['consoleHostCommandShape','legacy-handle-force-v1-candidate'],
+  ]);
+  const parentFailure = (overrides = {}) => JSON.stringify({ id: 0, ok: false, failure: {
+    check: 'diagnostic-parser-test-failed', phase: 'supervisor-compiled',
+    case: 'production-relay-args-exact-and-current-parent-correlation', stage: 'precondition',
+    parent: { ...parent, ...overrides },
+  } });
+  const projectedParent = projectDiagnosticParserOutput(parentFailure({ parentRelayArgsEqualExpected: false }), 11);
+  assert.equal(projectedParent.kind, 'failure');
+  assert.equal(projectedParent.stage, 'precondition');
+  assert.equal(projectedParent.parent.parentRelayArgsEqualExpected, false);
+  assert.equal(projectedParent.parent.consoleHostCommandShape, 'legacy-handle-force-v1-candidate');
   for (const invalid of [
     JSON.stringify({ id: 0, ok: false, failure: { check: 'diagnostic-parser-test-failed', phase: 'supervisor-compiled', case: 'unknown-case' } }),
     JSON.stringify({ id: 0, ok: false, failure: { check: 'diagnostic-parser-test-failed', phase: 'supervisor-compiled', case: 'wrong-fixture-parent-not-exact', commandLine: 'CANARY-private' } }),
     JSON.stringify({ id: 0, ok: false, failure: { check: 'diagnostic-parser-test-failed', phase: 'supervisor-compiled', case: 'wrong-fixture-parent-not-exact', handle: '0xDEADBEEF' } }),
+    parentFailure({ commandLine: 'CANARY-private' }),
+    parentFailure({ parentRelayArgsEqualExpected: 'false' }),
+    parentFailure({ parentRelayCommandLineClass: 'unknown-class' }),
+    parentFailure({ consoleHostArgumentCount: 13 }),
+    JSON.stringify({ id: 0, ok: false, failure: { check: 'diagnostic-parser-test-failed', phase: 'supervisor-compiled', case: 'production-relay-args-exact-and-current-parent-correlation', stage: 'unknown-stage', parent } }),
     '{malformed-json',
     'x'.repeat(4097),
   ]) assert.deepEqual(projectDiagnosticParserOutput(invalid, 100000), { kind: 'invalid', stderrBytes: 65535 });
@@ -176,7 +228,7 @@ test('classic supervisor bounds command-line diagnostic parsing without querying
     await within(closed, 5000);
     const projected = projectDiagnosticParserOutput(stdout, stderrBytes);
     const safeDetail = projected.kind === 'failure'
-      ? `sanitizedFailure=${projected.phase}/${projected.case}; stderrBytes=${projected.stderrBytes}`
+      ? `sanitizedFailure=${projected.phase}/${projected.case}${projected.stage ? `; stage=${projected.stage}; parent=${JSON.stringify(projected.parent)}` : ''}; stderrBytes=${projected.stderrBytes}`
       : `sanitizedFailureRecord=${projected.kind}; stderrBytes=${projected.stderrBytes}`;
     assert.equal(result.code, 0, safeDetail);
     assert.equal(projected.kind, 'success', safeDetail);

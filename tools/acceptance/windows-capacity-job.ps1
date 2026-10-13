@@ -16,6 +16,8 @@ $maximumRows = 128 # private-job membership, including compiler descendants
 $phase = 'script-entry'
 $utilityLoaded = $false
 $diagnosticTestCase = 'startup-or-unknown'
+$diagnosticFailureStage = $null
+$diagnosticFailureParent = $null
 $diagnosticTestCases = @('startup-or-unknown','missing-command-line','wrong-type-refused','over-bound-refused-before-parse','console-host-over-bound-shape-only','zero-arguments','one-argument','multiple-arguments','legacy-handle-only-candidate','legacy-handle-force-v1-candidate','malformed-case-length-and-extra-args-other','unparsed-command-shape','parser-argument-bound-refused','production-relay-args-exact-and-current-parent-correlation','wrong-relay-argv-not-exact','wrong-fixture-parent-not-exact','older-parent-date-not-exact','unknown-parent-not-correlated')
 $diagnosticTestPhases = @('script-entry','module-observation','import-utility','compile-supervisor','supervisor-compiled')
 
@@ -337,8 +339,28 @@ function Get-ConsoleHostDiagnostics([object]$Row,[object[]]$Rows,[string]$ShellE
             )
             $fixtureCreated = [string]$parentCreated.AddMilliseconds(-1).Ticks
             $parentDiagnostics = Get-ConsoleHostDiagnostics -Row $parentRows[1] -Rows $parentRows -ShellExecutable $shellPath -RelayArgs $actualRelayArgs -FixtureId 20 -FixtureCreation $fixtureCreated
+            $diagnosticFailureParent = [ordered]@{
+                parentCurrentRowFound=$parentDiagnostics.parentCurrentRowFound
+                parentRelayPathMatch=$parentDiagnostics.parentRelayPathMatch
+                parentRelayCommandLineClass=$parentDiagnostics.parentRelayCommandLineClass
+                parentRelayArgumentCount=$parentDiagnostics.parentRelayArgumentCount
+                parentRelayArgsParsed=$parentDiagnostics.parentRelayArgsParsed
+                parentRelayArgsEqualExpected=$parentDiagnostics.parentRelayArgsEqualExpected
+                parentParentIsFixture=$parentDiagnostics.parentParentIsFixture
+                parentCreationDatePresent=$parentDiagnostics.parentCreationDatePresent
+                parentCreationAtOrAfterFixtureObserved=$parentDiagnostics.parentCreationAtOrAfterFixtureObserved
+                consoleHostCommandLineClass=$parentDiagnostics.consoleHostCommandLineClass
+                consoleHostArgumentCount=$parentDiagnostics.consoleHostArgumentCount
+                consoleHostCommandShape=$parentDiagnostics.consoleHostCommandShape
+                consoleHostCreationDatePresent=$parentDiagnostics.consoleHostCreationDatePresent
+                consoleHostCreationAtOrAfterParentObserved=$parentDiagnostics.consoleHostCreationAtOrAfterParentObserved
+            }
+            $diagnosticFailureStage = 'precondition'
             if (-not $parentDiagnostics.parentCurrentRowFound -or -not $parentDiagnostics.parentRelayPathMatch -or -not $parentDiagnostics.parentRelayArgsParsed -or -not $parentDiagnostics.parentRelayArgsEqualExpected -or -not $parentDiagnostics.parentParentIsFixture -or -not $parentDiagnostics.parentCreationAtOrAfterFixtureObserved -or -not $parentDiagnostics.consoleHostCreationAtOrAfterParentObserved -or $parentDiagnostics.consoleHostCommandShape -ne 'legacy-handle-force-v1-candidate') { throw 'diagnostic-parser-test-failed' }
+            $diagnosticFailureStage = 'redaction-guard'
             if ((ConvertTo-Json -InputObject $parentDiagnostics -Compress).Contains('DEADBEEF')) { throw 'diagnostic-parser-test-failed' }
+            $diagnosticFailureStage = $null
+            $diagnosticFailureParent = $null
             $cases.Add('production-relay-args-exact-and-current-parent-correlation')
             $diagnosticTestCase = 'wrong-relay-argv-not-exact'
             $wrongArgs = @($actualRelayArgs);$wrongArgs[-1] = $wrongArgs[-1] + ' changed'
@@ -599,7 +621,17 @@ function Get-ConsoleHostDiagnostics([object]$Row,[object[]]$Rows,[string]$ShellE
     if ($DiagnosticParserTestOnly) {
         if ($diagnosticTestCases -notcontains $diagnosticTestCase) { $diagnosticTestCase='startup-or-unknown' }
         if ($diagnosticTestPhases -notcontains $phase) { $failurePhase='startup-or-unknown' } else { $failurePhase=$phase }
-        [Console]::Out.WriteLine('{"id":0,"ok":false,"failure":{"check":"diagnostic-parser-test-failed","phase":"' + $failurePhase + '","case":"' + $diagnosticTestCase + '"}}')
+        $failureRecord = [ordered]@{id=0;ok=$false;failure=[ordered]@{check='diagnostic-parser-test-failed';phase=$failurePhase;case=$diagnosticTestCase}}
+        if ($diagnosticTestCase -eq 'production-relay-args-exact-and-current-parent-correlation' -and $diagnosticFailureStage -in @('precondition','redaction-guard') -and $null -ne $diagnosticFailureParent) {
+            $failureRecord.failure.stage = $diagnosticFailureStage
+            $failureRecord.failure.parent = $diagnosticFailureParent
+        }
+        if ($utilityLoaded) {
+            [Console]::Out.WriteLine((ConvertTo-Json -InputObject $failureRecord -Depth 6 -Compress))
+        } else {
+            # Do not retry unavailable Utility autoload on startup refusal.
+            [Console]::Out.WriteLine('{"id":0,"ok":false,"failure":{"check":"diagnostic-parser-test-failed","phase":"' + $failurePhase + '","case":"' + $diagnosticTestCase + '"}}')
+        }
         [Console]::Out.Flush()
     } elseif (-not $utilityLoaded) {
         # Startup refusal must not retry the unavailable JSON cmdlet.
