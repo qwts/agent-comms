@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Disabled connected asynchronous receipt signing retains a durable presence intent before signing, verifies private candidates with a fresh clock, and requires one-use journal completion before dispatch. Bounded invocation lifetime, cancellation/revocation/restart tests and an operation-specific native contract advance integration without activating protected custody or physical support (#77).
 
 ### Fixed
+
+- Canonicalize the fixed Windows candidate Git archive to LF bytes and update its archive digest; retain the source commit/tree and exact extracted component checks. The earlier digest admitted Git CRLF conversion (#164).
 - Store fixed desktop environment keys and values as actual strings before the strict native serializer, retaining allowlist, NUL/key/size refusals and ordering. A no-process classic-shell regression requires original cmdlet-result cast failure and corrected-map admission; execution remains pending (#164).
 - Refuse desktop Node archive response lengths below the sole unknown-length sentinel `-1`; the fixed HTTPS origin, checksum pins, 128 MiB cap and 60-second deadline remain unchanged (#164).
 - Avoid detail allocation and rate-clock work after terminal diagnostic destination failure, while retaining bounded drops for recognized observations. This does not establish the cause of the failed-helper p95 result or performance acceptance (#164).

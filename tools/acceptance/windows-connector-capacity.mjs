@@ -24,7 +24,7 @@ import { probePinnedCustody } from './windows-capacity-custody.mjs';
 import { probePinnedChannel } from './windows-capacity-channel.mjs';
 import { probePinnedConnector, validConnectorObservation } from './windows-capacity-connector.mjs';
 import { readOwnedDesktopContext, isOwnedDesktopContext } from './windows-desktop-context.mjs';
-import { CORRECTED_STARTUP_SOURCE, verifyCorrectedStartupSource, boundedBrokerCode, classifyFixtureFailure } from './windows-corrected-startup.mjs';
+import { CORRECTED_STARTUP_SOURCE, canonicalCandidateArchiveArgs, verifyCandidateComponent, verifyCorrectedStartupSource, boundedBrokerCode, classifyFixtureFailure } from './windows-corrected-startup.mjs';
 
 const exec = promisify(execFile), SELF = fileURLToPath(import.meta.url);
 const JOB = fileURLToPath(new URL('./windows-capacity-job.ps1', import.meta.url));
@@ -612,15 +612,15 @@ async function main(context) {
     const pin = revision === 'candidate' ? CORRECTED_STARTUP_SOURCE.pin : PINS[revision];
     activeStage = 'archive-source';
     const { stdout: tree } = await exec('git.exe', ['rev-parse', `${pin}^{tree}`], { cwd, encoding: 'utf8', windowsHide: true });
-    const { stdout: bytes } = await exec('git.exe', ['archive', '--format=tar', pin], { cwd, encoding: 'buffer', maxBuffer: 32 * 1024 * 1024, windowsHide: true });
+    const { stdout: bytes } = await exec('git.exe', candidateOnly ? canonicalCandidateArchiveArgs(pin) : ['archive', '--format=tar', pin], { cwd, encoding: 'buffer', maxBuffer: 32 * 1024 * 1024, windowsHide: true });
     if (candidateOnly) verifyCorrectedStartupSource(tree.trim(), hash(bytes));
     const archive = path.join(output, `${revision}.tar`), source = path.join(output, revision);
     writeFileSync(archive, bytes); mkdirSync(source);
     await exec('tar.exe', ['-xf', archive, '-C', source], { windowsHide: true });
-    if (candidateCompiler) assert.equal(hash(readFileSync(path.join(source,'lib/platform/windows-pipe-client.mjs'))),
-      hash(readFileSync(new URL('../../lib/platform/windows-pipe-client.mjs',import.meta.url))), 'candidate-source-mismatch');
-    if (candidateOnly) assert.equal(hash(readFileSync(path.join(source, 'lib/platform/windows-pipe-stage.mjs'))),
-      hash(readFileSync(new URL('../../lib/platform/windows-pipe-stage.mjs', import.meta.url))), 'candidate-source-mismatch');
+    if (candidateCompiler) verifyCandidateComponent(hash(readFileSync(path.join(source,'lib/platform/windows-pipe-client.mjs'))),
+      hash(readFileSync(new URL('../../lib/platform/windows-pipe-client.mjs',import.meta.url))));
+    if (candidateOnly) verifyCandidateComponent(hash(readFileSync(path.join(source, 'lib/platform/windows-pipe-stage.mjs'))),
+      hash(readFileSync(new URL('../../lib/platform/windows-pipe-stage.mjs', import.meta.url))));
     archives[revision] = { source, pin, tree: tree.trim(), archiveSha256: hash(bytes) };
   }
   if (candidateCompiler) {
