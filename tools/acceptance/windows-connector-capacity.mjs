@@ -337,7 +337,7 @@ async function compilerProbe(source, variant, commitLimitBytes) {
     return {status:'failed',failure:failure(error),ownedTerminalConfirmed:false,stdioClosedConfirmed:false,
       descendantsEmptyConfirmed:false,cleanupConfirmed:false,cleanup:{scratchRemoved:false,jobEmptyConfirmed:false}};
   }
-  let attached = false, disposed = false, observation, original, outputBytes = 0;
+  let attached = false, disposed = false, observation, retainedObservation, original, outputBytes = 0;
   let relayCommandConfirmed = false;
   const receipt = { jobEmptyConfirmed: false, scratchRemoved: false };
   for (const stream of [fixture.child.stderr,supervisor.child.stderr]) {
@@ -367,7 +367,11 @@ async function compilerProbe(source, variant, commitLimitBytes) {
     assert.equal(result.attached,true); attached = true;
     activeStage = 'derived-compiler-control';
     const started = control.request('start',{},COMPILER_DEADLINE_MS + 15_000);
-    const reply = await sampleCompilerControl(job,started);
+    const reply = await sampleCompilerControl(job,started,{ onReply(value) {
+      // Diagnostics may survive a sampling refusal, but cannot satisfy its gates.
+      try { retainedObservation = projectCompilerObservation(value.compilerObservation,variant); }
+      catch { /* Malformed owned replies are never retained or serialized. */ }
+    } });
     relayCommandConfirmed = true;
     observation = projectCompilerObservation(reply.compilerObservation,variant);
     activeStage = 'compiler-fixture-stop';
@@ -382,7 +386,7 @@ async function compilerProbe(source, variant, commitLimitBytes) {
     removeScratch: () => rmSync(root,{recursive:true,force:true}) });
   // The fixed observation comes from our owned derived fixture, not a peer.
   return { status: original || observation?.status !== 'passed' || cleanup.errors.length ? 'failed' : 'passed',
-    ...(original ? {failure:original} : {}), ...(observation ? {compilerObservation:observation} : {}),
+    ...(original ? {failure:original} : {}), ...(retainedObservation ? {compilerObservation:retainedObservation} : {}),
     ownedTerminalConfirmed: cleanup.fixtureOwnedTerminalConfirmed && cleanup.supervisorOwnedTerminalConfirmed && observation?.ownedTerminalConfirmed === true,
     stdioClosedConfirmed: cleanup.fixtureStdioClosedConfirmed && cleanup.supervisorStdioClosedConfirmed && observation?.stdioClosedConfirmed === true,
     descendantsEmptyConfirmed: cleanup.jobEmptyConfirmed,

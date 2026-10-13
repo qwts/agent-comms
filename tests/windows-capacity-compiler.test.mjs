@@ -146,3 +146,32 @@ test('owned IPC observation projection rejects forged bounds, metadata and acces
     assert.throws(()=>projectCompilerObservation(forged,'implicit'),{message:'compiler-control-failed'});
   }
 });
+
+
+test('sampling refusal retains only projected owned diagnostics and still blocks continuation',async()=>{
+  const receipt={status:'failed',requestDeadlineMs:15000,ownedTerminalConfirmed:true,stdioClosedConfirmed:true,
+    forcedTerminationRequested:true,stderrBytes:0,stderrByteCountCapped:false,check:'compiler-deadline',
+    terminal:{code:null,signal:'SIGTERM'},phases:[{phase:'compiler-entry',elapsedMs:1}],elapsedMs:15002};
+  for(const value of [receipt,{...receipt,path:'CANARY-raw'},null]) {
+    let retained, admitted, calls=0;const rows=[];
+    await collectCompilerControls(async variant=>{
+      calls++;
+      await assert.rejects(sampleCompilerControl({request(){assert.fail('no sample before first interval');}},
+        Promise.resolve({compilerObservation:value,raw:'CANARY-envelope'}),{onReply(reply){
+          try {retained=projectCompilerObservation(reply.compilerObservation,variant);}catch {}
+        }}),{message:'owned-startup-fault'});
+      return {status:'failed',...(retained?{compilerObservation:retained}:{}),
+        ownedTerminalConfirmed:admitted?.ownedTerminalConfirmed===true,
+        stdioClosedConfirmed:admitted?.stdioClosedConfirmed===true,
+        descendantsEmptyConfirmed:true,cleanupConfirmed:true,relayCommandConfirmed:false};
+    },async row=>rows.push(row));
+    assert.equal(calls,1);assert.equal(rows[0].status,'failed');
+    assert.equal(rows[0].relayCommandConfirmed,false);
+    assert.deepEqual(rows.slice(1).map(row=>row.reason),Array(3).fill('prior-cleanup-unconfirmed'));
+    assert.equal(JSON.stringify(rows).includes('CANARY'),false);
+    if(value===receipt) {
+      assert.deepEqual(retained,receipt);receipt.phases[0].elapsedMs=2;
+      assert.equal(retained.phases[0].elapsedMs,1);
+    } else assert.equal(retained,undefined);
+  }
+});

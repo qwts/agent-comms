@@ -75,3 +75,20 @@ Existing private-job containment, exact comparisons, compiler ancestry and
 cleanup gates should remain unchanged. Native command-serialization coverage
 can compare the trusted derived argv with the captured parsed argv using those
 same fixed fields. This document authorizes no further hosted dispatch.
+
+
+## Retaining owned observations on sampling refusal
+
+The local compiler-control helper now projects an already-received owned
+fixture observation before it checks the relay-sampling guard. A valid bounded
+observation can therefore remain in a failed row when no relay sample was
+confirmed. Unknown fields, malformed values and raw reply metadata are not
+retained. This is diagnostic evidence, not proof of why a compiler control
+failed or whether a short-lived relay existed between samples.
+
+The guard still refuses with its existing failure and timing rules. A retained
+observation does not become a guard-admitted observation and cannot satisfy
+the terminal or stdio continuation gates. Subsequent controls remain blocked
+when those gates are unconfirmed. Private jobs, cleanup, worker source pins,
+candidate archive selection and deadlines are unchanged. This source change
+provides no new desktop acceptance result and authorizes no rerun.
