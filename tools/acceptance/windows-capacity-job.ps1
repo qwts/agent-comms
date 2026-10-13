@@ -326,8 +326,8 @@ function Get-ConsoleHostDiagnostics([object]$Row,[object[]]$Rows,[string]$ShellE
             if ($shape.class -ne 'parse-refused' -or $null -ne $shape.argumentCount) { throw 'diagnostic-parser-test-failed' }
             $cases.Add('parser-argument-bound-refused')
             $diagnosticTestCase = 'production-relay-args-exact-and-current-parent-correlation'
-            $actualRelayArgs = @($env:AGENT_COMMS_TEST_RELAY_ARGS_JSON | ConvertFrom-Json)
-            if ($actualRelayArgs.Count -ne 7 -or $actualRelayArgs[0] -ne '-NoLogo' -or $actualRelayArgs[5] -ne '-Command' -or $actualRelayArgs[-1].Contains('"')) { throw 'diagnostic-parser-test-failed' }
+            $actualRelayArgs = $env:AGENT_COMMS_TEST_RELAY_ARGS_JSON | ConvertFrom-Json
+            if ($actualRelayArgs -isnot [array] -or $actualRelayArgs.Count -ne 7 -or @($actualRelayArgs | Where-Object { $_ -isnot [string] }).Count -ne 0 -or $actualRelayArgs[0] -ne '-NoLogo' -or $actualRelayArgs[5] -ne '-Command' -or $actualRelayArgs[-1].Contains('"')) { throw 'diagnostic-parser-test-failed' }
             $shellPath = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
             $hostPath = 'C:\Windows\System32\conhost.exe'
             $relayCommandLine = '"' + $shellPath + '" ' + (($actualRelayArgs[0..($actualRelayArgs.Count - 2)] -join ' ') + ' "' + $actualRelayArgs[-1] + '"')
