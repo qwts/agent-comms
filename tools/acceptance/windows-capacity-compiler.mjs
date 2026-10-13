@@ -88,7 +88,7 @@ export async function collectCompilerControls(probe, record) {
 
 // The existing supervisor owns all command classification. Drain its one
 // in-flight request before the caller stops the fixture or closes the job.
-export async function sampleCompilerControl(job, started, { intervalMs = 250 } = {}) {
+export async function sampleCompilerControl(job, started, { intervalMs = 250, onReply = () => {} } = {}) {
   let sampling, timer, relayCommandConfirmed = false, rejectGuard, guardError;
   const guardFailed = new Promise((resolve,reject) => {rejectGuard=reject;});
   function sample() {
@@ -103,6 +103,8 @@ export async function sampleCompilerControl(job, started, { intervalMs = 250 } =
   try {
     const reply = await Promise.race([started,guardFailed]);
     clearInterval(timer);
+    // Retain only caller-projected diagnostics; this does not admit the reply.
+    onReply(reply);
     if (sampling) await sampling;
     // A guard refusal can arrive while the already-complete start drains.
     if (guardError) throw guardError;
