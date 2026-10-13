@@ -1,11 +1,11 @@
 # Desktop job proof candidate
 
-Related to #164. This development tooling is not Windows acceptance evidence.
+Related to #164. This tooling is not Windows acceptance evidence.
 Execution uses reviewed, pinned tooling on the already authorized target/tasks
 after required safety gates. Production categories, pins, deadlines and
 breakaway predicates cannot change to make a test pass. See the
 [desktop entrypoint](windows-desktop-acceptance.md) for profile and checkpoint
-requirements. Original failed Windows receipts remain unchanged.
+requirements. Retain failed receipts. See [archive bytes](windows-candidate-archive-bytes.md).
 
 ## Implemented containment tests
 

@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { spawnSync, spawn } from 'node:child_process';
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { CORRECTED_STARTUP_SOURCE, verifyCorrectedStartupSource, classifyFixtureFailure } from '../tools/acceptance/windows-corrected-startup.mjs';
+import { CORRECTED_STARTUP_SOURCE, canonicalCandidateArchiveArgs, verifyCandidateComponent, verifyCorrectedStartupSource, classifyFixtureFailure } from '../tools/acceptance/windows-corrected-startup.mjs';
 import { createCapacityController } from '../tools/acceptance/windows-capacity-control.mjs';
 import { retainCapacityFailure } from '../tools/acceptance/windows-capacity-lifecycle.mjs';
 import { projectWindowsPipeStage } from '../lib/platform/windows-pipe-stage.mjs';
@@ -85,3 +86,42 @@ for (const [code, probe, stage] of [['broker-probe-failed', undefined], ['CANARY
     } finally { clearTimeout(timer); if (child.exitCode === null && child.signalCode === null) child.kill(); rmSync(scratch, { recursive: true, force: true }); }
   });
 }
+
+// Uses the actual Git archive and tar extraction boundary on every CI platform.
+// HEAD and these paths are fixed by this checkout; no revision comes from input.
+test('canonical candidate archive defeats ambient CRLF conversion and retains strict component refusal', () => {
+  const cwd = fileURLToPath(new URL('../', import.meta.url));
+  const scratch = mkdtempSync(path.join(os.tmpdir(), 'comms-archive-bytes-'));
+  const components = ['lib/platform/windows-pipe-client.mjs', 'lib/platform/windows-pipe-stage.mjs'];
+  const digest = bytes => createHash('sha256').update(bytes).digest('hex');
+  const git = args => {
+    const result = spawnSync('git', args, { cwd, maxBuffer: 32 * 1024 * 1024, timeout: 10_000 });
+    assert.equal(result.error, undefined); assert.equal(result.status, 0);
+    return result.stdout;
+  };
+  const ambient = ['-c', 'core.autocrlf=true', '-c', 'core.eol=crlf'];
+  try {
+    const originals = components.map(name => git(['show', `HEAD:${name}`]));
+    for (const [label, args] of [
+      ['original', ['archive', '--format=tar', 'HEAD']],
+      ['canonical', canonicalCandidateArchiveArgs('HEAD')],
+    ]) {
+      const archive = path.join(scratch, `${label}.tar`), extracted = path.join(scratch, label);
+      writeFileSync(archive, git([...ambient, ...args, ...components])); mkdirSync(extracted);
+      const extraction = spawnSync('tar', ['-xf', archive, '-C', extracted], { timeout: 10_000, maxBuffer: 64 * 1024 });
+      assert.equal(extraction.error, undefined); assert.equal(extraction.status, 0);
+      components.forEach((name, index) => {
+        const bytes = readFileSync(path.join(extracted, name));
+        if (label === 'original') {
+          assert.ok(bytes.includes(Buffer.from('\r\n')));
+          assert.throws(() => verifyCandidateComponent(digest(bytes), digest(originals[index])), { message: 'candidate-source-mismatch' });
+        } else {
+          assert.deepEqual(bytes, originals[index]);
+          verifyCandidateComponent(digest(bytes), digest(originals[index]));
+          const tampered = Buffer.from(bytes); tampered[0] ^= 1;
+          assert.throws(() => verifyCandidateComponent(digest(tampered), digest(originals[index])), { message: 'candidate-source-mismatch' });
+        }
+      });
+    }
+  } finally { rmSync(scratch, { recursive: true, force: true }); }
+});
