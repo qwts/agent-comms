@@ -15,6 +15,9 @@ $known = @{}
 $maximumRows = 128 # private-job membership, including compiler descendants
 $phase = 'script-entry'
 $utilityLoaded = $false
+$diagnosticTestCase = 'startup-or-unknown'
+$diagnosticTestCases = @('startup-or-unknown','missing-command-line','wrong-type-refused','over-bound-refused-before-parse','console-host-over-bound-shape-only','zero-arguments','one-argument','multiple-arguments','legacy-handle-only-candidate','legacy-handle-force-v1-candidate','malformed-case-length-and-extra-args-other','unparsed-command-shape','parser-argument-bound-refused','production-relay-args-exact-and-current-parent-correlation','wrong-relay-argv-not-exact','wrong-fixture-parent-not-exact','older-parent-date-not-exact','unknown-parent-not-correlated')
+$diagnosticTestPhases = @('script-entry','module-observation','import-utility','compile-supervisor','supervisor-compiled')
 
 function Reply($Value) {
     [Console]::Out.WriteLine(($Value | ConvertTo-Json -Depth 8 -Compress))
@@ -262,34 +265,44 @@ function Get-ConsoleHostDiagnostics([object]$Row,[object[]]$Rows,[string]$ShellE
     if ($ValidateOnly) {
         if ($DiagnosticParserTestOnly) {
             $cases = [Collections.Generic.List[string]]::new()
+            $diagnosticTestCase = 'missing-command-line'
             $shape = Get-BoundedCommandLineShape $null
             if ($shape.class -ne 'missing' -or $null -ne $shape.argumentCount) { throw 'diagnostic-parser-test-failed' }
             $cases.Add('missing-command-line')
+            $diagnosticTestCase = 'wrong-type-refused'
             $shape = Get-BoundedCommandLineShape ([pscustomobject]@{value='not-a-string'})
             if ($shape.class -ne 'wrong-type' -or $null -ne $shape.argumentCount) { throw 'diagnostic-parser-test-failed' }
             $cases.Add('wrong-type-refused')
+            $diagnosticTestCase = 'over-bound-refused-before-parse'
             $shape = Get-BoundedCommandLineShape ('x' * ([CapacityJob]::MaximumCommandLineChars + 1))
             if ($shape.class -ne 'over-bound' -or $null -ne $shape.argumentCount) { throw 'diagnostic-parser-test-failed' }
             $cases.Add('over-bound-refused-before-parse')
+            $diagnosticTestCase = 'console-host-over-bound-shape-only'
             $oversizedRow = @{ProcessId=40;ParentProcessId=31;ExecutablePath='C:\Windows\System32\conhost.exe';CommandLine=('x' * ([CapacityJob]::MaximumCommandLineChars + 1));CreationDate=[DateTime]::UtcNow}
             $oversizedDiagnostics = Get-ConsoleHostDiagnostics -Row $oversizedRow -Rows @($oversizedRow) -ShellExecutable 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe' -RelayArgs @('-NoProfile','-Command','fixed') -FixtureId 20 -FixtureCreation ([string][DateTime]::UtcNow.Ticks)
             if ($oversizedDiagnostics.consoleHostCommandLineClass -ne 'over-bound' -or $null -ne $oversizedDiagnostics.consoleHostArgumentCount -or $oversizedDiagnostics.consoleHostCommandShape -ne 'unparsed') { throw 'diagnostic-parser-test-failed' }
             $cases.Add('console-host-over-bound-shape-only')
+            $diagnosticTestCase = 'zero-arguments'
             $shape = Get-BoundedCommandLineShape '"C:\Windows\System32\conhost.exe"'
             if ($shape.class -ne 'no-arguments' -or $shape.argumentCount -ne 0) { throw 'diagnostic-parser-test-failed' }
             $cases.Add('zero-arguments')
+            $diagnosticTestCase = 'one-argument'
             $shape = Get-BoundedCommandLineShape '"C:\Windows\System32\conhost.exe" 0x4'
             if ($shape.class -ne 'one-argument' -or $shape.argumentCount -ne 1) { throw 'diagnostic-parser-test-failed' }
             $cases.Add('one-argument')
+            $diagnosticTestCase = 'multiple-arguments'
             $shape = Get-BoundedCommandLineShape '"C:\Windows\System32\conhost.exe" 0x4 --headless'
             if ($shape.class -ne 'multiple-arguments' -or $shape.argumentCount -ne 2) { throw 'diagnostic-parser-test-failed' }
             $cases.Add('multiple-arguments')
+            $diagnosticTestCase = 'legacy-handle-only-candidate'
             $shape = Get-BoundedCommandLineShape '"C:\Windows\System32\conhost.exe" 0xA1b2C3d4'
             if ((Get-ConsoleHostCommandShape $shape) -ne 'legacy-handle-only-candidate') { throw 'diagnostic-parser-test-failed' }
             $cases.Add('legacy-handle-only-candidate')
+            $diagnosticTestCase = 'legacy-handle-force-v1-candidate'
             $shape = Get-BoundedCommandLineShape '"C:\Windows\System32\conhost.exe" 0xDEADBEEF -ForceV1'
             if ((Get-ConsoleHostCommandShape $shape) -ne 'legacy-handle-force-v1-candidate') { throw 'diagnostic-parser-test-failed' }
             $cases.Add('legacy-handle-force-v1-candidate')
+            $diagnosticTestCase = 'malformed-case-length-and-extra-args-other'
             foreach ($line in @(
                 '"C:\Windows\System32\conhost.exe" 0XDEADBEEF',
                 '"C:\Windows\System32\conhost.exe" 0x123456789',
@@ -300,14 +313,17 @@ function Get-ConsoleHostDiagnostics([object]$Row,[object[]]$Rows,[string]$ShellE
                 if ((Get-ConsoleHostCommandShape $shape) -ne 'other') { throw 'diagnostic-parser-test-failed' }
             }
             $cases.Add('malformed-case-length-and-extra-args-other')
+            $diagnosticTestCase = 'unparsed-command-shape'
             $unparsedLine = '"C:\Windows\System32\conhost.exe" ' + ((1..13 | ForEach-Object { 'a' }) -join ' ')
             $shape = Get-BoundedCommandLineShape $unparsedLine
             if ((Get-ConsoleHostCommandShape $shape) -ne 'unparsed') { throw 'diagnostic-parser-test-failed' }
             $cases.Add('unparsed-command-shape')
+            $diagnosticTestCase = 'parser-argument-bound-refused'
             $many = '"C:\Windows\System32\conhost.exe" ' + ((1..13 | ForEach-Object { 'a' }) -join ' ')
             $shape = Get-BoundedCommandLineShape $many
             if ($shape.class -ne 'parse-refused' -or $null -ne $shape.argumentCount) { throw 'diagnostic-parser-test-failed' }
             $cases.Add('parser-argument-bound-refused')
+            $diagnosticTestCase = 'production-relay-args-exact-and-current-parent-correlation'
             $actualRelayArgs = @($env:AGENT_COMMS_TEST_RELAY_ARGS_JSON | ConvertFrom-Json)
             if ($actualRelayArgs.Count -ne 7 -or $actualRelayArgs[0] -ne '-NoLogo' -or $actualRelayArgs[5] -ne '-Command' -or $actualRelayArgs[-1].Contains('"')) { throw 'diagnostic-parser-test-failed' }
             $shellPath = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
@@ -324,24 +340,29 @@ function Get-ConsoleHostDiagnostics([object]$Row,[object[]]$Rows,[string]$ShellE
             if (-not $parentDiagnostics.parentCurrentRowFound -or -not $parentDiagnostics.parentRelayPathMatch -or -not $parentDiagnostics.parentRelayArgsParsed -or -not $parentDiagnostics.parentRelayArgsEqualExpected -or -not $parentDiagnostics.parentParentIsFixture -or -not $parentDiagnostics.parentCreationAtOrAfterFixtureObserved -or -not $parentDiagnostics.consoleHostCreationAtOrAfterParentObserved -or $parentDiagnostics.consoleHostCommandShape -ne 'legacy-handle-force-v1-candidate') { throw 'diagnostic-parser-test-failed' }
             if ((ConvertTo-Json -InputObject $parentDiagnostics -Compress).Contains('DEADBEEF')) { throw 'diagnostic-parser-test-failed' }
             $cases.Add('production-relay-args-exact-and-current-parent-correlation')
+            $diagnosticTestCase = 'wrong-relay-argv-not-exact'
             $wrongArgs = @($actualRelayArgs);$wrongArgs[-1] = $wrongArgs[-1] + ' changed'
             $wrongArgRows = @($parentRows[0].Clone(),$parentRows[1].Clone())
             $wrongArgRows[0].CommandLine = '"' + $shellPath + '" ' + (($wrongArgs[0..($wrongArgs.Count - 2)] -join ' ') + ' "' + $wrongArgs[-1] + '"')
             $wrongArgDiagnostics = Get-ConsoleHostDiagnostics -Row $wrongArgRows[1] -Rows $wrongArgRows -ShellExecutable $shellPath -RelayArgs $actualRelayArgs -FixtureId 20 -FixtureCreation $fixtureCreated
             if (-not $wrongArgDiagnostics.parentRelayArgsParsed -or $wrongArgDiagnostics.parentRelayArgsEqualExpected) { throw 'diagnostic-parser-test-failed' }
             $cases.Add('wrong-relay-argv-not-exact')
+            $diagnosticTestCase = 'wrong-fixture-parent-not-exact'
             $wrongParentRows = @($parentRows[0].Clone(),$parentRows[1].Clone())
             $wrongParentRows[0].ParentProcessId = 21
             $wrongParentDiagnostics = Get-ConsoleHostDiagnostics -Row $wrongParentRows[1] -Rows $wrongParentRows -ShellExecutable $shellPath -RelayArgs $actualRelayArgs -FixtureId 20 -FixtureCreation $fixtureCreated
             if (-not $wrongParentDiagnostics.parentCurrentRowFound -or $wrongParentDiagnostics.parentParentIsFixture -or $wrongParentDiagnostics.parentRelayArgsEqualExpected) { throw 'diagnostic-parser-test-failed' }
             $cases.Add('wrong-fixture-parent-not-exact')
+            $diagnosticTestCase = 'older-parent-date-not-exact'
             $olderFixtureCreated = [string]$parentCreated.AddSeconds(1).Ticks
             $olderDiagnostics = Get-ConsoleHostDiagnostics -Row $parentRows[1] -Rows $parentRows -ShellExecutable $shellPath -RelayArgs $actualRelayArgs -FixtureId 20 -FixtureCreation $olderFixtureCreated
             if (-not $olderDiagnostics.parentCreationDatePresent -or $olderDiagnostics.parentCreationAtOrAfterFixtureObserved -or $olderDiagnostics.parentRelayArgsEqualExpected) { throw 'diagnostic-parser-test-failed' }
             $cases.Add('older-parent-date-not-exact')
+            $diagnosticTestCase = 'unknown-parent-not-correlated'
             $unknownParentDiagnostics = Get-ConsoleHostDiagnostics -Row $parentRows[1] -Rows @($parentRows[1]) -ShellExecutable $shellPath -RelayArgs $actualRelayArgs -FixtureId 20 -FixtureCreation $fixtureCreated
             if ($unknownParentDiagnostics.parentCurrentRowFound -or $unknownParentDiagnostics.parentRelayPathMatch -or $unknownParentDiagnostics.parentRelayArgsParsed -or $unknownParentDiagnostics.parentRelayArgsEqualExpected) { throw 'diagnostic-parser-test-failed' }
             $cases.Add('unknown-parent-not-correlated')
+            $diagnosticTestCase = 'startup-or-unknown'
             Reply @{id=0;ok=$true;parserCases=@($cases);workloadRun=$false;processQueryRun=$false}
             return
         }
@@ -575,7 +596,12 @@ function Get-ConsoleHostDiagnostics([object]$Row,[object[]]$Rows,[string]$ShellE
 } catch {
     # A fixed failure record, never PowerShell errors, command lines or stacks.
     $failureId = if ($null -eq $requestId) { 0 } else { $requestId }
-    if (-not $utilityLoaded) {
+    if ($DiagnosticParserTestOnly) {
+        if ($diagnosticTestCases -notcontains $diagnosticTestCase) { $diagnosticTestCase='startup-or-unknown' }
+        if ($diagnosticTestPhases -notcontains $phase) { $failurePhase='startup-or-unknown' } else { $failurePhase=$phase }
+        [Console]::Out.WriteLine('{"id":0,"ok":false,"failure":{"check":"diagnostic-parser-test-failed","phase":"' + $failurePhase + '","case":"' + $diagnosticTestCase + '"}}')
+        [Console]::Out.Flush()
+    } elseif (-not $utilityLoaded) {
         # Startup refusal must not retry the unavailable JSON cmdlet.
         [Console]::Out.WriteLine('{"id":0,"ok":false,"failure":{"check":"job-supervisor-failed","phase":"' + $phase + '"}}')
         [Console]::Out.Flush()

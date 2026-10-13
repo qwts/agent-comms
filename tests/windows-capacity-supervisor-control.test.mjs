@@ -14,11 +14,48 @@ const diagnosticParserCases = [
   'production-relay-args-exact-and-current-parent-correlation','wrong-relay-argv-not-exact','wrong-fixture-parent-not-exact',
   'older-parent-date-not-exact','unknown-parent-not-correlated',
 ];
+const diagnosticFailureCases = ['startup-or-unknown', ...diagnosticParserCases];
+const diagnosticFailurePhases = ['script-entry','module-observation','import-utility','compile-supervisor','supervisor-compiled','startup-or-unknown'];
+
+function projectDiagnosticParserOutput(stdout, stderrBytes) {
+  const boundedStderrBytes = Number.isSafeInteger(stderrBytes) && stderrBytes >= 0 ? Math.min(stderrBytes, 65535) : 65535;
+  if (typeof stdout !== 'string' || stdout.length > 4096) return { kind: 'invalid', stderrBytes: boundedStderrBytes };
+  let record;
+  try { record = JSON.parse(stdout); } catch { return { kind: 'invalid', stderrBytes: boundedStderrBytes }; }
+  const hasExactKeys = (value, keys) => value && typeof value === 'object' && !Array.isArray(value)
+    && Object.keys(value).sort().join(',') === [...keys].sort().join(',');
+  if (hasExactKeys(record, ['id','ok','parserCases','workloadRun','processQueryRun'])
+      && record.id === 0 && record.ok === true && record.workloadRun === false && record.processQueryRun === false
+      && Array.isArray(record.parserCases) && record.parserCases.length === diagnosticParserCases.length
+      && record.parserCases.every((value, index) => value === diagnosticParserCases[index])) {
+    return { kind: 'success', stderrBytes: boundedStderrBytes };
+  }
+  if (hasExactKeys(record, ['id','ok','failure']) && record.id === 0 && record.ok === false
+      && hasExactKeys(record.failure, ['check','phase','case'])
+      && record.failure.check === 'diagnostic-parser-test-failed'
+      && diagnosticFailurePhases.includes(record.failure.phase)
+      && diagnosticFailureCases.includes(record.failure.case)) {
+    return { kind: 'failure', phase: record.failure.phase, case: record.failure.case, stderrBytes: boundedStderrBytes };
+  }
+  return { kind: 'invalid', stderrBytes: boundedStderrBytes };
+}
 
 test('native diagnostic-parser receipt case order matches the PowerShell probe', () => {
   const script = readFileSync(new URL('../tools/acceptance/windows-capacity-job.ps1', import.meta.url), 'utf8');
   const cases = [...script.matchAll(/\$cases\.Add\('([^']+)'\)/g)].map((match) => match[1]);
   assert.deepEqual(cases, diagnosticParserCases);
+});
+
+test('native diagnostic-parser failure projection retains only closed IDs and bounded stderr count', () => {
+  const failure = JSON.stringify({ id: 0, ok: false, failure: { check: 'diagnostic-parser-test-failed', phase: 'supervisor-compiled', case: 'wrong-fixture-parent-not-exact' } });
+  assert.deepEqual(projectDiagnosticParserOutput(failure, 7), { kind: 'failure', phase: 'supervisor-compiled', case: 'wrong-fixture-parent-not-exact', stderrBytes: 7 });
+  for (const invalid of [
+    JSON.stringify({ id: 0, ok: false, failure: { check: 'diagnostic-parser-test-failed', phase: 'supervisor-compiled', case: 'unknown-case' } }),
+    JSON.stringify({ id: 0, ok: false, failure: { check: 'diagnostic-parser-test-failed', phase: 'supervisor-compiled', case: 'wrong-fixture-parent-not-exact', commandLine: 'CANARY-private' } }),
+    JSON.stringify({ id: 0, ok: false, failure: { check: 'diagnostic-parser-test-failed', phase: 'supervisor-compiled', case: 'wrong-fixture-parent-not-exact', handle: '0xDEADBEEF' } }),
+    '{malformed-json',
+    'x'.repeat(4097),
+  ]) assert.deepEqual(projectDiagnosticParserOutput(invalid, 100000), { kind: 'invalid', stderrBytes: 65535 });
 });
 
 async function within(promise, ms) {
@@ -133,12 +170,17 @@ test('classic supervisor bounds command-line diagnostic parsing without querying
   });
   const closed = new Promise(resolve => child.once('close', resolve));
   child.stdout.on('data', chunk => { stdout += chunk.toString('utf8'); if (stdout.length > 4096) child.kill(); });
-  child.stderr.on('data', chunk => { stderrBytes += chunk.length; });
+  child.stderr.on('data', chunk => { stderrBytes = Math.min(65535, stderrBytes + chunk.length); });
   try {
-    assert.equal((await within(exited, 50000)).code, 0);
+    const result = await within(exited, 50000);
     await within(closed, 5000);
-    assert.equal(stderrBytes, 0);
-    assert.deepEqual(JSON.parse(stdout), { id: 0, ok: true, parserCases: diagnosticParserCases, workloadRun: false, processQueryRun: false });
+    const projected = projectDiagnosticParserOutput(stdout, stderrBytes);
+    const safeDetail = projected.kind === 'failure'
+      ? `sanitizedFailure=${projected.phase}/${projected.case}; stderrBytes=${projected.stderrBytes}`
+      : `sanitizedFailureRecord=${projected.kind}; stderrBytes=${projected.stderrBytes}`;
+    assert.equal(result.code, 0, safeDetail);
+    assert.equal(projected.kind, 'success', safeDetail);
+    assert.equal(projected.stderrBytes, 0, `unexpectedStderrBytes=${projected.stderrBytes}`);
   } finally {
     if (!terminal) child.kill();
     await within(exited, 5000); await within(closed, 5000);
