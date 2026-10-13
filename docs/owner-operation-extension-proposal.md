@@ -83,11 +83,10 @@ assignments. Until these checks are reviewed, those operations stay deferred.
 
 ## First coherent phase: computer-use setting
 
-The approved permission-only `soul.computer-use.set` phase sets enabled true
-or false for one exact resolved account/Agent ID. While disabled, subsequent
+Approved permission-only `soul.computer-use.set` sets enabled true or false for
+one exact resolved account/Agent ID. While disabled, subsequent
 computer-use tool calls for that soul are denied, but the current turn and
-already-authorized or running tool calls continue. Check permission on each
-call and after approval waits. Each later setting change, including re-enabling,
+already-authorized or running tool calls continue. Gate each call, including after approval waits. Each later setting change, including re-enabling,
 requires fresh trusted presence and its own single-use receipt. Other effects
 remain unapproved, with no inherited authority.
 
@@ -116,9 +115,7 @@ authority refuses; a prior successful query preserves no power.
 
 Compare expected boolean before entered/spend. Compare, spend, write, exact
 readback and completion share one population lock. Setting-domain pre-effect
-refusals include `stale-expected-state`, `soul-not-found` and
-`invalid-request`; authentication, grant and revocation refusals remain. After
-entry only completed or indeterminate is valid. A no-op still spends/completes; audit is
+refusals include follow the proposed bot-domain to #77 mapping in the [wire candidate](owner-computer-use-wire-candidate.md#setting-domain-refusal-mapping); authentication, grant and revocation refusals keep existing semantics. After entry, only completed or indeterminate is valid. A no-op still spends/completes; audit is
 best effort. Recovery is observation-only without exact request-linked
 completion; current state cannot prove outcome or trigger another write.
 Off→on→off passes the boolean comparison. Disabled denies future calls without

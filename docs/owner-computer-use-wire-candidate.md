@@ -56,6 +56,23 @@ write and its writer only renames a temp file; bot review must design the
 no-op and flush/readback seam. Audit logging is best effort after
 completion and never retries or changes the result.
 
+### Setting-domain refusal mapping
+
+Map bot-domain refusals to the existing #77 evidence and response vocabulary
+(`agent-bot-identity/identity/owner-decision-evidence.mjs:27-36`):
+
+| Setting-domain outcome | Existing `effect.refused` code | Protocol outcome |
+| --- | --- | --- |
+| `stale-expected-state` | `expected-state-changed` | `validation-refused` |
+| `soul-not-found` | `target-unavailable` | `validation-refused` |
+| `invalid-request` after challenge | `validation-failed` | `validation-refused` |
+| Pre-effect I/O failure with a durably published refusal record | `storage-unavailable` | `storage-refused` |
+| Pre-effect I/O failure without durable refusal proof | No refusal record/digest | `storage-failed` / uncertain |
+
+Strict action/challenge decoding before a valid challenge may retain its existing
+protocol-refusal path and produces no effect refusal evidence. Do not add journal
+refusal codes. If refusal evidence cannot be durably published, remain uncertain.
+
 The current population `withLock` has a blocking stale-lock issue: in
 `agent-bot-identity/file-lock.mjs`, `STALE_LOCK_MS` is 30 seconds and the
 default `keepLiveOwners` is false, so a long-held live lock can be reclaimed.
