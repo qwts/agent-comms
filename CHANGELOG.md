@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+
+- Reconcile Proposed federation wire/receipt identity and lossless plaintext
+  bounds with accepted local-origin, body/wire, expiry and deduplication policy.
+  Development-only codec/structural laboratories do not adopt crypto, provider
+  or runtime behavior (#28/#118/#119).
+
 ## [0.5.4] - 2026-10-13
 
 ### Added
