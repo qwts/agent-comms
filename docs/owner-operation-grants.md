@@ -94,6 +94,12 @@ owner-decision support. Existing [principal target queries](principal-target-che
 continue their narrower current-target check. Full journals, native custody,
 relay and cross-account application remain open.
 
+## Proposed broader powers
+
+The [#250 policy proposal](owner-operation-extension-proposal.md) is not
+adopted. It proposes separate selectors and fresh presence/effect-bound
+receipts for additional actions; existing grants gain no new authority.
+
 ## Validation
 
 `node --test tests/owner-scoped-grants.test.mjs tests/owner-operation-grants.test.mjs`
