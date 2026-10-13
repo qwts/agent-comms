@@ -56,6 +56,14 @@ const CLEANUP_FAILURES = new Set([
   'kill-request-and-owned-terminal-unconfirmed', 'kill-request-and-owned-close-unconfirmed',
   'kill-request-and-owned-terminal-and-close-unconfirmed', 'cleanup-observation-failed',
 ]);
+const CONNECTOR_EVENTS = new Set([
+  'raw-connect', 'raw-error', 'raw-close', 'pending-after-12s',
+  'relay-error', 'relay-exit', 'relay-close',
+]);
+const CONNECTOR_ERROR_STAGES = new Set([
+  'host-clixml', 'host-stderr', 'pipe-refused', 'process-error',
+  'premature-close', 'startup-timeout', 'unclassified',
+]);
 
 test('detached relay probe uses the checked-in Node 24.21.0/libuv 1.52.1 diagnostic tuple', () => {
   assert.equal(hostComponents.node.version, '24.21.0');
@@ -121,9 +129,25 @@ function projectOwnedChildCleanup(value) {
   };
 }
 
-function projectCombinedProbeFailure(primary, cleanup) {
+function projectConnectorObservation(value) {
+  const events = value?.events instanceof Set ? value.events : new Set();
+  return {
+    rawConnect: events.has('raw-connect'),
+    rawError: events.has('raw-error'),
+    rawClose: events.has('raw-close'),
+    pendingAfter12s: events.has('pending-after-12s'),
+    relayError: events.has('relay-error'),
+    relayExit: events.has('relay-exit'),
+    relayClose: events.has('relay-close'),
+    rawErrorStage: CONNECTOR_ERROR_STAGES.has(value?.rawErrorStage) ? value.rawErrorStage : null,
+    invalid: value?.invalid === true,
+  };
+}
+
+function projectCombinedProbeFailure(primary, cleanup, connector) {
   return {
     primary: primary === null ? null : projectProbeFailure(primary),
+    connector: projectConnectorObservation(connector),
     cleanupFailure: CLEANUP_FAILURES.has(cleanup?.failure) ? cleanup.failure : 'cleanup-observation-failed',
     ownedChildren: {
       fixture: projectOwnedChildCleanup(cleanup?.ownedChildren?.fixture),
@@ -179,11 +203,19 @@ test('combined primary and cleanup failure projection preserves only owned resol
       supervisor: { spawned: true, terminalConfirmed: false, closeConfirmed: false, handle: 'CANARY-handle' },
     },
     message: 'CANARY-error',
+  }, {
+    events: new Set(['pending-after-12s', 'relay-exit', 'raw-error']),
+    rawErrorStage: 'startup-timeout', pid: 456, path: 'CANARY-relay-path', stderr: 'CANARY-output',
   });
   assert.deepEqual(combined, {
     primary: {
       awaitStage: 'relay-sample', fixtureStage: 'relay-connected', supervisorPhase: 'sample-classify',
       supervisorCheck: 'executable', errorClass: 'control-deadline',
+    },
+    connector: {
+      rawConnect: false, rawError: true, rawClose: false, pendingAfter12s: true,
+      relayError: false, relayExit: true, relayClose: false,
+      rawErrorStage: 'startup-timeout', invalid: false,
     },
     cleanupFailure: 'owned-terminal-and-close-unconfirmed',
     ownedChildren: {
@@ -192,6 +224,33 @@ test('combined primary and cleanup failure projection preserves only owned resol
     },
   });
   assert.doesNotMatch(JSON.stringify(combined), /CANARY|123/);
+  assert.doesNotMatch(JSON.stringify(combined), /456|stderr|output/);
+});
+
+test('connector event receipts are independent from monotonic fixture stages and reject unknown events', () => {
+  const events = new Set();
+  const record = (value) => {
+    const keys = value && typeof value === 'object' && !Array.isArray(value)
+      ? Object.keys(value).sort().join(',') : '';
+    if (value?.id !== -3 || !CONNECTOR_EVENTS.has(value.event)
+        || (value.event === 'raw-error'
+          ? keys !== 'errorStage,event,id' || !CONNECTOR_ERROR_STAGES.has(value.errorStage)
+          : keys !== 'event,id')
+        || events.has(value.event)) return false;
+    events.add(value.event);
+    return true;
+  };
+  assert.equal(record({ id: -3, event: 'relay-exit' }), true);
+  assert.equal(record({ id: -3, event: 'raw-connect' }), true);
+  assert.equal(record({ id: -3, event: 'pending-after-12s' }), true);
+  assert.equal(record({ id: -3, event: 'raw-error', errorStage: 'startup-timeout' }), true);
+  assert.equal(record({ id: -3, event: 'raw-error', errorStage: 'startup-timeout' }), false);
+  assert.equal(record({ id: -3, event: 'raw-error', errorStage: 'CANARY-secret' }), false);
+  assert.equal(record({ id: -3, event: 'CANARY-event' }), false);
+  assert.deepEqual(projectConnectorObservation({ events, rawErrorStage: 'startup-timeout' }), {
+    rawConnect: true, rawError: true, rawClose: false, pendingAfter12s: true,
+    relayError: false, relayExit: true, relayClose: false, rawErrorStage: 'startup-timeout', invalid: false,
+  });
 });
 
 test('DETACHED_PROCESS diagnostic probe preserves actual relay argv and remains in the private job without console host', {
@@ -211,6 +270,9 @@ test('DETACHED_PROCESS diagnostic probe preserves actual relay argv and remains 
   let fixtureStageInvalid = false;
   let fixtureStageIndex = -1;
   let fixtureStageCount = 0;
+  const connectorEvents = new Set();
+  let connectorObservationInvalid = false;
+  let rawErrorStage;
   let primaryFailure;
   const cleanup = {
     failure: 'none',
@@ -226,6 +288,22 @@ test('DETACHED_PROCESS diagnostic probe preserves actual relay argv and remains 
     const fixtureArgs = [fixturePath, pipe];
     fixture = owned(process.execPath, fixtureArgs, ['ignore', 'ignore', 'pipe', 'ipc']);
     fixture.child.on('message', record => {
+      if (record?.id === -3) {
+        const keys = record && typeof record === 'object' && !Array.isArray(record)
+          ? Object.keys(record).sort().join(',') : '';
+        const errorRecord = record.event === 'raw-error';
+        if (!CONNECTOR_EVENTS.has(record.event)
+            || (errorRecord
+              ? keys !== 'errorStage,event,id' || !CONNECTOR_ERROR_STAGES.has(record.errorStage)
+              : keys !== 'event,id')
+            || connectorEvents.has(record.event)) {
+          connectorObservationInvalid = true;
+          return;
+        }
+        connectorEvents.add(record.event);
+        if (errorRecord) rawErrorStage = record.errorStage;
+        return;
+      }
       if (!record || record.id !== -2) return;
       const keys = record && typeof record === 'object' && !Array.isArray(record) ? Object.keys(record).sort().join(',') : '';
       const index = FIXTURE_STAGES.indexOf(record.stage);
@@ -324,6 +402,7 @@ test('DETACHED_PROCESS diagnostic probe preserves actual relay argv and remains 
     await within(supervisor.closed, 5000, 'supervisor-close-deadline');
     assert.equal(supervisor.stderrBytes(), 0);
     assert.equal(fixtureStageInvalid, false);
+    assert.equal(connectorObservationInvalid, false);
     assert.deepEqual(FIXTURE_STAGES.slice(0, fixtureStageCount), FIXTURE_STAGES);
   } catch (error) {
     const supervisorPhase = control?.state().phase;
@@ -331,6 +410,9 @@ test('DETACHED_PROCESS diagnostic probe preserves actual relay argv and remains 
       awaitStage, fixtureStage, supervisorPhase, supervisorCheck: lastSupervisorCheck,
       errorClass: error?.message === 'probe-request-failed' ? lastSupervisorFailureClass : safeErrorClass(error),
     };
+    if (fixtureStageInvalid || connectorObservationInvalid) {
+      primaryFailure.errorClass = 'control-invalid';
+    }
   } finally {
     awaitStage = 'owned-cleanup';
     // Cleanup is limited to the two directly-owned harness children. The job
@@ -374,7 +456,9 @@ test('DETACHED_PROCESS diagnostic probe preserves actual relay argv and remains 
     else if (closeUnconfirmed) cleanup.failure = 'owned-close-unconfirmed';
   }
   if (primaryFailure || cleanup.failure !== 'none') {
-    const detail = projectCombinedProbeFailure(primaryFailure, cleanup);
+    const detail = projectCombinedProbeFailure(primaryFailure, cleanup, {
+      events: connectorEvents, rawErrorStage, invalid: connectorObservationInvalid,
+    });
     throw new Error(`detached-probe-failed ${JSON.stringify(detail)}`);
   }
 });

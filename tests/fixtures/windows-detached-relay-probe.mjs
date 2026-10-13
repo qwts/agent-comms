@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import net from 'node:net';
 import { connectWindowsPipe } from '../../lib/platform/windows-pipe-client.mjs';
+import { projectWindowsPipeStage } from '../../lib/platform/windows-pipe-stage.mjs';
 
 const pipe = process.argv[2];
 assert.equal(typeof pipe, 'string');
@@ -16,6 +17,12 @@ let rawClose;
 let serverClosed = false;
 const sockets = new Set();
 const reportStage = stage => { if (process.connected) process.send({ id: -2, stage }); };
+const reportConnector = (event, errorStage) => {
+  if (!process.connected) return;
+  const record = { id: -3, event };
+  if (event === 'raw-error') record.errorStage = errorStage;
+  process.send(record);
+};
 
 const serverReady = new Promise((resolve, reject) => {
   server = net.createServer((socket) => {
@@ -59,15 +66,33 @@ process.on('message', async ({ id, op, expectedRelayArgs }) => {
           reportStage('relay-process-spawned');
           relay = child;
           relayExit = new Promise((resolve) => {
-            child.once('error', () => resolve({ code: null }));
-            child.once('exit', (code, signal) => resolve({ code, signal }));
+            child.once('error', () => { reportConnector('relay-error'); resolve({ code: null }); });
+            child.once('exit', (code, signal) => { reportConnector('relay-exit'); resolve({ code, signal }); });
           });
-          relayClose = new Promise((resolve) => child.once('close', (code, signal) => resolve({ code, signal })));
+          relayClose = new Promise((resolve) => child.once('close', (code, signal) => {
+            reportConnector('relay-close');
+            resolve({ code, signal });
+          }));
           return child;
         },
       });
       rawClose = new Promise(resolve => raw.once('close', resolve));
       raw.on('data', () => {});
+      let connectorSettled = false;
+      let pendingTimer;
+      const settleConnector = (event, errorStage) => {
+        connectorSettled = true;
+        clearTimeout(pendingTimer);
+        pendingTimer = undefined;
+        reportConnector(event, errorStage);
+      };
+      raw.once('connect', () => settleConnector('raw-connect'));
+      raw.once('error', error => settleConnector('raw-error', projectWindowsPipeStage(error) ?? 'unclassified'));
+      raw.once('close', () => settleConnector('raw-close'));
+      pendingTimer = setTimeout(() => {
+        pendingTimer = undefined;
+        if (!connectorSettled) reportConnector('pending-after-12s');
+      }, 12_000);
       await new Promise((resolve, reject) => {
         raw.once('connect', resolve);
         raw.once('error', reject);
