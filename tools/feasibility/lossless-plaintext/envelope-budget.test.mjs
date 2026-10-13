@@ -32,7 +32,7 @@ test('native origin identities and maximum plaintext produce exact complete stru
   assert.equal(cbor(header(plain.length)).length,559);
   assert.equal(envelope(plain.length).length,56963);
   assert.ok(envelope(plain.length).length<=65536);
-  const actualReply=[...largest];actualReply[4]='msg_'+'f'.repeat(36);
+  const actualReply=[...largest];actualReply[4]='msg_ffffffff-ffff-ffff-ffff-ffffffffffff';
   assert.equal(encode(actualReply).length,55876);assert.equal(envelope(55876).length,56555);
 });
 test('full native body and old plaintext boundary are preserved; limit plus one refuses',()=>{
