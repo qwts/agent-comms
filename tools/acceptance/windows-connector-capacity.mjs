@@ -12,7 +12,7 @@ import { admissionStage, RATES } from './windows-capacity-policy.mjs';
 import { projectWindowsPipeStage } from '../../lib/platform/windows-pipe-stage.mjs';
 import { connectWindowsPipe } from '../../lib/platform/windows-pipe-client.mjs';
 import { supervisorClassificationFromError, supervisorClassificationFromFailure } from './windows-capacity-classification.mjs';
-import { captureCompilerPrefix, compilerControlArgs, observeCompilerControl, projectCompilerObservation, collectCompilerControls, sampleCompilerControl, COMPILER_SOURCE, COMPILER_DEADLINE_MS } from './windows-capacity-compiler.mjs';
+import { captureCompilerPrefix, compilerControlArgs, compilerReleaseRequestId, createCompilerRelease, observeCompilerControl, projectCompilerObservation, collectCompilerControls, sampleCompilerControl, COMPILER_SOURCE, COMPILER_DEADLINE_MS } from './windows-capacity-compiler.mjs';
 import { collectSupervisorProbes, createCapacityController, encodingSignature, FIXTURE_PHASES, snapshotCapacityPhases } from './windows-capacity-control.mjs';
 
 import { capacityTimingMode, capacityTimingProfile, createCapacityPhaseTiming, timeCapacityRequest } from './windows-capacity-timing.mjs';
@@ -89,8 +89,21 @@ async function compilerFixture(source, variant) {
   const prefix = captureCompilerPrefix(pinned.connectWindowsPipe, process.env);
   const shell = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
   const child = ownedChild(shell, compilerControlArgs(prefix, variant), {
-    env: environment(), stdio: ['ignore','pipe','pipe'], windowsHide: true });
+    env: environment(), stdio: ['pipe','pipe','pipe'], windowsHide: true });
+  const release = createCompilerRelease(child);
+  const releaseRequest = async request => {
+    let id;
+    try {
+      id = compilerReleaseRequestId(request,start.id);
+      await release();
+      process.send({ id, ok: true, released: true });
+    } catch {
+      if (Number.isSafeInteger(id)) process.send({ id, ok: false, failure: { check: 'control-closed' } });
+    }
+  };
+  process.once('message', releaseRequest);
   const receipt = await observeCompilerControl(child, variant);
+  process.removeListener('message', releaseRequest);
   process.send({ id: start.id, ok: true, compilerObservation: receipt });
   process.once('message', ({ id, op }) => {
     if (op !== 'stop') { process.exitCode = 1; process.disconnect(); return; }
@@ -367,7 +380,9 @@ async function compilerProbe(source, variant, commitLimitBytes) {
     assert.equal(result.attached,true); attached = true;
     activeStage = 'derived-compiler-control';
     const started = control.request('start',{},COMPILER_DEADLINE_MS + 15_000);
-    const reply = await sampleCompilerControl(job,started,{ onReply(value) {
+    const reply = await sampleCompilerControl(job,started,{ async onRelayConfirmed() {
+      assert.equal((await control.request('release',{},5000)).released,true,'control-invalid');
+    }, onReply(value) {
       // Diagnostics may survive a sampling refusal, but cannot satisfy its gates.
       try { retainedObservation = projectCompilerObservation(value.compilerObservation,variant); }
       catch { /* Malformed owned replies are never retained or serialized. */ }
