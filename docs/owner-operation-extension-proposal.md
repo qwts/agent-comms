@@ -85,27 +85,27 @@ assignments. Until these checks are reviewed, those operations stay deferred.
 
 The approved permission-only `soul.computer-use.set` phase sets enabled true
 or false for one exact resolved account/Agent ID. While disabled, subsequent
-computer-use tool calls for that soul are denied, but the current turn is not
-stopped, paused or cancelled. A later setting change, including re-enabling,
-requires fresh trusted presence and its own operation-specific single-use
-receipt. Other computer-use operations and effects remain unapproved, with no
-inherited authority.
+computer-use tool calls for that soul are denied, but the current turn and
+already-authorized or running tool calls continue. Check permission on each
+call and after approval waits. Each later setting change, including re-enabling,
+requires fresh trusted presence and its own single-use receipt. Other effects
+remain unapproved, with no inherited authority.
 
 See the [proposed wire extension](owner-computer-use-wire-candidate.md) for joint
 technical review; it does not adopt runtime behavior.
 
-Bind exact account/Agent ID, enabled and prepared expected booleans, request,
-installation/namespace, daemon epoch and effect plan to the single-use receipt.
-Freeze these before challenge; derive no authority from mutable labels,
-credential fields or caller account. Off→on→off before application returns to
-the same boolean and is accepted. The prompt names the exact target and result;
-changed target/value/plan or stale boolean refuses.
+Bind exact account/Agent ID, enabled/expected booleans, request,
+installation/namespace, daemon epoch and effect plan in the receipt. Freeze
+before challenge; mutable labels, credentials and caller accounts confer no
+authority. The trusted prompt names the exact soul/account and resulting state.
+Changed target/value/plan or stale boolean refuses; off→on→off returns to the
+accepted expected boolean.
 
 Exact prepared-turn cancellation is deferred until agent-bot exposes a reviewed
 API that names and validates one prepared turn/effect identity, consumes its
 own operation-specific single-use receipt, and supports exact reconciliation.
-Changing computer-use permission must never invoke the current whole-soul stop
-side effect.
+This operation must never invoke the current whole-soul stop side effect; the
+existing local route and its behavior remain unchanged.
 
 Use #77's reviewed receipt/presence/journal infrastructure when production
 ready; do not duplicate or bypass it. Require the existing target grant plus
@@ -114,17 +114,18 @@ account, daemon identity, enrollment and both grants at preparation, receipt
 issuance and immediately before durable application. Revocation or unavailable
 authority refuses; a prior successful query preserves no power.
 
-The daemon durably spends the request before applying the permission setting.
-After a crash or uncertain setting write, return `indeterminate` and reconcile
-the exact retained request/effect. No automatic retry, re-prompt, failover or
-newly generated request may conceal uncertainty. Reconciliation may discover
-completion; it must not silently perform a second setting change. Denying new
-computer-use tool calls while disabled does not cancel a turn already running.
+Compare expected boolean before entered/spend. Compare, spend, write, exact
+readback and completion share one population lock. Setting-domain pre-effect
+refusals include `stale-expected-state`, `soul-not-found` and
+`invalid-request`; authentication, grant and revocation refusals remain. After
+entry only completed or indeterminate is valid. A no-op still spends/completes; audit is
+best effort. Recovery is observation-only without exact request-linked
+completion; current state cannot prove outcome or trigger another write.
+Off→on→off passes the boolean comparison. Disabled denies future calls without
+cancelling authorized/running calls.
 
-Agent-bot owns the permission-only consumer/API design. The Comms and bot
-teams must jointly review the exact action and receipt shape and conformance
-vectors before either side adopts the wire contract. The current whole-soul stop behavior must not be invoked for this
-setting operation. Runtime implementation and acceptance remain pending.
+Agent-bot owns the permission-only consumer/API design. Bot and Comms must jointly review action, receipt and vectors before adoption. Runtime
+implementation and acceptance remain pending.
 
 ## Limits and acceptance required before enabling
 
@@ -133,19 +134,16 @@ replay and privacy bounds. Extending the vocabulary or selector schema must
 not silently enlarge those budgets. Unknown operations/selectors/fields,
 stale expected state and mismatched account/resource bindings refuse.
 
-Before enabling the first phase, acceptance must show that authenticated
-preparation and application use actual fresh native presence and protected
-single-use receipt custody; the receipt binds the exact soul, enabled value,
-expected boolean and effect-plan digest; duplicate, replay, changed
-target/value/effect and stale state refuse; revocation is checked at every
-boundary; and an uncertain write reconciles without repeating the setting
-change. While disabled, subsequent computer-use tool calls must be denied and
-the current turn must continue without a stop or pause. Re-enabling requires a
-new fresh presence and receipt. Include soul/account cross-scope canaries,
-unjoined/departed resolution, concurrent setting/turn races, and crash/restart
-before and after durable spend/write. Preserve the supported local-presence
-behavior.
-A fixture or target query alone cannot establish installed acceptance.
+Before enabling, verify fresh presence and protected single-use custody, exact
+target/value/expected boolean/plan binding and replay/stale-state refusal.
+Resolve the 30-second stale-lock reclaim before claiming lock exclusion; verify
+logical file/directory flush and exact readback (no physical-flush claim), and
+proof-only recovery without repeat writes. While off, deny future calls and
+continue current/authorized work. Re-enabling needs fresh presence and receipt.
+Cover exact soul/account cross-scope and unjoined/departed canaries, revocation
+at every boundary, replay/changed target-value-plan, concurrent setting/turn
+races, crash/restart before and after durable spend/write, and supported local
+presence. A fixture or target query alone is not installed acceptance.
 
 ## Remaining decisions requested
 
