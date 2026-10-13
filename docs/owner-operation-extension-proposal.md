@@ -91,13 +91,15 @@ requires fresh trusted presence and its own operation-specific single-use
 receipt. Other computer-use operations and effects remain unapproved, with no
 inherited authority.
 
-Bind the exact resolved account/Agent ID, boolean enabled value, expected
-setting state/revision, request identity, installation/namespace, daemon epoch
-and effect-plan digest to the operation-specific single-use receipt. Freeze these
-before challenge preparation; do not derive authority from a mutable action
-label, credential field or caller-supplied account. The trusted prompt names the
-exact soul/account and resulting enabled state. Reuse, replay, changed
-target/value/effect plan or stale setting state refuses.
+See the [proposed wire extension](owner-computer-use-wire-candidate.md) for joint
+technical review; it does not adopt runtime behavior.
+
+Bind exact account/Agent ID, enabled and prepared expected booleans, request,
+installation/namespace, daemon epoch and effect plan to the single-use receipt.
+Freeze these before challenge; derive no authority from mutable labels,
+credential fields or caller account. Off→on→off before application returns to
+the same boolean and is accepted. The prompt names the exact target and result;
+changed target/value/plan or stale boolean refuses.
 
 Exact prepared-turn cancellation is deferred until agent-bot exposes a reviewed
 API that names and validates one prepared turn/effect identity, consumes its
@@ -134,7 +136,7 @@ stale expected state and mismatched account/resource bindings refuse.
 Before enabling the first phase, acceptance must show that authenticated
 preparation and application use actual fresh native presence and protected
 single-use receipt custody; the receipt binds the exact soul, enabled value,
-expected setting state and effect-plan digest; duplicate, replay, changed
+expected boolean and effect-plan digest; duplicate, replay, changed
 target/value/effect and stale state refuse; revocation is checked at every
 boundary; and an uncertain write reconciles without repeating the setting
 change. While disabled, subsequent computer-use tool calls must be denied and
