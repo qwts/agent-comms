@@ -230,6 +230,7 @@ test('desktop downloader shared transfer uses deterministic responses and owned 
   const receipt = JSON.parse(bytes.subarray(0, bytesRead).toString('utf8').replace(/^\uFEFF/, ''));
   const token = value => typeof value === 'string' && /^[A-Za-z0-9_.-]{1,128}$/.test(value) ? value : 'invalid';
   assert.equal(result.code, 0, JSON.stringify({ stage: token(receipt.failure?.stage),
+    taskOutcome: ['not-started','running','completed','timeout','fault','canceled'].includes(receipt.failure?.taskOutcome) ? receipt.failure.taskOutcome : 'invalid',
     exceptionType: token(receipt.failure?.exceptionType),
     hresult: Number.isSafeInteger(receipt.failure?.hresult) ? receipt.failure.hresult : null }));
   assert.deepEqual(receipt, { v: 1, status: 'passed', cases: [

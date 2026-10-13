@@ -23,6 +23,10 @@ test('classification projector retains closed own primitive fields and independe
   assert.deepEqual(projectSupervisorClassification({...executable,executablePathPresent:false,builtinConsoleHostMatch:false}),{...executable,executablePathPresent:false,builtinConsoleHostMatch:false});
   assert.deepEqual(projectSupervisorClassification({...executable,parentIsDiagnostic:false,parentInOwnedRows:false}),{...executable,parentIsDiagnostic:false,parentInOwnedRows:false});
   assert.deepEqual(projectSupervisorClassification({...executable,parentIsFixture:true,parentIsDiagnostic:false}),{...executable,parentIsFixture:true,parentIsDiagnostic:false});
+  const desktopRow={check:'executable',executablePathPresent:true,builtinConsoleHostMatch:true,
+    rowIsRelay:false,rowIsDiagnostic:false,rowIsCompiler:false,parentIsFixture:false,parentIsDiagnostic:false,
+    parentIsRelay:true,parentIsCompiler:false,parentIsBuiltinConsoleHost:false,parentInOwnedRows:true};
+  assert.deepEqual(projectSupervisorClassification(desktopRow),desktopRow);
   for (const check of ['argv-parse','executable','compiler-parent','compiler-arguments','compiler-response','owned-parent','pid-reuse','history-bound','kind-bound']) {
     assert.deepEqual(projectSupervisorClassification({check}),{check});
   }
@@ -42,6 +46,16 @@ test('classification projector rejects unknown keys, accessors, inherited fields
     {check:'argv-parse',executablePathPresent:true,builtinConsoleHostMatch:false,parentIsFixture:true},
     {check:'executable',executablePathPresent:true,builtinConsoleHostMatch:false,parentIsFixture:true,argvCountMatches:true}
   ]) assert.equal(projectSupervisorClassification(value),undefined);
+  const desktopRow={check:'executable',executablePathPresent:true,builtinConsoleHostMatch:true,
+    rowIsRelay:false,rowIsDiagnostic:false,rowIsCompiler:false,parentIsFixture:false,parentIsDiagnostic:false,
+    parentIsRelay:true,parentIsCompiler:false,parentIsBuiltinConsoleHost:false,parentInOwnedRows:true};
+  for(const invalid of [
+    {...desktopRow,parentInOwnedRows:false},
+    {...desktopRow,parentIsCompiler:true},
+    {...desktopRow,rowIsDiagnostic:true},
+    {...desktopRow,parentIsRelay:'CANARY'},
+    {...desktopRow,rawParentPath:'CANARY-path'},
+  ]) assert.equal(projectSupervisorClassification(invalid),undefined);
   const complete={check:'executable',executablePathPresent:true,builtinConsoleHostMatch:true,parentIsFixture:false,parentIsDiagnostic:true,parentInOwnedRows:true};
   for(const invalid of [
     {...complete,parentInOwnedRows:false},
@@ -60,7 +74,10 @@ test('classification projector rejects unknown keys, accessors, inherited fields
 for(const classification of [
   {check:'argv-equality',argvCountMatches:true,argvMatches:false},
   {check:'executable',executablePathPresent:true,builtinConsoleHostMatch:true,parentIsFixture:false,parentIsDiagnostic:true,parentInOwnedRows:true},
-]) test(`real supervisor control IPC preserves fixed ${classification.check} classification through failure retention and owned exit`,async()=>{
+  {check:'executable',executablePathPresent:true,builtinConsoleHostMatch:true,
+    rowIsRelay:false,rowIsDiagnostic:false,rowIsCompiler:false,parentIsFixture:false,parentIsDiagnostic:false,
+    parentIsRelay:true,parentIsCompiler:false,parentIsBuiltinConsoleHost:false,parentInOwnedRows:true},
+]) test(`synthetic supervisor-control IPC preserves bounded ${classification.check} classification through failure retention and owned exit`,async()=>{
   const source=`import {createInterface} from 'node:readline';
 process.stdout.write(JSON.stringify({id:0,ok:true,phase:'ready'})+'\\n');
 createInterface({input:process.stdin}).once('line',line=>{
