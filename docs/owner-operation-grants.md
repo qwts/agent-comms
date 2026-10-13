@@ -94,6 +94,17 @@ owner-decision support. Existing [principal target queries](principal-target-che
 continue their narrower current-target check. Full journals, native custody,
 relay and cross-account application remain open.
 
+## Broader-power policy status
+
+The owner-approved permission-only first phase requires fresh presence plus
+an operation-specific single-use receipt for one soul's computer-use setting.
+When disabled, subsequent computer-use tool calls are denied, while the current
+turn continues. A later setting change requires a fresh receipt. No authority
+to stop a running turn or perform other computer-use operations is approved.
+The remainder of the [#250 proposal](owner-operation-extension-proposal.md)
+remains unadopted; runtime remains disabled pending implementation and
+acceptance. Existing grants gain no new authority.
+
 ## Validation
 
 `node --test tests/owner-scoped-grants.test.mjs tests/owner-operation-grants.test.mjs`
