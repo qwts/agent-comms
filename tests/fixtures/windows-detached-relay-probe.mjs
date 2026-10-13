@@ -15,6 +15,7 @@ let relayClose;
 let rawClose;
 let serverClosed = false;
 const sockets = new Set();
+const reportStage = stage => { if (process.connected) process.send({ id: -2, stage }); };
 
 const serverReady = new Promise((resolve, reject) => {
   server = net.createServer((socket) => {
@@ -40,7 +41,9 @@ process.send({ id: 0, ready: true });
 process.on('message', async ({ id, op, expectedRelayArgs }) => {
   try {
     if (op === 'start') {
+      reportStage('fixture-start-requested');
       await serverReady;
+      reportStage('pipe-listening');
       let spawnCount = 0;
       raw = connectWindowsPipe(pipe, {
         spawnProcess(file, args, options) {
@@ -51,7 +54,9 @@ process.on('message', async ({ id, op, expectedRelayArgs }) => {
               || options.windowsHide !== true
               || JSON.stringify(options.stdio) !== JSON.stringify(['pipe', 'pipe', 'pipe'])
               || options.detached !== undefined) throw new Error('production-relay-spawn-mismatch');
+          reportStage('spawn-request-validated');
           const child = spawn(file, args, { ...options, detached: true });
+          reportStage('relay-process-spawned');
           relay = child;
           relayExit = new Promise((resolve) => {
             child.once('error', () => resolve({ code: null }));
@@ -67,24 +72,32 @@ process.on('message', async ({ id, op, expectedRelayArgs }) => {
         raw.once('connect', resolve);
         raw.once('error', reject);
       });
+      reportStage('relay-connected');
       process.send({ id, connected: true, detached: true, windowsHide: true, stdioPipes: true, productionArgsExact: true });
     } else if (op === 'stop') {
       if (!raw || !relay) throw new Error('relay-not-started');
+      reportStage('relay-stop-requested');
       raw.end();
       const result = await within(relayExit, 5000, 'relay-natural-exit-deadline');
+      reportStage('relay-natural-exit');
       const closed = await within(relayClose, 5000, 'relay-close-deadline');
+      reportStage('relay-stdio-closed');
       if (result.code !== 0 || result.signal !== null || closed.code !== 0 || closed.signal !== null) throw new Error('relay-natural-exit-not-zero');
       const rawEnded = await within(rawClose, 5000, 'raw-close-deadline');
       if (raw.readableEnded !== true || raw.writableEnded !== true || rawEnded !== undefined) throw new Error('raw-eof-unconfirmed');
+      reportStage('raw-eof');
       await new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
       serverClosed = true;
       if (sockets.size !== 0) throw new Error('pipe-server-not-empty');
+      reportStage('pipe-server-closed');
       process.send({ id, stopped: true, exitCode: closed.code, signal: closed.signal, serverClosed: true, rawReadableEnded: raw.readableEnded, rawWritableEnded: raw.writableEnded });
     } else if (op === 'shutdown') {
+      reportStage('fixture-shutdown-requested');
       if (!serverClosed) {
         await new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
         serverClosed = true;
       }
+      reportStage('fixture-shutdown-complete');
       process.send({ id, shutdown: true, serverClosed: true }, () => process.disconnect());
     } else {
       throw new Error('unknown-operation');
