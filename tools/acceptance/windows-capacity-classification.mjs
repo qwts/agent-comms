@@ -9,7 +9,7 @@ export function projectSupervisorClassification(value) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
     const result = {};
     for (const key of Object.keys(value)) {
-      if (!['check','argvCountMatches','argvMatches','executablePathPresent','builtinConsoleHostMatch','parentIsFixture','parentIsDiagnostic','parentInOwnedRows'].includes(key)) return undefined;
+      if (!['check','argvCountMatches','argvMatches','executablePathPresent','builtinConsoleHostMatch','rowIsRelay','rowIsDiagnostic','rowIsCompiler','parentIsFixture','parentIsDiagnostic','parentIsRelay','parentIsCompiler','parentIsBuiltinConsoleHost','parentInOwnedRows'].includes(key)) return undefined;
       const descriptor = Object.getOwnPropertyDescriptor(value,key);
       if (!descriptor || !Object.hasOwn(descriptor,'value')) return undefined;
       result[key] = descriptor.value;
@@ -25,6 +25,15 @@ export function projectSupervisorClassification(value) {
           || (result.builtinConsoleHostMatch && !result.executablePathPresent)
           || ((result.parentIsFixture || result.parentIsDiagnostic) && !result.parentInOwnedRows)
           || (result.parentIsFixture && result.parentIsDiagnostic)) return undefined;
+    }
+    const rowParentClassKeys = ['rowIsRelay','rowIsDiagnostic','rowIsCompiler','parentIsRelay','parentIsCompiler','parentIsBuiltinConsoleHost'];
+    if (rowParentClassKeys.some(key => Object.hasOwn(result,key))) {
+      if (result.check !== 'executable' || rowParentClassKeys.some(key => typeof result[key] !== 'boolean')
+          || !executableKeys.every(key => typeof result[key] === 'boolean')
+          || ((result.parentIsRelay || result.parentIsCompiler || result.parentIsBuiltinConsoleHost) && !result.parentInOwnedRows)
+          || (result.builtinConsoleHostMatch && (result.rowIsRelay || result.rowIsDiagnostic || result.rowIsCompiler))
+          || [result.rowIsRelay,result.rowIsDiagnostic,result.rowIsCompiler].filter(Boolean).length > 1
+          || [result.parentIsFixture,result.parentIsDiagnostic,result.parentIsRelay,result.parentIsCompiler,result.parentIsBuiltinConsoleHost].filter(Boolean).length > 1) return undefined;
     }
     if (result.argvMatches !== undefined && result.argvCountMatches !== true) return undefined;
     if (result.check === 'argv-count' && (result.argvCountMatches !== false || result.argvMatches !== undefined)) return undefined;

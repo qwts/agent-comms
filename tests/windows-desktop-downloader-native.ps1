@@ -5,7 +5,7 @@ $ErrorActionPreference='Stop'
 foreach($name in @('Microsoft.PowerShell.Management','Microsoft.PowerShell.Utility')) {
     Import-Module -Name ([IO.Path]::Combine($PSHOME,'Modules',$name,($name+'.psd1'))) -ErrorAction Stop
 }
-$cases=[Collections.Generic.List[string]]::new();$stage='initialize';$passed=$false;$failure=$null
+$cases=[Collections.Generic.List[string]]::new();$stage='initialize';$passed=$false;$failure=$null;$script:taskOutcome='not-started'
 try {
     $helper=[IO.Path]::Combine($PSScriptRoot,'..','tools','acceptance','windows-desktop-root.ps1')
     . $helper
@@ -58,15 +58,24 @@ public sealed class DesktopDownloadStream:Stream {
         $destination=[IO.Path]::Combine($base,$Name+'.zip')
         if($Collision){[IO.File]::WriteAllText($destination,'existing-canary')}
         $acl=if($Collision){[IO.File]::GetAccessControl($destination).GetSecurityDescriptorSddlForm([Security.AccessControl.AccessControlSections]::All)}else{$null}
-        $stream=[DesktopDownloadStream]::new($Size,$ReadFailure);$refused=$false;$digest=$null;$task=$null;$reason=$null
+        $stream=[DesktopDownloadStream]::new($Size,$ReadFailure);$refused=$false;$digest=$null;$task=$null;$reason=$null;$script:taskOutcome='not-started'
         try {
             $task=[DesktopDownloadProof]::ProveNodeArchive($stream,$Declared,$Status,$Encoding,$destination,[Threading.CancellationToken]::None)
             # Only completed tasks are consumed. The JS owner supplies a hard outer
-            # process deadline; timeout never synchronously disposes pending IO.
-            if(-not $task.Wait(10000)){throw 'proof-task-terminal-unconfirmed'}
+            # process deadline. The exact-cap case writes and hashes 128 MiB,
+            # then the verifier reads and hashes it again; 60 seconds stays well
+            # inside the 150-second owner deadline while tolerating slow runners.
+            $script:taskOutcome='running'
+            $completed=$false
+            try {$completed=$task.Wait(60000)} catch [AggregateException] {$completed=$true}
+            if(-not $completed -and -not $task.IsCompleted){$script:taskOutcome='timeout';throw 'proof-task-terminal-unconfirmed'}
+            if($task.IsCanceled){$script:taskOutcome='canceled';throw 'proof-task-canceled'}
+            if($task.IsFaulted){$script:taskOutcome='fault'}else{$script:taskOutcome='completed'}
             $digest=$task.GetAwaiter().GetResult()
         } catch {
-            if($task -and -not $task.IsCompleted){throw 'proof-task-terminal-unconfirmed'}
+            if($task -and -not $task.IsCompleted){$script:taskOutcome='timeout';throw 'proof-task-terminal-unconfirmed'}
+            if($task -and $task.IsCanceled){$script:taskOutcome='canceled'}
+            elseif($task -and $task.IsFaulted){$script:taskOutcome='fault'}
             $reason=$_.Exception.GetBaseException().Message;$refused=$true
         }
         if($Success) {
@@ -101,6 +110,6 @@ public sealed class DesktopDownloadStream:Stream {
     $stage='sibling-preserved'
     if([IO.File]::ReadAllText($sentinel) -cne 'downloader-sibling-canary' -or [IO.File]::GetAccessControl($sentinel).GetSecurityDescriptorSddlForm([Security.AccessControl.AccessControlSections]::All) -cne $sentinelAcl){throw 'sibling-mutated'}
     $cases.Add($stage);$passed=$true
-} catch {$failure=@{stage=$stage;exceptionType=$_.Exception.GetType().FullName;hresult=$_.Exception.HResult}}
+} catch {$failure=@{stage=$stage;taskOutcome=$script:taskOutcome;exceptionType=$_.Exception.GetType().FullName;hresult=$_.Exception.HResult}}
 @{v=1;status=$(if($passed){'passed'}else{'failed'});cases=@($cases);failure=$failure;networkInvoked=$false;rootRetained=$true;nativeCloseProven=$false;httpAbortProven=$false}|ConvertTo-Json -Depth 4|Set-Content -LiteralPath ([IO.Path]::Combine($Root,'downloader.json')) -Encoding UTF8
 if(-not $passed){exit 1}
