@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { spawn } from 'node:child_process';
-import { mkdtempSync, writeFileSync, realpathSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, realpathSync, rmSync, readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,6 +10,17 @@ import { captureCompilerPrefix, compilerControlArgs } from '../tools/acceptance/
 import { createCapacityController } from '../tools/acceptance/windows-capacity-control.mjs';
 import { retainCapacityFailure } from '../tools/acceptance/windows-capacity-lifecycle.mjs';
 import { projectSupervisorClassification, supervisorClassificationFromFailure, supervisorClassificationFromError } from '../tools/acceptance/windows-capacity-classification.mjs';
+import { captureProductionWindowsRelay } from './helpers/capture-production-windows-relay.mjs';
+
+test('actual connector relay command fits documented Windows command-line bound', () => {
+  const { args, serializedCommandLineLength } = captureProductionWindowsRelay();
+  const script = readFileSync(new URL('../tools/acceptance/windows-capacity-job.ps1', import.meta.url), 'utf8');
+  assert.deepEqual(args.slice(0, 6), ['-NoLogo','-NoProfile','-NonInteractive','-OutputFormat','Text','-Command']);
+  assert.equal(args.at(-1).includes('"'), false, 'the captured command can be quoted without embedded-quote expansion');
+  assert.match(script, /MaximumCommandLineChars = 32766; \/\/ CreateProcess limit of 32767 UTF-16 code units includes the terminating NUL\./);
+  assert.ok(serializedCommandLineLength > 4096, 'regression fixture must exceed the previous arbitrary limit');
+  assert.ok(serializedCommandLineLength <= 32766, 'production relay must fit the documented Windows limit');
+});
 
 test('classification projector retains closed own primitive fields and independent snapshots',()=>{
   const classification={check:'argv-equality',argvCountMatches:true,argvMatches:false};
@@ -27,6 +38,17 @@ test('classification projector retains closed own primitive fields and independe
     rowIsRelay:false,rowIsDiagnostic:false,rowIsCompiler:false,parentIsFixture:false,parentIsDiagnostic:false,
     parentIsRelay:true,parentIsCompiler:false,parentIsBuiltinConsoleHost:false,parentInOwnedRows:true};
   assert.deepEqual(projectSupervisorClassification(desktopRow),desktopRow);
+  const commandEvidence={...desktopRow,consoleHostCommandLineClass:'multiple-arguments',consoleHostCommandShape:'legacy-handle-force-v1-candidate',consoleHostArgumentCount:2,
+    parentCurrentRowFound:true,parentRelayPathMatch:true,parentRelayCommandLineClass:'multiple-arguments',parentRelayArgumentCount:3,
+    parentRelayArgsParsed:true,parentRelayArgsEqualExpected:true,parentParentIsFixture:true,parentCreationDatePresent:true,
+    parentCreationAtOrAfterFixtureObserved:true,consoleHostCreationDatePresent:true,consoleHostCreationAtOrAfterParentObserved:true};
+  assert.deepEqual(projectSupervisorClassification(commandEvidence),commandEvidence);
+  const handleOnlyEvidence={...commandEvidence,consoleHostCommandLineClass:'one-argument',consoleHostCommandShape:'legacy-handle-only-candidate',consoleHostArgumentCount:1};
+  assert.deepEqual(projectSupervisorClassification(handleOnlyEvidence),handleOnlyEvidence);
+  const otherShapeEvidence={...commandEvidence,consoleHostCommandShape:'other'};
+  assert.deepEqual(projectSupervisorClassification(otherShapeEvidence),otherShapeEvidence);
+  const unparsedShapeEvidence={...commandEvidence,consoleHostCommandLineClass:'over-bound',consoleHostCommandShape:'unparsed',consoleHostArgumentCount:null};
+  assert.deepEqual(projectSupervisorClassification(unparsedShapeEvidence),unparsedShapeEvidence);
   for (const check of ['argv-parse','executable','compiler-parent','compiler-arguments','compiler-response','owned-parent','pid-reuse','history-bound','kind-bound']) {
     assert.deepEqual(projectSupervisorClassification({check}),{check});
   }
@@ -55,6 +77,28 @@ test('classification projector rejects unknown keys, accessors, inherited fields
     {...desktopRow,rowIsDiagnostic:true},
     {...desktopRow,parentIsRelay:'CANARY'},
     {...desktopRow,rawParentPath:'CANARY-path'},
+  ]) assert.equal(projectSupervisorClassification(invalid),undefined);
+  const commandEvidence={check:'executable',executablePathPresent:true,builtinConsoleHostMatch:true,
+    rowIsRelay:false,rowIsDiagnostic:false,rowIsCompiler:false,parentIsFixture:false,parentIsDiagnostic:false,
+    parentIsRelay:true,parentIsCompiler:false,parentIsBuiltinConsoleHost:false,parentInOwnedRows:true,
+    consoleHostCommandLineClass:'multiple-arguments',consoleHostCommandShape:'legacy-handle-force-v1-candidate',consoleHostArgumentCount:2,parentCurrentRowFound:true,
+    parentRelayPathMatch:true,parentRelayCommandLineClass:'multiple-arguments',parentRelayArgumentCount:3,
+    parentRelayArgsParsed:true,parentRelayArgsEqualExpected:true,parentParentIsFixture:true,parentCreationDatePresent:true,
+    parentCreationAtOrAfterFixtureObserved:true,consoleHostCreationDatePresent:true,consoleHostCreationAtOrAfterParentObserved:true};
+  for(const invalid of [
+    {...commandEvidence,consoleHostCommandLineClass:'recognized'},
+    {...commandEvidence,consoleHostCommandLineClass:'missing'},
+    {...commandEvidence,consoleHostCommandShape:'recognized'},
+    {...commandEvidence,consoleHostCommandShape:'legacy-handle-only-candidate'},
+    {...commandEvidence,consoleHostCommandShape:'unparsed'},
+    {...commandEvidence,consoleHostCommandLineClass:'parse-refused',consoleHostArgumentCount:null,consoleHostCommandShape:'other'},
+    {...commandEvidence,consoleHostArgumentCount:13},
+    {...commandEvidence,parentRelayCommandLineClass:'unknown'},
+    {...commandEvidence,parentRelayArgumentCount:1},
+    {...commandEvidence,parentParentIsFixture:false},
+    {...commandEvidence,parentCurrentRowFound:false},
+    {...commandEvidence,parentCreationAtOrAfterFixtureObserved:true,parentCreationDatePresent:false},
+    {...commandEvidence,rawCommandLine:'CANARY-secret'},
   ]) assert.equal(projectSupervisorClassification(invalid),undefined);
   const complete={check:'executable',executablePathPresent:true,builtinConsoleHostMatch:true,parentIsFixture:false,parentIsDiagnostic:true,parentInOwnedRows:true};
   for(const invalid of [

@@ -1,4 +1,5 @@
-param([switch]$ValidateOnly)
+param([switch]$ValidateOnly,[switch]$DiagnosticParserTestOnly)
+if ($DiagnosticParserTestOnly) { $ValidateOnly=$true }
 if (-not $ValidateOnly) {
     [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"script-entry"}')
     [Console]::Out.Flush()
@@ -52,6 +53,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 public static class CapacityJob {
+    public const int MaximumCommandLineChars = 32766; // CreateProcess limit of 32767 UTF-16 code units includes the terminating NUL.
     [StructLayout(LayoutKind.Sequential)] struct Basic {
         public long UserTime, KernelTime;
         public uint Flags;
@@ -154,10 +156,12 @@ public static class CapacityJob {
         } finally { Marshal.FreeHGlobal(data); }
     }
     public static string[] Args(string command) {
+        if (command == null || command.Length > MaximumCommandLineChars) throw new ArgumentOutOfRangeException();
         int count;
         IntPtr data = CommandLineToArgvW(command, out count);
-        if (data == IntPtr.Zero || count < 1 || count > 12) throw new Exception();
+        if (data == IntPtr.Zero) throw new Exception();
         try {
+            if (count < 1 || count > 12) throw new Exception();
             List<string> args = new List<string>();
             for (int i=1; i<count; i++) args.Add(Marshal.PtrToStringUni(Marshal.ReadIntPtr(data, i * IntPtr.Size)));
             return args.ToArray();
@@ -165,12 +169,182 @@ public static class CapacityJob {
     }
 }
 '@ | Out-Null
+function Get-BoundedCommandLineShape([object]$CommandLine) {
+    if ($null -eq $CommandLine) { return @{class='missing';argumentCount=$null;arguments=$null} }
+    if ($CommandLine -isnot [string]) { return @{class='wrong-type';argumentCount=$null;arguments=$null} }
+    if ($CommandLine.Length -gt [CapacityJob]::MaximumCommandLineChars) { return @{class='over-bound';argumentCount=$null;arguments=$null} }
+    try { $arguments = [CapacityJob]::Args($CommandLine) }
+    catch { return @{class='parse-refused';argumentCount=$null;arguments=$null} }
+    $count = $arguments.Count
+    if ($count -eq 0) { $argumentClass='no-arguments' }
+    elseif ($count -eq 1) { $argumentClass='one-argument' }
+    else { $argumentClass='multiple-arguments' }
+    return @{class=$argumentClass;argumentCount=$count;arguments=$arguments}
+}
+function Test-LegacyConsoleHandleToken([object]$Value) {
+    if ($Value -isnot [string] -or $Value.Length -lt 3 -or $Value.Length -gt 10) { return $false }
+    return $Value -cmatch '\A0x[0-9A-Fa-f]{1,8}\z'
+}
+function Get-ConsoleHostCommandShape([object]$Shape) {
+    # These are bounded lexical observations drawn from Microsoft's moving main
+    # branch at src/host/ConsoleArguments.cpp and src/host/ut_host/ConsoleArgumentsTests.cpp.
+    # They do not establish that the installed Windows binary supports either grammar.
+    if ($Shape.class -notin @('no-arguments','one-argument','multiple-arguments')) { return 'unparsed' }
+    $arguments = @($Shape.arguments)
+    if ($arguments.Count -eq 1 -and (Test-LegacyConsoleHandleToken $arguments[0])) { return 'legacy-handle-only-candidate' }
+    if ($arguments.Count -eq 2 -and (Test-LegacyConsoleHandleToken $arguments[0]) -and $arguments[1] -ceq '-ForceV1') { return 'legacy-handle-force-v1-candidate' }
+    return 'other'
+}
+function Get-ConsoleHostDiagnostics([object]$Row,[object[]]$Rows,[string]$ShellExecutable,[object[]]$RelayArgs,[int]$FixtureId,[string]$FixtureCreation) {
+    # The line is inspected only in memory, under a character bound before the
+    # native parser. Receipts contain shape/count only. Parent row correlations
+    # use the current job-filtered sample; timestamps are not historical proof.
+    $rowShape = Get-BoundedCommandLineShape $Row.CommandLine
+    $commandShape = Get-ConsoleHostCommandShape $rowShape
+    $parentRows = @($Rows | Where-Object { $_.ProcessId -eq $Row.ParentProcessId })
+    $parentFound = $parentRows.Count -eq 1
+    $parentRelayPath = $false
+    $parentClass = 'not-checked'
+    $parentArgCount = $null
+    $parentArgsParsed = $false
+    $parentArgsEqual = $false
+    $parentParentIsFixture = $false
+    $parentCreationPresent = $false
+    $parentCreationAfterFixture = $false
+    $rowCreationPresent = $false
+    $rowCreationAfterParent = $false
+    if ($parentFound) {
+        $parent = $parentRows[0]
+        $parentRelayPath = $parent.ExecutablePath -is [string] -and [string]::Equals($parent.ExecutablePath,$ShellExecutable,[StringComparison]::OrdinalIgnoreCase)
+        $parentParentIsFixture = $parent.ParentProcessId -eq $FixtureId
+        try {
+            if ($null -ne $parent.CreationDate) {
+                $parentTicks = $parent.CreationDate.ToUniversalTime().Ticks
+                $parentCreationPresent = $parentTicks -gt 0
+                if ($parentCreationPresent) { $parentCreationAfterFixture = $parentTicks -ge [long]$FixtureCreation }
+            }
+        } catch { $parentCreationPresent=$false;$parentCreationAfterFixture=$false }
+        try {
+            if ($null -ne $Row.CreationDate) { $rowTicks = $Row.CreationDate.ToUniversalTime().Ticks; $rowCreationPresent = $rowTicks -gt 0 }
+        } catch { $rowCreationPresent=$false }
+        if ($rowCreationPresent -and $parentCreationPresent) { $rowCreationAfterParent = $rowTicks -ge $parentTicks }
+        if ($parentRelayPath) {
+            $parentShape = Get-BoundedCommandLineShape $parent.CommandLine
+            $parentClass = $parentShape.class
+            $parentArgCount = $parentShape.argumentCount
+            $parentArgsParsed = $parentClass -in @('no-arguments','one-argument','multiple-arguments')
+            if ($parentArgsParsed -and $parentParentIsFixture -and $parentCreationAfterFixture) {
+                $expectedRelayArgs = @($RelayArgs)
+                if ($parentShape.arguments.Count -eq $expectedRelayArgs.Count) {
+                    $parentArgsEqual = $true
+                    for ($i=0; $i -lt $expectedRelayArgs.Count; $i++) {
+                        if ($parentShape.arguments[$i] -cne $expectedRelayArgs[$i]) { $parentArgsEqual=$false;break }
+                    }
+                }
+            }
+        }
+    }
+    return @{
+        consoleHostCommandLineClass=$rowShape.class;consoleHostArgumentCount=$rowShape.argumentCount;consoleHostCommandShape=$commandShape
+        parentCurrentRowFound=$parentFound;parentRelayPathMatch=$parentRelayPath
+        parentRelayCommandLineClass=$parentClass;parentRelayArgumentCount=$parentArgCount
+        parentRelayArgsParsed=$parentArgsParsed;parentRelayArgsEqualExpected=$parentArgsEqual
+        parentParentIsFixture=$parentParentIsFixture;parentCreationDatePresent=$parentCreationPresent
+        parentCreationAtOrAfterFixtureObserved=$parentCreationAfterFixture
+        consoleHostCreationDatePresent=$rowCreationPresent;consoleHostCreationAtOrAfterParentObserved=$rowCreationAfterParent
+    }
+}
     $phase = 'supervisor-compiled'
     if (-not $ValidateOnly) {
         [Console]::Out.WriteLine('{"id":-1,"ok":true,"phase":"supervisor-compiled"}')
         [Console]::Out.Flush()
     }
     if ($ValidateOnly) {
+        if ($DiagnosticParserTestOnly) {
+            $cases = [Collections.Generic.List[string]]::new()
+            $shape = Get-BoundedCommandLineShape $null
+            if ($shape.class -ne 'missing' -or $null -ne $shape.argumentCount) { throw 'diagnostic-parser-test-failed' }
+            $cases.Add('missing-command-line')
+            $shape = Get-BoundedCommandLineShape ([pscustomobject]@{value='not-a-string'})
+            if ($shape.class -ne 'wrong-type' -or $null -ne $shape.argumentCount) { throw 'diagnostic-parser-test-failed' }
+            $cases.Add('wrong-type-refused')
+            $shape = Get-BoundedCommandLineShape ('x' * ([CapacityJob]::MaximumCommandLineChars + 1))
+            if ($shape.class -ne 'over-bound' -or $null -ne $shape.argumentCount) { throw 'diagnostic-parser-test-failed' }
+            $cases.Add('over-bound-refused-before-parse')
+            $oversizedRow = @{ProcessId=40;ParentProcessId=31;ExecutablePath='C:\Windows\System32\conhost.exe';CommandLine=('x' * ([CapacityJob]::MaximumCommandLineChars + 1));CreationDate=[DateTime]::UtcNow}
+            $oversizedDiagnostics = Get-ConsoleHostDiagnostics -Row $oversizedRow -Rows @($oversizedRow) -ShellExecutable 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe' -RelayArgs @('-NoProfile','-Command','fixed') -FixtureId 20 -FixtureCreation ([string][DateTime]::UtcNow.Ticks)
+            if ($oversizedDiagnostics.consoleHostCommandLineClass -ne 'over-bound' -or $null -ne $oversizedDiagnostics.consoleHostArgumentCount -or $oversizedDiagnostics.consoleHostCommandShape -ne 'unparsed') { throw 'diagnostic-parser-test-failed' }
+            $cases.Add('console-host-over-bound-shape-only')
+            $shape = Get-BoundedCommandLineShape '"C:\Windows\System32\conhost.exe"'
+            if ($shape.class -ne 'no-arguments' -or $shape.argumentCount -ne 0) { throw 'diagnostic-parser-test-failed' }
+            $cases.Add('zero-arguments')
+            $shape = Get-BoundedCommandLineShape '"C:\Windows\System32\conhost.exe" 0x4'
+            if ($shape.class -ne 'one-argument' -or $shape.argumentCount -ne 1) { throw 'diagnostic-parser-test-failed' }
+            $cases.Add('one-argument')
+            $shape = Get-BoundedCommandLineShape '"C:\Windows\System32\conhost.exe" 0x4 --headless'
+            if ($shape.class -ne 'multiple-arguments' -or $shape.argumentCount -ne 2) { throw 'diagnostic-parser-test-failed' }
+            $cases.Add('multiple-arguments')
+            $shape = Get-BoundedCommandLineShape '"C:\Windows\System32\conhost.exe" 0xA1b2C3d4'
+            if ((Get-ConsoleHostCommandShape $shape) -ne 'legacy-handle-only-candidate') { throw 'diagnostic-parser-test-failed' }
+            $cases.Add('legacy-handle-only-candidate')
+            $shape = Get-BoundedCommandLineShape '"C:\Windows\System32\conhost.exe" 0xDEADBEEF -ForceV1'
+            if ((Get-ConsoleHostCommandShape $shape) -ne 'legacy-handle-force-v1-candidate') { throw 'diagnostic-parser-test-failed' }
+            $cases.Add('legacy-handle-force-v1-candidate')
+            foreach ($line in @(
+                '"C:\Windows\System32\conhost.exe" 0XDEADBEEF',
+                '"C:\Windows\System32\conhost.exe" 0x123456789',
+                '"C:\Windows\System32\conhost.exe" 0xA1b2C3d4 -forcev1',
+                '"C:\Windows\System32\conhost.exe" 0xA1b2C3d4 -ForceV1 extra'
+            )) {
+                $shape = Get-BoundedCommandLineShape $line
+                if ((Get-ConsoleHostCommandShape $shape) -ne 'other') { throw 'diagnostic-parser-test-failed' }
+            }
+            $cases.Add('malformed-case-length-and-extra-args-other')
+            $unparsedLine = '"C:\Windows\System32\conhost.exe" ' + ((1..13 | ForEach-Object { 'a' }) -join ' ')
+            $shape = Get-BoundedCommandLineShape $unparsedLine
+            if ((Get-ConsoleHostCommandShape $shape) -ne 'unparsed') { throw 'diagnostic-parser-test-failed' }
+            $cases.Add('unparsed-command-shape')
+            $many = '"C:\Windows\System32\conhost.exe" ' + ((1..13 | ForEach-Object { 'a' }) -join ' ')
+            $shape = Get-BoundedCommandLineShape $many
+            if ($shape.class -ne 'parse-refused' -or $null -ne $shape.argumentCount) { throw 'diagnostic-parser-test-failed' }
+            $cases.Add('parser-argument-bound-refused')
+            $actualRelayArgs = @($env:AGENT_COMMS_TEST_RELAY_ARGS_JSON | ConvertFrom-Json)
+            if ($actualRelayArgs.Count -ne 7 -or $actualRelayArgs[0] -ne '-NoLogo' -or $actualRelayArgs[5] -ne '-Command' -or $actualRelayArgs[-1].Contains('"')) { throw 'diagnostic-parser-test-failed' }
+            $shellPath = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
+            $hostPath = 'C:\Windows\System32\conhost.exe'
+            $relayCommandLine = '"' + $shellPath + '" ' + (($actualRelayArgs[0..($actualRelayArgs.Count - 2)] -join ' ') + ' "' + $actualRelayArgs[-1] + '"')
+            $parentCreated = [DateTime]::UtcNow
+            $hostCreated = $parentCreated.AddMilliseconds(1)
+            $parentRows = @(
+                @{ProcessId=31;ParentProcessId=20;ExecutablePath=$shellPath;CommandLine=$relayCommandLine;CreationDate=$parentCreated},
+                @{ProcessId=40;ParentProcessId=31;ExecutablePath=$hostPath;CommandLine='"conhost.exe" 0xDEADBEEF -ForceV1';CreationDate=$hostCreated}
+            )
+            $fixtureCreated = [string]$parentCreated.AddMilliseconds(-1).Ticks
+            $parentDiagnostics = Get-ConsoleHostDiagnostics -Row $parentRows[1] -Rows $parentRows -ShellExecutable $shellPath -RelayArgs $actualRelayArgs -FixtureId 20 -FixtureCreation $fixtureCreated
+            if (-not $parentDiagnostics.parentCurrentRowFound -or -not $parentDiagnostics.parentRelayPathMatch -or -not $parentDiagnostics.parentRelayArgsParsed -or -not $parentDiagnostics.parentRelayArgsEqualExpected -or -not $parentDiagnostics.parentParentIsFixture -or -not $parentDiagnostics.parentCreationAtOrAfterFixtureObserved -or -not $parentDiagnostics.consoleHostCreationAtOrAfterParentObserved -or $parentDiagnostics.consoleHostCommandShape -ne 'legacy-handle-force-v1-candidate') { throw 'diagnostic-parser-test-failed' }
+            if ((ConvertTo-Json -InputObject $parentDiagnostics -Compress).Contains('DEADBEEF')) { throw 'diagnostic-parser-test-failed' }
+            $cases.Add('production-relay-args-exact-and-current-parent-correlation')
+            $wrongArgs = @($actualRelayArgs);$wrongArgs[-1] = $wrongArgs[-1] + ' changed'
+            $wrongArgRows = @($parentRows[0].Clone(),$parentRows[1].Clone())
+            $wrongArgRows[0].CommandLine = '"' + $shellPath + '" ' + (($wrongArgs[0..($wrongArgs.Count - 2)] -join ' ') + ' "' + $wrongArgs[-1] + '"')
+            $wrongArgDiagnostics = Get-ConsoleHostDiagnostics -Row $wrongArgRows[1] -Rows $wrongArgRows -ShellExecutable $shellPath -RelayArgs $actualRelayArgs -FixtureId 20 -FixtureCreation $fixtureCreated
+            if (-not $wrongArgDiagnostics.parentRelayArgsParsed -or $wrongArgDiagnostics.parentRelayArgsEqualExpected) { throw 'diagnostic-parser-test-failed' }
+            $cases.Add('wrong-relay-argv-not-exact')
+            $wrongParentRows = @($parentRows[0].Clone(),$parentRows[1].Clone())
+            $wrongParentRows[0].ParentProcessId = 21
+            $wrongParentDiagnostics = Get-ConsoleHostDiagnostics -Row $wrongParentRows[1] -Rows $wrongParentRows -ShellExecutable $shellPath -RelayArgs $actualRelayArgs -FixtureId 20 -FixtureCreation $fixtureCreated
+            if (-not $wrongParentDiagnostics.parentCurrentRowFound -or $wrongParentDiagnostics.parentParentIsFixture -or $wrongParentDiagnostics.parentRelayArgsEqualExpected) { throw 'diagnostic-parser-test-failed' }
+            $cases.Add('wrong-fixture-parent-not-exact')
+            $olderFixtureCreated = [string]$parentCreated.AddSeconds(1).Ticks
+            $olderDiagnostics = Get-ConsoleHostDiagnostics -Row $parentRows[1] -Rows $parentRows -ShellExecutable $shellPath -RelayArgs $actualRelayArgs -FixtureId 20 -FixtureCreation $olderFixtureCreated
+            if (-not $olderDiagnostics.parentCreationDatePresent -or $olderDiagnostics.parentCreationAtOrAfterFixtureObserved -or $olderDiagnostics.parentRelayArgsEqualExpected) { throw 'diagnostic-parser-test-failed' }
+            $cases.Add('older-parent-date-not-exact')
+            $unknownParentDiagnostics = Get-ConsoleHostDiagnostics -Row $parentRows[1] -Rows @($parentRows[1]) -ShellExecutable $shellPath -RelayArgs $actualRelayArgs -FixtureId 20 -FixtureCreation $fixtureCreated
+            if ($unknownParentDiagnostics.parentCurrentRowFound -or $unknownParentDiagnostics.parentRelayPathMatch -or $unknownParentDiagnostics.parentRelayArgsParsed -or $unknownParentDiagnostics.parentRelayArgsEqualExpected) { throw 'diagnostic-parser-test-failed' }
+            $cases.Add('unknown-parent-not-correlated')
+            Reply @{id=0;ok=$true;parserCases=@($cases);workloadRun=$false;processQueryRun=$false}
+            return
+        }
         $job = [CapacityJob]::Create(536870912)
         if (@([CapacityJob]::Pids($job)).Count -ne 0 -or [CapacityJob]::Cpu100ns($job) -ne 0) { throw 'invalid-empty-job' }
         [void][CapacityJob]::PeakCommit($job)
@@ -291,7 +465,29 @@ public static class CapacityJob {
                 $classification = @{}
                 $kind = 'main'
                 if ($row.ProcessId -ne $fixtureId) {
+                    $consoleHost = [IO.Path]::Combine($env:SystemRoot,'System32','conhost.exe')
+                    if ([string]::Equals($row.ExecutablePath, $consoleHost, [StringComparison]::OrdinalIgnoreCase)) {
+                        # Reject the unexpected image before parsing its command line.
+                        # The diagnostic helper enforces its own bound before parsing.
+                        $classification.check = 'executable'
+                        $classification.executablePathPresent = $row.ExecutablePath -is [string] -and $row.ExecutablePath.Length -gt 0
+                        $classification.builtinConsoleHostMatch = $true
+                        $classification.rowIsRelay = $false
+                        $classification.rowIsDiagnostic = $false
+                        $classification.rowIsCompiler = $false
+                        $classification.parentIsFixture = $row.ParentProcessId -eq $fixtureId
+                        $ownedParent = @($rows | Where-Object { $_.ProcessId -eq $row.ParentProcessId })
+                        $classification.parentInOwnedRows = $ownedParent.Count -gt 0
+                        $classification.parentIsDiagnostic = @($ownedParent | Where-Object { $_.ProcessId -ne $fixtureId -and $_.ExecutablePath -ieq $nodeExecutable }).Count -gt 0
+                        $classification.parentIsRelay = @($ownedParent | Where-Object { $_.ExecutablePath -ieq $shellExecutable }).Count -gt 0
+                        $classification.parentIsCompiler = @($ownedParent | Where-Object { $compilerExecutables -icontains $_.ExecutablePath }).Count -gt 0
+                        $classification.parentIsBuiltinConsoleHost = @($ownedParent | Where-Object { [string]::Equals($_.ExecutablePath, $consoleHost, [StringComparison]::OrdinalIgnoreCase) }).Count -gt 0
+                        $consoleHostDiagnostics = Get-ConsoleHostDiagnostics -Row $row -Rows $rows -ShellExecutable $shellExecutable -RelayArgs $relayArgs -FixtureId $fixtureId -FixtureCreation $fixtureCreation
+                        foreach ($key in $consoleHostDiagnostics.Keys) { $classification[$key] = $consoleHostDiagnostics[$key] }
+                        throw 'unexpected-owned-executable'
+                    }
                     $classification.check = 'argv-parse'
+                    if ($row.CommandLine -isnot [string] -or $row.CommandLine.Length -gt [CapacityJob]::MaximumCommandLineChars) { throw 'owned-command-line-bound' }
                     $processArgs = [CapacityJob]::Args($row.CommandLine)
                     $expected = $null
                     $classification.check = 'executable'
@@ -309,7 +505,6 @@ public static class CapacityJob {
                         $responsePath = [IO.Path]::GetFullPath($response.Substring(1))
                         if (-not $responsePath.StartsWith($compilerTemp.TrimEnd('\') + '\', [StringComparison]::OrdinalIgnoreCase) -or -not $responsePath.EndsWith('.cmdline')) { throw 'compiler-response-unconfirmed' }
                     } else {
-                        $consoleHost = [IO.Path]::Combine($env:SystemRoot,'System32','conhost.exe')
                         $classification.executablePathPresent = $row.ExecutablePath -is [string] -and $row.ExecutablePath.Length -gt 0
                         $classification.builtinConsoleHostMatch = [string]::Equals($row.ExecutablePath, $consoleHost, [StringComparison]::OrdinalIgnoreCase)
                         $classification.rowIsRelay = [string]::Equals($row.ExecutablePath, $shellExecutable, [StringComparison]::OrdinalIgnoreCase)
@@ -388,8 +583,14 @@ public static class CapacityJob {
         $failure = @{check='job-supervisor-failed';phase=$phase}
         if ($phase -eq 'sample-classify' -and $classification.check -in @('argv-parse','executable','compiler-parent','compiler-arguments','compiler-response','owned-parent','argv-count','argv-equality','pid-reuse','history-bound','kind-bound')) {
             $failure.classification = @{check=$classification.check}
-            foreach ($key in @('argvCountMatches','argvMatches','executablePathPresent','builtinConsoleHostMatch','rowIsRelay','rowIsDiagnostic','rowIsCompiler','parentIsFixture','parentIsDiagnostic','parentIsRelay','parentIsCompiler','parentIsBuiltinConsoleHost','parentInOwnedRows')) {
+            foreach ($key in @('argvCountMatches','argvMatches','executablePathPresent','builtinConsoleHostMatch','rowIsRelay','rowIsDiagnostic','rowIsCompiler','parentIsFixture','parentIsDiagnostic','parentIsRelay','parentIsCompiler','parentIsBuiltinConsoleHost','parentInOwnedRows','consoleHostCommandLineClass','consoleHostCommandShape','consoleHostArgumentCount','parentCurrentRowFound','parentRelayPathMatch','parentRelayCommandLineClass','parentRelayArgumentCount','parentRelayArgsParsed','parentRelayArgsEqualExpected','parentParentIsFixture','parentCreationDatePresent','parentCreationAtOrAfterFixtureObserved','consoleHostCreationDatePresent','consoleHostCreationAtOrAfterParentObserved')) {
                 if ($classification[$key] -is [bool]) { $failure.classification[$key] = $classification[$key] }
+            }
+            foreach ($key in @('consoleHostCommandLineClass','consoleHostCommandShape','parentRelayCommandLineClass')) {
+                if ($classification[$key] -is [string]) { $failure.classification[$key] = $classification[$key] }
+            }
+            foreach ($key in @('consoleHostArgumentCount','parentRelayArgumentCount')) {
+                if ($classification.ContainsKey($key)) { $failure.classification[$key] = $classification[$key] }
             }
         }
         Reply @{id=$failureId;ok=$false;failure=$failure}

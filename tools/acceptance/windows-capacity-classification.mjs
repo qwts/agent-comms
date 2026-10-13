@@ -9,7 +9,8 @@ export function projectSupervisorClassification(value) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
     const result = {};
     for (const key of Object.keys(value)) {
-      if (!['check','argvCountMatches','argvMatches','executablePathPresent','builtinConsoleHostMatch','rowIsRelay','rowIsDiagnostic','rowIsCompiler','parentIsFixture','parentIsDiagnostic','parentIsRelay','parentIsCompiler','parentIsBuiltinConsoleHost','parentInOwnedRows'].includes(key)) return undefined;
+      if (!['check','argvCountMatches','argvMatches','executablePathPresent','builtinConsoleHostMatch','rowIsRelay','rowIsDiagnostic','rowIsCompiler','parentIsFixture','parentIsDiagnostic','parentIsRelay','parentIsCompiler','parentIsBuiltinConsoleHost','parentInOwnedRows',
+        'consoleHostCommandLineClass','consoleHostCommandShape','consoleHostArgumentCount','parentCurrentRowFound','parentRelayPathMatch','parentRelayCommandLineClass','parentRelayArgumentCount','parentRelayArgsParsed','parentRelayArgsEqualExpected','parentParentIsFixture','parentCreationDatePresent','parentCreationAtOrAfterFixtureObserved','consoleHostCreationDatePresent','consoleHostCreationAtOrAfterParentObserved'].includes(key)) return undefined;
       const descriptor = Object.getOwnPropertyDescriptor(value,key);
       if (!descriptor || !Object.hasOwn(descriptor,'value')) return undefined;
       result[key] = descriptor.value;
@@ -34,6 +35,39 @@ export function projectSupervisorClassification(value) {
           || (result.builtinConsoleHostMatch && (result.rowIsRelay || result.rowIsDiagnostic || result.rowIsCompiler))
           || [result.rowIsRelay,result.rowIsDiagnostic,result.rowIsCompiler].filter(Boolean).length > 1
           || [result.parentIsFixture,result.parentIsDiagnostic,result.parentIsRelay,result.parentIsCompiler,result.parentIsBuiltinConsoleHost].filter(Boolean).length > 1) return undefined;
+    }
+    const conhostDiagnosticKeys = ['consoleHostCommandLineClass','consoleHostCommandShape','consoleHostArgumentCount','parentCurrentRowFound','parentRelayPathMatch','parentRelayCommandLineClass','parentRelayArgumentCount','parentRelayArgsParsed','parentRelayArgsEqualExpected','parentParentIsFixture','parentCreationDatePresent','parentCreationAtOrAfterFixtureObserved','consoleHostCreationDatePresent','consoleHostCreationAtOrAfterParentObserved'];
+    if (conhostDiagnosticKeys.some(key => Object.hasOwn(result,key))) {
+      const shapeClasses = ['missing','wrong-type','over-bound','parse-refused','no-arguments','one-argument','multiple-arguments'];
+      const parsedShape = value => ['no-arguments','one-argument','multiple-arguments'].includes(value);
+      const commandShapes = ['legacy-handle-only-candidate','legacy-handle-force-v1-candidate','other','unparsed'];
+      const countMatchesShape = (shape,count) => shape === 'no-arguments' ? count === 0
+        : shape === 'one-argument' ? count === 1
+          : shape === 'multiple-arguments' ? Number.isInteger(count) && count >= 2 && count <= 12
+            : count === null;
+      const booleans = ['parentCurrentRowFound','parentRelayPathMatch','parentRelayArgsParsed','parentRelayArgsEqualExpected','parentParentIsFixture','parentCreationDatePresent','parentCreationAtOrAfterFixtureObserved','consoleHostCreationDatePresent','consoleHostCreationAtOrAfterParentObserved'];
+      const countsValid = count => count === null || Number.isInteger(count) && count >= 0 && count <= 12;
+      const parentShapeClasses = [...shapeClasses,'not-checked'];
+      if (result.check !== 'executable' || result.builtinConsoleHostMatch !== true
+          || conhostDiagnosticKeys.some(key => !Object.hasOwn(result,key))
+          || !shapeClasses.includes(result.consoleHostCommandLineClass)
+          || !commandShapes.includes(result.consoleHostCommandShape)
+          || !parentShapeClasses.includes(result.parentRelayCommandLineClass)
+          || !booleans.every(key => typeof result[key] === 'boolean')
+          || !countsValid(result.consoleHostArgumentCount) || !countsValid(result.parentRelayArgumentCount)
+          || !countMatchesShape(result.consoleHostCommandLineClass,result.consoleHostArgumentCount)
+          || !countMatchesShape(result.parentRelayCommandLineClass,result.parentRelayArgumentCount)
+          || (parsedShape(result.consoleHostCommandLineClass) === (result.consoleHostCommandShape === 'unparsed'))
+          || (result.consoleHostCommandShape === 'legacy-handle-only-candidate' && result.consoleHostArgumentCount !== 1)
+          || (result.consoleHostCommandShape === 'legacy-handle-force-v1-candidate' && result.consoleHostArgumentCount !== 2)
+          || (result.parentCurrentRowFound && !result.parentInOwnedRows)
+          || (result.parentRelayPathMatch && !result.parentCurrentRowFound)
+          || (result.parentRelayArgsParsed && (!result.parentRelayPathMatch || !parsedShape(result.parentRelayCommandLineClass)))
+          || (parsedShape(result.parentRelayCommandLineClass) && !result.parentRelayArgsParsed)
+          || (result.parentRelayArgsEqualExpected && (!result.parentRelayArgsParsed || !result.parentParentIsFixture || !result.parentCreationAtOrAfterFixtureObserved))
+          || (result.parentParentIsFixture && !result.parentCurrentRowFound)
+          || (result.parentCreationAtOrAfterFixtureObserved && (!result.parentCurrentRowFound || !result.parentCreationDatePresent))
+          || (result.consoleHostCreationAtOrAfterParentObserved && (!result.consoleHostCreationDatePresent || !result.parentCreationDatePresent || !result.parentCurrentRowFound))) return undefined;
     }
     if (result.argvMatches !== undefined && result.argvCountMatches !== true) return undefined;
     if (result.check === 'argv-count' && (result.argvCountMatches !== false || result.argvMatches !== undefined)) return undefined;

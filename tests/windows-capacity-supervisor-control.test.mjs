@@ -1,10 +1,25 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { realpathSync } from 'node:fs';
+import { realpathSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { createCapacityController, utilityProbeCommand } from '../tools/acceptance/windows-capacity-control.mjs';
+import { captureProductionWindowsRelay } from './helpers/capture-production-windows-relay.mjs';
+
+const diagnosticParserCases = [
+  'missing-command-line','wrong-type-refused','over-bound-refused-before-parse','console-host-over-bound-shape-only','zero-arguments',
+  'one-argument','multiple-arguments','legacy-handle-only-candidate','legacy-handle-force-v1-candidate',
+  'malformed-case-length-and-extra-args-other','unparsed-command-shape','parser-argument-bound-refused',
+  'production-relay-args-exact-and-current-parent-correlation','wrong-relay-argv-not-exact','wrong-fixture-parent-not-exact',
+  'older-parent-date-not-exact','unknown-parent-not-correlated',
+];
+
+test('native diagnostic-parser receipt case order matches the PowerShell probe', () => {
+  const script = readFileSync(new URL('../tools/acceptance/windows-capacity-job.ps1', import.meta.url), 'utf8');
+  const cases = [...script.matchAll(/\$cases\.Add\('([^']+)'\)/g)].map((match) => match[1]);
+  assert.deepEqual(cases, diagnosticParserCases);
+});
 
 async function within(promise, ms) {
   let timer;
@@ -100,6 +115,33 @@ test('classic supervisor exchanges bounded control records with stdin still open
     const result = await terminalWithin(5000);
     assert.notEqual(result, null, 'owned supervisor terminal unconfirmed');
     await within(stdioClosed, 5000);
+  }
+});
+
+test('classic supervisor bounds command-line diagnostic parsing without querying processes', { skip: process.platform !== 'win32', timeout: 60000 }, async () => {
+  const shell = path.join(process.env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe');
+  const script = fileURLToPath(new URL('../tools/acceptance/windows-capacity-job.ps1', import.meta.url));
+  const { args: relayArgs } = captureProductionWindowsRelay();
+  const child = spawn(shell, ['-NoProfile','-NonInteractive','-File',script,'-DiagnosticParserTestOnly'], {
+    env: { ...process.env, AGENT_COMMS_TEST_RELAY_ARGS_JSON: JSON.stringify(relayArgs) },
+    stdio: ['ignore','pipe','pipe'], windowsHide: true,
+  });
+  let terminal = false, stdout = '', stderrBytes = 0;
+  const exited = new Promise(resolve => {
+    child.once('error', () => { terminal = true; resolve({ code: null }); });
+    child.once('exit', code => { terminal = true; resolve({ code }); });
+  });
+  const closed = new Promise(resolve => child.once('close', resolve));
+  child.stdout.on('data', chunk => { stdout += chunk.toString('utf8'); if (stdout.length > 4096) child.kill(); });
+  child.stderr.on('data', chunk => { stderrBytes += chunk.length; });
+  try {
+    assert.equal((await within(exited, 50000)).code, 0);
+    await within(closed, 5000);
+    assert.equal(stderrBytes, 0);
+    assert.deepEqual(JSON.parse(stdout), { id: 0, ok: true, parserCases: diagnosticParserCases, workloadRun: false, processQueryRun: false });
+  } finally {
+    if (!terminal) child.kill();
+    await within(exited, 5000); await within(closed, 5000);
   }
 });
 
