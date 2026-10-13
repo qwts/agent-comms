@@ -130,3 +130,9 @@ allowed-host/denied-Node/denied-security and cross-UID endpoint evidence. Then
 derive frame/count limits and durable reservation arithmetic together with
 effect evidence. No production codec or runtime capability is justified by this
 options document.
+
+
+The [complete proposed custody record](owner-decision-staging-custody.md)
+provides the two-key enrollment, private storage, loss/recovery and removal
+recommendation. Its reproducible synthetic evaluation is a review input, not
+production crypto approval.
