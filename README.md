@@ -43,7 +43,8 @@ from this agent-comms release; these receipts are not blanket Windows support.
 - [Principal client API](docs/principal-client.md): embed owner census and chat.
 - [Owner-decision proposal](docs/owner-decisions.md): proposed security contract;
   [evidence and conformance](docs/owner-decision-conformance.md), and
-  [private daemon evidence admission](docs/owner-decision-daemon-evidence-admission.md).
+  [private daemon evidence admission](docs/owner-decision-daemon-evidence-admission.md), and
+  [private supervised observation](docs/owner-supervised-broker.md).
   No runtime authorization.
 - [Windows](docs/windows.md): released `win32` platform branches and their
   current end-to-end limits.

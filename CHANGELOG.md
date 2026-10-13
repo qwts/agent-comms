@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Add a private inherited native-supervisor session and dedicated broker entrypoint with bounded canonical framing, synchronous native observation scopes, poison/EOF handling and production-factory observation. Installation trust remains external to JavaScript; receipt, coordinator and physical activation remain refused (#77).
 - Strengthen actual-process diagnostic backpressure acceptance with separate live blocked-writer plateau and terminal-failure predicates, bounded sanitized receipts, and owned exit/helper/stdio checks. This is functional evidence, not numeric unread saturation or performance acceptance (#164).
 - Add a source-only current-user Windows desktop acceptance candidate for fixed compiler and startup diagnostics, with restricted scratch and existing private-job guards; execution and cleanup acceptance remain pending (#164).
 - Both principal client factories expose the existing authenticated `health()` operation with additive cached running-build and supported private diagnostic-format metadata. Existing health fields, grant-filtered census, authentication and storage-uncertainty refusals remain unchanged; documented recovery categories add no public errors or automatic retries (#164).
