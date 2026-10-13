@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { createCapacityController } from '../tools/acceptance/windows-capacity-control.mjs';
 import { supervisorClassificationFromError, supervisorClassificationFromFailure } from '../tools/acceptance/windows-capacity-classification.mjs';
+import { projectRelayExitOutcome, validRelayExitOutcome } from './helpers/windows-relay-exit-outcome.mjs';
 import { captureProductionWindowsRelay } from './helpers/capture-production-windows-relay.mjs';
 
 const fixturePath = fileURLToPath(new URL('./fixtures/windows-detached-relay-probe.mjs', import.meta.url));
@@ -64,6 +65,15 @@ const CONNECTOR_ERROR_STAGES = new Set([
   'host-clixml', 'host-stderr', 'pipe-refused', 'process-error',
   'premature-close', 'startup-timeout', 'unclassified',
 ]);
+
+function validConnectorRecord(value) {
+  const keys = value && typeof value === 'object' && !Array.isArray(value)
+    ? Object.keys(value).sort().join(',') : '';
+  if (value?.id !== -3 || !CONNECTOR_EVENTS.has(value.event)) return false;
+  if (value.event === 'raw-error') return keys === 'errorStage,event,id' && CONNECTOR_ERROR_STAGES.has(value.errorStage);
+  if (value.event === 'relay-exit') return keys === 'event,exitCode,exitOutcome,id' && validRelayExitOutcome(value);
+  return keys === 'event,id';
+}
 
 test('detached relay probe uses the checked-in Node 24.21.0/libuv 1.52.1 diagnostic tuple', () => {
   assert.equal(hostComponents.node.version, '24.21.0');
@@ -131,6 +141,9 @@ function projectOwnedChildCleanup(value) {
 
 function projectConnectorObservation(value) {
   const events = value?.events instanceof Set ? value.events : new Set();
+  const exit = events.has('relay-exit') && validRelayExitOutcome({ exitCode: value?.relayExitCode, exitOutcome: value?.relayExitOutcome })
+    ? { exitCode: value.relayExitCode, exitOutcome: value.relayExitOutcome }
+    : { exitCode: null, exitOutcome: 'unknown' };
   return {
     rawConnect: events.has('raw-connect'),
     rawError: events.has('raw-error'),
@@ -139,6 +152,7 @@ function projectConnectorObservation(value) {
     relayError: events.has('relay-error'),
     relayExit: events.has('relay-exit'),
     relayClose: events.has('relay-close'),
+    ...exit,
     rawErrorStage: CONNECTOR_ERROR_STAGES.has(value?.rawErrorStage) ? value.rawErrorStage : null,
     invalid: value?.invalid === true,
   };
@@ -215,7 +229,7 @@ test('combined primary and cleanup failure projection preserves only owned resol
     connector: {
       rawConnect: false, rawError: true, rawClose: false, pendingAfter12s: true,
       relayError: false, relayExit: true, relayClose: false,
-      rawErrorStage: 'startup-timeout', invalid: false,
+      exitCode: null, exitOutcome: 'unknown', rawErrorStage: 'startup-timeout', invalid: false,
     },
     cleanupFailure: 'owned-terminal-and-close-unconfirmed',
     ownedChildren: {
@@ -230,17 +244,11 @@ test('combined primary and cleanup failure projection preserves only owned resol
 test('connector event receipts are independent from monotonic fixture stages and reject unknown events', () => {
   const events = new Set();
   const record = (value) => {
-    const keys = value && typeof value === 'object' && !Array.isArray(value)
-      ? Object.keys(value).sort().join(',') : '';
-    if (value?.id !== -3 || !CONNECTOR_EVENTS.has(value.event)
-        || (value.event === 'raw-error'
-          ? keys !== 'errorStage,event,id' || !CONNECTOR_ERROR_STAGES.has(value.errorStage)
-          : keys !== 'event,id')
-        || events.has(value.event)) return false;
+    if (!validConnectorRecord(value) || events.has(value.event)) return false;
     events.add(value.event);
     return true;
   };
-  assert.equal(record({ id: -3, event: 'relay-exit' }), true);
+  assert.equal(record({ id: -3, event: 'relay-exit', exitCode: 0, exitOutcome: 'zero' }), true);
   assert.equal(record({ id: -3, event: 'raw-connect' }), true);
   assert.equal(record({ id: -3, event: 'pending-after-12s' }), true);
   assert.equal(record({ id: -3, event: 'raw-error', errorStage: 'startup-timeout' }), true);
@@ -249,8 +257,42 @@ test('connector event receipts are independent from monotonic fixture stages and
   assert.equal(record({ id: -3, event: 'CANARY-event' }), false);
   assert.deepEqual(projectConnectorObservation({ events, rawErrorStage: 'startup-timeout' }), {
     rawConnect: true, rawError: true, rawClose: false, pendingAfter12s: true,
-    relayError: false, relayExit: true, relayClose: false, rawErrorStage: 'startup-timeout', invalid: false,
+    relayError: false, relayExit: true, relayClose: false, exitCode: null, exitOutcome: 'unknown', rawErrorStage: 'startup-timeout', invalid: false,
   });
+});
+
+test('relay exit receipts retain bounded native status and redact all other child details', () => {
+  const cases = [[0, 'zero'], [1, 'nonzero'], [-2147483648, 'nonzero'], [4294967295, 'nonzero']];
+  for (const [code, outcome] of cases) {
+    const projected = projectRelayExitOutcome(code, null);
+    assert.deepEqual(projected, { exitCode: code, exitOutcome: outcome });
+    assert.equal(validConnectorRecord({ id: -3, event: 'relay-exit', ...projected }), true);
+    const observation = projectConnectorObservation({ events: new Set(['relay-exit']),
+      relayExitCode: code, relayExitOutcome: outcome, pid: 987654, signal: 'CANARY-signal',
+      stderr: 'CANARY-output', path: 'CANARY-path', args: ['CANARY-arg'], handle: 'CANARY-handle' });
+    assert.equal(observation.exitCode, code); assert.equal(observation.exitOutcome, outcome);
+    assert.doesNotMatch(JSON.stringify(observation), /CANARY|987654|stderr|path|args|handle/);
+  }
+  assert.deepEqual(projectRelayExitOutcome(null, 'SIGTERM'), { exitCode: null, exitOutcome: 'signal' });
+  assert.deepEqual(projectRelayExitOutcome(null, null), { exitCode: null, exitOutcome: 'unknown' });
+  for (const code of [-2147483649, 4294967296, 0.5, NaN, Infinity, '1', true, undefined, {}]) {
+    assert.deepEqual(projectRelayExitOutcome(code, null), { exitCode: null, exitOutcome: 'unknown' });
+    assert.equal(validConnectorRecord({ id: -3, event: 'relay-exit', exitCode: code, exitOutcome: 'nonzero' }), false);
+  }
+  for (const record of [
+    { id: -3, event: 'relay-exit' },
+    { id: -3, event: 'relay-exit', exitCode: null, exitOutcome: 'zero' },
+    { id: -3, event: 'relay-exit', exitCode: 0, exitOutcome: 'nonzero' },
+    { id: -3, event: 'relay-exit', exitCode: 1, exitOutcome: 'signal' },
+    { id: -3, event: 'relay-exit', exitCode: null, exitOutcome: 'CANARY-signal' },
+    { id: -3, event: 'relay-exit', exitCode: 0, exitOutcome: 'zero', stderr: 'CANARY-output' },
+    { id: -3, event: 'relay-close', exitCode: 0, exitOutcome: 'zero' },
+  ]) assert.equal(validConnectorRecord(record), false);
+  for (const outcome of ['signal', 'unknown']) assert.equal(validConnectorRecord({ id: -3, event: 'relay-exit', exitCode: null, exitOutcome: outcome }), true);
+  const sanitized = projectConnectorObservation({ events: new Set(['relay-exit']), relayExitCode: 4294967296, relayExitOutcome: 'nonzero' });
+  assert.equal(sanitized.exitCode, null); assert.equal(sanitized.exitOutcome, 'unknown');
+  const absent = projectConnectorObservation({ events: new Set(), relayExitCode: 1, relayExitOutcome: 'nonzero' });
+  assert.equal(absent.exitCode, null); assert.equal(absent.exitOutcome, 'unknown');
 });
 
 test('DETACHED_PROCESS diagnostic probe preserves actual relay argv and remains in the private job without console host', {
@@ -273,6 +315,8 @@ test('DETACHED_PROCESS diagnostic probe preserves actual relay argv and remains 
   const connectorEvents = new Set();
   let connectorObservationInvalid = false;
   let rawErrorStage;
+  let relayExitCode;
+  let relayExitOutcome;
   let primaryFailure;
   const cleanup = {
     failure: 'none',
@@ -289,19 +333,14 @@ test('DETACHED_PROCESS diagnostic probe preserves actual relay argv and remains 
     fixture = owned(process.execPath, fixtureArgs, ['ignore', 'ignore', 'pipe', 'ipc']);
     fixture.child.on('message', record => {
       if (record?.id === -3) {
-        const keys = record && typeof record === 'object' && !Array.isArray(record)
-          ? Object.keys(record).sort().join(',') : '';
         const errorRecord = record.event === 'raw-error';
-        if (!CONNECTOR_EVENTS.has(record.event)
-            || (errorRecord
-              ? keys !== 'errorStage,event,id' || !CONNECTOR_ERROR_STAGES.has(record.errorStage)
-              : keys !== 'event,id')
-            || connectorEvents.has(record.event)) {
+        if (!validConnectorRecord(record) || connectorEvents.has(record.event)) {
           connectorObservationInvalid = true;
           return;
         }
         connectorEvents.add(record.event);
         if (errorRecord) rawErrorStage = record.errorStage;
+        if (record.event === 'relay-exit') { relayExitCode = record.exitCode; relayExitOutcome = record.exitOutcome; }
         return;
       }
       if (!record || record.id !== -2) return;
@@ -457,7 +496,7 @@ test('DETACHED_PROCESS diagnostic probe preserves actual relay argv and remains 
   }
   if (primaryFailure || cleanup.failure !== 'none') {
     const detail = projectCombinedProbeFailure(primaryFailure, cleanup, {
-      events: connectorEvents, rawErrorStage, invalid: connectorObservationInvalid,
+      events: connectorEvents, rawErrorStage, relayExitCode, relayExitOutcome, invalid: connectorObservationInvalid,
     });
     throw new Error(`detached-probe-failed ${JSON.stringify(detail)}`);
   }

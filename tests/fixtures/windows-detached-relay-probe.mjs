@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import net from 'node:net';
+import { projectRelayExitOutcome } from '../helpers/windows-relay-exit-outcome.mjs';
 import { connectWindowsPipe } from '../../lib/platform/windows-pipe-client.mjs';
 import { projectWindowsPipeStage } from '../../lib/platform/windows-pipe-stage.mjs';
 
@@ -17,10 +18,11 @@ let rawClose;
 let serverClosed = false;
 const sockets = new Set();
 const reportStage = stage => { if (process.connected) process.send({ id: -2, stage }); };
-const reportConnector = (event, errorStage) => {
+const reportConnector = (event, detail) => {
   if (!process.connected) return;
   const record = { id: -3, event };
-  if (event === 'raw-error') record.errorStage = errorStage;
+  if (event === 'raw-error') record.errorStage = detail;
+  if (event === 'relay-exit') Object.assign(record, detail);
   process.send(record);
 };
 
@@ -67,7 +69,7 @@ process.on('message', async ({ id, op, expectedRelayArgs }) => {
           relay = child;
           relayExit = new Promise((resolve) => {
             child.once('error', () => { reportConnector('relay-error'); resolve({ code: null }); });
-            child.once('exit', (code, signal) => { reportConnector('relay-exit'); resolve({ code, signal }); });
+            child.once('exit', (code, signal) => { reportConnector('relay-exit', projectRelayExitOutcome(code, signal)); resolve({ code, signal }); });
           });
           relayClose = new Promise((resolve) => child.once('close', (code, signal) => {
             reportConnector('relay-close');
