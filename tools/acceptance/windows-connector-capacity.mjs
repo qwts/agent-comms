@@ -19,7 +19,7 @@ import { capacityTimingMode, capacityTimingProfile, createCapacityPhaseTiming, t
 
 import { cleanupCapacityRun, retainCapacityFailure } from './windows-capacity-lifecycle.mjs';
 
-import { RELAY_STARTUP_SOURCE, verifyRelayStartupSource, verifiedRelayContract } from './windows-relay-candidate.mjs';
+import { RELAY_STARTUP_SOURCE, verifyRelayStartupSource, verifiedRelayContract, relayBuildArguments, relayBuildFailure } from './windows-relay-candidate.mjs';
 
 import { probePinnedStorage } from './windows-capacity-storage.mjs';
 import { probePinnedCustody } from './windows-capacity-custody.mjs';
@@ -42,7 +42,7 @@ const supervisorPhases = new Set(['script-entry','compile-supervisor','superviso
 const checks = new Set(['fixture-terminal', 'fixture-deadline', 'control-deadline', 'control-closed',
   'control-output-bound', 'control-invalid', 'job-supervisor-failed', 'natural-exit-unconfirmed',
   'relay-exit-unconfirmed', 'scratch-retained', 'job-exit-unconfirmed', 'diagnostic-output-invalid',
-  'compiler-source-mismatch', 'compiler-control-failed', 'compiler-deadline', 'compiler-terminal', 'owned-startup-fault', 'owned-forced-cleanup', 'policy-failed', 'memory-headroom-insufficient', 'candidate-source-mismatch', 'operation-failed', 'assertion-failed', 'timing-unavailable']);
+  'compiler-source-mismatch', 'compiler-control-failed', 'compiler-deadline', 'compiler-terminal', 'owned-startup-fault', 'owned-forced-cleanup', 'policy-failed', 'memory-headroom-insufficient', 'candidate-source-mismatch', 'relay-build-timeout', 'relay-build-failed', 'operation-failed', 'assertion-failed', 'timing-unavailable']);
 function failure(error) {
   const windowsPipeStage = projectWindowsPipeStage(error);
   const supervisorClassification = supervisorClassificationFromError(error);
@@ -665,8 +665,18 @@ async function main(context) {
     if (relayCandidateStartup) {
       activeStage = 'relay-artifact-build';
       const buildHost = path.join(process.env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe');
-      await exec(buildHost, ['-NoLogo', '-NoProfile', '-NonInteractive', '-File', path.join(source, 'scripts/build-windows-relay.ps1')],
-        { env: environment(), windowsHide: true, timeout: 30_000, maxBuffer: 65_536 });
+      const buildArguments = relayBuildArguments(source);
+      const started = performance.now();
+      try {
+        await exec(buildHost, buildArguments,
+          { env: environment(), windowsHide: true, timeout: 30_000, maxBuffer: 65_536 });
+        writeFileSync(path.join(output, 'relay-build.json'), `${JSON.stringify({ status: 'passed', durationMs: performance.now() - started })}\n`);
+      } catch (error) {
+        const buildFailure = relayBuildFailure(error);
+        writeFileSync(path.join(output, 'relay-build.json'), `${JSON.stringify({ status: 'failed', ...buildFailure, durationMs: performance.now() - started })}\n`);
+        throw new Error(buildFailure.check);
+      }
+      activeStage = 'relay-artifact-verification';
       relayArtifact = (await verifiedRelayContract(source)).artifact;
     }
     archives[revision] = { source, pin, tree: tree.trim(), archiveSha256: hash(bytes), ...(relayArtifact ? { relayArtifact } : {}) };

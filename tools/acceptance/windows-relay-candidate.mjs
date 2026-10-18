@@ -21,6 +21,21 @@ export function verifyRelayStartupSource(tree, archiveSha256) {
   return { ...RELAY_STARTUP_SOURCE };
 }
 
+// Child PowerShell does not inherit the bootstrap's process execution policy
+// through the deliberately filtered environment. This is an explicit build of
+// already approved public source, with the same policy as the CI bootstrap.
+export function relayBuildArguments(source) {
+  assert.equal(readFileSync(path.join(source, 'RELEASE_COMMIT'), 'utf8').trim(), RELAY_STARTUP_SOURCE.pin);
+  return ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
+    '-File', path.join(source, 'scripts/build-windows-relay.ps1')];
+}
+
+export function relayBuildFailure(error) {
+  return { check: error?.killed === true ? 'relay-build-timeout' : 'relay-build-failed',
+    exitCode: Number.isSafeInteger(error?.code) ? error.code : null,
+    signal: ['SIGTERM', 'SIGKILL'].includes(error?.signal) ? error.signal : null };
+}
+
 // Capture the actual public connector contract with inert streams. Verification
 // stays enabled; this never launches a process or connects to a named pipe.
 export async function verifiedRelayContract(source) {

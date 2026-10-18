@@ -4,8 +4,29 @@ import { mkdtempSync, mkdirSync, copyFileSync, writeFileSync, rmSync, realpathSy
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { RELAY_STARTUP_SOURCE, verifyRelayStartupSource, verifiedRelayContract } from '../tools/acceptance/windows-relay-candidate.mjs';
+import { RELAY_STARTUP_SOURCE, verifyRelayStartupSource, verifiedRelayContract, relayBuildArguments, relayBuildFailure } from '../tools/acceptance/windows-relay-candidate.mjs';
 import { CORRECTED_STARTUP_SOURCE, verifyCorrectedStartupSource, verifyCandidateComponent } from '../tools/acceptance/windows-corrected-startup.mjs';
+
+test('archive build explicitly selects the bootstrap process policy and refuses a different source stamp', t => {
+  const root = mkdtempSync(path.join(os.tmpdir(), 'relay-build-arguments-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  assert.throws(() => relayBuildArguments(root));
+  writeFileSync(path.join(root, 'RELEASE_COMMIT'), RELAY_STARTUP_SOURCE.pin);
+  const args = relayBuildArguments(root);
+  assert.deepEqual(args.slice(args.indexOf('-ExecutionPolicy'), -2), ['-ExecutionPolicy', 'Bypass']);
+  assert.deepEqual(args.slice(-2), ['-File', path.join(root, 'scripts/build-windows-relay.ps1')]);
+  writeFileSync(path.join(root, 'RELEASE_COMMIT'), 'a'.repeat(40));
+  assert.throws(() => relayBuildArguments(root));
+});
+
+test('build failure receipt distinguishes timeout from exit without retaining raw diagnostics', () => {
+  assert.deepEqual(relayBuildFailure({ killed: true, signal: 'SIGTERM', stderr: 'private output' }),
+    { check: 'relay-build-timeout', exitCode: null, signal: 'SIGTERM' });
+  assert.deepEqual(relayBuildFailure({ code: 1, stderr: 'private output' }),
+    { check: 'relay-build-failed', exitCode: 1, signal: null });
+  assert.deepEqual(relayBuildFailure({ code: 'ENOENT', signal: 'untrusted' }),
+    { check: 'relay-build-failed', exitCode: null, signal: null });
+});
 
 test('relay candidate component approval uses pinned bytes, not a mutable CRLF checkout', () => {
   const text = readFileSync(new URL('../lib/platform/windows-pipe-stage.mjs', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
