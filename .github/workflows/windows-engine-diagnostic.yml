@@ -132,5 +132,7 @@ jobs:
             .windows-results/capacity/capacity.json
             .windows-results/capacity/failure.json
             .windows-results/capacity/partial-run.json
+            .windows-results/capacity/relay-source-approval.json
+            .windows-results/capacity/relay-source.tar
           include-hidden-files: true
           if-no-files-found: warn

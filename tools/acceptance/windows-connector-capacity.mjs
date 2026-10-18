@@ -636,6 +636,17 @@ async function main(context) {
     activeStage = 'archive-source';
     const { stdout: tree } = await exec('git.exe', ['rev-parse', `${pin}^{tree}`], { cwd, encoding: 'utf8', windowsHide: true });
     const { stdout: bytes } = await exec('git.exe', candidateOnly ? canonicalCandidateArchiveArgs(pin) : ['archive', '--format=tar', pin], { cwd, encoding: 'buffer', maxBuffer: 32 * 1024 * 1024, windowsHide: true });
+    if (relayCandidateStartup) {
+      // Retain only public fixed-commit input bytes, never extracted execution
+      // or profile data, when native archive approval fails before preparation.
+      writeFileSync(path.join(output, 'relay-source-approval.json'), `${JSON.stringify({
+        pin, observedTree: tree.trim(), observedArchiveSha256: hash(bytes), archiveBytes: bytes.length,
+        expectedTree: RELAY_STARTUP_SOURCE.tree, expectedArchiveSha256: RELAY_STARTUP_SOURCE.archiveSha256,
+      }, null, 2)}\n`);
+      if (tree.trim() !== RELAY_STARTUP_SOURCE.tree || hash(bytes) !== RELAY_STARTUP_SOURCE.archiveSha256) {
+        writeFileSync(path.join(output, 'relay-source.tar'), bytes);
+      }
+    }
     if (candidateOnly) (relayCandidateStartup ? verifyRelayStartupSource : verifyCorrectedStartupSource)(tree.trim(), hash(bytes));
     const archive = path.join(output, `${revision}.tar`), source = path.join(output, revision);
     writeFileSync(archive, bytes); mkdirSync(source);
