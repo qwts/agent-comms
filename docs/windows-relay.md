@@ -50,3 +50,41 @@ or the remaining compiler/capacity work under #164.
 Legacy compiler controls remain tied to their original source hashes. The
 current relay has no runtime compiler; those controls cannot silently claim
 to validate this helper.
+
+## Broker startup and delivery candidate
+
+The `relay-candidate-startup` manual workflow task selects the reviewed
+`ba75753e8e99e7c475baff9bfa139721276b5b06` runtime in a disposable standard-user
+profile. The driver requires its fixed tree and canonical archive digest;
+dispatch cannot supply another runtime revision. The workflow explicitly
+builds the helper from the reviewed checkout before creating the disposable
+account. The account receives only the executable and manifest as read-only
+inputs, copies them into its independently approved source archive, verifies
+the artifact, and records the source and binary digests. Build preparation is
+outside both the standard-user acceptance and measured job; acceptance does
+not require the standard user to compile a prebuilt product.
+Component approval uses the reviewed commit's canonical digest, never a
+mutable tool checkout whose CRLF conversion can differ from archive bytes.
+
+The driver captures the actual connector's fixed executable and arguments
+through inert streams, with artifact verification enabled. The supervisor
+then admits only that executable/argv, the fixture, and the existing diagnostic
+writer; runtime compiler descendants are not admitted for this candidate.
+It exercises Broker startup, pairing and approval, two agent joins, one
+send/read/ack/empty-read cycle, natural shutdown, empty-job confirmation and
+owned process/stdio cleanup under the existing bounded startup profile.
+
+The first run with workflow prebuild, [39169322836](https://github.com/qwts/agent-comms/actions/runs/39169322836),
+passed source/component approval, artifact verification and Broker startup,
+then failed during pairing with `broker-timeout`. It did not reach approval,
+joins or delivery. Its failure receipt confirms owned fixture/supervisor exit,
+stdio closure, empty job and scratch removal. The outer bootstrap nevertheless
+retains the profile because its conservative cleanup gate refuses any
+`failure.json`; its `capacity-tool-cleanup-unconfirmed` and `test-profile-cleanup`
+results remain failures. This is diagnostic progress, not a passing Windows
+acceptance result. Pairing and outer cleanup reconciliation remain under #164.
+
+This is a separate functional candidate. The historical `candidate-*` tasks,
+compiler digests, old/new comparison pins, classification guards, and
+deadlines remain unchanged. A hosted pass does not establish owner-desktop,
+installed-host, offered-rate capacity, or numeric overhead acceptance.

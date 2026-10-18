@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Add a fixed-source Windows startup/delivery acceptance candidate for the
+  prebuilt relay, with explicit artifact preparation and verified launcher
+  classification. Preserve historical compiler and capacity inputs (#164).
+
 - Use a prebuilt console-free .NET Windows pipe relay instead of PowerShell
   and runtime compilation. Preserve Identification and EOF shutdown; verify
   the bundled executable and source digests before launch (#164).
