@@ -119,7 +119,7 @@ jobs:
       - name: Verify named-pipe client impersonation ceiling
         run: node --test tests/platform-win32-pipe-native.test.mjs
       - name: Verify Windows connector stage through local client wrapping
-        run: node --test tests/windows-pipe-stage.test.mjs tests/windows-pipe-client.test.mjs
+        run: node --test tests/windows-pipe-stage.test.mjs tests/windows-pipe-client.test.mjs tests/windows-relay-build.test.mjs
       - name: Verify Windows stale-probe settlement and disposal
         run: node --test tests/platform-win32-stale-probe.test.mjs
       - name: Verify task wrapper owns its descendant process lifetime

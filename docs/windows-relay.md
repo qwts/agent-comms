@@ -26,6 +26,11 @@ subsystem before starting the fixed bundled path. A missing, corrupted, stale,
 or console-subsystem build fails closed with the existing process-error stage.
 These are package-integrity checks, not a claim of Authenticode signing.
 
+Custom spawn wrappers receive the same artifact verification by default.
+In-memory test doubles must explicitly set `skipRelayVerificationForTests`;
+that option is refused with the default real spawn function. Native probes
+use verification, including when wrapping spawn to observe the relay.
+
 ## Release and acceptance
 
 Windows CI builds the helper before native security tests and retains the

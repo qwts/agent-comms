@@ -21,6 +21,7 @@ export function captureProductionWindowsRelay() {
   let captured;
   const raw = connectWindowsPipe('\\\\.\\pipe\\agent-comms.test.S-1-5-21-123', {
     env: {},
+    skipRelayVerificationForTests: true,
     spawnProcess(file, args) {
       captured = { file, args: [...args] };
       return child;

@@ -3,8 +3,11 @@ $root = Split-Path -Parent $PSScriptRoot
 $source = Join-Path $root 'native/windows/AgentCommsPipeRelay.cs'
 $directory = Join-Path $root 'bin/windows'
 $binary = Join-Path $directory 'agent-comms-pipe-relay.exe'
-$compiler = Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
-if (-not (Test-Path $compiler -PathType Leaf)) { throw 'Windows .NET Framework compiler unavailable' }
+# Probe only the fixed operating-system Framework paths, never PATH.
+$compiler = @('Framework64', 'Framework') | ForEach-Object {
+    Join-Path $env:WINDIR "Microsoft.NET/$_/v4.0.30319/csc.exe"
+} | Where-Object { Test-Path $_ -PathType Leaf } | Select-Object -First 1
+if (-not $compiler) { throw 'Windows .NET Framework compiler unavailable' }
 if (Test-Path (Join-Path $root '.git')) {
     $commit = (& git -C $root rev-parse HEAD).Trim()
     if ($LASTEXITCODE -ne 0) { throw 'Relay build source commit unavailable' }

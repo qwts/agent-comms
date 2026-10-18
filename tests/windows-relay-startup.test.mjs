@@ -28,11 +28,11 @@ test('Windows PowerShell starts hidden and rejects DETACHED_PROCESS before execu
           '-NoLogo', '-NoProfile', '-NonInteractive', '-OutputFormat', 'Text', '-Command', command,
         ], { windowsHide: true, detached, stdio: ['pipe', 'pipe', 'pipe'], env: legacyPowerShellEnv(process.env) });
         let stdoutBytes = 0, stderr = '', timedOut = false, spawnFailed = false;
-        child.stdout.on('data', chunk => { stdoutBytes += chunk.length; });
-        child.stderr.on('data', chunk => { stderr = (stderr + chunk.toString('utf8')).slice(0, 256); });
+        child.stdout?.on('data', chunk => { stdoutBytes += chunk.length; });
+        child.stderr?.on('data', chunk => { stderr = (stderr + chunk.toString('utf8')).slice(0, 256); });
         child.once('error', () => { spawnFailed = true; });
         let closeTimer;
-        const timer = setTimeout(() => { timedOut = true; child.kill(); }, 12000);
+        const timer = setTimeout(() => { timedOut = true; if (child.pid) child.kill(); }, 12000);
         let result;
         try {
           result = await Promise.race([
@@ -42,8 +42,8 @@ test('Windows PowerShell starts hidden and rejects DETACHED_PROCESS before execu
         } finally {
           clearTimeout(timer);
           clearTimeout(closeTimer);
-          child.stdin.destroy();
-          if (child.exitCode === null && child.signalCode === null) child.kill();
+          for (const stream of [child.stdin, child.stdout, child.stderr]) stream?.destroy();
+          if (child.pid && child.exitCode === null && child.signalCode === null) child.kill();
         }
         assert.equal(timedOut, false, 'startup deadline');
         assert.equal(spawnFailed, false, 'spawn refused');

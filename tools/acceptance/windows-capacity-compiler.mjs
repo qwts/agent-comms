@@ -42,7 +42,7 @@ export function captureCompilerPrefix(connectWindowsPipe, env) {
     stderr: new PassThrough(), exitCode: 0, signalCode: null });
   let raw;
   try {
-    raw = connectWindowsPipe('\\\\.\\pipe\\agent-comms-compiler-control', { env, spawnProcess(file, args, options) {
+    raw = connectWindowsPipe('\\\\.\\pipe\\agent-comms-compiler-control', { env, skipRelayVerificationForTests: true, spawnProcess(file, args, options) {
       calls++;
       if (calls !== 1 || options?.windowsHide !== true || !Array.isArray(options.stdio)
           || options.stdio.length !== 3 || options.stdio.some(value => value !== 'pipe')) fail();
