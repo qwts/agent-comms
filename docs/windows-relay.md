@@ -74,6 +74,16 @@ It exercises Broker startup, pairing and approval, two agent joins, one
 send/read/ack/empty-read cycle, natural shutdown, empty-job confirmation and
 owned process/stdio cleanup under the existing bounded startup profile.
 
+The first run with workflow prebuild, [39169322836](https://github.com/qwts/agent-comms/actions/runs/39169322836),
+passed source/component approval, artifact verification and Broker startup,
+then failed during pairing with `broker-timeout`. It did not reach approval,
+joins or delivery. Its failure receipt confirms owned fixture/supervisor exit,
+stdio closure, empty job and scratch removal. The outer bootstrap nevertheless
+retains the profile because its conservative cleanup gate refuses any
+`failure.json`; its `capacity-tool-cleanup-unconfirmed` and `test-profile-cleanup`
+results remain failures. This is diagnostic progress, not a passing Windows
+acceptance result. Pairing and outer cleanup reconciliation remain under #164.
+
 This is a separate functional candidate. The historical `candidate-*` tasks,
 compiler digests, old/new comparison pins, classification guards, and
 deadlines remain unchanged. A hosted pass does not establish owner-desktop,
