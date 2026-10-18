@@ -175,19 +175,6 @@ function safeErrorClass(error) {
   return FAILURE_CLASSES.has(error?.message) ? error.message : 'other-failure';
 }
 
-async function safeRequest(control, operation, fields = {}, timeout = 5000) {
-  try { return await control.request(operation, fields, timeout); }
-  catch (error) {
-    const classification = supervisorClassificationFromError(error);
-    lastSupervisorCheck = SUPERVISOR_CHECKS.has(classification?.check) ? classification.check : 'unknown';
-    lastSupervisorFailureClass = safeErrorClass(error);
-    throw new Error('probe-request-failed');
-  }
-}
-
-let lastSupervisorCheck = 'unknown';
-let lastSupervisorFailureClass = 'other-failure';
-
 test('detached relay failure projection keeps only fixed await, fixture, supervisor and error classes', () => {
   assert.deepEqual(projectProbeFailure({
     awaitStage: 'relay-sample', fixtureStage: 'relay-connected', supervisorPhase: 'sample-classify',
@@ -299,6 +286,19 @@ test('DETACHED_PROCESS diagnostic probe preserves actual relay argv and remains 
   skip: process.platform !== 'win32',
   timeout: 90000,
 }, async () => {
+  async function safeRequest(control, operation, fields = {}, timeout = 5000) {
+    try { return await control.request(operation, fields, timeout); }
+    catch (error) {
+      const classification = supervisorClassificationFromError(error);
+      lastSupervisorCheck = SUPERVISOR_CHECKS.has(classification?.check) ? classification.check : 'unknown';
+      lastSupervisorFailureClass = safeErrorClass(error);
+      throw new Error('probe-request-failed');
+    }
+  }
+
+  let lastSupervisorCheck = 'unknown';
+  let lastSupervisorFailureClass = 'other-failure';
+
   assert.equal(process.version, pinnedNodeVersion, 'Windows diagnostic must use the checked-in Node sidecar tuple');
   assert.equal(process.versions.uv, pinnedLibuvVersion, 'Windows diagnostic must use the checked-in Node sidecar tuple');
   // This test is diagnostic-only: it uses the production connector and worker,
@@ -326,7 +326,7 @@ test('DETACHED_PROCESS diagnostic probe preserves actual relay argv and remains 
     },
   };
   try {
-    shell = path.join(process.env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe');
+    shell = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
     relayArgs = captureProductionWindowsRelay().args;
     const pipe = `\\\\.\\pipe\\agent-comms.detached-probe.${process.pid}.${Date.now()}`;
     const fixtureArgs = [fixturePath, pipe];

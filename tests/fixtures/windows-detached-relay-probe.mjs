@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import net from 'node:net';
 import { projectRelayExitOutcome } from '../helpers/windows-relay-exit-outcome.mjs';
+import { waitForProbeConnect } from '../helpers/windows-probe-connect.mjs';
 import { connectWindowsPipe } from '../../lib/platform/windows-pipe-client.mjs';
 import { projectWindowsPipeStage } from '../../lib/platform/windows-pipe-stage.mjs';
 
@@ -61,7 +62,8 @@ process.on('message', async ({ id, op, expectedRelayArgs }) => {
             && args.every((value, index) => value === expectedRelayArgs[index]);
           if (spawnCount !== 1 || file !== 'powershell.exe' || !exactArgs
               || options.windowsHide !== true
-              || JSON.stringify(options.stdio) !== JSON.stringify(['pipe', 'pipe', 'pipe'])
+              || !Array.isArray(options.stdio) || options.stdio.length !== 3
+              || !options.stdio.every(value => value === 'pipe')
               || options.detached !== undefined) throw new Error('production-relay-spawn-mismatch');
           reportStage('spawn-request-validated');
           const child = spawn(file, args, { ...options, detached: true });
@@ -95,10 +97,7 @@ process.on('message', async ({ id, op, expectedRelayArgs }) => {
         pendingTimer = undefined;
         if (!connectorSettled) reportConnector('pending-after-12s');
       }, 12_000);
-      await new Promise((resolve, reject) => {
-        raw.once('connect', resolve);
-        raw.once('error', reject);
-      });
+      await waitForProbeConnect(raw);
       reportStage('relay-connected');
       process.send({ id, connected: true, detached: true, windowsHide: true, stdioPipes: true, productionArgsExact: true });
     } else if (op === 'stop') {
