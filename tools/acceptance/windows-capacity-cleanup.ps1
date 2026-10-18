@@ -1,4 +1,12 @@
 # Native exit status alone cannot authorize deletion of capacity child state.
+function Set-WindowsCapacityResultStatus([Collections.IDictionary]$Report, [int]$ExitCode) {
+    if ($ExitCode -ne 0 -or $Report.status -ne 'passed') {
+        if ($Report.status -ne 'capacity-not-qualified') { $Report.status = 'failed' }
+        return 1
+    }
+    return 0
+}
+
 function Test-WindowsCapacityCleanupConfirmed([string]$Directory) {
     try {
         $file = Get-Item -LiteralPath (Join-Path $Directory 'capacity.json') -ErrorAction Stop

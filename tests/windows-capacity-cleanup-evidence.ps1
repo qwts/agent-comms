@@ -1,6 +1,16 @@
 # No processes/accounts: uncertainty must survive nested tool/bootstrap reports.
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot '../tools/acceptance/windows-capacity-cleanup.ps1')
+foreach ($case in @(
+    @{report=@{};exit=1;status='failed';result=1},
+    @{report=@{status='passed'};exit=1;status='failed';result=1},
+    @{report=@{status='failed'};exit=0;status='failed';result=1},
+    @{report=@{status='capacity-not-qualified'};exit=1;status='capacity-not-qualified';result=1},
+    @{report=@{status='passed'};exit=0;status='passed';result=0}
+)) {
+    $result = Set-WindowsCapacityResultStatus $case.report $case.exit
+    if ($result -ne $case.result -or $case.report.status -ne $case.status) { throw 'Operation status was lost during successful disposal' }
+}
 $scratch = Join-Path ([IO.Path]::GetTempPath()) ('comms-cleanup-test-' + [Guid]::NewGuid().ToString('N'))
 try {
     New-Item -ItemType Directory -Path $scratch | Out-Null
