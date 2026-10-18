@@ -58,14 +58,16 @@ and only one-account mode: `persona-accounts` (groups, `--group`) is
   ownership checks and gains no handshake; after the handshake the wire is
   the same on both platforms.
 
-  A stale-pipe probe permits startup after an ordinary connector refusal. An
-  observed live connection irreversibly refuses a second broker as
-  `broker-running` before disposal can throw or emit a later error. A close
-  before either result refuses as `broker-probe-failed`; it does not establish
-  that the pipe is absent. Result listeners are removed after settlement while
-  one stream-local error listener handles late disposal errors. Constructor
-  regressions cover these boundaries; this source repair does not establish
-  the cause of earlier hosted diagnostics or Windows numeric capacity.
+  Stale-pipe refusal permits startup; a live connection refuses
+  as `broker-running`. Closing before either result is `broker-probe-failed`.
+  Cleanup cannot change settled results; late errors remain handled.
+
+  Keep the owned PowerShell relay hidden and non-detached (`detached: false`)
+  with piped stdio. `DETACHED_PROCESS` exits 0 without executing the worker
+  ([#267](https://github.com/qwts/agent-comms/pull/267)).
+  `relay-startup` checks production launch and pipe security;
+  `detached-relay-probe` retains the unsupported experiment. Hosted evidence
+  grants no owner-desktop or compiler acceptance.
 
 - **Secret store.** The principal is `principal.<credentialName>.dpapi` in
   the client state directory, DPAPI-protected in the `CurrentUser` scope
