@@ -67,7 +67,7 @@ to validate this helper.
 ## Broker startup and delivery candidate
 
 The `relay-candidate-startup` manual workflow task selects the fixed
-`1c4b1b564c6e616e38e4dbfa5511e205af75f281` runtime in a disposable standard-user
+`260d5dbbd7a27c2b044b3497757ee9b73e649c53` runtime in a disposable standard-user
 profile. The driver requires its fixed tree and canonical archive digest;
 dispatch cannot supply another runtime revision. The workflow explicitly
 builds the helper from the fixed checkout before creating the disposable

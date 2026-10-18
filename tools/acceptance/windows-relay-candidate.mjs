@@ -8,9 +8,9 @@ import { PassThrough } from 'node:stream';
 import { pathToFileURL } from 'node:url';
 
 export const RELAY_STARTUP_SOURCE = Object.freeze({
-  pin: '1c4b1b564c6e616e38e4dbfa5511e205af75f281',
-  tree: '1f5ddfd54a9410ae985cdca84027e5446537a962',
-  archiveSha256: '0363798c08a0daf2cd44f1d0c4ff1f65171850f63beb820f917183863888afb3',
+  pin: '260d5dbbd7a27c2b044b3497757ee9b73e649c53',
+  tree: '530018f0aca82b0a51f8cf6c86717c20eb83d481',
+  archiveSha256: 'eb2186494f19516c5e878043d714a60f0bd7da7985bb41aee46e66a6f1835694',
   pipeStageSha256: 'e012c398a9a7ec03332472c45a469e2c635dfe6c6b4236677b8bdaa537058e90',
 });
 

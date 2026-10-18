@@ -73,7 +73,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: qwts/agent-comms
-          ref: 1c4b1b564c6e616e38e4dbfa5511e205af75f281
+          ref: 260d5dbbd7a27c2b044b3497757ee9b73e649c53
           path: .windows-fixtures/relay-correction
           persist-credentials: false
       - name: Prebuild the fixed relay candidate before disposable-account acceptance
