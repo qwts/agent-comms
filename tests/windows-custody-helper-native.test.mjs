@@ -18,6 +18,12 @@ test('verified GUI helper performs fresh Unicode custody and SID checks without 
   const isolation = createAccountIsolation('win32', { env });
   assert.deepEqual(isolation.inspect([], 'custody-test'), []);
   const sid = isolation.currentUid();
+  // Elevated developer/CI tokens can initially assign Administrators as owner.
+  // Make this private test fixture explicitly user-owned before testing it.
+  const ownership = spawnSync(path.join(process.env.SystemRoot, 'System32', 'icacls.exe'),
+    [root, '/setowner', `*${sid}`, '/T'], { encoding: 'utf8', windowsHide: true, timeout: 10000 });
+  assert.equal(ownership.error, undefined);
+  assert.equal(ownership.status, 0, 'private fixture ownership setup failed');
   assert.equal(isolation.systemUidOf(os.userInfo().username), sid);
   assert.deepEqual(isolation.inspect([root, file, path.join(root, 'missing')], 'custody-test'), [
     { owner: sid, kind: 'directory', link: false }, { owner: sid, kind: 'file', link: false }, null,
