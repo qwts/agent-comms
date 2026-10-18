@@ -103,8 +103,8 @@ confirmed profile disposal with no bootstrap cleanup errors while retaining the
 failed pairing. It observed 22.1 seconds in account resolution, then 23.0 seconds
 in the remaining proof validation before a roughly 4 ms append. The pairing
 request was persisted, but its client deadline had elapsed. The fixed runtime
-candidate above removes those default PowerShell launches; its fresh native
-inspection still has to pass Windows validation with unchanged request limits.
+candidate above removes those default PowerShell launches and retains the
+existing request limits.
 The first native-custody candidate [39173624245](https://github.com/qwts/agent-comms/actions/runs/39173624245)
 then exposed a separate 30-second startup refusal in the existing PowerShell
 durable-replacement path (`storage-failed`); owned and bootstrap cleanup passed.
@@ -113,6 +113,18 @@ The fixed helper also implements `--replace` using the same `MoveFileExW` flags
 paths remain child environment data, and failures or ambiguous timeouts still
 poison the writer for recovery without retry. Real default replacement no longer
 launches PowerShell or a runtime compiler; injected runners keep their adapter.
+
+The complete native candidate [39174227116](https://github.com/qwts/agent-comms/actions/runs/39174227116)
+passed Broker startup, pairing/approval, two joins, one send/read/ack/empty-read
+cycle, natural exit, an empty job and scratch removal. The standard-user and
+bootstrap reports both passed, with the profile removed and no cleanup errors.
+The observed account resolver and remaining proof-validation phases took about
+27 ms and 29 ms in that run; these are functional diagnostic observations, not
+capacity or performance acceptance. The client's 10-second request deadline and
+the durable replacement's 30-second failure bound are unchanged. The following
+status normalization also keeps a failed operation explicitly failed even when
+disposal succeeds; native reader regressions cover missing and conflicting
+status/exit combinations.
 
 The follow-up cleanup reader distinguishes that operation failure from disposal
 proof only for the single prebuilt-relay candidate. It requires explicit true
