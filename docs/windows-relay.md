@@ -59,6 +59,8 @@ profile. The driver requires its fixed tree and canonical archive digest;
 dispatch cannot supply another runtime revision. It explicitly builds the
 helper from that verified archive before private-job startup and records
 the source and binary digests. Build preparation is outside the measured job.
+Component approval uses the reviewed commit's canonical digest, never a
+mutable tool checkout whose CRLF conversion can differ from archive bytes.
 
 The driver captures the actual connector's fixed executable and arguments
 through inert streams, with artifact verification enabled. The supervisor

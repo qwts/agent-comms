@@ -11,6 +11,7 @@ export const RELAY_STARTUP_SOURCE = Object.freeze({
   pin: 'ba75753e8e99e7c475baff9bfa139721276b5b06',
   tree: '35ac6cf0306590fa600591aaffcd79cf7f20c428',
   archiveSha256: '91b34843c6a97e100415bdcbf3ebf889e8bf018b3272910255dbfe2e9582c612',
+  pipeStageSha256: 'e012c398a9a7ec03332472c45a469e2c635dfe6c6b4236677b8bdaa537058e90',
 });
 
 export function verifyRelayStartupSource(tree, archiveSha256) {

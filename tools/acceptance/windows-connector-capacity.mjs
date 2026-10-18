@@ -653,8 +653,14 @@ async function main(context) {
     await exec('tar.exe', ['-xf', archive, '-C', source], { windowsHide: true });
     if (candidateCompiler) verifyCandidateComponent(hash(readFileSync(path.join(source,'lib/platform/windows-pipe-client.mjs'))),
       hash(readFileSync(new URL('../../lib/platform/windows-pipe-client.mjs',import.meta.url))));
-    if (candidateOnly) verifyCandidateComponent(hash(readFileSync(path.join(source, 'lib/platform/windows-pipe-stage.mjs'))),
-      hash(readFileSync(new URL('../../lib/platform/windows-pipe-stage.mjs', import.meta.url))));
+    if (candidateOnly) {
+      const observed = hash(readFileSync(path.join(source, 'lib/platform/windows-pipe-stage.mjs')));
+      const toolCheckout = hash(readFileSync(new URL('../../lib/platform/windows-pipe-stage.mjs', import.meta.url)));
+      const expected = relayCandidateStartup ? RELAY_STARTUP_SOURCE.pipeStageSha256 : toolCheckout;
+      if (relayCandidateStartup) writeFileSync(path.join(output, 'relay-component-approval.json'),
+        `${JSON.stringify({ observed, expected, toolCheckout }, null, 2)}\n`);
+      verifyCandidateComponent(observed, expected);
+    }
     let relayArtifact;
     if (relayCandidateStartup) {
       activeStage = 'relay-artifact-build';

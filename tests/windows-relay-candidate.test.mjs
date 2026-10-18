@@ -1,11 +1,22 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdtempSync, mkdirSync, copyFileSync, writeFileSync, rmSync, realpathSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, copyFileSync, writeFileSync, rmSync, realpathSync, readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { RELAY_STARTUP_SOURCE, verifyRelayStartupSource, verifiedRelayContract } from '../tools/acceptance/windows-relay-candidate.mjs';
-import { CORRECTED_STARTUP_SOURCE, verifyCorrectedStartupSource } from '../tools/acceptance/windows-corrected-startup.mjs';
+import { CORRECTED_STARTUP_SOURCE, verifyCorrectedStartupSource, verifyCandidateComponent } from '../tools/acceptance/windows-corrected-startup.mjs';
+
+test('relay candidate component approval uses pinned bytes, not a mutable CRLF checkout', () => {
+  const text = readFileSync(new URL('../lib/platform/windows-pipe-stage.mjs', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
+  const digest = value => createHash('sha256').update(value).digest('hex');
+  const canonical = digest(text), checkout = digest(text.replace(/\n/g, '\r\n'));
+  assert.equal(canonical, RELAY_STARTUP_SOURCE.pipeStageSha256);
+  assert.notEqual(canonical, checkout);
+  assert.throws(() => verifyCandidateComponent(canonical, checkout), /candidate-source-mismatch/);
+  verifyCandidateComponent(canonical, RELAY_STARTUP_SOURCE.pipeStageSha256);
+  assert.throws(() => verifyCandidateComponent(checkout, RELAY_STARTUP_SOURCE.pipeStageSha256), /candidate-source-mismatch/);
+});
 
 test('prebuilt-relay candidate has an independent fixed source approval; legacy inputs cannot substitute', () => {
   const { tree, archiveSha256 } = RELAY_STARTUP_SOURCE;
