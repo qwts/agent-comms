@@ -21,7 +21,6 @@
   "files": [
     "bin/",
     "lib/",
-    "skills/",
-    "RELEASE_COMMIT"
+    "skills/"
   ]
 }

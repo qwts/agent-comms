@@ -99,7 +99,9 @@ Agents should read `agent-comms skill` from the installed executable first,
 check `--version` against its compatibility range, and record `skill path`
 source provenance. Org/SOP runtime pins do not select these instructions.
 Release archives and Homebrew installs preserve the source commit in
-`RELEASE_COMMIT`; unavailable provenance remains `null`, never an enclosing
+`RELEASE_COMMIT`. Working-tree npm packages omit the archive-only placeholder
+and report `null`; this private package is released through archives and
+Homebrew. Unavailable provenance remains `null`, never an enclosing
 checkout's commit. Local checks:
 
 ```sh

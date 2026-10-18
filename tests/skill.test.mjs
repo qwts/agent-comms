@@ -73,7 +73,10 @@ test('packaged source provenance uses its stamp, never an enclosing repository',
   const commit = 'a'.repeat(40);
   writeFileSync(path.join(root, 'RELEASE_COMMIT'), `${commit}\n`);
   assert.equal(sourceCommit(root), commit);
-  for (const invalid of ['$Format:%H$', 'short-sha', 'A'.repeat(40)]) {
+  const sha256 = 'b'.repeat(64);
+  writeFileSync(path.join(root, 'RELEASE_COMMIT'), `${sha256}\n`);
+  assert.equal(sourceCommit(root), sha256);
+  for (const invalid of ['$Format:%H$', 'short-sha', 'A'.repeat(40), 'c'.repeat(41), 'd'.repeat(63), 'e'.repeat(65)]) {
     writeFileSync(path.join(root, 'RELEASE_COMMIT'), invalid);
     assert.equal(sourceCommit(root), null);
   }
@@ -94,4 +97,17 @@ test('git archives expand the release provenance stamp', t => {
   const archive = git('archive', '--format=tar', 'HEAD', 'RELEASE_COMMIT');
   assert.ok(archive.includes(Buffer.from(`${commit}\n`)));
   assert.ok(!archive.includes(Buffer.from('$Format:%H$')));
+});
+
+
+test('source provenance supports a SHA-256 checkout', t => {
+  const root = mkdtempSync(path.join(tmpdir(), 'comms-sha256-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const git = (...args) => execFileSync('git', ['-C', root, ...args]);
+  git('init', '--quiet', '--object-format=sha256');
+  git('-c', 'user.name=SHA256 fixture', '-c', 'user.email=fixture@example.invalid',
+    '-c', 'core.hooksPath=/dev/null', '-c', 'commit.gpgsign=false', 'commit', '--allow-empty', '--quiet', '-m', 'Fixture');
+  const commit = git('rev-parse', 'HEAD').toString().trim();
+  assert.equal(commit.length, 64);
+  assert.equal(sourceCommit(root), commit);
 });
