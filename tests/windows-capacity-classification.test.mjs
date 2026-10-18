@@ -172,14 +172,23 @@ for (const variant of ['exact','count-mismatch','value-mismatch']) test(`native 
   writeFileSync(script,`import {spawn} from 'node:child_process';
 let child;process.send({id:0,paused:true});
 process.on('message',({id,op,args})=>{
- if(op==='start'){child=spawn(process.execPath,args,{stdio:['ignore','pipe','pipe'],windowsHide:true,detached:true});child.stdout.resume();child.stderr.resume();child.once('spawn',()=>process.send({id,ok:true,spawned:true}));}
+ if(op==='start'){
+  child=spawn(process.execPath,args,{stdio:['ignore','pipe','pipe'],windowsHide:true,detached:true});
+  child.stderr.resume();let status='',ready=false;
+  child.stdout.on('data',chunk=>{
+   if(ready)return;status+=chunk.toString('utf8');
+   if(status==='ARGV_CANARY_READY\\n'){ready=true;process.send({id,ok:true,spawned:true});}
+   else if(!'ARGV_CANARY_READY\\n'.startsWith(status))throw new Error('inert-child-readiness-refused');
+  });
+ }
  if(op==='stop'){child.once('close',()=>process.send({id,ok:true,stopped:true},()=>process.disconnect()));child.kill();}
 });`);
   const shell=path.join(process.env.SystemRoot,'System32/WindowsPowerShell/v1.0/powershell.exe');
   const supervisorScript=fileURLToPath(new URL('../tools/acceptance/windows-capacity-job.ps1',import.meta.url));
   const fixtureArgs=[script];
   const prefix=legacyCompilerPrefix();
-  const actualArgs=['-e','setInterval(()=>{},1000)','--',...compilerControlArgs(prefix,'implicit')];
+  // Wait for JavaScript readiness, not the earlier OS spawn event, before CIM samples.
+  const actualArgs=['-e',"process.stdout.write('ARGV_CANARY_READY\\n');setInterval(()=>{},1000)",'--',...compilerControlArgs(prefix,'implicit')];
   const expectedArgs=[...actualArgs];
   if(variant==='count-mismatch') expectedArgs.pop();
   if(variant==='value-mismatch') expectedArgs[expectedArgs.length-1]+=';CANARY-public-mismatch';
