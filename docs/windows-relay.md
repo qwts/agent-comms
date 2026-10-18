@@ -28,7 +28,7 @@ existing strict SID/owner/type/link grammar and refusals without a PowerShell
 launch per check. The real default account-isolation adapter requires this
 artifact and never falls back after verification or execution failure. Explicit
 injected runners retain the existing PowerShell adapter contract. The candidate
-supervisor admits only these two additional exact argument vectors for the
+supervisor admits only the three fixed native argument vectors described here for the
 same verified helper and current fixture parent; their resource usage is
 included in the existing relay/helper totals. It still refuses other arguments,
 unrelated executables, parent mismatches and runtime compilers.
@@ -105,6 +105,14 @@ in the remaining proof validation before a roughly 4 ms append. The pairing
 request was persisted, but its client deadline had elapsed. The fixed runtime
 candidate above removes those default PowerShell launches; its fresh native
 inspection still has to pass Windows validation with unchanged request limits.
+The first native-custody candidate [39173624245](https://github.com/qwts/agent-comms/actions/runs/39173624245)
+then exposed a separate 30-second startup refusal in the existing PowerShell
+durable-replacement path (`storage-failed`); owned and bootstrap cleanup passed.
+The fixed helper also implements `--replace` using the same `MoveFileExW` flags
+(`REPLACE_EXISTING | WRITE_THROUGH`, without `COPY_ALLOWED`). Validated sibling
+paths remain child environment data, and failures or ambiguous timeouts still
+poison the writer for recovery without retry. Real default replacement no longer
+launches PowerShell or a runtime compiler; injected runners keep their adapter.
 
 The follow-up cleanup reader distinguishes that operation failure from disposal
 proof only for the single prebuilt-relay candidate. It requires explicit true

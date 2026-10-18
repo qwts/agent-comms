@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, rmSync, openSync, fsyncSync, closeSync, readFileSync, existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { createAccountIsolation } from '../lib/platform/account-isolation.mjs';
 import { verifyWindowsRelay } from '../lib/platform/windows-relay-artifact.mjs';
+import { durableReplace } from '../lib/platform/durable-file.mjs';
 
 test('verified GUI helper performs fresh Unicode custody and SID checks without PowerShell', {
   skip: process.platform !== 'win32', timeout: 30000,
@@ -32,8 +33,20 @@ test('verified GUI helper performs fresh Unicode custody and SID checks without 
   rmSync(file);
   assert.deepEqual(isolation.inspect([file], 'custody-test'), [null], 'file state is read again, never cached');
   assert.throws(() => isolation.systemUidOf('owner\nCANARY'), { code: 'usage' });
+  const previousPath = process.env.PATH;
+  process.env.PATH = env.PATH;
+  try {
+    const next = path.join(root, 'next-日.tmp');
+    writeFileSync(next, 'new bytes');
+    const fd = openSync(next, 'r+');
+    try { fsyncSync(fd); } finally { closeSync(fd); }
+    writeFileSync(file, 'old bytes');
+    durableReplace(next, file);
+    assert.equal(readFileSync(file, 'utf8'), 'new bytes');
+    assert.equal(existsSync(next), false);
+  } finally { process.env.PATH = previousPath; }
   const binary = verifyWindowsRelay();
-  for (const args of [['--SID'], ['--inspect', 'CANARY-extra'], ['--unknown']]) {
+  for (const args of [['--SID'], ['--inspect', 'CANARY-extra'], ['--replace', 'CANARY-extra'], ['--unknown']]) {
     const result = spawnSync(binary, args, { input: '', encoding: 'utf8', env, windowsHide: true, timeout: 5000 });
     assert.equal(result.error, undefined);
     assert.notEqual(result.status, 0);

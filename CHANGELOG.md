@@ -11,7 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Read fresh Windows SIDs and filesystem custody through the verified native
   helper instead of launching PowerShell for each real default check. Preserve
-  ownership/link refusals and request deadlines. Dispose a failed relay
+  ownership/link refusals and request deadlines. Use the same verified helper
+  for write-through durable replacement without runtime compilation or retries.
+  Dispose a failed relay
   candidate's profile only with complete, typed owned-cleanup proof (#164).
 
 - Add a fixed-source Windows startup/delivery acceptance candidate for the

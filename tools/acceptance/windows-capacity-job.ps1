@@ -27,7 +27,7 @@ function Reply($Value) {
 }
 
 function Test-NativeCustodyArguments([object[]]$Arguments, [bool]$Enabled) {
-    return $Enabled -and $Arguments.Count -eq 1 -and $Arguments[0] -is [string] -and $Arguments[0] -cin @('--sid','--inspect')
+    return $Enabled -and $Arguments.Count -eq 1 -and $Arguments[0] -is [string] -and $Arguments[0] -cin @('--sid','--inspect','--replace')
 }
 
 try {
@@ -271,6 +271,7 @@ function Get-ConsoleHostDiagnostics([object]$Row,[object[]]$Rows,[string]$ShellE
     if ($ValidateOnly) {
         if (-not (Test-NativeCustodyArguments @('--sid') $true) -or
             -not (Test-NativeCustodyArguments @('--inspect') $true) -or
+            -not (Test-NativeCustodyArguments @('--replace') $true) -or
             (Test-NativeCustodyArguments @('--sid') $false) -or
             (Test-NativeCustodyArguments @() $true) -or
             (Test-NativeCustodyArguments @('--SID') $true) -or
@@ -549,7 +550,7 @@ function Get-ConsoleHostDiagnostics([object]$Row,[object[]]$Rows,[string]$ShellE
                     $classification.check = 'executable'
                     if ($row.ExecutablePath -ieq $shellExecutable) {
                         $kind='relay'; $expected=$relayArgs
-                        # Only these two fixed operations of the same verified
+                        # Only these fixed operations of the same verified
                         # helper are admitted. Parent/creation/argv checks below
                         # still apply; path/account inputs travel only on stdin.
                         if (Test-NativeCustodyArguments $processArgs $nativeCustody) { $expected=@($processArgs[0]) }
