@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Preserve the source commit in release archives and Homebrew installs so
+  `skill path` identifies the installed bundle without an org/SOP runtime pin.
+  Installed copies no longer borrow an enclosing checkout's commit.
+
 ### Documentation
 
 - Reconcile Proposed federation wire/receipt identity and lossless plaintext

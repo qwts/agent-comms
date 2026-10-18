@@ -95,7 +95,12 @@ agent-comms send ACCOUNT/AGENT_ID --body "hello"
 agent-comms inbox read
 ```
 
-Agents should read `agent-comms skill` first. Local checks:
+Agents should read `agent-comms skill` from the installed executable first,
+check `--version` against its compatibility range, and record `skill path`
+source provenance. Org/SOP runtime pins do not select these instructions.
+Release archives and Homebrew installs preserve the source commit in
+`RELEASE_COMMIT`; unavailable provenance remains `null`, never an enclosing
+checkout's commit. Local checks:
 
 ```sh
 npm ci

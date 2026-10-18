@@ -20,7 +20,9 @@ class AgentComms < Formula
   depends_on "node"
 
   def install
-    libexec.install "bin", "lib", "skills", "package.json"
+    # The Git-based formula source has no expanded archive stamp.
+    (buildpath/"RELEASE_COMMIT").write Utils.safe_popen_read("git", "rev-parse", "HEAD").strip + "\n"
+    libexec.install "bin", "lib", "skills", "package.json", "RELEASE_COMMIT"
     (bin/"agent-comms").write <<~EOS
       #!/bin/sh
       exec "#{Formula["node"].opt_bin}/node" "#{libexec}/bin/agent-comms.mjs" "$@"
@@ -30,5 +32,6 @@ class AgentComms < Formula
   test do
     assert_equal "agent-comms #{version}", shell_output("#{bin}/agent-comms --version").strip
     system bin/"agent-comms", "skill", "list"
+    assert_match(/[0-9a-f]{40}/, shell_output("#{bin}/agent-comms skill path"))
   end
 end

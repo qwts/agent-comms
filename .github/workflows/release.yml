@@ -87,6 +87,7 @@ jobs:
           tree="$RUNNER_TEMP/smoke/$name"
           test "$(node "$tree/bin/agent-comms.mjs" --version)" = "agent-comms $VERSION"
           node "$tree/bin/agent-comms.mjs" skill list | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{if(!JSON.parse(s).ok)process.exit(1)})'
+          node "$tree/bin/agent-comms.mjs" skill path | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const p=JSON.parse(s);if(!p.ok||p.commit!==process.env.SHA)process.exit(1)})'
           # Release notes are the version's CHANGELOG section.
           awk -v v="$VERSION" '/^## \[/{on = index($0, "## [" v "]") == 1; next} on' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
           grep -q '[^[:space:]]' "$RUNNER_TEMP/notes.md" || { echo "::error::CHANGELOG section for $VERSION is empty"; exit 1; }
