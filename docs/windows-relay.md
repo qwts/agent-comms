@@ -84,6 +84,16 @@ retains the profile because its conservative cleanup gate refuses any
 results remain failures. This is diagnostic progress, not a passing Windows
 acceptance result. Pairing and outer cleanup reconciliation remain under #164.
 
+The follow-up cleanup reader distinguishes that operation failure from disposal
+proof only for the single prebuilt-relay candidate. It requires explicit true
+receipts for both owned processes, both stdio closures, the empty job and scratch
+removal, explicit false forced-termination flags, and an empty error array.
+Missing, malformed, uncertain, forced or legacy failure receipts still retain
+the profile. Successful disposal never changes the failed operation into a pass.
+Fixed pairing phases additionally observe the real account resolver and log
+append while forwarding their arguments, receiver, results and exceptions;
+account names, paths and proof data are not retained.
+
 This is a separate functional candidate. The historical `candidate-*` tasks,
 compiler digests, old/new comparison pins, classification guards, and
 deadlines remain unchanged. A hosted pass does not establish owner-desktop,
