@@ -1,4 +1,4 @@
-// Separate acceptance candidate for the reviewed prebuilt relay. Legacy
+// Separate acceptance candidate for the fixed prebuilt relay. Legacy
 // compiler and old/new comparison inputs remain immutable in their own modes.
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
@@ -8,9 +8,9 @@ import { PassThrough } from 'node:stream';
 import { pathToFileURL } from 'node:url';
 
 export const RELAY_STARTUP_SOURCE = Object.freeze({
-  pin: 'ba75753e8e99e7c475baff9bfa139721276b5b06',
-  tree: '35ac6cf0306590fa600591aaffcd79cf7f20c428',
-  archiveSha256: '91b34843c6a97e100415bdcbf3ebf889e8bf018b3272910255dbfe2e9582c612',
+  pin: '1c4b1b564c6e616e38e4dbfa5511e205af75f281',
+  tree: '1f5ddfd54a9410ae985cdca84027e5446537a962',
+  archiveSha256: '0363798c08a0daf2cd44f1d0c4ff1f65171850f63beb820f917183863888afb3',
   pipeStageSha256: 'e012c398a9a7ec03332472c45a469e2c635dfe6c6b4236677b8bdaa537058e90',
 });
 

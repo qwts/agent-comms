@@ -66,11 +66,11 @@ to validate this helper.
 
 ## Broker startup and delivery candidate
 
-The `relay-candidate-startup` manual workflow task selects the reviewed
-`ba75753e8e99e7c475baff9bfa139721276b5b06` runtime in a disposable standard-user
+The `relay-candidate-startup` manual workflow task selects the fixed
+`1c4b1b564c6e616e38e4dbfa5511e205af75f281` runtime in a disposable standard-user
 profile. The driver requires its fixed tree and canonical archive digest;
 dispatch cannot supply another runtime revision. The workflow explicitly
-builds the helper from the reviewed checkout before creating the disposable
+builds the helper from the fixed checkout before creating the disposable
 account. The account receives only the executable and manifest as read-only
 inputs, copies them into its independently approved source archive, verifies
 the artifact, and records the source and binary digests. Build preparation is
@@ -96,6 +96,15 @@ retains the profile because its conservative cleanup gate refuses any
 `failure.json`; its `capacity-tool-cleanup-unconfirmed` and `test-profile-cleanup`
 results remain failures. This is diagnostic progress, not a passing Windows
 acceptance result. Pairing and outer cleanup reconciliation remain under #164.
+That historical run used the earlier `ba75753e` runtime, before native custody.
+
+The phase-observation follow-up [39172469383](https://github.com/qwts/agent-comms/actions/runs/39172469383)
+confirmed profile disposal with no bootstrap cleanup errors while retaining the
+failed pairing. It observed 22.1 seconds in account resolution, then 23.0 seconds
+in the remaining proof validation before a roughly 4 ms append. The pairing
+request was persisted, but its client deadline had elapsed. The fixed runtime
+candidate above removes those default PowerShell launches; its fresh native
+inspection still has to pass Windows validation with unchanged request limits.
 
 The follow-up cleanup reader distinguishes that operation failure from disposal
 proof only for the single prebuilt-relay candidate. It requires explicit true

@@ -20,7 +20,7 @@ test('relay candidate component approval uses pinned bytes, not a mutable CRLF c
 
 test('prebuilt-relay candidate has an independent fixed source approval; legacy inputs cannot substitute', () => {
   const { tree, archiveSha256 } = RELAY_STARTUP_SOURCE;
-  assert.equal(RELAY_STARTUP_SOURCE.pin, 'ba75753e8e99e7c475baff9bfa139721276b5b06');
+  assert.equal(RELAY_STARTUP_SOURCE.pin, '1c4b1b564c6e616e38e4dbfa5511e205af75f281');
   assert.deepEqual(verifyRelayStartupSource(tree, archiveSha256), RELAY_STARTUP_SOURCE);
   assert.throws(() => verifyCorrectedStartupSource(tree, archiveSha256), /candidate-source-mismatch/);
   assert.throws(() => verifyRelayStartupSource(CORRECTED_STARTUP_SOURCE.tree, CORRECTED_STARTUP_SOURCE.archiveSha256), /candidate-source-mismatch/);
