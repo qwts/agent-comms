@@ -5,13 +5,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { createCapacityController, utilityProbeCommand } from '../tools/acceptance/windows-capacity-control.mjs';
-import { captureProductionWindowsRelay } from './helpers/capture-production-windows-relay.mjs';
+import { legacyCompilerArgs } from './helpers/windows-legacy-compiler.mjs';
 
 const diagnosticParserCases = [
   'missing-command-line','wrong-type-refused','over-bound-refused-before-parse','console-host-over-bound-shape-only','zero-arguments',
   'one-argument','multiple-arguments','legacy-handle-only-candidate','legacy-handle-force-v1-candidate',
   'malformed-case-length-and-extra-args-other','unparsed-command-shape','parser-argument-bound-refused',
-  'production-relay-args-exact-and-current-parent-correlation','wrong-relay-argv-not-exact','wrong-fixture-parent-not-exact',
+  'legacy-relay-args-exact-and-current-parent-correlation','wrong-relay-argv-not-exact','wrong-fixture-parent-not-exact',
   'older-parent-date-not-exact','unknown-parent-not-correlated',
 ];
 const diagnosticFailureCases = ['startup-or-unknown', ...diagnosticParserCases];
@@ -54,7 +54,7 @@ function projectDiagnosticParserOutput(stdout, stderrBytes) {
       && hasExactKeys(record.failure, ['check','phase','case','stage','parent'])
       && record.failure.check === 'diagnostic-parser-test-failed'
       && record.failure.phase === 'supervisor-compiled'
-      && record.failure.case === 'production-relay-args-exact-and-current-parent-correlation'
+      && record.failure.case === 'legacy-relay-args-exact-and-current-parent-correlation'
       && ['precondition','redaction-guard'].includes(record.failure.stage)
       && hasExactKeys(record.failure.parent, diagnosticParentFields)
       && diagnosticParentBooleanFields.every((key) => typeof record.failure.parent[key] === 'boolean')
@@ -88,7 +88,7 @@ test('native diagnostic-parser failure projection retains only closed IDs and bo
   ]);
   const parentFailure = (overrides = {}) => JSON.stringify({ id: 0, ok: false, failure: {
     check: 'diagnostic-parser-test-failed', phase: 'supervisor-compiled',
-    case: 'production-relay-args-exact-and-current-parent-correlation', stage: 'precondition',
+    case: 'legacy-relay-args-exact-and-current-parent-correlation', stage: 'precondition',
     parent: { ...parent, ...overrides },
   } });
   const projectedParent = projectDiagnosticParserOutput(parentFailure({ parentRelayArgsEqualExpected: false }), 11);
@@ -104,7 +104,7 @@ test('native diagnostic-parser failure projection retains only closed IDs and bo
     parentFailure({ parentRelayArgsEqualExpected: 'false' }),
     parentFailure({ parentRelayCommandLineClass: 'unknown-class' }),
     parentFailure({ consoleHostArgumentCount: 13 }),
-    JSON.stringify({ id: 0, ok: false, failure: { check: 'diagnostic-parser-test-failed', phase: 'supervisor-compiled', case: 'production-relay-args-exact-and-current-parent-correlation', stage: 'unknown-stage', parent } }),
+    JSON.stringify({ id: 0, ok: false, failure: { check: 'diagnostic-parser-test-failed', phase: 'supervisor-compiled', case: 'legacy-relay-args-exact-and-current-parent-correlation', stage: 'unknown-stage', parent } }),
     '{malformed-json',
     'x'.repeat(4097),
   ]) assert.deepEqual(projectDiagnosticParserOutput(invalid, 100000), { kind: 'invalid', stderrBytes: 65535 });
@@ -210,7 +210,9 @@ test('classic supervisor exchanges bounded control records with stdin still open
 test('classic supervisor bounds command-line diagnostic parsing without querying processes', { skip: process.platform !== 'win32', timeout: 60000 }, async () => {
   const shell = path.join(process.env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe');
   const script = fileURLToPath(new URL('../tools/acceptance/windows-capacity-job.ps1', import.meta.url));
-  const { args: relayArgs } = captureProductionWindowsRelay();
+  // The console-host grammar regression retains the exact historical PowerShell worker.
+  // Current production startup/argv is covered by windows-detached-relay-probe.test.mjs.
+  const relayArgs = legacyCompilerArgs();
   const child = spawn(shell, ['-NoProfile','-NonInteractive','-File',script,'-DiagnosticParserTestOnly'], {
     env: { ...process.env, AGENT_COMMS_TEST_RELAY_ARGS_JSON: JSON.stringify(relayArgs) },
     stdio: ['ignore','pipe','pipe'], windowsHide: true,

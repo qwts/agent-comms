@@ -18,7 +18,7 @@ $utilityLoaded = $false
 $diagnosticTestCase = 'startup-or-unknown'
 $diagnosticFailureStage = $null
 $diagnosticFailureParent = $null
-$diagnosticTestCases = @('startup-or-unknown','missing-command-line','wrong-type-refused','over-bound-refused-before-parse','console-host-over-bound-shape-only','zero-arguments','one-argument','multiple-arguments','legacy-handle-only-candidate','legacy-handle-force-v1-candidate','malformed-case-length-and-extra-args-other','unparsed-command-shape','parser-argument-bound-refused','production-relay-args-exact-and-current-parent-correlation','wrong-relay-argv-not-exact','wrong-fixture-parent-not-exact','older-parent-date-not-exact','unknown-parent-not-correlated')
+$diagnosticTestCases = @('startup-or-unknown','missing-command-line','wrong-type-refused','over-bound-refused-before-parse','console-host-over-bound-shape-only','zero-arguments','one-argument','multiple-arguments','legacy-handle-only-candidate','legacy-handle-force-v1-candidate','malformed-case-length-and-extra-args-other','unparsed-command-shape','parser-argument-bound-refused','legacy-relay-args-exact-and-current-parent-correlation','wrong-relay-argv-not-exact','wrong-fixture-parent-not-exact','older-parent-date-not-exact','unknown-parent-not-correlated')
 $diagnosticTestPhases = @('script-entry','module-observation','import-utility','compile-supervisor','supervisor-compiled')
 
 function Reply($Value) {
@@ -325,7 +325,7 @@ function Get-ConsoleHostDiagnostics([object]$Row,[object[]]$Rows,[string]$ShellE
             $shape = Get-BoundedCommandLineShape $many
             if ($shape.class -ne 'parse-refused' -or $null -ne $shape.argumentCount) { throw 'diagnostic-parser-test-failed' }
             $cases.Add('parser-argument-bound-refused')
-            $diagnosticTestCase = 'production-relay-args-exact-and-current-parent-correlation'
+            $diagnosticTestCase = 'legacy-relay-args-exact-and-current-parent-correlation'
             $actualRelayArgs = $env:AGENT_COMMS_TEST_RELAY_ARGS_JSON | ConvertFrom-Json
             if ($actualRelayArgs -isnot [array] -or $actualRelayArgs.Count -ne 7 -or @($actualRelayArgs | Where-Object { $_ -isnot [string] }).Count -ne 0 -or $actualRelayArgs[0] -ne '-NoLogo' -or $actualRelayArgs[5] -ne '-Command' -or $actualRelayArgs[-1].Contains('"')) { throw 'diagnostic-parser-test-failed' }
             $shellPath = 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe'
@@ -361,7 +361,7 @@ function Get-ConsoleHostDiagnostics([object]$Row,[object[]]$Rows,[string]$ShellE
             if ((ConvertTo-Json -InputObject $parentDiagnostics -Compress).Contains('DEADBEEF')) { throw 'diagnostic-parser-test-failed' }
             $diagnosticFailureStage = $null
             $diagnosticFailureParent = $null
-            $cases.Add('production-relay-args-exact-and-current-parent-correlation')
+            $cases.Add('legacy-relay-args-exact-and-current-parent-correlation')
             $diagnosticTestCase = 'wrong-relay-argv-not-exact'
             $wrongArgs = @($actualRelayArgs);$wrongArgs[-1] = $wrongArgs[-1] + ' changed'
             $wrongArgRows = @($parentRows[0].Clone(),$parentRows[1].Clone())
@@ -622,7 +622,7 @@ function Get-ConsoleHostDiagnostics([object]$Row,[object[]]$Rows,[string]$ShellE
         if ($diagnosticTestCases -notcontains $diagnosticTestCase) { $diagnosticTestCase='startup-or-unknown' }
         if ($diagnosticTestPhases -notcontains $phase) { $failurePhase='startup-or-unknown' } else { $failurePhase=$phase }
         $failureRecord = [ordered]@{id=0;ok=$false;failure=[ordered]@{check='diagnostic-parser-test-failed';phase=$failurePhase;case=$diagnosticTestCase}}
-        if ($diagnosticTestCase -eq 'production-relay-args-exact-and-current-parent-correlation' -and $diagnosticFailureStage -in @('precondition','redaction-guard') -and $null -ne $diagnosticFailureParent) {
+        if ($diagnosticTestCase -eq 'legacy-relay-args-exact-and-current-parent-correlation' -and $diagnosticFailureStage -in @('precondition','redaction-guard') -and $null -ne $diagnosticFailureParent) {
             $failureRecord.failure.stage = $diagnosticFailureStage
             $failureRecord.failure.parent = $diagnosticFailureParent
         }
