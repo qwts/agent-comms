@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import test from 'node:test';
+import { verifyWindowsRelay } from '../lib/platform/windows-relay-artifact.mjs';
+
+test('relay artifact binds source, binary, release commit, and a console-free PE subsystem', t => {
+  const root = mkdtempSync(path.join(os.tmpdir(), 'relay-build-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  mkdirSync(path.join(root, 'bin', 'windows'), { recursive: true });
+  mkdirSync(path.join(root, 'native', 'windows'), { recursive: true });
+  const binaryPath = path.join(root, 'bin', 'windows', 'agent-comms-pipe-relay.exe');
+  const sourcePath = path.join(root, 'native', 'windows', 'AgentCommsPipeRelay.cs');
+  const manifestPath = path.join(root, 'bin', 'windows', 'relay-build.json');
+  const source = 'public fixed source';
+  const binary = Buffer.alloc(256);
+  binary.write('MZ'); binary.writeUInt32LE(64, 0x3c);
+  binary.write('PE\0\0', 64); binary.writeUInt16LE(0x10b, 88); binary.writeUInt16LE(2, 156);
+  const digest = value => createHash('sha256').update(value).digest('hex');
+  const manifest = { format: 1, sourceCommit: 'a'.repeat(40), sourceSha256: digest(source), binarySha256: digest(binary), subsystem: 'windows' };
+  const restore = () => {
+    writeFileSync(sourcePath, source); writeFileSync(binaryPath, binary);
+    writeFileSync(manifestPath, JSON.stringify(manifest));
+    writeFileSync(path.join(root, 'RELEASE_COMMIT'), manifest.sourceCommit);
+  };
+  restore();
+  assert.equal(verifyWindowsRelay(root), binaryPath);
+  writeFileSync(sourcePath, 'tampered source');
+  assert.throws(() => verifyWindowsRelay(root));
+  restore(); writeFileSync(binaryPath, Buffer.from('tampered binary'));
+  assert.throws(() => verifyWindowsRelay(root));
+  restore(); writeFileSync(path.join(root, 'RELEASE_COMMIT'), 'b'.repeat(40));
+  assert.throws(() => verifyWindowsRelay(root));
+  restore(); writeFileSync(manifestPath, JSON.stringify({ ...manifest, extra: true }));
+  assert.throws(() => verifyWindowsRelay(root));
+  restore();
+  const consoleBinary = Buffer.from(binary); consoleBinary.writeUInt16LE(3, 156);
+  writeFileSync(binaryPath, consoleBinary);
+  writeFileSync(manifestPath, JSON.stringify({ ...manifest, binarySha256: digest(consoleBinary) }));
+  assert.throws(() => verifyWindowsRelay(root), { message: 'relay-artifact-invalid' });
+});

@@ -62,11 +62,11 @@ and only one-account mode: `persona-accounts` (groups, `--group`) is
   as `broker-running`. Closing before either result is `broker-probe-failed`.
   Cleanup cannot change settled results; late errors remain handled.
 
-  The hidden relay uses .NET byte-copy tasks without C# compilation.
-  Keep `detached: false` and piped stdio. `DETACHED_PROCESS` exits 0 without executing the worker
-  ([#267](https://github.com/qwts/agent-comms/pull/267)).
-  `relay-startup` checks production launch and pipe security;
-  `detached-relay-probe` retains the unsupported experiment. No owner-desktop or compiler acceptance.
+  The pipe relay is a prebuilt console-free .NET helper with inherited binary
+  stdio and `Identification`. It needs no PowerShell or runtime compiler.
+  See [relay build and provenance](windows-relay.md) for source setup and
+  exact-CI artifact packaging. Detached PowerShell remains unsupported;
+  hosted evidence grants no owner-desktop or compiler acceptance.
 
 - **Secret store.** The principal is `principal.<credentialName>.dpapi` in
   the client state directory, DPAPI-protected in the `CurrentUser` scope

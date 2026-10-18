@@ -2,13 +2,14 @@
 // streams. This does not exercise native Windows APIs or qualify acceptance.
 import assert from 'node:assert/strict';
 import childProcess from 'node:child_process';
-import { generateKeyPairSync, sign } from 'node:crypto';
+import { createHash, generateKeyPairSync, sign } from 'node:crypto';
 import { EventEmitter } from 'node:events';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import fs, { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { syncBuiltinESMExports } from 'node:module';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { PassThrough } from 'node:stream';
 
 const scenario = process.argv[2], root = mkdtempSync(path.join(os.tmpdir(), 'ac-client-stage-'));
@@ -35,12 +36,31 @@ if (cleanupCase) {
   };
   net.createConnection = () => socket;
 } else {
+  // Keep the real artifact verifier in the integration path with an inert PE.
+  // These isolated file reads never build or execute a native Windows helper.
+  const originalRead = fs.readFileSync;
+  const repo = fileURLToPath(new URL('../../', import.meta.url));
+  const binaryFile = path.join(repo, 'bin', 'windows', 'agent-comms-pipe-relay.exe');
+  const manifestFile = path.join(repo, 'bin', 'windows', 'relay-build.json');
+  const source = originalRead(path.join(repo, 'native', 'windows', 'AgentCommsPipeRelay.cs'));
+  const binary = Buffer.alloc(256);
+  binary.write('MZ'); binary.writeUInt32LE(64, 0x3c);
+  binary.write('PE\0\0', 64); binary.writeUInt16LE(0x10b, 88); binary.writeUInt16LE(2, 156);
+  const digest = value => createHash('sha256').update(value).digest('hex');
+  const manifest = Buffer.from(JSON.stringify({ format: 1, sourceCommit: 'a'.repeat(40),
+    sourceSha256: digest(source), binarySha256: digest(binary), subsystem: 'windows' }));
+  fs.readFileSync = (file, ...options) => {
+    if (file === binaryFile) return binary;
+    if (file === manifestFile) return manifest;
+    if (file === path.join(repo, 'RELEASE_COMMIT')) return 'a'.repeat(40);
+    return originalRead(file, ...options);
+  };
   childProcess.spawnSync = (file) => {
     assert.equal(file, 'whoami.exe');
     return { status: 0, stdout: '"test","S-1-5-21-123"\n' };
   };
   childProcess.spawn = (file, args, options) => {
-    assert.equal(file, 'powershell.exe');
+    assert.match(file, /agent-comms-pipe-relay\.exe$/);
     child = new EventEmitter();
     for (const key of ['stdin','stdout','stderr']) child[key] = new PassThrough();
     child.exitCode = child.signalCode = null;

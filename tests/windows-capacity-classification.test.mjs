@@ -16,8 +16,7 @@ import { legacyCompilerPrefix, legacyCompilerArgs } from './helpers/windows-lega
 test('actual connector relay command fits documented Windows command-line bound', () => {
   const { args, serializedCommandLineLength } = captureProductionWindowsRelay();
   const script = readFileSync(new URL('../tools/acceptance/windows-capacity-job.ps1', import.meta.url), 'utf8');
-  assert.deepEqual(args.slice(0, 6), ['-NoLogo','-NoProfile','-NonInteractive','-OutputFormat','Text','-Command']);
-  assert.equal(args.at(-1).includes('"'), false, 'the captured command can be quoted without embedded-quote expansion');
+  assert.deepEqual(args, [], 'the packaged relay needs no command script');
   assert.match(script, /MaximumCommandLineChars = 32766; \/\/ CreateProcess limit of 32767 UTF-16 code units includes the terminating NUL\./);
   assert.ok(legacyCompilerArgs().at(-1).length > 4096, 'retained legacy fixture exceeds the previous arbitrary limit');
   assert.ok(serializedCommandLineLength <= 32766, 'production relay must fit the documented Windows limit');

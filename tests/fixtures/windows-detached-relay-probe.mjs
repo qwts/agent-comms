@@ -4,6 +4,7 @@ import net from 'node:net';
 import { projectRelayExitOutcome } from '../helpers/windows-relay-exit-outcome.mjs';
 import { waitForProbeConnect } from '../helpers/windows-probe-connect.mjs';
 import { connectWindowsPipe } from '../../lib/platform/windows-pipe-client.mjs';
+import { verifyWindowsRelay } from '../../lib/platform/windows-relay-artifact.mjs';
 import { projectWindowsPipeStage } from '../../lib/platform/windows-pipe-stage.mjs';
 
 const pipe = process.argv[2];
@@ -50,19 +51,20 @@ async function within(promise, milliseconds, code) {
 }
 process.send({ id: 0, ready: true });
 
-process.on('message', async ({ id, op, expectedRelayArgs }) => {
+process.on('message', async ({ id, op, expectedRelayArgs, expectedRelayFile }) => {
   try {
     if (op === 'start') {
       reportStage('fixture-start-requested');
       await serverReady;
       reportStage('pipe-listening');
+      verifyWindowsRelay();
       let spawnCount = 0;
       raw = connectWindowsPipe(pipe, {
         spawnProcess(file, args, options) {
           spawnCount += 1;
           const exactArgs = Array.isArray(expectedRelayArgs) && args.length === expectedRelayArgs.length
             && args.every((value, index) => value === expectedRelayArgs[index]);
-          if (spawnCount !== 1 || file !== 'powershell.exe' || !exactArgs
+          if (spawnCount !== 1 || file !== expectedRelayFile || !exactArgs
               || options.windowsHide !== true
               || !Array.isArray(options.stdio) || options.stdio.length !== 3
               || !options.stdio.every(value => value === 'pipe')

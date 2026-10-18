@@ -23,6 +23,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Build the console-free Windows pipe relay
+        shell: pwsh
+        run: ./scripts/build-windows-relay.ps1
       # #127: test the engines with the host's checksum-verified Node tuple.
       # This is a disposable native-engine run, not a Windows host package.
       - name: Fetch released agent-bot fixture

@@ -317,7 +317,7 @@ test(`${probeMode === 'detached' ? 'DETACHED_PROCESS diagnostic' : 'Production h
   // This test is diagnostic-only: it uses the production connector and worker,
   // but only connects to a local byte-draining pipe server. It does not start
   // either communications application or change production spawn options.
-  let shell, relayArgs, fixture, fixtureControl, supervisor, control;
+  let shell, relayArgs, relayFile, fixture, fixtureControl, supervisor, control;
   const start = Date.now();
   const remaining = () => Math.max(1, 60000 - (Date.now() - start));
   let awaitStage = 'fixture-startup';
@@ -341,7 +341,7 @@ test(`${probeMode === 'detached' ? 'DETACHED_PROCESS diagnostic' : 'Production h
   };
   try {
     shell = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
-    relayArgs = captureProductionWindowsRelay().args;
+    ({ args: relayArgs, file: relayFile } = captureProductionWindowsRelay());
     const pipe = `\\\\.\\pipe\\agent-comms.detached-probe.${process.pid}.${Date.now()}`;
     const fixtureArgs = [fixturePath, pipe, probeMode];
     fixture = owned(process.execPath, fixtureArgs, ['ignore', 'ignore', 'pipe', 'ipc']);
@@ -379,7 +379,7 @@ test(`${probeMode === 'detached' ? 'DETACHED_PROCESS diagnostic' : 'Production h
       pid: fixture.child.pid,
       parentPid: process.pid,
       nodeExecutable: realpathSync(process.execPath),
-      shellExecutable: shell,
+      shellExecutable: realpathSync(relayFile),
       fixtureArgs,
       relayArgs,
       diagnosticArgs: [],
@@ -398,7 +398,7 @@ test(`${probeMode === 'detached' ? 'DETACHED_PROCESS diagnostic' : 'Production h
     assert.equal((await safeRequest(control, 'members', {}, remaining())).activeMembers, 1);
 
     awaitStage = 'fixture-start';
-    const connected = await fixtureControl.request('start', { expectedRelayArgs: relayArgs }, remaining());
+    const connected = await fixtureControl.request('start', { expectedRelayArgs: relayArgs, expectedRelayFile: relayFile }, remaining());
     assert.deepEqual(connected, {
       id: connected.id, connected: true, detached: probeMode === 'detached', windowsHide: true,
       stdioPipes: true, productionArgsExact: true,

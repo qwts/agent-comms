@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Remove runtime C# compilation from the Windows pipe relay by using .NET
-  asynchronous byte copies. Keep its hidden, non-detached launch, Identification
-  ceiling, and EOF shutdown; retain the unsupported detached experiment (#164).
+- Use a prebuilt console-free .NET Windows pipe relay instead of PowerShell
+  and runtime compilation. Preserve Identification and EOF shutdown; verify
+  the bundled executable and source digests before launch (#164).
 
 - Preserve the source commit in release archives and Homebrew installs so
   `skill path` identifies the installed bundle without an org/SOP runtime pin.

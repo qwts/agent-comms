@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { EventEmitter, once } from 'node:events';
+import { readFileSync } from 'node:fs';
 import { PassThrough } from 'node:stream';
 import { test } from 'node:test';
 
@@ -49,17 +50,14 @@ test('Windows pipe connector waits for the child connection marker and forwards 
   assert.equal(connected, false, 'partial readiness cannot send the hello');
   child.stderr.write('ECTED\n');
   assert.equal(connected, true);
-  assert.equal(observed.file, 'powershell.exe');
+  assert.match(observed.file, /agent-comms-pipe-relay\.exe$/);
+  assert.deepEqual(observed.args, []);
   assert.equal(observed.options.windowsHide, true);
   assert.equal(observed.options.detached, false);
   assert.deepEqual(observed.options.stdio, ['pipe', 'pipe', 'pipe']);
-  const command = observed.args.at(-1);
-  const encodedWorker = /FromBase64String\('([^']+)'\)/.exec(command)?.[1];
-  assert.ok(encodedWorker, 'the fixed PowerShell command should carry the relay source');
-  const workerSource = Buffer.from(encodedWorker, 'base64').toString('utf16le');
-  assert.match(workerSource, /\[IO\.Pipes\.PipeDirection\]::InOut,\s*\[IO\.Pipes\.PipeOptions\]::Asynchronous,\s*\[Security\.Principal\.TokenImpersonationLevel\]::Identification/);
-  assert.doesNotMatch(workerSource, /Add-Type|csc\.exe|new Thread/);
-  assert.match(workerSource, /CopyToAsync/);
+  const workerSource = readFileSync(new URL('../native/windows/AgentCommsPipeRelay.cs', import.meta.url), 'utf8');
+  assert.match(workerSource, /PipeOptions.Asynchronous, TokenImpersonationLevel.Identification/);
+  assert.doesNotMatch(workerSource, /Add-Type|csc\.exe/);
   assert.deepEqual(observed.options.env, { Path: 'system-path', keep: 'yes', AGENT_COMMS_PIPE_NAME: 'agent-comms.test.S-1-5-21-123' });
   assert.deepEqual(callerEnv, { Path: 'system-path', PSModulePath: 'incompatible', keep: 'yes' });
 
