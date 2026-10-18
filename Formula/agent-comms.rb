@@ -20,6 +20,11 @@ class AgentComms < Formula
   depends_on "node"
 
   def install
+    # Older release tags predate source-stamp support. Keep their install path.
+    if (buildpath/"RELEASE_COMMIT").exist?
+      (buildpath/"RELEASE_COMMIT").write Utils.safe_popen_read("git", "rev-parse", "HEAD").strip + "\n"
+      libexec.install "RELEASE_COMMIT"
+    end
     libexec.install "bin", "lib", "skills", "package.json"
     (bin/"agent-comms").write <<~EOS
       #!/bin/sh
@@ -30,5 +35,12 @@ class AgentComms < Formula
   test do
     assert_equal "agent-comms #{version}", shell_output("#{bin}/agent-comms --version").strip
     system bin/"agent-comms", "skill", "list"
+    provenance = JSON.parse(shell_output("#{bin}/agent-comms skill path"))
+    if (libexec/"RELEASE_COMMIT").exist?
+      assert_match(/\A(?:[0-9a-f]{40}|[0-9a-f]{64})\z/, provenance.fetch("commit"))
+      assert_equal (libexec/"RELEASE_COMMIT").read.strip, provenance.fetch("commit")
+    else
+      assert_nil provenance.fetch("commit")
+    end
   end
 end

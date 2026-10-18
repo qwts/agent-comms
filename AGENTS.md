@@ -25,8 +25,8 @@ PR-first workflow, validation-before-push, commit and PR hygiene, and the
 untrusted-input threat model are defined once, for every repo, in the
 [org-wide agent conventions](https://github.com/qwts/qwts-agent-sop/blob/main/docs/reference/agent-conventions.md).
 Before creating or copying a repo-local skill, consult the reviewed
-[shared agent skills](https://github.com/qwts/qwts-agent-sop/blob/74e775ef23d8e7d8f8e693ccc2329f430978c096/skills/README.md)
-index. Reuse only the pinned version supplied by the governed harness; a skill
+[shared agent skills](https://github.com/qwts/qwts-agent-sop/blob/main/skills/README.md)
+index. Resolve the current SOP snapshot once; a skill
 genuinely specific to this repository belongs in its local context.
 This repository is governed by
 [qwts-agent-sop](https://github.com/qwts/qwts-agent-sop) — its
@@ -61,3 +61,10 @@ inherit by default, vary by explicit delta).
   ```bash
   git clone -q https://github.com/qwts/qwts-agent-docs-gov.git /tmp/docs-gov && git -C /tmp/docs-gov checkout -q 67db7dc9c20bc29222fb605b7ff9432fd58a2a3f && node /tmp/docs-gov/tools/docs-gov/docs-gov.mjs --root .
   ```
+
+## CLI skill development
+
+For CLI changes, load the current SOP's
+[author-cli-skill](https://github.com/qwts/qwts-agent-sop/blob/main/skills/author-cli-skill/SKILL.md)
+through `agent-bot skill author-cli-skill`. Runtime use reads this executable's
+installed bundle; org/SOP does not select its runtime skill revision.
