@@ -6,11 +6,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { connectWindowsPipe } from '../lib/platform/windows-pipe-client.mjs';
-import { captureCompilerPrefix, compilerControlArgs } from '../tools/acceptance/windows-capacity-compiler.mjs';
+import { compilerControlArgs } from '../tools/acceptance/windows-capacity-compiler.mjs';
 import { createCapacityController } from '../tools/acceptance/windows-capacity-control.mjs';
 import { retainCapacityFailure } from '../tools/acceptance/windows-capacity-lifecycle.mjs';
 import { projectSupervisorClassification, supervisorClassificationFromFailure, supervisorClassificationFromError } from '../tools/acceptance/windows-capacity-classification.mjs';
 import { captureProductionWindowsRelay } from './helpers/capture-production-windows-relay.mjs';
+import { legacyCompilerPrefix, legacyCompilerArgs } from './helpers/windows-legacy-compiler.mjs';
 
 test('actual connector relay command fits documented Windows command-line bound', () => {
   const { args, serializedCommandLineLength } = captureProductionWindowsRelay();
@@ -18,7 +19,7 @@ test('actual connector relay command fits documented Windows command-line bound'
   assert.deepEqual(args.slice(0, 6), ['-NoLogo','-NoProfile','-NonInteractive','-OutputFormat','Text','-Command']);
   assert.equal(args.at(-1).includes('"'), false, 'the captured command can be quoted without embedded-quote expansion');
   assert.match(script, /MaximumCommandLineChars = 32766; \/\/ CreateProcess limit of 32767 UTF-16 code units includes the terminating NUL\./);
-  assert.ok(serializedCommandLineLength > 4096, 'regression fixture must exceed the previous arbitrary limit');
+  assert.ok(legacyCompilerArgs().at(-1).length > 4096, 'retained legacy fixture exceeds the previous arbitrary limit');
   assert.ok(serializedCommandLineLength <= 32766, 'production relay must fit the documented Windows limit');
 });
 
@@ -178,7 +179,7 @@ process.on('message',({id,op,args})=>{
   const shell=path.join(process.env.SystemRoot,'System32/WindowsPowerShell/v1.0/powershell.exe');
   const supervisorScript=fileURLToPath(new URL('../tools/acceptance/windows-capacity-job.ps1',import.meta.url));
   const fixtureArgs=[script];
-  const prefix=captureCompilerPrefix(connectWindowsPipe,process.env);
+  const prefix=legacyCompilerPrefix();
   const actualArgs=['-e','setInterval(()=>{},1000)','--',...compilerControlArgs(prefix,'implicit')];
   const expectedArgs=[...actualArgs];
   if(variant==='count-mismatch') expectedArgs.pop();

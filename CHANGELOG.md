@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Pin the supported hidden, non-detached Windows relay launch and add native
-  startup and private-job containment coverage; retain the unsupported detached
-  experiment as separate negative evidence (#164).
+- Remove runtime C# compilation from the Windows pipe relay by using .NET
+  asynchronous byte copies. Keep its hidden, non-detached launch, Identification
+  ceiling, and EOF shutdown; retain the unsupported detached experiment (#164).
 
 - Preserve the source commit in release archives and Homebrew installs so
   `skill path` identifies the installed bundle without an org/SOP runtime pin.
