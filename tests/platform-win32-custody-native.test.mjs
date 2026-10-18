@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 
-test('native Get-Acl and DPAPI work through a Node intermediary with inherited PS7 modules', {
+test('native custody and DPAPI work through a Node intermediary with inherited PS7 modules', {
   skip: process.platform !== 'win32', timeout: 30_000,
 }, () => {
   const pwshHome = execFileSync('pwsh.exe', ['-NoProfile', '-NonInteractive', '-Command', '[Console]::Out.Write($PSHOME)'], { encoding: 'utf8' }).trim();
@@ -24,7 +24,7 @@ test('native Get-Acl and DPAPI work through a Node intermediary with inherited P
     try {
       const isolation = createAccountIsolation();
       const [entry] = isolation.inspect([root], 'native-inspection');
-      assert.ok(entry, 'Get-Acl must return a native inspection');
+      assert.ok(entry, 'custody helper must return a native inspection');
       assert.match(entry.owner, /^S-1-\\d+(?:-\\d+)+$/);
       assert.equal(entry.kind, 'directory');
       assert.equal(entry.link, false);

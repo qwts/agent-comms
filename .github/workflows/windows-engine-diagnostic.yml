@@ -68,15 +68,15 @@ jobs:
           ref: cb50469ca0b6757c4ab860de582b9b140fc525a0
           path: .windows-fixtures/stale-correction
           persist-credentials: false
-      - name: Fetch exact reviewed prebuilt-relay startup source
+      - name: Fetch fixed prebuilt-relay startup source candidate
         if: inputs.task == 'relay-candidate-startup'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: qwts/agent-comms
-          ref: ba75753e8e99e7c475baff9bfa139721276b5b06
+          ref: 260d5dbbd7a27c2b044b3497757ee9b73e649c53
           path: .windows-fixtures/relay-correction
           persist-credentials: false
-      - name: Prebuild the exact reviewed relay before disposable-account acceptance
+      - name: Prebuild the fixed relay candidate before disposable-account acceptance
         if: inputs.task == 'relay-candidate-startup'
         timeout-minutes: 1
         shell: pwsh

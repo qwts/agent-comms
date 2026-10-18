@@ -203,7 +203,7 @@ try {
         $reportData.bootstrapCleanup = @{accountSid=$sid;errors=@($cleanupErrors.ToArray());removed=($cleanupErrors.Count -eq 0)}
         if ($exitCode -ne 0) { $reportData.requiredEngineChecks = 'failed' }
     } else {
-        if ($reportData.status -ne 'passed') { $exitCode = 1 }
+        $exitCode = Set-WindowsCapacityResultStatus $reportData $exitCode
         $reportData.bootstrapCleanup = @{errors=@($cleanupErrors.ToArray());removed=($cleanupErrors.Count -eq 0)}
         if ($failure -or $cleanupErrors.Count -gt 0) { $reportData.status = 'failed' }
     }

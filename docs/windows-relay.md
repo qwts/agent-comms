@@ -20,6 +20,19 @@ compiler and writes an ignored executable and build manifest under `bin/windows`
 Compilation is an explicit build step, never an automatic runtime fallback.
 The build requires a source commit from the checkout or release stamp.
 
+The same verified helper also implements the fixed `--sid` and `--inspect`
+custody operations. Account names and literal paths arrive as UTF-8 stdin data,
+never command arguments or executable code. It uses fresh Windows NTAccount
+translation and filesystem ACL/attribute reads on every call, preserving the
+existing strict SID/owner/type/link grammar and refusals without a PowerShell
+launch per check. The real default account-isolation adapter requires this
+artifact and never falls back after verification or execution failure. Explicit
+injected runners retain the existing PowerShell adapter contract. The candidate
+supervisor admits only the three fixed native argument vectors described here for the
+same verified helper and current fixture parent; their resource usage is
+included in the existing relay/helper totals. It still refuses other arguments,
+unrelated executables, parent mismatches and runtime compilers.
+
 The manifest binds the source commit, C# source digest, binary digest, and
 Windows subsystem. Runtime checks those digests and the executable's actual PE
 subsystem before starting the fixed bundled path. A missing, corrupted, stale,
@@ -53,11 +66,11 @@ to validate this helper.
 
 ## Broker startup and delivery candidate
 
-The `relay-candidate-startup` manual workflow task selects the reviewed
-`ba75753e8e99e7c475baff9bfa139721276b5b06` runtime in a disposable standard-user
+The `relay-candidate-startup` manual workflow task selects the fixed
+`260d5dbbd7a27c2b044b3497757ee9b73e649c53` runtime in a disposable standard-user
 profile. The driver requires its fixed tree and canonical archive digest;
 dispatch cannot supply another runtime revision. The workflow explicitly
-builds the helper from the reviewed checkout before creating the disposable
+builds the helper from the fixed checkout before creating the disposable
 account. The account receives only the executable and manifest as read-only
 inputs, copies them into its independently approved source archive, verifies
 the artifact, and records the source and binary digests. Build preparation is
@@ -83,6 +96,45 @@ retains the profile because its conservative cleanup gate refuses any
 `failure.json`; its `capacity-tool-cleanup-unconfirmed` and `test-profile-cleanup`
 results remain failures. This is diagnostic progress, not a passing Windows
 acceptance result. Pairing and outer cleanup reconciliation remain under #164.
+That historical run used the earlier `ba75753e` runtime, before native custody.
+
+The phase-observation follow-up [39172469383](https://github.com/qwts/agent-comms/actions/runs/39172469383)
+confirmed profile disposal with no bootstrap cleanup errors while retaining the
+failed pairing. It observed 22.1 seconds in account resolution, then 23.0 seconds
+in the remaining proof validation before a roughly 4 ms append. The pairing
+request was persisted, but its client deadline had elapsed. The fixed runtime
+candidate above removes those default PowerShell launches and retains the
+existing request limits.
+The first native-custody candidate [39173624245](https://github.com/qwts/agent-comms/actions/runs/39173624245)
+then exposed a separate 30-second startup refusal in the existing PowerShell
+durable-replacement path (`storage-failed`); owned and bootstrap cleanup passed.
+The fixed helper also implements `--replace` using the same `MoveFileExW` flags
+(`REPLACE_EXISTING | WRITE_THROUGH`, without `COPY_ALLOWED`). Validated sibling
+paths remain child environment data, and failures or ambiguous timeouts still
+poison the writer for recovery without retry. Real default replacement no longer
+launches PowerShell or a runtime compiler; injected runners keep their adapter.
+
+The complete native candidate [39174227116](https://github.com/qwts/agent-comms/actions/runs/39174227116)
+passed Broker startup, pairing/approval, two joins, one send/read/ack/empty-read
+cycle, natural exit, an empty job and scratch removal. The standard-user and
+bootstrap reports both passed, with the profile removed and no cleanup errors.
+The observed account resolver and remaining proof-validation phases took about
+27 ms and 29 ms in that run; these are functional diagnostic observations, not
+capacity or performance acceptance. The client's 10-second request deadline and
+the durable replacement's 30-second failure bound are unchanged. The following
+status normalization also keeps a failed operation explicitly failed even when
+disposal succeeds; native reader regressions cover missing and conflicting
+status/exit combinations.
+
+The follow-up cleanup reader distinguishes that operation failure from disposal
+proof only for the single prebuilt-relay candidate. It requires explicit true
+receipts for both owned processes, both stdio closures, the empty job and scratch
+removal, explicit false forced-termination flags, and an empty error array.
+Missing, malformed, uncertain, forced or legacy failure receipts still retain
+the profile. Successful disposal never changes the failed operation into a pass.
+Fixed pairing phases additionally observe the real account resolver and log
+append while forwarding their arguments, receiver, results and exceptions;
+account names, paths and proof data are not retained.
 
 This is a separate functional candidate. The historical `candidate-*` tasks,
 compiler digests, old/new comparison pins, classification guards, and

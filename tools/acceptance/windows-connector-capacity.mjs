@@ -157,13 +157,35 @@ async function fixture(source, timingMode = 'default') {
     return;
   }
   phase('fixture-imports');
-  const [{ Broker }, client, pathsModule] = await Promise.all([load('lib/broker.mjs'), load('lib/client.mjs'), load('lib/paths.mjs')]);
+  const [{ Broker }, client, pathsModule, { brokerDiagnostic }] = await Promise.all([load('lib/broker.mjs'), load('lib/client.mjs'), load('lib/paths.mjs'), load('lib/diagnostics.mjs')]);
   const paths = pathsModule.brokerPaths(), clientPaths = pathsModule.clientPaths();
-  const broker = new Broker({ paths, mode: 'single-account' });
+  const broker = new Broker({ paths, mode: 'single-account', ...(timingMode === 'candidate-startup' ? {
+    diagnostic: (...args) => {
+      brokerDiagnostic(...args);
+      if (args[0] === 'pair-account-pending') phase('fixture-pair-persisted');
+    },
+  } : {}) });
   fixtureCleanup = async () => { await broker.stop(); if (process.connected) process.disconnect(); };
   process.once('disconnect', () => fixtureCleanup().catch(() => { process.exitCode = 1; }));
   phase('fixture-broker-start');
   await broker.start();
+  if (timingMode === 'candidate-startup') {
+    // Observe the actual resolver and append, forwarding unchanged arguments,
+    // receiver, results and exceptions. Never inspect or retain proof data.
+    const resolve = broker.uidOf;
+    broker.uidOf = function (...args) {
+      phase('fixture-pair-resolve');
+      try { return resolve.apply(this, args); }
+      finally { phase('fixture-pair-resolved'); }
+    };
+    const append = broker.log.append;
+    broker.log.append = function (...args) {
+      const pairing = args[0]?.t === 'pair-request';
+      if (pairing) phase('fixture-pair-persist');
+      try { return append.apply(this, args); }
+      finally { if (pairing) phase('fixture-pair-persist-returned'); }
+    };
+  }
   phase('fixture-pair');
   const pairing = await client.pair(paths, clientPaths, undefined, os.userInfo().username, 'single-account');
   phase('fixture-approve');
@@ -478,6 +500,7 @@ async function run(source, revision, rates, preflight, commitLimitBytes, relayCa
     const production = relayCandidate ? await verifiedRelayContract(source) : { shellExecutable: shell, ...productionArguments(source) };
     const attachment = await supervisor.request('attach', { pid: fixtureOwned.child.pid, parentPid: process.pid, nodeExecutable: realpathSync(process.execPath),
       shellExecutable: production.shellExecutable, fixtureArgs: args, relayArgs: production.relayArgs, diagnosticArgs: production.diagnosticArgs, commitLimitBytes,
+      ...(relayCandidate ? { nativeCustody: true } : {}),
       compilerExecutables: relayCandidate ? [] : ['Framework', 'Framework64'].map((name) => path.join(process.env.SystemRoot, 'Microsoft.NET', name, 'v4.0.30319', 'csc.exe')),
       compilerTemp: realpathSync(childTemp()) }, Math.max(1, 15_000 - (performance.now() - attachStarted)));
     attached = true; powershellVersion = attachment.powershellVersion;
