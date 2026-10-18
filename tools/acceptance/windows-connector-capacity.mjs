@@ -19,6 +19,8 @@ import { capacityTimingMode, capacityTimingProfile, createCapacityPhaseTiming, t
 
 import { cleanupCapacityRun, retainCapacityFailure } from './windows-capacity-lifecycle.mjs';
 
+import { capacityScope, capacityDeployment } from './windows-capacity-description.mjs';
+
 import { RELAY_STARTUP_SOURCE, verifyRelayStartupSource, verifiedRelayContract, installRelayArtifact } from './windows-relay-candidate.mjs';
 
 import { probePinnedStorage } from './windows-capacity-storage.mjs';
@@ -537,7 +539,7 @@ async function run(source, revision, rates, preflight, commitLimitBytes, relayCa
     if (sampleFailure && preflight !== 'forced' && preflight !== 'fault') throw sampleFailure;
     assert.equal(outputFailure, false, 'diagnostic-output-invalid');
     return { revision, preflight: preflight || null, stages,
-      deployment: relayCandidate ? 'one embedded production Broker/client; Identification prebuilt .NET relay' : preflight === 'storage' ? 'actual corrected-source fresh Broker storage prefix; no Broker.start, stale probes, listeners, A2A startup or delivery' : preflight === 'connector' ? 'actual pinned connector lifecycle events; no Broker, listener, EventLog, replay, maintenance or workload' : preflight === 'channel' ? 'channel-prepare-and-stale-probes; no Broker, listener, EventLog, replay, maintenance or workload' : preflight === 'custody' ? 'actual pinned account custody API only; no Broker or connector' : 'one embedded production Broker/client; Identification PowerShell connector',
+      deployment: capacityDeployment({ relayCandidate, preflight }),
       requestedRates: rates, skippedRates: RATES.filter((rate) => !stages.some((stage) => stage.offeredRate === rate)),
       baselinePermittedRates: rates,
       skipReason: preflight ? 'preflight-no-offers' : stages.some((stage) => !stage.qualified) ? 'preceding-stage-unqualified' : rates.length < RATES.length ? 'baseline-did-not-reach-higher-stage' : null,
@@ -689,7 +691,7 @@ async function main(context) {
     if(result.status!=='passed') process.exitCode=1;
     return;
   }
-  const result = { v: 1, ...(relayCandidateStartup ? { relayCandidateStartup: true, relayBuildScope: 'workflow prebuild before disposable-account startup; verified read-only artifact input; no runtime compiler or capacity comparison' } : {}), ...(desktopContext ? { executionKind: 'desktop-current-user', desktopProfile: desktopContext.profile } : {}), scope: relayCandidateStartup ? 'hosted standard-user fixed prebuilt-relay source Broker startup, pairing, one delivery and disposal; no offered-rate, desktop or installed-host acceptance' : desktopContext ? 'current standard-user desktop exact corrected-source Broker startup, one delivery and disposal only; no offered-rate or installed-host acceptance' : candidateChannel ? 'hosted standard-user exact corrected-source channel-prepare-and-stale-probes only; actual default channel; no Broker.start, EventLog, replay, maintenance, listeners, delivery or offered rates' : candidateStorage ? 'hosted standard-user exact corrected-source fresh storage prefix only; actual prepare, EventLog custody/replay and compacting maintenance; no Broker.start, stale probes, listeners, delivery or offered rates' : candidateStartup ? 'hosted standard-user exact corrected-source Broker startup, one delivery and disposal only; no offered-rate stages, capacity comparison, desktop or host acceptance' : connectorOnly ? 'actual-connector-events; prepare/main stale probe then unconsumed admin connector; no Broker, listener, EventLog, replay, maintenance or workload' : channelOnly ? 'channel-prepare-and-stale-probes; actual pinned default channel; no Broker, listener, EventLog, replay, maintenance or workload' : custodyOnly ? 'hosted standard-user Windows pinned custody API only; no Broker or connector or offered-rate stages' : startupOnly ? 'hosted standard-user Windows old-pin production startup and disposal only; no offered-rate stages or capacity acceptance' : 'hosted standard-user Windows finite capacity pilot; no benchmark, desktop, host or 100/s support acceptance',
+  const result = { v: 1, ...(relayCandidateStartup ? { relayCandidateStartup: true, relayBuildScope: 'workflow prebuild before disposable-account startup; verified read-only artifact input; no runtime compiler or capacity comparison' } : {}), ...(desktopContext ? { executionKind: 'desktop-current-user', desktopProfile: desktopContext.profile } : {}), scope: capacityScope({ relayCandidateStartup, desktopContext, candidateChannel, candidateStorage, candidateStartup, connectorOnly, channelOnly, custodyOnly, startupOnly }),
     ...(candidateStorage ? { storageHelperLifetime: 'actual production subprocesses belong to private job; configured timeout is not exit proof; no individual helper terminal observation' } : {}),
     storageType: 'not-measured', nodeArchiveSha256: components.node.sha256['win-x64'],
     node: process.version, nodeExecutableSha256: hash(readFileSync(process.execPath)),

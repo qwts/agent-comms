@@ -21,13 +21,19 @@ export function verifyRelayStartupSource(tree, archiveSha256) {
   return { ...RELAY_STARTUP_SOURCE };
 }
 
+// Match verifyWindowsRelay's production ceilings exactly. This fixed-source
+// diagnostic must refuse any artifact the shipped runtime would refuse, even
+// if its digest matches. A larger product requires a reviewed runtime change.
+const RELAY_BINARY_MAX_BYTES = 1048576;
+const RELAY_MANIFEST_MAX_BYTES = 1024;
+
 // Install only the two bounded build outputs into the independently approved
 // archive. No compiler runs in the disposable account or measured private job.
 export async function installRelayArtifact(source, artifactDirectory) {
   assert.equal(readFileSync(path.join(source, 'RELEASE_COMMIT'), 'utf8').trim(), RELAY_STARTUP_SOURCE.pin);
   const destination = path.join(source, 'bin/windows');
   mkdirSync(destination, { recursive: true });
-  for (const [name, limit] of [['agent-comms-pipe-relay.exe', 1048576], ['relay-build.json', 1024]]) {
+  for (const [name, limit] of [['agent-comms-pipe-relay.exe', RELAY_BINARY_MAX_BYTES], ['relay-build.json', RELAY_MANIFEST_MAX_BYTES]]) {
     const file = path.join(artifactDirectory, name);
     const stat = statSync(file);
     assert.ok(stat.isFile() && stat.size > 0 && stat.size <= limit);
