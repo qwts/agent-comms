@@ -1,1 +1,2 @@
 RELEASE_COMMIT export-subst
+native/windows/AgentCommsPipeRelay.cs text eol=lf
