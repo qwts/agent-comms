@@ -31,9 +31,22 @@ export function relayBuildArguments(source) {
 }
 
 export function relayBuildFailure(error) {
+  const diagnostics = `${typeof error?.stderr === 'string' ? error.stderr : ''}\n${typeof error?.stdout === 'string' ? error.stdout : ''}`;
+  const reasons = [
+    ['compiler-unavailable', 'Windows .NET Framework compiler unavailable'],
+    ['source-commit-unavailable', 'Relay build source commit unavailable'],
+    ['source-commit-invalid', 'Relay build source commit invalid'],
+    ['compilation-failed', 'Relay compilation failed'],
+    ['execution-policy', 'PSSecurityException'],
+    ['module-load', 'CouldNotAutoloadMatchingModule'],
+    ['command-unavailable', 'CommandNotFoundException'],
+    ['access-denied', 'UnauthorizedAccessException'],
+  ];
+  const reason = reasons.find(([, marker]) => diagnostics.includes(marker))?.[0] ?? 'unclassified';
   return { check: error?.killed === true ? 'relay-build-timeout' : 'relay-build-failed',
     exitCode: Number.isSafeInteger(error?.code) ? error.code : null,
-    signal: ['SIGTERM', 'SIGKILL'].includes(error?.signal) ? error.signal : null };
+    signal: ['SIGTERM', 'SIGKILL'].includes(error?.signal) ? error.signal : null, reason,
+    compilerErrors: [...new Set(diagnostics.match(/\bCS\d{4}\b/g) ?? [])].slice(0, 8) };
 }
 
 // Capture the actual public connector contract with inert streams. Verification

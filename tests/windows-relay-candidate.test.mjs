@@ -21,11 +21,15 @@ test('archive build explicitly selects the bootstrap process policy and refuses 
 
 test('build failure receipt distinguishes timeout from exit without retaining raw diagnostics', () => {
   assert.deepEqual(relayBuildFailure({ killed: true, signal: 'SIGTERM', stderr: 'private output' }),
-    { check: 'relay-build-timeout', exitCode: null, signal: 'SIGTERM' });
+    { check: 'relay-build-timeout', exitCode: null, signal: 'SIGTERM', reason: 'unclassified', compilerErrors: [] });
   assert.deepEqual(relayBuildFailure({ code: 1, stderr: 'private output' }),
-    { check: 'relay-build-failed', exitCode: 1, signal: null });
+    { check: 'relay-build-failed', exitCode: 1, signal: null, reason: 'unclassified', compilerErrors: [] });
   assert.deepEqual(relayBuildFailure({ code: 'ENOENT', signal: 'untrusted' }),
-    { check: 'relay-build-failed', exitCode: null, signal: null });
+    { check: 'relay-build-failed', exitCode: null, signal: null, reason: 'unclassified', compilerErrors: [] });
+  const refusal = relayBuildFailure({ code: 1, stderr: 'private path CouldNotAutoloadMatchingModule', stdout: 'private path error CS2001 CS2001' });
+  assert.equal(refusal.reason, 'module-load');
+  assert.deepEqual(refusal.compilerErrors, ['CS2001']);
+  assert.equal(JSON.stringify(refusal).includes('private'), false);
 });
 
 test('relay candidate component approval uses pinned bytes, not a mutable CRLF checkout', () => {
