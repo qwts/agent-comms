@@ -21,6 +21,8 @@
   "files": [
     "bin/",
     "lib/",
-    "skills/"
+    "skills/",
+    "native/windows/",
+    "scripts/build-windows-relay.ps1"
   ]
 }

@@ -3,8 +3,10 @@ import test from 'node:test';
 import { connectWindowsPipe } from '../lib/platform/windows-pipe-client.mjs';
 import { captureCompilerPrefix, deriveCompilerPrefix, compilerControlArgs, collectCompilerControls, sampleCompilerControl, compilerReleaseRequestId, createCompilerRelease, COMPILER_ORDER, COMPILER_DEADLINE_MS } from '../tools/acceptance/windows-capacity-compiler.mjs';
 
-const prefix = captureCompilerPrefix(connectWindowsPipe, { PSModulePath: 'CANARY-private-path' });
-test('derived control uses the exact actual production worker compile prefix without invoking pipe Run', () => {
+import { legacyCompilerArgs, legacyCompilerPrefix } from './helpers/windows-legacy-compiler.mjs';
+
+const prefix = legacyCompilerPrefix();
+test('historical compiler control retains the pinned legacy prefix without invoking pipe Run', () => {
   assert.ok(prefix.includes('[void](Add-Type -TypeDefinition $source -Language CSharp'));
   assert.equal(prefix.includes('[AgentCommsPipeClient]::Run('), false);
   for (const variant of ['implicit','explicit']) {
@@ -20,11 +22,9 @@ test('derived control uses the exact actual production worker compile prefix wit
   assert.equal(COMPILER_DEADLINE_MS, 15000);
 });
 test('captured public command refuses changed shell, argv, worker bytes and arbitrary prefix without exposing inputs', () => {
-  let file, args;
-  const captured = captureCompilerPrefix((pipe, options) => connectWindowsPipe(pipe, { ...options, spawnProcess(f,a,o) {
-    file=f;args=a;return options.spawnProcess(f,a,o);
-  } }), {});
-  assert.equal(captured,prefix);
+  const file = 'powershell.exe', args = legacyCompilerArgs();
+  assert.equal(deriveCompilerPrefix(file, args), prefix);
+  assert.throws(() => captureCompilerPrefix(connectWindowsPipe, {}), { message: 'compiler-source-mismatch' });
   const changed = [...args];changed[changed.length-1]=changed.at(-1).replace('FromBase64String', 'CANARY-private');
   for (const [f,a] of [['CANARY-executable',args],[file,args.slice(1)],[file,changed],[file,[...args.slice(0,-1),args.at(-1)+';CANARY-secret']]]) {
     assert.throws(() => deriveCompilerPrefix(f,a), { message:'compiler-source-mismatch' });

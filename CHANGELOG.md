@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Use a prebuilt console-free .NET Windows pipe relay instead of PowerShell
+  and runtime compilation. Preserve Identification and EOF shutdown; verify
+  the bundled executable and source digests before launch (#164).
+
 - Preserve the source commit in release archives and Homebrew installs so
   `skill path` identifies the installed bundle without an org/SOP runtime pin.
   Installed copies no longer borrow an enclosing checkout's commit.

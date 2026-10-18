@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import { EventEmitter, once } from 'node:events';
+import fs, { readFileSync } from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
+import { fileURLToPath } from 'node:url';
 import { PassThrough } from 'node:stream';
 import { test } from 'node:test';
 
@@ -32,12 +35,30 @@ test('legacy PowerShell environment removes every PSModulePath spelling without 
   assert.deepEqual(input, { Path: 'system-path', PSModulePath: 'pwsh-modules', pSmOdUlEpAtH: 'another-path', sentinel: 'kept' });
 });
 
+test('custom spawn wrappers cannot bypass artifact verification implicitly', () => {
+  const original = fs.readFileSync;
+  const manifest = fileURLToPath(new URL('../bin/windows/relay-build.json', import.meta.url));
+  fs.readFileSync = (file, ...args) => file === manifest ? Buffer.from('{}') : original(file, ...args);
+  syncBuiltinESMExports();
+  try {
+    assert.throws(() => connectWindowsPipe(PIPE, {
+      spawnProcess: () => assert.fail('invalid artifact reached custom spawn'),
+    }), error => error.code === 'ECONNREFUSED' && error.message === 'named pipe connection failed');
+    assert.throws(() => connectWindowsPipe(PIPE, { skipRelayVerificationForTests: true }),
+      { message: 'relay verification bypass requires a test spawn double' });
+  } finally {
+    fs.readFileSync = original;
+    syncBuiltinESMExports();
+  }
+});
+
 test('Windows pipe connector waits for the child connection marker and forwards bytes both ways', async () => {
   const child = fakeChild();
   const callerEnv = { Path: 'system-path', PSModulePath: 'incompatible', keep: 'yes' };
   const observed = {};
   const raw = connectWindowsPipe(PIPE, {
     env: callerEnv,
+    skipRelayVerificationForTests: true,
     spawnProcess: (file, args, options) => {
       Object.assign(observed, { file, args, options });
       return child;
@@ -49,12 +70,14 @@ test('Windows pipe connector waits for the child connection marker and forwards 
   assert.equal(connected, false, 'partial readiness cannot send the hello');
   child.stderr.write('ECTED\n');
   assert.equal(connected, true);
-  assert.equal(observed.file, 'powershell.exe');
-  const command = observed.args.at(-1);
-  const encodedWorker = /FromBase64String\('([^']+)'\)/.exec(command)?.[1];
-  assert.ok(encodedWorker, 'the fixed PowerShell command should carry the relay source');
-  const workerSource = Buffer.from(encodedWorker, 'base64').toString('utf16le');
-  assert.match(workerSource, /PipeDirection\.InOut, PipeOptions\.Asynchronous,\s*TokenImpersonationLevel\.Identification/);
+  assert.match(observed.file, /agent-comms-pipe-relay\.exe$/);
+  assert.deepEqual(observed.args, []);
+  assert.equal(observed.options.windowsHide, true);
+  assert.equal(observed.options.detached, false);
+  assert.deepEqual(observed.options.stdio, ['pipe', 'pipe', 'pipe']);
+  const workerSource = readFileSync(new URL('../native/windows/AgentCommsPipeRelay.cs', import.meta.url), 'utf8');
+  assert.match(workerSource, /PipeOptions.Asynchronous, TokenImpersonationLevel.Identification/);
+  assert.doesNotMatch(workerSource, /Add-Type|csc\.exe/);
   assert.deepEqual(observed.options.env, { Path: 'system-path', keep: 'yes', AGENT_COMMS_PIPE_NAME: 'agent-comms.test.S-1-5-21-123' });
   assert.deepEqual(callerEnv, { Path: 'system-path', PSModulePath: 'incompatible', keep: 'yes' });
 
@@ -69,7 +92,7 @@ test('Windows pipe connector waits for the child connection marker and forwards 
 
 test('Windows pipe connector refuses unexpected child status without exposing its output', async () => {
   const child = fakeChild();
-  const raw = connectWindowsPipe(PIPE, { spawnProcess: () => child });
+  const raw = connectWindowsPipe(PIPE, { spawnProcess: () => child, skipRelayVerificationForTests: true });
   const failed = once(raw, 'error');
   child.stderr.write('REFUSED\nsecret/path/detail');
   const [error] = await failed;
@@ -79,7 +102,7 @@ test('Windows pipe connector refuses unexpected child status without exposing it
 
 test('Windows pipe bridge drains final bytes, propagates EOF, and closes its child handles on destroy', async () => {
   const child = fakeChild();
-  const raw = connectWindowsPipe(PIPE, { spawnProcess: () => child });
+  const raw = connectWindowsPipe(PIPE, { spawnProcess: () => child, skipRelayVerificationForTests: true });
   const chunks = [];
   raw.on('data', (chunk) => chunks.push(chunk));
   const ended = once(raw, 'end');
@@ -102,7 +125,7 @@ test('Windows pipe startup diagnostics classify unexpected output without exposi
     ['REFUSED\n', 'pipe-refused'],
   ]) {
     const child = fakeChild();
-    const raw = connectWindowsPipe(PIPE, { spawnProcess: () => child });
+    const raw = connectWindowsPipe(PIPE, { spawnProcess: () => child, skipRelayVerificationForTests: true });
     const failed = once(raw, 'error');
     child.stderr.end(text);
     const [error] = await failed;
@@ -116,7 +139,7 @@ test('Windows pipe startup diagnostics classify unexpected output without exposi
 
 test('Windows pipe startup refuses silent relay EOF and exit before readiness', async () => {
   const child = fakeChild();
-  const raw = connectWindowsPipe(PIPE, { spawnProcess: () => child });
+  const raw = connectWindowsPipe(PIPE, { spawnProcess: () => child, skipRelayVerificationForTests: true });
   let connected = false;
   let failure;
   raw.on('connect', () => { connected = true; });
@@ -138,7 +161,7 @@ test('Windows pipe startup refuses silent relay EOF and exit before readiness', 
 
 test('Windows pipe startup preserves readiness arriving after stdout EOF', async () => {
   const child = fakeChild();
-  const raw = connectWindowsPipe(PIPE, { spawnProcess: () => child });
+  const raw = connectWindowsPipe(PIPE, { spawnProcess: () => child, skipRelayVerificationForTests: true });
   const chunks = [];
   raw.on('data', chunk => chunks.push(chunk));
   const connected = once(raw, 'connect');

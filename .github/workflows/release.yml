@@ -38,9 +38,11 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: write
+      actions: read
     env:
       GH_TOKEN: ${{ github.token }}
       SHA: ${{ github.event.workflow_run.head_sha }}
+      CI_RUN: ${{ github.event.workflow_run.id }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -81,10 +83,24 @@ jobs:
         run: |
           name="agent-comms-$VERSION"
           git archive --format=tar.gz --prefix="$name/" -o "$RUNNER_TEMP/$name.tar.gz" "$SHA"
-          (cd "$RUNNER_TEMP" && sha256sum "$name.tar.gz" > "$name.tar.gz.sha256")
           mkdir "$RUNNER_TEMP/smoke"
           tar -xzf "$RUNNER_TEMP/$name.tar.gz" -C "$RUNNER_TEMP/smoke"
           tree="$RUNNER_TEMP/smoke/$name"
+          gh run download "$CI_RUN" --repo "$GITHUB_REPOSITORY" --name windows-pipe-relay --dir "$RUNNER_TEMP/windows-relay"
+          mkdir -p "$tree/bin/windows"
+          cp "$RUNNER_TEMP/windows-relay/agent-comms-pipe-relay.exe" "$RUNNER_TEMP/windows-relay/relay-build.json" "$tree/bin/windows/"
+          TREE="$tree" node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          import path from 'node:path';
+          import { pathToFileURL } from 'node:url';
+          const root = process.env.TREE;
+          const manifest = JSON.parse(readFileSync(path.join(root, 'bin/windows/relay-build.json'), 'utf8'));
+          if (manifest.sourceCommit !== process.env.SHA) throw Error('Relay artifact is not from this release commit');
+          const { verifyWindowsRelay } = await import(pathToFileURL(path.join(root, 'lib/platform/windows-relay-artifact.mjs')));
+          verifyWindowsRelay(root);
+          NODE
+          tar -czf "$RUNNER_TEMP/$name.tar.gz" -C "$RUNNER_TEMP/smoke" "$name"
+          (cd "$RUNNER_TEMP" && sha256sum "$name.tar.gz" > "$name.tar.gz.sha256")
           test "$(node "$tree/bin/agent-comms.mjs" --version)" = "agent-comms $VERSION"
           node "$tree/bin/agent-comms.mjs" skill list | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{if(!JSON.parse(s).ok)process.exit(1)})'
           node "$tree/bin/agent-comms.mjs" skill path | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const p=JSON.parse(s);if(!p.ok||p.commit!==process.env.SHA)process.exit(1)})'

@@ -6,19 +6,19 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { connectWindowsPipe } from '../lib/platform/windows-pipe-client.mjs';
-import { captureCompilerPrefix, compilerControlArgs } from '../tools/acceptance/windows-capacity-compiler.mjs';
+import { compilerControlArgs } from '../tools/acceptance/windows-capacity-compiler.mjs';
 import { createCapacityController } from '../tools/acceptance/windows-capacity-control.mjs';
 import { retainCapacityFailure } from '../tools/acceptance/windows-capacity-lifecycle.mjs';
 import { projectSupervisorClassification, supervisorClassificationFromFailure, supervisorClassificationFromError } from '../tools/acceptance/windows-capacity-classification.mjs';
 import { captureProductionWindowsRelay } from './helpers/capture-production-windows-relay.mjs';
+import { legacyCompilerPrefix, legacyCompilerArgs } from './helpers/windows-legacy-compiler.mjs';
 
 test('actual connector relay command fits documented Windows command-line bound', () => {
   const { args, serializedCommandLineLength } = captureProductionWindowsRelay();
   const script = readFileSync(new URL('../tools/acceptance/windows-capacity-job.ps1', import.meta.url), 'utf8');
-  assert.deepEqual(args.slice(0, 6), ['-NoLogo','-NoProfile','-NonInteractive','-OutputFormat','Text','-Command']);
-  assert.equal(args.at(-1).includes('"'), false, 'the captured command can be quoted without embedded-quote expansion');
+  assert.deepEqual(args, [], 'the packaged relay needs no command script');
   assert.match(script, /MaximumCommandLineChars = 32766; \/\/ CreateProcess limit of 32767 UTF-16 code units includes the terminating NUL\./);
-  assert.ok(serializedCommandLineLength > 4096, 'regression fixture must exceed the previous arbitrary limit');
+  assert.ok(legacyCompilerArgs().at(-1).length > 4096, 'retained legacy fixture exceeds the previous arbitrary limit');
   assert.ok(serializedCommandLineLength <= 32766, 'production relay must fit the documented Windows limit');
 });
 
@@ -172,14 +172,23 @@ for (const variant of ['exact','count-mismatch','value-mismatch']) test(`native 
   writeFileSync(script,`import {spawn} from 'node:child_process';
 let child;process.send({id:0,paused:true});
 process.on('message',({id,op,args})=>{
- if(op==='start'){child=spawn(process.execPath,args,{stdio:['ignore','pipe','pipe'],windowsHide:true,detached:true});child.stdout.resume();child.stderr.resume();child.once('spawn',()=>process.send({id,ok:true,spawned:true}));}
+ if(op==='start'){
+  child=spawn(process.execPath,args,{stdio:['ignore','pipe','pipe'],windowsHide:true,detached:true});
+  child.stderr.resume();let status='',ready=false;
+  child.stdout.on('data',chunk=>{
+   if(ready)return;status+=chunk.toString('utf8');
+   if(status==='ARGV_CANARY_READY\\n'){ready=true;process.send({id,ok:true,spawned:true});}
+   else if(!'ARGV_CANARY_READY\\n'.startsWith(status))throw new Error('inert-child-readiness-refused');
+  });
+ }
  if(op==='stop'){child.once('close',()=>process.send({id,ok:true,stopped:true},()=>process.disconnect()));child.kill();}
 });`);
   const shell=path.join(process.env.SystemRoot,'System32/WindowsPowerShell/v1.0/powershell.exe');
   const supervisorScript=fileURLToPath(new URL('../tools/acceptance/windows-capacity-job.ps1',import.meta.url));
   const fixtureArgs=[script];
-  const prefix=captureCompilerPrefix(connectWindowsPipe,process.env);
-  const actualArgs=['-e','setInterval(()=>{},1000)','--',...compilerControlArgs(prefix,'implicit')];
+  const prefix=legacyCompilerPrefix();
+  // Wait for JavaScript readiness, not the earlier OS spawn event, before CIM samples.
+  const actualArgs=['-e',"process.stdout.write('ARGV_CANARY_READY\\n');setInterval(()=>{},1000)",'--',...compilerControlArgs(prefix,'implicit')];
   const expectedArgs=[...actualArgs];
   if(variant==='count-mismatch') expectedArgs.pop();
   if(variant==='value-mismatch') expectedArgs[expectedArgs.length-1]+=';CANARY-public-mismatch';

@@ -4,9 +4,12 @@ import net from 'node:net';
 import { projectRelayExitOutcome } from '../helpers/windows-relay-exit-outcome.mjs';
 import { waitForProbeConnect } from '../helpers/windows-probe-connect.mjs';
 import { connectWindowsPipe } from '../../lib/platform/windows-pipe-client.mjs';
+import { verifyWindowsRelay } from '../../lib/platform/windows-relay-artifact.mjs';
 import { projectWindowsPipeStage } from '../../lib/platform/windows-pipe-stage.mjs';
 
 const pipe = process.argv[2];
+const mode = process.argv[3] ?? 'detached';
+assert.ok(['production', 'detached'].includes(mode));
 assert.equal(typeof pipe, 'string');
 assert.ok(pipe.startsWith('\\\\.\\pipe\\agent-comms.detached-probe.'));
 
@@ -48,25 +51,26 @@ async function within(promise, milliseconds, code) {
 }
 process.send({ id: 0, ready: true });
 
-process.on('message', async ({ id, op, expectedRelayArgs }) => {
+process.on('message', async ({ id, op, expectedRelayArgs, expectedRelayFile }) => {
   try {
     if (op === 'start') {
       reportStage('fixture-start-requested');
       await serverReady;
       reportStage('pipe-listening');
+      verifyWindowsRelay();
       let spawnCount = 0;
       raw = connectWindowsPipe(pipe, {
         spawnProcess(file, args, options) {
           spawnCount += 1;
           const exactArgs = Array.isArray(expectedRelayArgs) && args.length === expectedRelayArgs.length
             && args.every((value, index) => value === expectedRelayArgs[index]);
-          if (spawnCount !== 1 || file !== 'powershell.exe' || !exactArgs
+          if (spawnCount !== 1 || file !== expectedRelayFile || !exactArgs
               || options.windowsHide !== true
               || !Array.isArray(options.stdio) || options.stdio.length !== 3
               || !options.stdio.every(value => value === 'pipe')
-              || options.detached !== undefined) throw new Error('production-relay-spawn-mismatch');
+              || options.detached !== false) throw new Error('production-relay-spawn-mismatch');
           reportStage('spawn-request-validated');
-          const child = spawn(file, args, { ...options, detached: true });
+          const child = spawn(file, args, mode === 'detached' ? { ...options, detached: true } : options);
           reportStage('relay-process-spawned');
           relay = child;
           relayExit = new Promise((resolve) => {
@@ -99,7 +103,7 @@ process.on('message', async ({ id, op, expectedRelayArgs }) => {
       }, 12_000);
       await waitForProbeConnect(raw);
       reportStage('relay-connected');
-      process.send({ id, connected: true, detached: true, windowsHide: true, stdioPipes: true, productionArgsExact: true });
+      process.send({ id, connected: true, detached: mode === 'detached', windowsHide: true, stdioPipes: true, productionArgsExact: true });
     } else if (op === 'stop') {
       if (!raw || !relay) throw new Error('relay-not-started');
       reportStage('relay-stop-requested');

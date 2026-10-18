@@ -9,6 +9,7 @@ import { supervisorClassificationFromError, supervisorClassificationFromFailure 
 import { projectRelayExitOutcome, validRelayExitOutcome } from './helpers/windows-relay-exit-outcome.mjs';
 import { captureProductionWindowsRelay } from './helpers/capture-production-windows-relay.mjs';
 
+const probeMode = process.env.AGENT_COMMS_RELAY_PROBE_MODE ?? 'production';
 const fixturePath = fileURLToPath(new URL('./fixtures/windows-detached-relay-probe.mjs', import.meta.url));
 const supervisorPath = fileURLToPath(new URL('../tools/acceptance/windows-capacity-job.ps1', import.meta.url));
 const hostComponents = JSON.parse(readFileSync(new URL('./fixtures/windows-host-components.json', import.meta.url), 'utf8'));
@@ -121,13 +122,14 @@ function assertWithinProbeCapacity(sample) {
   }
 }
 
-function projectProbeFailure({ awaitStage, fixtureStage, supervisorPhase, supervisorCheck, errorClass }) {
+function projectProbeFailure({ awaitStage, fixtureStage, supervisorPhase, supervisorCheck, errorClass, activeMembers }) {
   return {
     awaitStage: AWAIT_STAGES.has(awaitStage) ? awaitStage : 'unknown',
     fixtureStage: FIXTURE_STAGES.includes(fixtureStage) ? fixtureStage : 'unknown',
     supervisorPhase: SUPERVISOR_PHASES.has(supervisorPhase) ? supervisorPhase : 'unknown',
     supervisorCheck: SUPERVISOR_CHECKS.has(supervisorCheck) ? supervisorCheck : 'unknown',
     errorClass: FAILURE_CLASSES.has(errorClass) ? errorClass : 'other-failure',
+    ...(Number.isSafeInteger(activeMembers) && activeMembers >= 0 && activeMembers <= jobProcessLimit ? { activeMembers } : {}),
   };
 }
 
@@ -190,6 +192,16 @@ test('detached relay failure projection keeps only fixed await, fixture, supervi
     awaitStage: 'unknown', fixtureStage: 'unknown', supervisorPhase: 'unknown',
     supervisorCheck: 'unknown', errorClass: 'other-failure',
   });
+});
+
+test('job member count diagnostics accept only a bounded own numeric observation', () => {
+  const base = { awaitStage: 'relay-members', fixtureStage: 'relay-connected' };
+  for (const activeMembers of [0, 1, 2, 3, 128]) {
+    assert.equal(projectProbeFailure({ ...base, activeMembers }).activeMembers, activeMembers);
+  }
+  for (const activeMembers of [-1, 129, NaN, Infinity, 0.5, '3', 'CANARY-secret', {}]) {
+    assert.equal(Object.hasOwn(projectProbeFailure({ ...base, activeMembers }), 'activeMembers'), false);
+  }
 });
 
 test('combined primary and cleanup failure projection preserves only owned resolution booleans', () => {
@@ -282,7 +294,7 @@ test('relay exit receipts retain bounded native status and redact all other chil
   assert.equal(absent.exitCode, null); assert.equal(absent.exitOutcome, 'unknown');
 });
 
-test('DETACHED_PROCESS diagnostic probe preserves actual relay argv and remains in the private job without console host', {
+test(`${probeMode === 'detached' ? 'DETACHED_PROCESS diagnostic' : 'Production hidden relay startup'} preserves actual relay argv and remains in the private job without console host`, {
   skip: process.platform !== 'win32',
   timeout: 90000,
 }, async () => {
@@ -299,12 +311,13 @@ test('DETACHED_PROCESS diagnostic probe preserves actual relay argv and remains 
   let lastSupervisorCheck = 'unknown';
   let lastSupervisorFailureClass = 'other-failure';
 
+  assert.ok(['production', 'detached'].includes(probeMode), 'unknown relay probe mode');
   assert.equal(process.version, pinnedNodeVersion, 'Windows diagnostic must use the checked-in Node sidecar tuple');
   assert.equal(process.versions.uv, pinnedLibuvVersion, 'Windows diagnostic must use the checked-in Node sidecar tuple');
   // This test is diagnostic-only: it uses the production connector and worker,
   // but only connects to a local byte-draining pipe server. It does not start
   // either communications application or change production spawn options.
-  let shell, relayArgs, fixture, fixtureControl, supervisor, control;
+  let shell, relayArgs, relayFile, fixture, fixtureControl, supervisor, control;
   const start = Date.now();
   const remaining = () => Math.max(1, 60000 - (Date.now() - start));
   let awaitStage = 'fixture-startup';
@@ -318,6 +331,7 @@ test('DETACHED_PROCESS diagnostic probe preserves actual relay argv and remains 
   let relayExitCode;
   let relayExitOutcome;
   let primaryFailure;
+  let activeMembers;
   const cleanup = {
     failure: 'none',
     ownedChildren: {
@@ -327,9 +341,9 @@ test('DETACHED_PROCESS diagnostic probe preserves actual relay argv and remains 
   };
   try {
     shell = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
-    relayArgs = captureProductionWindowsRelay().args;
+    ({ args: relayArgs, file: relayFile } = captureProductionWindowsRelay());
     const pipe = `\\\\.\\pipe\\agent-comms.detached-probe.${process.pid}.${Date.now()}`;
-    const fixtureArgs = [fixturePath, pipe];
+    const fixtureArgs = [fixturePath, pipe, probeMode];
     fixture = owned(process.execPath, fixtureArgs, ['ignore', 'ignore', 'pipe', 'ipc']);
     fixture.child.on('message', record => {
       if (record?.id === -3) {
@@ -365,7 +379,7 @@ test('DETACHED_PROCESS diagnostic probe preserves actual relay argv and remains 
       pid: fixture.child.pid,
       parentPid: process.pid,
       nodeExecutable: realpathSync(process.execPath),
-      shellExecutable: shell,
+      shellExecutable: realpathSync(relayFile),
       fixtureArgs,
       relayArgs,
       diagnosticArgs: [],
@@ -384,16 +398,17 @@ test('DETACHED_PROCESS diagnostic probe preserves actual relay argv and remains 
     assert.equal((await safeRequest(control, 'members', {}, remaining())).activeMembers, 1);
 
     awaitStage = 'fixture-start';
-    const connected = await fixtureControl.request('start', { expectedRelayArgs: relayArgs }, remaining());
+    const connected = await fixtureControl.request('start', { expectedRelayArgs: relayArgs, expectedRelayFile: relayFile }, remaining());
     assert.deepEqual(connected, {
-      id: connected.id, connected: true, detached: true, windowsHide: true,
+      id: connected.id, connected: true, detached: probeMode === 'detached', windowsHide: true,
       stdioPipes: true, productionArgsExact: true,
     });
     awaitStage = 'relay-members';
     const members = await safeRequest(control, 'members', {}, remaining());
-    assert.equal(members.activeMembers, 2, 'fixture and one relay must be the only job members');
+    activeMembers = members.activeMembers;
     awaitStage = 'relay-sample';
     const withRelay = await safeRequest(control, 'sample', {}, remaining());
+    assert.equal(activeMembers, 2, 'fixture and one relay must be the only job members');
     assertWithinProbeCapacity(withRelay);
     assert.equal(withRelay.totals.main.count, 1);
     assert.equal(withRelay.totals.relay.count, 1);
@@ -446,7 +461,7 @@ test('DETACHED_PROCESS diagnostic probe preserves actual relay argv and remains 
   } catch (error) {
     const supervisorPhase = control?.state().phase;
     primaryFailure = {
-      awaitStage, fixtureStage, supervisorPhase, supervisorCheck: lastSupervisorCheck,
+      awaitStage, fixtureStage, supervisorPhase, supervisorCheck: lastSupervisorCheck, activeMembers,
       errorClass: error?.message === 'probe-request-failed' ? lastSupervisorFailureClass : safeErrorClass(error),
     };
     if (fixtureStageInvalid || connectorObservationInvalid) {

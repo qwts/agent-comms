@@ -21,16 +21,16 @@ export function captureProductionWindowsRelay() {
   let captured;
   const raw = connectWindowsPipe('\\\\.\\pipe\\agent-comms.test.S-1-5-21-123', {
     env: {},
-    spawnProcess(_file, args) {
-      captured = [...args];
+    skipRelayVerificationForTests: true,
+    spawnProcess(file, args) {
+      captured = { file, args: [...args] };
       return child;
     },
   });
   raw.destroy();
   if (!captured) throw new Error('production-relay-spawn-not-captured');
-  const systemRoot = process.env.SystemRoot || 'C:\\Windows';
-  const executable = `${systemRoot}\\System32\\WindowsPowerShell\\v1.0\\powershell.exe`;
-  const serializedCommandLineLength = executable.length + 2 + captured.reduce((length, arg) => length + arg.length, 0)
-    + captured.length + 2; // Each argument is space-separated; the executable and final command argument are quoted.
-  return { args: captured, serializedCommandLineLength };
+  const { file, args } = captured;
+  const serializedCommandLineLength = file.length + 2 + args.reduce((length, arg) => length + arg.length, 0)
+    + args.length + 2;
+  return { file, args, serializedCommandLineLength };
 }
