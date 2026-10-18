@@ -92,7 +92,7 @@ jobs:
         if: inputs.task == 'detached-relay-probe'
         shell: pwsh
         run: |
-          & $env:AGENT_COMMS_ACCEPTANCE_NODE --test tests/windows-detached-relay-probe.test.mjs
+          & $env:AGENT_COMMS_ACCEPTANCE_NODE --test --test-concurrency=1 tests/windows-relay-startup.test.mjs tests/windows-detached-relay-probe.test.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Publish exact native-engine acceptance matrix
         if: always() && inputs.task != 'detached-relay-probe'
