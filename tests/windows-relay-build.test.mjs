@@ -32,7 +32,11 @@ try {
     & (Join-Path $env:AGENT_COMMS_RELAY_BUILD_TEST_ROOT 'scripts/build-windows-relay.ps1')
     if ($env:AGENT_COMMS_TEST_NO_COMPILER -eq '1') { exit 2 }
 } catch {
-    if ($env:AGENT_COMMS_TEST_NO_COMPILER -ne '1' -or $_.Exception.Message -ne 'Windows .NET Framework compiler unavailable') { exit 3 }
+    if ($env:AGENT_COMMS_TEST_NO_COMPILER -ne '1' -or $_.Exception.Message -ne 'Windows .NET Framework compiler unavailable') {
+        # This isolated build contains only public source and a synthetic release stamp.
+        [Console]::Error.WriteLine($_.Exception.Message)
+        exit 3
+    }
 }
 exit 0`;
   for (const absent of [false, true]) {
@@ -42,7 +46,7 @@ exit 0`;
       windowsHide: true, encoding: 'utf8', timeout: 10000,
     });
     assert.equal(result.error, undefined, 'build probe spawn failed');
-    assert.equal(result.status, 0, `build probe refused (${absent ? 'no compiler' : 'Framework fallback'})`);
+    assert.equal(result.status, 0, `build probe refused (${absent ? 'no compiler' : 'Framework fallback'}): ${result.stderr.slice(0, 2000)}`);
     if (absent) assert.equal(existsSync(path.join(root, 'bin')), false);
     else assert.equal(verifyWindowsRelay(root), path.join(root, 'bin', 'windows', 'agent-comms-pipe-relay.exe'));
   }
