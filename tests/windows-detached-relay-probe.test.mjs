@@ -122,13 +122,14 @@ function assertWithinProbeCapacity(sample) {
   }
 }
 
-function projectProbeFailure({ awaitStage, fixtureStage, supervisorPhase, supervisorCheck, errorClass }) {
+function projectProbeFailure({ awaitStage, fixtureStage, supervisorPhase, supervisorCheck, errorClass, activeMembers }) {
   return {
     awaitStage: AWAIT_STAGES.has(awaitStage) ? awaitStage : 'unknown',
     fixtureStage: FIXTURE_STAGES.includes(fixtureStage) ? fixtureStage : 'unknown',
     supervisorPhase: SUPERVISOR_PHASES.has(supervisorPhase) ? supervisorPhase : 'unknown',
     supervisorCheck: SUPERVISOR_CHECKS.has(supervisorCheck) ? supervisorCheck : 'unknown',
     errorClass: FAILURE_CLASSES.has(errorClass) ? errorClass : 'other-failure',
+    ...(Number.isSafeInteger(activeMembers) && activeMembers >= 0 && activeMembers <= jobProcessLimit ? { activeMembers } : {}),
   };
 }
 
@@ -191,6 +192,16 @@ test('detached relay failure projection keeps only fixed await, fixture, supervi
     awaitStage: 'unknown', fixtureStage: 'unknown', supervisorPhase: 'unknown',
     supervisorCheck: 'unknown', errorClass: 'other-failure',
   });
+});
+
+test('job member count diagnostics accept only a bounded own numeric observation', () => {
+  const base = { awaitStage: 'relay-members', fixtureStage: 'relay-connected' };
+  for (const activeMembers of [0, 1, 2, 3, 128]) {
+    assert.equal(projectProbeFailure({ ...base, activeMembers }).activeMembers, activeMembers);
+  }
+  for (const activeMembers of [-1, 129, NaN, Infinity, 0.5, '3', 'CANARY-secret', {}]) {
+    assert.equal(Object.hasOwn(projectProbeFailure({ ...base, activeMembers }), 'activeMembers'), false);
+  }
 });
 
 test('combined primary and cleanup failure projection preserves only owned resolution booleans', () => {
@@ -320,6 +331,7 @@ test(`${probeMode === 'detached' ? 'DETACHED_PROCESS diagnostic' : 'Production h
   let relayExitCode;
   let relayExitOutcome;
   let primaryFailure;
+  let activeMembers;
   const cleanup = {
     failure: 'none',
     ownedChildren: {
@@ -393,9 +405,10 @@ test(`${probeMode === 'detached' ? 'DETACHED_PROCESS diagnostic' : 'Production h
     });
     awaitStage = 'relay-members';
     const members = await safeRequest(control, 'members', {}, remaining());
-    assert.equal(members.activeMembers, 2, 'fixture and one relay must be the only job members');
+    activeMembers = members.activeMembers;
     awaitStage = 'relay-sample';
     const withRelay = await safeRequest(control, 'sample', {}, remaining());
+    assert.equal(activeMembers, 2, 'fixture and one relay must be the only job members');
     assertWithinProbeCapacity(withRelay);
     assert.equal(withRelay.totals.main.count, 1);
     assert.equal(withRelay.totals.relay.count, 1);
@@ -448,7 +461,7 @@ test(`${probeMode === 'detached' ? 'DETACHED_PROCESS diagnostic' : 'Production h
   } catch (error) {
     const supervisorPhase = control?.state().phase;
     primaryFailure = {
-      awaitStage, fixtureStage, supervisorPhase, supervisorCheck: lastSupervisorCheck,
+      awaitStage, fixtureStage, supervisorPhase, supervisorCheck: lastSupervisorCheck, activeMembers,
       errorClass: error?.message === 'probe-request-failed' ? lastSupervisorFailureClass : safeErrorClass(error),
     };
     if (fixtureStageInvalid || connectorObservationInvalid) {
