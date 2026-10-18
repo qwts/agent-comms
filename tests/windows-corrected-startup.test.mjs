@@ -48,6 +48,7 @@ for (const [code, probe, stage] of [['broker-probe-failed', undefined], ['CANARY
     mkdirSync(path.join(scratch, 'lib'));
     writeFileSync(path.join(scratch, 'lib/broker.mjs'), `import {writeFileSync} from 'node:fs';export class Broker{async start(){const error=Object.assign(new Error('CANARY-body-source-secret'),{code:${JSON.stringify(code)},cause:new Error('CANARY-cause')});${stageSetup}throw error}maintain(){throw Object.assign(new Error('CANARY-storage-secret'),{code:${JSON.stringify(code)}})}async stop(){writeFileSync(${JSON.stringify(cleaned)},'stopped')}}`);
     writeFileSync(path.join(scratch, 'lib/client.mjs'), 'export const unused = true;');
+    writeFileSync(path.join(scratch, 'lib/diagnostics.mjs'), 'export function brokerDiagnostic(){}');
     writeFileSync(path.join(scratch, 'lib/paths.mjs'), 'export function brokerPaths(){return {}};export function clientPaths(){return {}};');
     writeFileSync(path.join(scratch, 'lib/state.mjs'), 'export class EventLog{constructor(){this.file="private"}replay(){return {seq:0}}}');
     writeFileSync(path.join(scratch, 'lib/retention.mjs'), 'export function nextExpiry(){return Infinity}');
