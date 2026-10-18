@@ -68,6 +68,13 @@ try {
         # Exact-path trust is only for these read-only CI inputs; no global config.
         Invoke-Checked $git @('-c', "safe.directory=$source", 'clone', '--local', '--no-hardlinks', '--no-checkout', $source, (Join-Path $stage ($entry.name + '-source')))
     }
+    if ($Mode -eq 'relay-candidate-startup') {
+        $artifact = Join-Path $stage 'relay-artifact'
+        New-Item -ItemType Directory -Path $artifact | Out-Null
+        foreach ($name in @('agent-comms-pipe-relay.exe', 'relay-build.json')) {
+            Copy-Item -LiteralPath (Join-Path $repository ('.windows-fixtures/relay-correction/bin/windows/' + $name)) -Destination (Join-Path $artifact $name)
+        }
+    }
     $nodeDirectory = Split-Path -Parent $env:AGENT_COMMS_ACCEPTANCE_NODE
     Copy-Item -LiteralPath $nodeDirectory -Destination (Join-Path $stage 'node') -Recurse
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'windows-acceptance-child.ps1') -Destination (Join-Path $stage 'child.ps1')

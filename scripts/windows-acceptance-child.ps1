@@ -47,7 +47,10 @@ try {
         if ($inputs.mode -eq 'candidate-channel') { $arguments[1] = '--candidate-channel' }
         if ($inputs.mode -eq 'candidate-storage') { $arguments[1] = '--candidate-storage' }
         if ($inputs.mode -eq 'candidate-compiler') { $arguments[1] = '--candidate-compiler' }
-        if ($inputs.mode -eq 'relay-candidate-startup') { $arguments[1] = '--relay-candidate' }
+        if ($inputs.mode -eq 'relay-candidate-startup') {
+            $arguments[1] = '--relay-candidate'
+            $arguments += @('--relay-artifact', (Join-Path $PSScriptRoot 'relay-artifact'))
+        }
         if ($inputs.mode -eq 'capacity-preflight') { $arguments += '--preflight' }
         if ($inputs.mode -eq 'capacity-supervisor') { $arguments += '--supervisor-preflight' }
         if ($inputs.mode -eq 'capacity-attach') { $arguments += '--attach-preflight' }

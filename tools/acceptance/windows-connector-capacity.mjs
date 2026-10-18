@@ -19,7 +19,7 @@ import { capacityTimingMode, capacityTimingProfile, createCapacityPhaseTiming, t
 
 import { cleanupCapacityRun, retainCapacityFailure } from './windows-capacity-lifecycle.mjs';
 
-import { RELAY_STARTUP_SOURCE, verifyRelayStartupSource, verifiedRelayContract, relayBuildArguments, relayBuildFailure } from './windows-relay-candidate.mjs';
+import { RELAY_STARTUP_SOURCE, verifyRelayStartupSource, verifiedRelayContract, installRelayArtifact } from './windows-relay-candidate.mjs';
 
 import { probePinnedStorage } from './windows-capacity-storage.mjs';
 import { probePinnedCustody } from './windows-capacity-custody.mjs';
@@ -42,7 +42,7 @@ const supervisorPhases = new Set(['script-entry','compile-supervisor','superviso
 const checks = new Set(['fixture-terminal', 'fixture-deadline', 'control-deadline', 'control-closed',
   'control-output-bound', 'control-invalid', 'job-supervisor-failed', 'natural-exit-unconfirmed',
   'relay-exit-unconfirmed', 'scratch-retained', 'job-exit-unconfirmed', 'diagnostic-output-invalid',
-  'compiler-source-mismatch', 'compiler-control-failed', 'compiler-deadline', 'compiler-terminal', 'owned-startup-fault', 'owned-forced-cleanup', 'policy-failed', 'memory-headroom-insufficient', 'candidate-source-mismatch', 'relay-build-timeout', 'relay-build-failed', 'operation-failed', 'assertion-failed', 'timing-unavailable']);
+  'compiler-source-mismatch', 'compiler-control-failed', 'compiler-deadline', 'compiler-terminal', 'owned-startup-fault', 'owned-forced-cleanup', 'policy-failed', 'memory-headroom-insufficient', 'candidate-source-mismatch', 'operation-failed', 'assertion-failed', 'timing-unavailable']);
 function failure(error) {
   const windowsPipeStage = projectWindowsPipeStage(error);
   const supervisorClassification = supervisorClassificationFromError(error);
@@ -592,7 +592,10 @@ async function main(context) {
   const relayCandidateStartup = args[2] === '--relay-candidate';
   const candidateStartup = args[2] === '--candidate' || relayCandidateStartup;
   const candidateOnly = candidateStartup || candidateStorage || candidateChannel || candidateCompiler;
-  if (candidateOnly) { assert.equal(args.length, 6); assert.equal(args[4], '--output'); }
+  if (candidateOnly) {
+    assert.equal(args.length, relayCandidateStartup ? 8 : 6); assert.equal(args[4], '--output');
+    if (relayCandidateStartup) assert.equal(args[6], '--relay-artifact');
+  }
   else {
     assert.equal(args[2], '--old'); assert.equal(args[4], '--new'); assert.equal(args[6], '--output');
     assert.ok(args.length === 8 || (args.length === 9 && ['--preflight','--supervisor-preflight','--attach-preflight','--sample-preflight','--startup-preflight','--custody-preflight','--channel-preflight','--connector-preflight'].includes(args[8])));
@@ -663,21 +666,8 @@ async function main(context) {
     }
     let relayArtifact;
     if (relayCandidateStartup) {
-      activeStage = 'relay-artifact-build';
-      const buildHost = path.join(process.env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe');
-      const buildArguments = relayBuildArguments(source);
-      const started = performance.now();
-      try {
-        await exec(buildHost, buildArguments,
-          { env: environment(), windowsHide: true, timeout: 30_000, maxBuffer: 65_536 });
-        writeFileSync(path.join(output, 'relay-build.json'), `${JSON.stringify({ status: 'passed', durationMs: performance.now() - started })}\n`);
-      } catch (error) {
-        const buildFailure = relayBuildFailure(error);
-        writeFileSync(path.join(output, 'relay-build.json'), `${JSON.stringify({ status: 'failed', ...buildFailure, durationMs: performance.now() - started })}\n`);
-        throw new Error(buildFailure.check);
-      }
       activeStage = 'relay-artifact-verification';
-      relayArtifact = (await verifiedRelayContract(source)).artifact;
+      relayArtifact = await installRelayArtifact(source, path.resolve(args[7]));
     }
     archives[revision] = { source, pin, tree: tree.trim(), archiveSha256: hash(bytes), ...(relayArtifact ? { relayArtifact } : {}) };
   }
@@ -699,7 +689,7 @@ async function main(context) {
     if(result.status!=='passed') process.exitCode=1;
     return;
   }
-  const result = { v: 1, ...(relayCandidateStartup ? { relayCandidateStartup: true, relayBuildScope: 'explicit preparation before private-job startup and delivery; no runtime compiler or capacity comparison' } : {}), ...(desktopContext ? { executionKind: 'desktop-current-user', desktopProfile: desktopContext.profile } : {}), scope: relayCandidateStartup ? 'hosted standard-user fixed prebuilt-relay source Broker startup, pairing, one delivery and disposal; no offered-rate, desktop or installed-host acceptance' : desktopContext ? 'current standard-user desktop exact corrected-source Broker startup, one delivery and disposal only; no offered-rate or installed-host acceptance' : candidateChannel ? 'hosted standard-user exact corrected-source channel-prepare-and-stale-probes only; actual default channel; no Broker.start, EventLog, replay, maintenance, listeners, delivery or offered rates' : candidateStorage ? 'hosted standard-user exact corrected-source fresh storage prefix only; actual prepare, EventLog custody/replay and compacting maintenance; no Broker.start, stale probes, listeners, delivery or offered rates' : candidateStartup ? 'hosted standard-user exact corrected-source Broker startup, one delivery and disposal only; no offered-rate stages, capacity comparison, desktop or host acceptance' : connectorOnly ? 'actual-connector-events; prepare/main stale probe then unconsumed admin connector; no Broker, listener, EventLog, replay, maintenance or workload' : channelOnly ? 'channel-prepare-and-stale-probes; actual pinned default channel; no Broker, listener, EventLog, replay, maintenance or workload' : custodyOnly ? 'hosted standard-user Windows pinned custody API only; no Broker or connector or offered-rate stages' : startupOnly ? 'hosted standard-user Windows old-pin production startup and disposal only; no offered-rate stages or capacity acceptance' : 'hosted standard-user Windows finite capacity pilot; no benchmark, desktop, host or 100/s support acceptance',
+  const result = { v: 1, ...(relayCandidateStartup ? { relayCandidateStartup: true, relayBuildScope: 'workflow prebuild before disposable-account startup; verified read-only artifact input; no runtime compiler or capacity comparison' } : {}), ...(desktopContext ? { executionKind: 'desktop-current-user', desktopProfile: desktopContext.profile } : {}), scope: relayCandidateStartup ? 'hosted standard-user fixed prebuilt-relay source Broker startup, pairing, one delivery and disposal; no offered-rate, desktop or installed-host acceptance' : desktopContext ? 'current standard-user desktop exact corrected-source Broker startup, one delivery and disposal only; no offered-rate or installed-host acceptance' : candidateChannel ? 'hosted standard-user exact corrected-source channel-prepare-and-stale-probes only; actual default channel; no Broker.start, EventLog, replay, maintenance, listeners, delivery or offered rates' : candidateStorage ? 'hosted standard-user exact corrected-source fresh storage prefix only; actual prepare, EventLog custody/replay and compacting maintenance; no Broker.start, stale probes, listeners, delivery or offered rates' : candidateStartup ? 'hosted standard-user exact corrected-source Broker startup, one delivery and disposal only; no offered-rate stages, capacity comparison, desktop or host acceptance' : connectorOnly ? 'actual-connector-events; prepare/main stale probe then unconsumed admin connector; no Broker, listener, EventLog, replay, maintenance or workload' : channelOnly ? 'channel-prepare-and-stale-probes; actual pinned default channel; no Broker, listener, EventLog, replay, maintenance or workload' : custodyOnly ? 'hosted standard-user Windows pinned custody API only; no Broker or connector or offered-rate stages' : startupOnly ? 'hosted standard-user Windows old-pin production startup and disposal only; no offered-rate stages or capacity acceptance' : 'hosted standard-user Windows finite capacity pilot; no benchmark, desktop, host or 100/s support acceptance',
     ...(candidateStorage ? { storageHelperLifetime: 'actual production subprocesses belong to private job; configured timeout is not exit proof; no individual helper terminal observation' } : {}),
     storageType: 'not-measured', nodeArchiveSha256: components.node.sha256['win-x64'],
     node: process.version, nodeExecutableSha256: hash(readFileSync(process.execPath)),

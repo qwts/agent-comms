@@ -76,6 +76,11 @@ jobs:
           ref: ba75753e8e99e7c475baff9bfa139721276b5b06
           path: .windows-fixtures/relay-correction
           persist-credentials: false
+      - name: Prebuild the exact reviewed relay before disposable-account acceptance
+        if: inputs.task == 'relay-candidate-startup'
+        timeout-minutes: 1
+        shell: pwsh
+        run: ./.windows-fixtures/relay-correction/scripts/build-windows-relay.ps1
       - name: Download and verify the host-selected Windows Node sidecar
         shell: pwsh
         run: |
@@ -134,7 +139,6 @@ jobs:
             .windows-results/capacity/partial-run.json
             .windows-results/capacity/relay-source-approval.json
             .windows-results/capacity/relay-component-approval.json
-            .windows-results/capacity/relay-build.json
             .windows-results/capacity/relay-source.tar
           include-hidden-files: true
           if-no-files-found: warn
