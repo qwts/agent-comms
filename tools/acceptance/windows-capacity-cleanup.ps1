@@ -14,7 +14,8 @@ function Test-WindowsCapacityCleanupConfirmed([string]$Directory) {
             if ($failureFile.Length -gt 8388608) { return $false }
             $failure = Get-Content -LiteralPath $failureFile.FullName -Raw | ConvertFrom-Json -ErrorAction Stop
             if ($failure.status -ne 'failed' -or $failure.revision -ne 'candidate' -or
-                $failure.preflight -ne 'candidate-startup' -or $failure.cleanup -or $failure.original) { return $false }
+                $failure.preflight -ne 'candidate-startup' -or $failure.PSObject.Properties['cleanup'] -or
+                $failure.PSObject.Properties['original']) { return $false }
             $cleanup = $failure.ownedCleanup
             foreach ($name in @('fixtureOwnedTerminalConfirmed','fixtureStdioClosedConfirmed',
                     'supervisorOwnedTerminalConfirmed','supervisorStdioClosedConfirmed','jobEmptyConfirmed','scratchRemoved')) {

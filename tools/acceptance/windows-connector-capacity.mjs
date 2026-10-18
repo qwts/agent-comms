@@ -500,6 +500,7 @@ async function run(source, revision, rates, preflight, commitLimitBytes, relayCa
     const production = relayCandidate ? await verifiedRelayContract(source) : { shellExecutable: shell, ...productionArguments(source) };
     const attachment = await supervisor.request('attach', { pid: fixtureOwned.child.pid, parentPid: process.pid, nodeExecutable: realpathSync(process.execPath),
       shellExecutable: production.shellExecutable, fixtureArgs: args, relayArgs: production.relayArgs, diagnosticArgs: production.diagnosticArgs, commitLimitBytes,
+      ...(relayCandidate ? { nativeCustody: true } : {}),
       compilerExecutables: relayCandidate ? [] : ['Framework', 'Framework64'].map((name) => path.join(process.env.SystemRoot, 'Microsoft.NET', name, 'v4.0.30319', 'csc.exe')),
       compilerTemp: realpathSync(childTemp()) }, Math.max(1, 15_000 - (performance.now() - attachStarted)));
     attached = true; powershellVersion = attachment.powershellVersion;

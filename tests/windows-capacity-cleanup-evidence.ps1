@@ -52,6 +52,12 @@ try {
     $record | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $failure
     if (Test-WindowsCapacityCleanupConfirmed $scratch) { throw 'Failure cleanup uncertainty lost' }
     $clean.errors = @()
+    foreach ($name in @('cleanup','original')) {
+        $record[$name] = @()
+        $record | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $failure
+        if (Test-WindowsCapacityCleanupConfirmed $scratch) { throw 'Nested ambiguous cleanup disposition accepted' }
+        $record.Remove($name)
+    }
     $record | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $failure
     Set-Content -LiteralPath $file -Value '{"v":1,"relayCandidateStartup":false,"runs":[]}'
     if (Test-WindowsCapacityCleanupConfirmed $scratch) { throw 'Legacy failure admitted by relay-only disposal proof' }

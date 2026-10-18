@@ -156,7 +156,7 @@ jobs:
           node --test tests/windows-desktop-context.test.mjs
           tests/windows-desktop-job-native.test.mjs tests/windows-desktop-boundary.test.mjs
       - name: Verify native custody and DPAPI through inherited PowerShell 7 environment
-        run: node --test tests/platform-win32-custody-native.test.mjs
+        run: node --test --test-concurrency=1 tests/platform-win32-custody-native.test.mjs tests/windows-custody-helper-native.test.mjs
       - name: Retain verified relay build for exact-commit release packaging
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

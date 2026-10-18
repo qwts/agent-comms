@@ -26,6 +26,10 @@ function Reply($Value) {
     [Console]::Out.Flush()
 }
 
+function Test-NativeCustodyArguments([object[]]$Arguments, [bool]$Enabled) {
+    return $Enabled -and $Arguments.Count -eq 1 -and $Arguments[0] -is [string] -and $Arguments[0] -cin @('--sid','--inspect')
+}
+
 try {
     # This dev-only observer must not depend on implicit Utility autoload.
     $phase = 'module-observation'
@@ -265,6 +269,13 @@ function Get-ConsoleHostDiagnostics([object]$Row,[object[]]$Rows,[string]$ShellE
         [Console]::Out.Flush()
     }
     if ($ValidateOnly) {
+        if (-not (Test-NativeCustodyArguments @('--sid') $true) -or
+            -not (Test-NativeCustodyArguments @('--inspect') $true) -or
+            (Test-NativeCustodyArguments @('--sid') $false) -or
+            (Test-NativeCustodyArguments @() $true) -or
+            (Test-NativeCustodyArguments @('--SID') $true) -or
+            (Test-NativeCustodyArguments @('--sid','extra') $true) -or
+            (Test-NativeCustodyArguments @(1) $true)) { throw 'native-custody-arguments-test-failed' }
         if ($DiagnosticParserTestOnly) {
             $cases = [Collections.Generic.List[string]]::new()
             $diagnosticTestCase = 'missing-command-line'
@@ -423,6 +434,8 @@ function Get-ConsoleHostDiagnostics([object]$Row,[object[]]$Rows,[string]$ShellE
             $shellExecutable = [string]$inputData.shellExecutable
             $fixtureArgs = @($inputData.fixtureArgs)
             $relayArgs = @($inputData.relayArgs)
+            $nativeCustody = $inputData.nativeCustody -is [bool] -and $inputData.nativeCustody
+            if ($nativeCustody -and ($relayArgs.Count -ne 0 -or [IO.Path]::GetFileName($shellExecutable) -cne 'agent-comms-pipe-relay.exe')) { throw 'invalid-native-custody-contract' }
             $diagnosticArgs = @($inputData.diagnosticArgs)
             $compilerExecutables = @($inputData.compilerExecutables)
             $compilerTemp = [string]$inputData.compilerTemp
@@ -534,7 +547,13 @@ function Get-ConsoleHostDiagnostics([object]$Row,[object[]]$Rows,[string]$ShellE
                     $processArgs = [CapacityJob]::Args($row.CommandLine)
                     $expected = $null
                     $classification.check = 'executable'
-                    if ($row.ExecutablePath -ieq $shellExecutable) { $kind='relay'; $expected=$relayArgs }
+                    if ($row.ExecutablePath -ieq $shellExecutable) {
+                        $kind='relay'; $expected=$relayArgs
+                        # Only these two fixed operations of the same verified
+                        # helper are admitted. Parent/creation/argv checks below
+                        # still apply; path/account inputs travel only on stdin.
+                        if (Test-NativeCustodyArguments $processArgs $nativeCustody) { $expected=@($processArgs[0]) }
+                    }
                     elseif ($row.ExecutablePath -ieq $nodeExecutable) { $kind='diagnostic'; $expected=$diagnosticArgs }
                     elseif ($compilerExecutables -icontains $row.ExecutablePath) {
                         $kind='compiler'

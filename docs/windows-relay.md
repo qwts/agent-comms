@@ -20,6 +20,19 @@ compiler and writes an ignored executable and build manifest under `bin/windows`
 Compilation is an explicit build step, never an automatic runtime fallback.
 The build requires a source commit from the checkout or release stamp.
 
+The same verified helper also implements the fixed `--sid` and `--inspect`
+custody operations. Account names and literal paths arrive as UTF-8 stdin data,
+never command arguments or executable code. It uses fresh Windows NTAccount
+translation and filesystem ACL/attribute reads on every call, preserving the
+existing strict SID/owner/type/link grammar and refusals without a PowerShell
+launch per check. The real default account-isolation adapter requires this
+artifact and never falls back after verification or execution failure. Explicit
+injected runners retain the existing PowerShell adapter contract. The candidate
+supervisor admits only these two additional exact argument vectors for the
+same verified helper and current fixture parent; their resource usage is
+included in the existing relay/helper totals. It still refuses other arguments,
+unrelated executables, parent mismatches and runtime compilers.
+
 The manifest binds the source commit, C# source digest, binary digest, and
 Windows subsystem. Runtime checks those digests and the executable's actual PE
 subsystem before starting the fixed bundled path. A missing, corrupted, stale,
