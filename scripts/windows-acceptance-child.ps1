@@ -27,7 +27,7 @@ try {
     New-Item -ItemType Directory -Path $working | Out-Null
     $gate = 'clone-child-owned-inputs'
     . (Join-Path $PSScriptRoot 'native-command.ps1')
-    $names = if ($inputs.mode -eq 'engine') { @('candidate','bot','released') } elseif ($inputs.mode -in @('candidate-startup','candidate-storage','candidate-channel','candidate-compiler')) { @('candidate','correction') } else { @('candidate','old','new') }
+    $names = if ($inputs.mode -eq 'engine') { @('candidate','bot','released') } elseif ($inputs.mode -in @('candidate-startup','candidate-storage','candidate-channel','candidate-compiler','relay-candidate-startup')) { @('candidate','correction') } else { @('candidate','old','new') }
     foreach ($name in $names) {
         $source = Join-Path $PSScriptRoot ($name + '-source')
         Invoke-WindowsAcceptanceNative $inputs.git @('-c', "safe.directory=$source", 'clone', '--quiet', '--local', '--no-hardlinks', $source, (Join-Path $working $name))
@@ -37,16 +37,17 @@ try {
     $env:AGENT_COMMS_NODE_ARCHIVE_SHA256 = $inputs.nodeArchiveSha256
     $candidate = Join-Path $working 'candidate'
     Set-Location -LiteralPath $candidate
-    if ($inputs.mode -in @('candidate-startup','candidate-storage','candidate-channel','candidate-compiler','capacity-supervisor','capacity-attach','capacity-sample','capacity-startup','capacity-custody','capacity-channel','capacity-connector','capacity-preflight','capacity-pilot')) {
+    if ($inputs.mode -in @('candidate-startup','candidate-storage','candidate-channel','candidate-compiler','relay-candidate-startup','capacity-supervisor','capacity-attach','capacity-sample','capacity-startup','capacity-custody','capacity-channel','capacity-connector','capacity-preflight','capacity-pilot')) {
         $gate = 'production-connector-capacity'
         $env:AGENT_COMMS_CAPACITY_PROFILE_VERIFIED = '1'
         $arguments = @('tools/acceptance/windows-connector-capacity.mjs', '--old', (Join-Path $working 'old'), '--new', (Join-Path $working 'new'), '--output', (Join-Path $PSScriptRoot 'results/capacity'))
-        if ($inputs.mode -in @('candidate-startup','candidate-storage','candidate-channel','candidate-compiler')) {
+        if ($inputs.mode -in @('candidate-startup','candidate-storage','candidate-channel','candidate-compiler','relay-candidate-startup')) {
             $arguments = @('tools/acceptance/windows-connector-capacity.mjs', '--candidate', (Join-Path $working 'correction'), '--output', (Join-Path $PSScriptRoot 'results/capacity'))
         }
         if ($inputs.mode -eq 'candidate-channel') { $arguments[1] = '--candidate-channel' }
         if ($inputs.mode -eq 'candidate-storage') { $arguments[1] = '--candidate-storage' }
         if ($inputs.mode -eq 'candidate-compiler') { $arguments[1] = '--candidate-compiler' }
+        if ($inputs.mode -eq 'relay-candidate-startup') { $arguments[1] = '--relay-candidate' }
         if ($inputs.mode -eq 'capacity-preflight') { $arguments += '--preflight' }
         if ($inputs.mode -eq 'capacity-supervisor') { $arguments += '--supervisor-preflight' }
         if ($inputs.mode -eq 'capacity-attach') { $arguments += '--attach-preflight' }

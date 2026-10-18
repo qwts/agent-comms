@@ -19,6 +19,8 @@ import { capacityTimingMode, capacityTimingProfile, createCapacityPhaseTiming, t
 
 import { cleanupCapacityRun, retainCapacityFailure } from './windows-capacity-lifecycle.mjs';
 
+import { RELAY_STARTUP_SOURCE, verifyRelayStartupSource, verifiedRelayContract } from './windows-relay-candidate.mjs';
+
 import { probePinnedStorage } from './windows-capacity-storage.mjs';
 import { probePinnedCustody } from './windows-capacity-custody.mjs';
 import { probePinnedChannel } from './windows-capacity-channel.mjs';
@@ -410,7 +412,7 @@ async function compilerProbe(source, variant, commitLimitBytes) {
     cleanup: {...cleanup,naturalJobEmptyConfirmed:receipt.naturalJobEmptyConfirmed === true} };
 }
 
-async function run(source, revision, rates, preflight, commitLimitBytes) {
+async function run(source, revision, rates, preflight, commitLimitBytes, relayCandidate = false) {
   source = realpathSync(source);
   const root = mkdtempSync(path.join(scratchParent(), 'agent-comms-capacity-'));
   const shell = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
@@ -471,9 +473,10 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
     if (ready.ok === false) throw supervisorFailure(ready);
     assert.equal(ready.phase, 'ready');
     activeStage = 'supervisor-attach';
+    const production = relayCandidate ? await verifiedRelayContract(source) : { shellExecutable: shell, ...productionArguments(source) };
     const attachment = await supervisor.request('attach', { pid: fixtureOwned.child.pid, parentPid: process.pid, nodeExecutable: realpathSync(process.execPath),
-      shellExecutable: shell, fixtureArgs: args, ...productionArguments(source), commitLimitBytes,
-      compilerExecutables: ['Framework', 'Framework64'].map((name) => path.join(process.env.SystemRoot, 'Microsoft.NET', name, 'v4.0.30319', 'csc.exe')),
+      shellExecutable: production.shellExecutable, fixtureArgs: args, relayArgs: production.relayArgs, diagnosticArgs: production.diagnosticArgs, commitLimitBytes,
+      compilerExecutables: relayCandidate ? [] : ['Framework', 'Framework64'].map((name) => path.join(process.env.SystemRoot, 'Microsoft.NET', name, 'v4.0.30319', 'csc.exe')),
       compilerTemp: realpathSync(childTemp()) }, Math.max(1, 15_000 - (performance.now() - attachStarted)));
     attached = true; powershellVersion = attachment.powershellVersion;
     activeStage = preflight === 'storage' ? 'candidate-storage-prefix' : preflight === 'connector' ? 'actual-connector-events' : preflight === 'channel' ? 'channel-prepare-and-stale-probes' : preflight === 'custody' ? 'custody-api' : 'production-startup';
@@ -534,7 +537,7 @@ async function run(source, revision, rates, preflight, commitLimitBytes) {
     if (sampleFailure && preflight !== 'forced' && preflight !== 'fault') throw sampleFailure;
     assert.equal(outputFailure, false, 'diagnostic-output-invalid');
     return { revision, preflight: preflight || null, stages,
-      deployment: preflight === 'storage' ? 'actual corrected-source fresh Broker storage prefix; no Broker.start, stale probes, listeners, A2A startup or delivery' : preflight === 'connector' ? 'actual pinned connector lifecycle events; no Broker, listener, EventLog, replay, maintenance or workload' : preflight === 'channel' ? 'channel-prepare-and-stale-probes; no Broker, listener, EventLog, replay, maintenance or workload' : preflight === 'custody' ? 'actual pinned account custody API only; no Broker or connector' : 'one embedded production Broker/client; Identification PowerShell connector',
+      deployment: relayCandidate ? 'one embedded production Broker/client; Identification prebuilt .NET relay' : preflight === 'storage' ? 'actual corrected-source fresh Broker storage prefix; no Broker.start, stale probes, listeners, A2A startup or delivery' : preflight === 'connector' ? 'actual pinned connector lifecycle events; no Broker, listener, EventLog, replay, maintenance or workload' : preflight === 'channel' ? 'channel-prepare-and-stale-probes; no Broker, listener, EventLog, replay, maintenance or workload' : preflight === 'custody' ? 'actual pinned account custody API only; no Broker or connector' : 'one embedded production Broker/client; Identification PowerShell connector',
       requestedRates: rates, skippedRates: RATES.filter((rate) => !stages.some((stage) => stage.offeredRate === rate)),
       baselinePermittedRates: rates,
       skipReason: preflight ? 'preflight-no-offers' : stages.some((stage) => !stage.qualified) ? 'preceding-stage-unqualified' : rates.length < RATES.length ? 'baseline-did-not-reach-higher-stage' : null,
@@ -586,7 +589,8 @@ async function main(context) {
   const candidateCompiler = args[2] === '--candidate-compiler';
   const candidateChannel = args[2] === '--candidate-channel';
   const candidateStorage = args[2] === '--candidate-storage';
-  const candidateStartup = args[2] === '--candidate';
+  const relayCandidateStartup = args[2] === '--relay-candidate';
+  const candidateStartup = args[2] === '--candidate' || relayCandidateStartup;
   const candidateOnly = candidateStartup || candidateStorage || candidateChannel || candidateCompiler;
   if (candidateOnly) { assert.equal(args.length, 6); assert.equal(args[4], '--output'); }
   else {
@@ -628,11 +632,11 @@ async function main(context) {
   if (commitLimitBytes < 512 * 1024 ** 2 || os.freemem() < commitLimitBytes + 512 * 1024 ** 2) throw new Error('memory-headroom-insufficient');
   const archives = {};
   for (const [revision, cwd] of candidateOnly ? [['candidate', args[3]]] : [['old', args[3]], ['new', args[5]]]) {
-    const pin = revision === 'candidate' ? CORRECTED_STARTUP_SOURCE.pin : PINS[revision];
+    const pin = revision === 'candidate' ? (relayCandidateStartup ? RELAY_STARTUP_SOURCE.pin : CORRECTED_STARTUP_SOURCE.pin) : PINS[revision];
     activeStage = 'archive-source';
     const { stdout: tree } = await exec('git.exe', ['rev-parse', `${pin}^{tree}`], { cwd, encoding: 'utf8', windowsHide: true });
     const { stdout: bytes } = await exec('git.exe', candidateOnly ? canonicalCandidateArchiveArgs(pin) : ['archive', '--format=tar', pin], { cwd, encoding: 'buffer', maxBuffer: 32 * 1024 * 1024, windowsHide: true });
-    if (candidateOnly) verifyCorrectedStartupSource(tree.trim(), hash(bytes));
+    if (candidateOnly) (relayCandidateStartup ? verifyRelayStartupSource : verifyCorrectedStartupSource)(tree.trim(), hash(bytes));
     const archive = path.join(output, `${revision}.tar`), source = path.join(output, revision);
     writeFileSync(archive, bytes); mkdirSync(source);
     await exec('tar.exe', ['-xf', archive, '-C', source], { windowsHide: true });
@@ -640,7 +644,15 @@ async function main(context) {
       hash(readFileSync(new URL('../../lib/platform/windows-pipe-client.mjs',import.meta.url))));
     if (candidateOnly) verifyCandidateComponent(hash(readFileSync(path.join(source, 'lib/platform/windows-pipe-stage.mjs'))),
       hash(readFileSync(new URL('../../lib/platform/windows-pipe-stage.mjs', import.meta.url))));
-    archives[revision] = { source, pin, tree: tree.trim(), archiveSha256: hash(bytes) };
+    let relayArtifact;
+    if (relayCandidateStartup) {
+      activeStage = 'relay-artifact-build';
+      const buildHost = path.join(process.env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe');
+      await exec(buildHost, ['-NoLogo', '-NoProfile', '-NonInteractive', '-File', path.join(source, 'scripts/build-windows-relay.ps1')],
+        { env: environment(), windowsHide: true, timeout: 30_000, maxBuffer: 65_536 });
+      relayArtifact = (await verifiedRelayContract(source)).artifact;
+    }
+    archives[revision] = { source, pin, tree: tree.trim(), archiveSha256: hash(bytes), ...(relayArtifact ? { relayArtifact } : {}) };
   }
   if (candidateCompiler) {
     const result = {v:1,...(desktopContext ? {executionKind:'desktop-current-user',desktopProfile:desktopContext.profile} : {}),compilerOnly:true,scope:'derived exact fixed worker compiler controls; implicit-explicit-explicit-implicit; no broker, pipe connection or workload',
@@ -660,7 +672,7 @@ async function main(context) {
     if(result.status!=='passed') process.exitCode=1;
     return;
   }
-  const result = { v: 1, ...(desktopContext ? { executionKind: 'desktop-current-user', desktopProfile: desktopContext.profile } : {}), scope: desktopContext ? 'current standard-user desktop exact corrected-source Broker startup, one delivery and disposal only; no offered-rate or installed-host acceptance' : candidateChannel ? 'hosted standard-user exact corrected-source channel-prepare-and-stale-probes only; actual default channel; no Broker.start, EventLog, replay, maintenance, listeners, delivery or offered rates' : candidateStorage ? 'hosted standard-user exact corrected-source fresh storage prefix only; actual prepare, EventLog custody/replay and compacting maintenance; no Broker.start, stale probes, listeners, delivery or offered rates' : candidateStartup ? 'hosted standard-user exact corrected-source Broker startup, one delivery and disposal only; no offered-rate stages, capacity comparison, desktop or host acceptance' : connectorOnly ? 'actual-connector-events; prepare/main stale probe then unconsumed admin connector; no Broker, listener, EventLog, replay, maintenance or workload' : channelOnly ? 'channel-prepare-and-stale-probes; actual pinned default channel; no Broker, listener, EventLog, replay, maintenance or workload' : custodyOnly ? 'hosted standard-user Windows pinned custody API only; no Broker or connector or offered-rate stages' : startupOnly ? 'hosted standard-user Windows old-pin production startup and disposal only; no offered-rate stages or capacity acceptance' : 'hosted standard-user Windows finite capacity pilot; no benchmark, desktop, host or 100/s support acceptance',
+  const result = { v: 1, ...(relayCandidateStartup ? { relayCandidateStartup: true, relayBuildScope: 'explicit preparation before private-job startup and delivery; no runtime compiler or capacity comparison' } : {}), ...(desktopContext ? { executionKind: 'desktop-current-user', desktopProfile: desktopContext.profile } : {}), scope: relayCandidateStartup ? 'hosted standard-user fixed prebuilt-relay source Broker startup, pairing, one delivery and disposal; no offered-rate, desktop or installed-host acceptance' : desktopContext ? 'current standard-user desktop exact corrected-source Broker startup, one delivery and disposal only; no offered-rate or installed-host acceptance' : candidateChannel ? 'hosted standard-user exact corrected-source channel-prepare-and-stale-probes only; actual default channel; no Broker.start, EventLog, replay, maintenance, listeners, delivery or offered rates' : candidateStorage ? 'hosted standard-user exact corrected-source fresh storage prefix only; actual prepare, EventLog custody/replay and compacting maintenance; no Broker.start, stale probes, listeners, delivery or offered rates' : candidateStartup ? 'hosted standard-user exact corrected-source Broker startup, one delivery and disposal only; no offered-rate stages, capacity comparison, desktop or host acceptance' : connectorOnly ? 'actual-connector-events; prepare/main stale probe then unconsumed admin connector; no Broker, listener, EventLog, replay, maintenance or workload' : channelOnly ? 'channel-prepare-and-stale-probes; actual pinned default channel; no Broker, listener, EventLog, replay, maintenance or workload' : custodyOnly ? 'hosted standard-user Windows pinned custody API only; no Broker or connector or offered-rate stages' : startupOnly ? 'hosted standard-user Windows old-pin production startup and disposal only; no offered-rate stages or capacity acceptance' : 'hosted standard-user Windows finite capacity pilot; no benchmark, desktop, host or 100/s support acceptance',
     ...(candidateStorage ? { storageHelperLifetime: 'actual production subprocesses belong to private job; configured timeout is not exit proof; no individual helper terminal observation' } : {}),
     storageType: 'not-measured', nodeArchiveSha256: components.node.sha256['win-x64'],
     node: process.version, nodeExecutableSha256: hash(readFileSync(process.execPath)),
@@ -677,13 +689,14 @@ async function main(context) {
       timingScope: 'parent start-request duration and independent child relative fixed-phase observations; explicit trusted-mode deadline/reporting cap; observational, not performance acceptance' } : {}),
     storageSha256: hash(readFileSync(new URL('./windows-capacity-storage.mjs', import.meta.url))),
     correctedStartupSha256: hash(readFileSync(new URL('./windows-corrected-startup.mjs', import.meta.url))),
+    ...(relayCandidateStartup ? { relayCandidateSha256: hash(readFileSync(new URL('./windows-relay-candidate.mjs', import.meta.url))) } : {}),
     archives: Object.fromEntries(Object.entries(archives).map(([key, { source, ...value }]) => [key, value])), runs: [] };
   const persist = () => writeFileSync(path.join(output, 'capacity.json'), `${JSON.stringify(result, null, 2)}\n`);
   persist();
   for (const revision of candidateOnly ? ['candidate'] : startupOnly || custodyOnly || channelOnly || connectorOnly ? ['old'] : ['old', 'new']) {
     if (candidateChannel) { result.runs.push(await run(archives[revision].source, revision, [], 'channel', commitLimitBytes)); persist(); }
     else if (candidateStorage) { result.runs.push(await run(archives[revision].source, revision, [], 'storage', commitLimitBytes)); persist(); }
-    else if (candidateStartup) { result.runs.push(await run(archives[revision].source, revision, [], 'candidate-startup', commitLimitBytes)); persist(); }
+    else if (candidateStartup) { result.runs.push(await run(archives[revision].source, revision, [], 'candidate-startup', commitLimitBytes, relayCandidateStartup)); persist(); }
     else if (connectorOnly) { result.runs.push(await run(archives[revision].source, revision, [], 'connector', commitLimitBytes)); persist(); }
     else if (channelOnly) { result.runs.push(await run(archives[revision].source, revision, [], 'channel', commitLimitBytes)); persist(); }
     else if (custodyOnly) { result.runs.push(await run(archives[revision].source, revision, [], 'custody', commitLimitBytes)); persist(); }

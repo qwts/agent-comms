@@ -8,7 +8,7 @@ on:
       task:
         description: 'Engine acceptance or finite production-connector capacity evidence'
         type: choice
-        options: [engine, candidate-startup, candidate-storage, candidate-channel, candidate-compiler, capacity-supervisor, capacity-attach, capacity-sample, capacity-startup, capacity-custody, capacity-channel, capacity-connector, capacity-preflight, capacity-pilot, detached-relay-probe, relay-startup]
+        options: [engine, candidate-startup, candidate-storage, candidate-channel, candidate-compiler, capacity-supervisor, capacity-attach, capacity-sample, capacity-startup, capacity-custody, capacity-channel, capacity-connector, capacity-preflight, capacity-pilot, detached-relay-probe, relay-startup, relay-candidate-startup]
         default: engine
 
 permissions:
@@ -29,7 +29,7 @@ jobs:
       # #127: test the engines with the host's checksum-verified Node tuple.
       # This is a disposable native-engine run, not a Windows host package.
       - name: Fetch released agent-bot fixture
-        if: inputs.task != 'detached-relay-probe' && inputs.task != 'relay-startup'
+        if: inputs.task != 'detached-relay-probe' && inputs.task != 'relay-startup' && inputs.task != 'relay-candidate-startup'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: qwts/agent-bot-identity
@@ -37,7 +37,7 @@ jobs:
           path: .windows-fixtures/agent-bot
           persist-credentials: false
       - name: Fetch released agent-comms fixture
-        if: inputs.task != 'detached-relay-probe' && inputs.task != 'relay-startup'
+        if: inputs.task != 'detached-relay-probe' && inputs.task != 'relay-startup' && inputs.task != 'relay-candidate-startup'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: qwts/agent-comms
@@ -45,7 +45,7 @@ jobs:
           path: .windows-fixtures/agent-comms
           persist-credentials: false
       - name: Fetch exact pre-instrumentation capacity source
-        if: inputs.task != 'engine' && inputs.task != 'candidate-startup' && inputs.task != 'candidate-storage' && inputs.task != 'candidate-channel' && inputs.task != 'candidate-compiler' && inputs.task != 'detached-relay-probe' && inputs.task != 'relay-startup'
+        if: inputs.task != 'engine' && inputs.task != 'candidate-startup' && inputs.task != 'candidate-storage' && inputs.task != 'candidate-channel' && inputs.task != 'candidate-compiler' && inputs.task != 'detached-relay-probe' && inputs.task != 'relay-startup' && inputs.task != 'relay-candidate-startup'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: qwts/agent-comms
@@ -53,7 +53,7 @@ jobs:
           path: .windows-fixtures/observability-old
           persist-credentials: false
       - name: Fetch exact instrumented capacity source
-        if: inputs.task != 'engine' && inputs.task != 'candidate-startup' && inputs.task != 'candidate-storage' && inputs.task != 'candidate-channel' && inputs.task != 'candidate-compiler' && inputs.task != 'detached-relay-probe' && inputs.task != 'relay-startup'
+        if: inputs.task != 'engine' && inputs.task != 'candidate-startup' && inputs.task != 'candidate-storage' && inputs.task != 'candidate-channel' && inputs.task != 'candidate-compiler' && inputs.task != 'detached-relay-probe' && inputs.task != 'relay-startup' && inputs.task != 'relay-candidate-startup'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: qwts/agent-comms
@@ -67,6 +67,14 @@ jobs:
           repository: qwts/agent-comms
           ref: cb50469ca0b6757c4ab860de582b9b140fc525a0
           path: .windows-fixtures/stale-correction
+          persist-credentials: false
+      - name: Fetch exact reviewed prebuilt-relay startup source
+        if: inputs.task == 'relay-candidate-startup'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: qwts/agent-comms
+          ref: ba75753e8e99e7c475baff9bfa139721276b5b06
+          path: .windows-fixtures/relay-correction
           persist-credentials: false
       - name: Download and verify the host-selected Windows Node sidecar
         shell: pwsh

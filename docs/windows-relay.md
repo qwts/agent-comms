@@ -50,3 +50,25 @@ or the remaining compiler/capacity work under #164.
 Legacy compiler controls remain tied to their original source hashes. The
 current relay has no runtime compiler; those controls cannot silently claim
 to validate this helper.
+
+## Broker startup and delivery candidate
+
+The `relay-candidate-startup` manual workflow task selects the reviewed
+`ba75753e8e99e7c475baff9bfa139721276b5b06` runtime in a disposable standard-user
+profile. The driver requires its fixed tree and canonical archive digest;
+dispatch cannot supply another runtime revision. It explicitly builds the
+helper from that verified archive before private-job startup and records
+the source and binary digests. Build preparation is outside the measured job.
+
+The driver captures the actual connector's fixed executable and arguments
+through inert streams, with artifact verification enabled. The supervisor
+then admits only that executable/argv, the fixture, and the existing diagnostic
+writer; runtime compiler descendants are not admitted for this candidate.
+It exercises Broker startup, pairing and approval, two agent joins, one
+send/read/ack/empty-read cycle, natural shutdown, empty-job confirmation and
+owned process/stdio cleanup under the existing bounded startup profile.
+
+This is a separate functional candidate. The historical `candidate-*` tasks,
+compiler digests, old/new comparison pins, classification guards, and
+deadlines remain unchanged. A hosted pass does not establish owner-desktop,
+installed-host, offered-rate capacity, or numeric overhead acceptance.
