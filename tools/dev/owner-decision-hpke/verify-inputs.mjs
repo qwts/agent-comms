@@ -14,8 +14,10 @@ for (const dep of deps) {
   const match = locked.find((p) => p.name === dep.name && p.version === dep.version);
   assert(match); assert.equal(match.checksum, dep.sha256);
 }
-assert.equal(locked.find((p) => p.name === 'hpke').version, receipt.version);
-assert.equal(locked.find((p) => p.name === 'hpke').checksum, receipt.checksum);
+const hpke = locked.find((p) => p.name === 'hpke');
+assert(hpke, 'Cargo.lock must contain the pinned hpke registry package');
+assert.equal(hpke.version, receipt.version);
+assert.equal(hpke.checksum, receipt.checksum);
 const vector = JSON.parse(read('artifacts/rfc9180-auth-x25519-chacha.json'));
 assert.deepEqual([vector.mode, vector.kem_id, vector.kdf_id, vector.aead_id], [2, 32, 1, 3]);
 assert.equal(vector.encryptions.length, 257); assert.equal(vector.exports.length, 3);

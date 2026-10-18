@@ -35,7 +35,7 @@ MSRV is 1.85; selected transitive dependencies declare up to 1.87. Actual
 macOS 13 execution and signed release integration remain prerequisites. Node does not need an HPKE implementation or npm runtime
 dependency; it must not handimplement the RFC key schedule.
 
-The [proposed custody record](../../../../docs/owner-decision-staging-custody.md)
+The [proposed custody record](../../../docs/owner-decision-staging-custody.md)
 contains the complete two-key recommendation and remaining review prerequisites.
 Run commands from this directory. `cargo fetch --locked` obtains the pinned
 backend; set `CARGO_HTTP_MULTIPLEXING=false` if a local HTTP2 proxy prevents Cargo
