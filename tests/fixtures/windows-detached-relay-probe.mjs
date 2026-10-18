@@ -7,6 +7,8 @@ import { connectWindowsPipe } from '../../lib/platform/windows-pipe-client.mjs';
 import { projectWindowsPipeStage } from '../../lib/platform/windows-pipe-stage.mjs';
 
 const pipe = process.argv[2];
+const mode = process.argv[3] ?? 'detached';
+assert.ok(['production', 'detached'].includes(mode));
 assert.equal(typeof pipe, 'string');
 assert.ok(pipe.startsWith('\\\\.\\pipe\\agent-comms.detached-probe.'));
 
@@ -64,9 +66,9 @@ process.on('message', async ({ id, op, expectedRelayArgs }) => {
               || options.windowsHide !== true
               || !Array.isArray(options.stdio) || options.stdio.length !== 3
               || !options.stdio.every(value => value === 'pipe')
-              || options.detached !== undefined) throw new Error('production-relay-spawn-mismatch');
+              || options.detached !== false) throw new Error('production-relay-spawn-mismatch');
           reportStage('spawn-request-validated');
-          const child = spawn(file, args, { ...options, detached: true });
+          const child = spawn(file, args, mode === 'detached' ? { ...options, detached: true } : options);
           reportStage('relay-process-spawned');
           relay = child;
           relayExit = new Promise((resolve) => {
@@ -99,7 +101,7 @@ process.on('message', async ({ id, op, expectedRelayArgs }) => {
       }, 12_000);
       await waitForProbeConnect(raw);
       reportStage('relay-connected');
-      process.send({ id, connected: true, detached: true, windowsHide: true, stdioPipes: true, productionArgsExact: true });
+      process.send({ id, connected: true, detached: mode === 'detached', windowsHide: true, stdioPipes: true, productionArgsExact: true });
     } else if (op === 'stop') {
       if (!raw || !relay) throw new Error('relay-not-started');
       reportStage('relay-stop-requested');

@@ -8,7 +8,7 @@ on:
       task:
         description: 'Engine acceptance or finite production-connector capacity evidence'
         type: choice
-        options: [engine, candidate-startup, candidate-storage, candidate-channel, candidate-compiler, capacity-supervisor, capacity-attach, capacity-sample, capacity-startup, capacity-custody, capacity-channel, capacity-connector, capacity-preflight, capacity-pilot, detached-relay-probe]
+        options: [engine, candidate-startup, candidate-storage, candidate-channel, candidate-compiler, capacity-supervisor, capacity-attach, capacity-sample, capacity-startup, capacity-custody, capacity-channel, capacity-connector, capacity-preflight, capacity-pilot, detached-relay-probe, relay-startup]
         default: engine
 
 permissions:
@@ -26,7 +26,7 @@ jobs:
       # #127: test the engines with the host's checksum-verified Node tuple.
       # This is a disposable native-engine run, not a Windows host package.
       - name: Fetch released agent-bot fixture
-        if: inputs.task != 'detached-relay-probe'
+        if: inputs.task != 'detached-relay-probe' && inputs.task != 'relay-startup'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: qwts/agent-bot-identity
@@ -34,7 +34,7 @@ jobs:
           path: .windows-fixtures/agent-bot
           persist-credentials: false
       - name: Fetch released agent-comms fixture
-        if: inputs.task != 'detached-relay-probe'
+        if: inputs.task != 'detached-relay-probe' && inputs.task != 'relay-startup'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: qwts/agent-comms
@@ -42,7 +42,7 @@ jobs:
           path: .windows-fixtures/agent-comms
           persist-credentials: false
       - name: Fetch exact pre-instrumentation capacity source
-        if: inputs.task != 'engine' && inputs.task != 'candidate-startup' && inputs.task != 'candidate-storage' && inputs.task != 'candidate-channel' && inputs.task != 'candidate-compiler' && inputs.task != 'detached-relay-probe'
+        if: inputs.task != 'engine' && inputs.task != 'candidate-startup' && inputs.task != 'candidate-storage' && inputs.task != 'candidate-channel' && inputs.task != 'candidate-compiler' && inputs.task != 'detached-relay-probe' && inputs.task != 'relay-startup'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: qwts/agent-comms
@@ -50,7 +50,7 @@ jobs:
           path: .windows-fixtures/observability-old
           persist-credentials: false
       - name: Fetch exact instrumented capacity source
-        if: inputs.task != 'engine' && inputs.task != 'candidate-startup' && inputs.task != 'candidate-storage' && inputs.task != 'candidate-channel' && inputs.task != 'candidate-compiler' && inputs.task != 'detached-relay-probe'
+        if: inputs.task != 'engine' && inputs.task != 'candidate-startup' && inputs.task != 'candidate-storage' && inputs.task != 'candidate-channel' && inputs.task != 'candidate-compiler' && inputs.task != 'detached-relay-probe' && inputs.task != 'relay-startup'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: qwts/agent-comms
@@ -80,7 +80,7 @@ jobs:
           "AGENT_COMMS_ACCEPTANCE_NODE=$directory\node-v$version-win-x64\node.exe" >> $env:GITHUB_ENV
           "AGENT_COMMS_NODE_ARCHIVE_SHA256=$actual" >> $env:GITHUB_ENV
       - name: Exercise engines in a disposable standard-user profile
-        if: inputs.task != 'detached-relay-probe'
+        if: inputs.task != 'detached-relay-probe' && inputs.task != 'relay-startup'
         shell: pwsh
         env:
           AGENT_COMMS_DISPOSABLE_WINDOWS: '1'
@@ -88,14 +88,22 @@ jobs:
         run: |
           ./scripts/windows-acceptance-user.ps1 -Report .windows-results/acceptance.json -Mode $env:AGENT_COMMS_ACCEPTANCE_TASK
           exit $LASTEXITCODE
-      - name: Probe detached production relay containment without application workload
-        if: inputs.task == 'detached-relay-probe'
+      - name: Probe relay startup and private-job containment without application workload
+        if: inputs.task == 'detached-relay-probe' || inputs.task == 'relay-startup'
         shell: pwsh
+        env:
+          AGENT_COMMS_RELAY_PROBE_MODE: ${{ inputs.task == 'detached-relay-probe' && 'detached' || 'production' }}
         run: |
           & $env:AGENT_COMMS_ACCEPTANCE_NODE --test --test-concurrency=1 tests/windows-relay-startup.test.mjs tests/windows-detached-relay-probe.test.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify native pipe impersonation and queued-byte guards
+        if: inputs.task == 'relay-startup'
+        shell: pwsh
+        run: |
+          & $env:AGENT_COMMS_ACCEPTANCE_NODE --test tests/platform-win32-pipe-native.test.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Publish exact native-engine acceptance matrix
-        if: always() && inputs.task != 'detached-relay-probe'
+        if: always() && inputs.task != 'detached-relay-probe' && inputs.task != 'relay-startup'
         shell: pwsh
         run: |
           if (Test-Path .windows-results/acceptance.json) {
@@ -104,7 +112,7 @@ jobs:
             '```' >> $env:GITHUB_STEP_SUMMARY
           }
       - name: Retain native-engine acceptance evidence
-        if: always() && inputs.task != 'detached-relay-probe'
+        if: always() && inputs.task != 'detached-relay-probe' && inputs.task != 'relay-startup'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: windows-engine-acceptance

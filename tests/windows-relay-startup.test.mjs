@@ -16,7 +16,7 @@ public static class RelayStartupProbe {
 [RelayStartupProbe]::Run()`,
 };
 
-test('Windows PowerShell executes the relay launch wrapper before named-pipe startup', {
+test('Windows PowerShell starts hidden and rejects DETACHED_PROCESS before executing the relay wrapper', {
   skip: process.platform !== 'win32', timeout: 60000,
 }, async t => {
   for (const [stage, script] of Object.entries(scripts)) {
@@ -50,7 +50,11 @@ test('Windows PowerShell executes the relay launch wrapper before named-pipe sta
         assert.equal(result.code, 0, 'PowerShell exit code');
         assert.equal(result.signal, null, 'PowerShell termination');
         assert.equal(stdoutBytes, 0, 'unexpected stdout');
-        assert.equal(stderr === marker, true, 'startup marker absent or unexpected stderr');
+        if (detached) {
+          assert.equal(stderr.length, 0, 'unsupported detached host must match the silent exit regression');
+        } else {
+          assert.equal(stderr === marker, true, 'startup marker absent or unexpected stderr');
+        }
       });
     }
   }

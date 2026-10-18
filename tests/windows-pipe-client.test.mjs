@@ -50,6 +50,9 @@ test('Windows pipe connector waits for the child connection marker and forwards 
   child.stderr.write('ECTED\n');
   assert.equal(connected, true);
   assert.equal(observed.file, 'powershell.exe');
+  assert.equal(observed.options.windowsHide, true);
+  assert.equal(observed.options.detached, false);
+  assert.deepEqual(observed.options.stdio, ['pipe', 'pipe', 'pipe']);
   const command = observed.args.at(-1);
   const encodedWorker = /FromBase64String\('([^']+)'\)/.exec(command)?.[1];
   assert.ok(encodedWorker, 'the fixed PowerShell command should carry the relay source');

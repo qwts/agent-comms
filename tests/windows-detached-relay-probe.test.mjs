@@ -9,6 +9,7 @@ import { supervisorClassificationFromError, supervisorClassificationFromFailure 
 import { projectRelayExitOutcome, validRelayExitOutcome } from './helpers/windows-relay-exit-outcome.mjs';
 import { captureProductionWindowsRelay } from './helpers/capture-production-windows-relay.mjs';
 
+const probeMode = process.env.AGENT_COMMS_RELAY_PROBE_MODE ?? 'production';
 const fixturePath = fileURLToPath(new URL('./fixtures/windows-detached-relay-probe.mjs', import.meta.url));
 const supervisorPath = fileURLToPath(new URL('../tools/acceptance/windows-capacity-job.ps1', import.meta.url));
 const hostComponents = JSON.parse(readFileSync(new URL('./fixtures/windows-host-components.json', import.meta.url), 'utf8'));
@@ -282,7 +283,7 @@ test('relay exit receipts retain bounded native status and redact all other chil
   assert.equal(absent.exitCode, null); assert.equal(absent.exitOutcome, 'unknown');
 });
 
-test('DETACHED_PROCESS diagnostic probe preserves actual relay argv and remains in the private job without console host', {
+test(`${probeMode === 'detached' ? 'DETACHED_PROCESS diagnostic' : 'Production hidden relay startup'} preserves actual relay argv and remains in the private job without console host`, {
   skip: process.platform !== 'win32',
   timeout: 90000,
 }, async () => {
@@ -299,6 +300,7 @@ test('DETACHED_PROCESS diagnostic probe preserves actual relay argv and remains 
   let lastSupervisorCheck = 'unknown';
   let lastSupervisorFailureClass = 'other-failure';
 
+  assert.ok(['production', 'detached'].includes(probeMode), 'unknown relay probe mode');
   assert.equal(process.version, pinnedNodeVersion, 'Windows diagnostic must use the checked-in Node sidecar tuple');
   assert.equal(process.versions.uv, pinnedLibuvVersion, 'Windows diagnostic must use the checked-in Node sidecar tuple');
   // This test is diagnostic-only: it uses the production connector and worker,
@@ -329,7 +331,7 @@ test('DETACHED_PROCESS diagnostic probe preserves actual relay argv and remains 
     shell = path.join(process.env.SystemRoot, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe');
     relayArgs = captureProductionWindowsRelay().args;
     const pipe = `\\\\.\\pipe\\agent-comms.detached-probe.${process.pid}.${Date.now()}`;
-    const fixtureArgs = [fixturePath, pipe];
+    const fixtureArgs = [fixturePath, pipe, probeMode];
     fixture = owned(process.execPath, fixtureArgs, ['ignore', 'ignore', 'pipe', 'ipc']);
     fixture.child.on('message', record => {
       if (record?.id === -3) {
@@ -386,7 +388,7 @@ test('DETACHED_PROCESS diagnostic probe preserves actual relay argv and remains 
     awaitStage = 'fixture-start';
     const connected = await fixtureControl.request('start', { expectedRelayArgs: relayArgs }, remaining());
     assert.deepEqual(connected, {
-      id: connected.id, connected: true, detached: true, windowsHide: true,
+      id: connected.id, connected: true, detached: probeMode === 'detached', windowsHide: true,
       stdioPipes: true, productionArgsExact: true,
     });
     awaitStage = 'relay-members';
