@@ -21,8 +21,12 @@ test('Windows relay build falls back to Framework and refuses when both fixed co
   // The fallback must really compile and pass the runtime artifact verifier.
   const command = String.raw`
 $ErrorActionPreference = 'Stop'
+# Load built-in modules before shadowing the probe; module discovery itself
+# uses Test-Path -LiteralPath and must not enter a partial test double.
+Import-Module Microsoft.PowerShell.Management
+Import-Module Microsoft.PowerShell.Utility
 function Test-Path {
-    param([string]$Path, [string]$PathType)
+    param([Parameter(Position=0)][Alias('LiteralPath')][string]$Path, [string]$PathType)
     $fixed = @('Framework64','Framework') | ForEach-Object { Join-Path $env:WINDIR "Microsoft.NET/$_/v4.0.30319/csc.exe" }
     if ($Path -eq $fixed[0] -or ($env:AGENT_COMMS_TEST_NO_COMPILER -eq '1' -and $Path -eq $fixed[1])) { return $false }
     if ($PathType) { return Microsoft.PowerShell.Management\Test-Path -LiteralPath $Path -PathType $PathType }
