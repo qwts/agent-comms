@@ -33,6 +33,9 @@ deadline, before the measured fixture/private job starts. The normal artifact
 build establishes `Bypass` for that child PowerShell session explicitly; it
 does not inherit a caller's process policy or change user/machine policy.
 Group Policy still takes precedence. The normal artifact
+build child fixes `PATHEXT` to `.EXE`, so classic PowerShell waits for the
+fixed compiler executable and observes its exit code in the sanitized environment.
+The normal artifact
 manifest, source/binary hashes, release stamp and PE subsystem checks still
 apply. Neither a source nor an artifact path is accepted from the caller. The
 historical compiler/startup tasks and the hosted artifact-input path retain

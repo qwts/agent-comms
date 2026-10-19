@@ -34,10 +34,15 @@ const RELAY_MANIFEST_MAX_BYTES = 1024;
 // only the approved archive here, before the separately measured fixture job.
 export async function prepareDesktopRelayArtifact(source, { env = process.env, run = promisify(execFile) } = {}) {
   assert.equal(readFileSync(path.join(source, 'RELEASE_COMMIT'), 'utf8').trim(), RELAY_STARTUP_SOURCE.pin);
+  // Without PATHEXT classic PowerShell activates even fixed .exe paths as
+  // documents, returning before csc exits and leaving LASTEXITCODE unset.
+  // Permit only the executable extension this approved build requires.
+  const buildEnvironment = { ...Object.fromEntries(Object.entries(windowsPowershellEnvironment(env))
+    .filter(([key]) => key.toLowerCase() !== 'pathext')), PATHEXT: '.EXE' };
   try {
     await run(path.join(env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe'),
       ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', path.join(source, 'scripts/build-windows-relay.ps1')],
-      { env: windowsPowershellEnvironment(env), windowsHide: true, timeout: 30000, maxBuffer: 32768, encoding: 'utf8' });
+      { env: buildEnvironment, windowsHide: true, timeout: 30000, maxBuffer: 32768, encoding: 'utf8' });
   } catch { throw new Error('desktop-relay-build-failed'); }
   return (await verifiedRelayContract(source)).artifact;
 }
