@@ -16,9 +16,9 @@ $cases=[Collections.Generic.List[string]]::new()
 $held=$null;$success=$false;$stage='initialize-shared-helper';$failure=$null;$probeState=$null
 function Set-OwnedAcl($Path,$Rights=[Security.AccessControl.FileSystemRights]::FullControl,$Inheritance=[Security.AccessControl.InheritanceFlags]'ContainerInherit,ObjectInherit',$Propagation=[Security.AccessControl.PropagationFlags]::None,$Type=[Security.AccessControl.AccessControlType]::Allow) {
     $acl=[Security.AccessControl.DirectorySecurity]::new()
-    $acl.SetOwner($sid);$acl.SetAccessRuleProtection($true,$false)
+    $actualOwner=[IO.Directory]::GetAccessControl($Path,[Security.AccessControl.AccessControlSections]::Owner).GetOwner([Security.Principal.SecurityIdentifier]); if($actualOwner.Value -ne $sid.Value){$acl.SetOwner($sid)}; $acl.SetAccessRuleProtection($true,$false)
     $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new($sid,$Rights,$Inheritance,$Propagation,$Type))
-    Set-Acl -LiteralPath $Path -AclObject $acl
+    [IO.Directory]::SetAccessControl($Path,$acl)
 }
 function Expect-Refusal($Name,[scriptblock]$Action) {
     $script:stage=$Name
@@ -110,7 +110,7 @@ try {
     Expect-Refusal 'wrong-expected-owner' {Assert-DesktopRootAcl $leaf $everyone}
     $acl=Get-Acl -LiteralPath $leaf
     $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new($everyone,[Security.AccessControl.FileSystemRights]::ReadAndExecute,[Security.AccessControl.InheritanceFlags]::None,[Security.AccessControl.PropagationFlags]::None,[Security.AccessControl.AccessControlType]::Allow))
-    Set-Acl -LiteralPath $leaf -AclObject $acl
+    [IO.Directory]::SetAccessControl($leaf,$acl)
     Expect-Refusal 'extra-ace' {Assert-DesktopRootAcl $leaf $sid}
     Set-OwnedAcl $leaf ([Security.AccessControl.FileSystemRights]::Modify)
     Expect-Refusal 'weaker-rights' {Assert-DesktopRootAcl $leaf $sid}
@@ -121,7 +121,7 @@ try {
     Set-OwnedAcl $leaf ([Security.AccessControl.FileSystemRights]::WriteData) ([Security.AccessControl.InheritanceFlags]::None) ([Security.AccessControl.PropagationFlags]::None) ([Security.AccessControl.AccessControlType]::Deny)
     Expect-Refusal 'deny-ace' {Assert-DesktopRootAcl $leaf $sid}
     Set-OwnedAcl $leaf
-    $acl=Get-Acl -LiteralPath $leaf;$acl.SetAccessRuleProtection($false,$true);Set-Acl -LiteralPath $leaf -AclObject $acl
+    $acl=Get-Acl -LiteralPath $leaf;$acl.SetAccessRuleProtection($false,$true);[IO.Directory]::SetAccessControl($leaf,$acl)
     Expect-Refusal 'unprotected-dacl' {Assert-DesktopRootAcl $leaf $sid}
     Set-OwnedAcl $leaf
     # Mutating only this owned ACL is possible despite no-delete handles. A

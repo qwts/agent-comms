@@ -31,7 +31,7 @@ const seams = { 'local-channel': createLocalChannel, 'secret-store': createSecre
 // no production constructor and refuses unsupported platforms before launch.
 // Dedicated inherited supervisor sessions are Darwin-only and refuse before
 // descriptor access elsewhere; their private fixed-FD protocol has no Windows port.
-const platformSources = [...Object.keys(seams), 'durable-file', 'diagnostic-stderr', 'diagnostic-export-process', 'owner-journal-lock', 'owner-journal-native', 'owner-decision-readiness', 'owner-enrollment-source', 'owner-receipt-native', 'owner-supervised-session'];
+const platformSources = [...Object.keys(seams), 'durable-file', 'diagnostic-stderr', 'diagnostic-export-process', 'owner-journal-lock', 'owner-journal-native', 'owner-decision-readiness', 'owner-enrollment-source', 'owner-receipt-native', 'owner-supervised-session', 'daemon-requests'];
 
 // GeniusBar ADR-0046: every seam has a Windows branch, exercised with fake
 // runners in tests/platform-win32.test.mjs (secret store, service startup)
