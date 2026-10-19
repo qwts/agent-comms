@@ -1,5 +1,6 @@
 // Priority is explicit: specialized candidates precede their shared startup flag.
 export function capacityScope({ relayCandidateStartup, desktopContext, candidateChannel, candidateStorage, candidateStartup, connectorOnly, channelOnly, custodyOnly, startupOnly }) {
+  if (relayCandidateStartup && desktopContext) return 'current standard-user desktop fixed prebuilt-relay source Broker startup, pairing, one delivery and disposal only; no offered-rate or installed-host acceptance';
   if (relayCandidateStartup) return 'hosted standard-user fixed prebuilt-relay source Broker startup, pairing, one delivery and disposal; no offered-rate, desktop or installed-host acceptance';
   if (desktopContext) return 'current standard-user desktop exact corrected-source Broker startup, one delivery and disposal only; no offered-rate or installed-host acceptance';
   if (candidateChannel) return 'hosted standard-user exact corrected-source channel-prepare-and-stale-probes only; actual default channel; no Broker.start, EventLog, replay, maintenance, listeners, delivery or offered rates';

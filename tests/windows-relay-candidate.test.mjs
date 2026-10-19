@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, copyFileSync, writeFileSync, rmSync, realpathSy
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { RELAY_STARTUP_SOURCE, verifyRelayStartupSource, verifiedRelayContract, installRelayArtifact } from '../tools/acceptance/windows-relay-candidate.mjs';
+import { RELAY_STARTUP_SOURCE, verifyRelayStartupSource, verifiedRelayContract, installRelayArtifact, prepareDesktopRelayArtifact } from '../tools/acceptance/windows-relay-candidate.mjs';
 import { CORRECTED_STARTUP_SOURCE, verifyCorrectedStartupSource, verifyCandidateComponent } from '../tools/acceptance/windows-corrected-startup.mjs';
 
 test('relay candidate component approval uses pinned bytes, not a mutable CRLF checkout', () => {
@@ -60,6 +60,22 @@ test('actual candidate connector contract requires a verified fixed artifact eve
   assert.deepEqual(result.relayArgs, []);
   assert.deepEqual(result.artifact, artifact);
   assert.equal(result.diagnosticArgs[0], '--input-type=module');
+  const env = { SystemRoot: path.join(root, 'Windows'), PSModulePath: 'must-not-reach-classic-shell', TEMP: root };
+  let builds = 0;
+  assert.deepEqual(await prepareDesktopRelayArtifact(root, { env, run: async (file, args, options) => {
+    builds++;
+    assert.equal(file, path.join(env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe'));
+    assert.deepEqual(args, ['-NoLogo','-NoProfile','-NonInteractive','-File',path.join(root,'scripts/build-windows-relay.ps1')]);
+    assert.deepEqual(options.env, { SystemRoot: env.SystemRoot, TEMP: root });
+    assert.equal(options.timeout, 30000);
+    assert.equal(options.maxBuffer, 32768);
+    assert.equal(options.windowsHide, true);
+  } }), artifact);
+  assert.equal(builds, 1);
+  await assert.rejects(prepareDesktopRelayArtifact(root, { env, run: async () => { throw new Error('CANARY-private-build-error'); } }), { message: 'desktop-relay-build-failed' });
+  writeFileSync(path.join(root, 'RELEASE_COMMIT'), 'a'.repeat(40));
+  await assert.rejects(prepareDesktopRelayArtifact(root, { env, run: async () => assert.fail('unapproved source must not compile') }));
+  writeFileSync(path.join(root, 'RELEASE_COMMIT'), RELAY_STARTUP_SOURCE.pin);
   writeFileSync(path.join(input, 'relay-build.json'), JSON.stringify({ format: 1, ...artifact, sourceCommit: 'a'.repeat(40) }));
   await assert.rejects(installRelayArtifact(root, input));
   writeFileSync(path.join(input, 'relay-build.json'), JSON.stringify({ format: 1, ...artifact }));

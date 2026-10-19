@@ -21,13 +21,13 @@ import { cleanupCapacityRun, retainCapacityFailure } from './windows-capacity-li
 
 import { capacityScope, capacityDeployment } from './windows-capacity-description.mjs';
 
-import { RELAY_STARTUP_SOURCE, verifyRelayStartupSource, verifiedRelayContract, installRelayArtifact } from './windows-relay-candidate.mjs';
+import { RELAY_STARTUP_SOURCE, verifyRelayStartupSource, verifiedRelayContract, installRelayArtifact, prepareDesktopRelayArtifact } from './windows-relay-candidate.mjs';
 
 import { probePinnedStorage } from './windows-capacity-storage.mjs';
 import { probePinnedCustody } from './windows-capacity-custody.mjs';
 import { probePinnedChannel } from './windows-capacity-channel.mjs';
 import { probePinnedConnector, validConnectorObservation } from './windows-capacity-connector.mjs';
-import { readOwnedDesktopContext, isOwnedDesktopContext } from './windows-desktop-context.mjs';
+import { readOwnedDesktopContext, isOwnedDesktopContext, desktopTaskMode } from './windows-desktop-context.mjs';
 import { CORRECTED_STARTUP_SOURCE, canonicalCandidateArchiveArgs, verifyCandidateComponent, verifyCorrectedStartupSource, boundedBrokerCode, classifyFixtureFailure } from './windows-corrected-startup.mjs';
 
 const exec = promisify(execFile), SELF = fileURLToPath(import.meta.url);
@@ -44,7 +44,7 @@ const supervisorPhases = new Set(['script-entry','compile-supervisor','superviso
 const checks = new Set(['fixture-terminal', 'fixture-deadline', 'control-deadline', 'control-closed',
   'control-output-bound', 'control-invalid', 'job-supervisor-failed', 'natural-exit-unconfirmed',
   'relay-exit-unconfirmed', 'scratch-retained', 'job-exit-unconfirmed', 'diagnostic-output-invalid',
-  'compiler-source-mismatch', 'compiler-control-failed', 'compiler-deadline', 'compiler-terminal', 'owned-startup-fault', 'owned-forced-cleanup', 'policy-failed', 'memory-headroom-insufficient', 'candidate-source-mismatch', 'operation-failed', 'assertion-failed', 'timing-unavailable']);
+  'compiler-source-mismatch', 'compiler-control-failed', 'compiler-deadline', 'compiler-terminal', 'owned-startup-fault', 'owned-forced-cleanup', 'policy-failed', 'memory-headroom-insufficient', 'candidate-source-mismatch', 'desktop-relay-build-failed', 'operation-failed', 'assertion-failed', 'timing-unavailable']);
 function failure(error) {
   const windowsPipeStage = projectWindowsPipeStage(error);
   const supervisorClassification = supervisorClassificationFromError(error);
@@ -610,7 +610,7 @@ async function main(context) {
   const components = JSON.parse(readFileSync(new URL('../../tests/fixtures/windows-host-components.json', import.meta.url)));
   assert.equal(process.version, `v${components.node.version}`);
   assert.equal(desktopContext?.nodeArchiveSha256 ?? process.env.AGENT_COMMS_NODE_ARCHIVE_SHA256, components.node.sha256['win-x64']);
-  const args = desktopContext ? [process.execPath, SELF, desktopContext.task === 'candidate-compiler' ? '--candidate-compiler' : '--candidate', path.resolve(fileURLToPath(new URL('../../', import.meta.url))), '--output', path.join(desktopContext.root, 'results')] : process.argv;
+  const args = desktopContext ? [process.execPath, SELF, desktopTaskMode(desktopContext.task), path.resolve(fileURLToPath(new URL('../../', import.meta.url))), '--output', path.join(desktopContext.root, 'results')] : process.argv;
   const candidateCompiler = args[2] === '--candidate-compiler';
   const candidateChannel = args[2] === '--candidate-channel';
   const candidateStorage = args[2] === '--candidate-storage';
@@ -618,8 +618,8 @@ async function main(context) {
   const candidateStartup = args[2] === '--candidate' || relayCandidateStartup;
   const candidateOnly = candidateStartup || candidateStorage || candidateChannel || candidateCompiler;
   if (candidateOnly) {
-    assert.equal(args.length, relayCandidateStartup ? 8 : 6); assert.equal(args[4], '--output');
-    if (relayCandidateStartup) assert.equal(args[6], '--relay-artifact');
+    assert.equal(args.length, relayCandidateStartup && !desktopContext ? 8 : 6); assert.equal(args[4], '--output');
+    if (relayCandidateStartup && !desktopContext) assert.equal(args[6], '--relay-artifact');
   }
   else {
     assert.equal(args[2], '--old'); assert.equal(args[4], '--new'); assert.equal(args[6], '--output');
@@ -691,8 +691,10 @@ async function main(context) {
     }
     let relayArtifact;
     if (relayCandidateStartup) {
-      activeStage = 'relay-artifact-verification';
-      relayArtifact = await installRelayArtifact(source, path.resolve(args[7]));
+      activeStage = desktopContext ? 'desktop-relay-artifact-preparation' : 'relay-artifact-verification';
+      relayArtifact = desktopContext
+        ? await prepareDesktopRelayArtifact(source, { env: environment() })
+        : await installRelayArtifact(source, path.resolve(args[7]));
     }
     archives[revision] = { source, pin, tree: tree.trim(), archiveSha256: hash(bytes), ...(relayArtifact ? { relayArtifact } : {}) };
   }
@@ -714,7 +716,7 @@ async function main(context) {
     if(result.status!=='passed') process.exitCode=1;
     return;
   }
-  const result = { v: 1, ...(relayCandidateStartup ? { relayCandidateStartup: true, relayBuildScope: 'workflow prebuild before disposable-account startup; verified read-only artifact input; no runtime compiler or capacity comparison' } : {}), ...(desktopContext ? { executionKind: 'desktop-current-user', desktopProfile: desktopContext.profile } : {}), scope: capacityScope({ relayCandidateStartup, desktopContext, candidateChannel, candidateStorage, candidateStartup, connectorOnly, channelOnly, custodyOnly, startupOnly }),
+  const result = { v: 1, ...(relayCandidateStartup ? { relayCandidateStartup: true, relayBuildScope: desktopContext ? 'approved archive build inside the bounded desktop outer job before measured private-fixture startup; no runtime relay compilation or capacity comparison' : 'workflow prebuild before disposable-account startup; verified read-only artifact input; no runtime compiler or capacity comparison' } : {}), ...(desktopContext ? { executionKind: 'desktop-current-user', desktopProfile: desktopContext.profile } : {}), scope: capacityScope({ relayCandidateStartup, desktopContext, candidateChannel, candidateStorage, candidateStartup, connectorOnly, channelOnly, custodyOnly, startupOnly }),
     ...(candidateStorage ? { storageHelperLifetime: 'actual production subprocesses belong to private job; configured timeout is not exit proof; no individual helper terminal observation' } : {}),
     storageType: 'not-measured', nodeArchiveSha256: components.node.sha256['win-x64'],
     node: process.version, nodeExecutableSha256: hash(readFileSync(process.execPath)),

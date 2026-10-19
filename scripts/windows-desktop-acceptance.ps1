@@ -1,6 +1,6 @@
 # Explicit owner-desktop diagnostic. No account, task, service or profile writes.
 [CmdletBinding()]
-param([Parameter(Mandatory)][ValidateSet('candidate-compiler','candidate-startup')][string]$Task)
+param([Parameter(Mandatory)][ValidateSet('candidate-compiler','candidate-startup','relay-candidate-startup')][string]$Task)
 $ErrorActionPreference = 'Stop'
 $repo = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 . (Join-Path $repo 'tools/acceptance/windows-desktop-root.ps1')

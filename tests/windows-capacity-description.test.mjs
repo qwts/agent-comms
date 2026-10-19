@@ -6,6 +6,10 @@ test('specialized candidate descriptions win over shared startup flags and retai
   const relay = capacityScope({ relayCandidateStartup: true, candidateStartup: true });
   assert.match(relay, /prebuilt-relay/);
   assert.match(relay, /no offered-rate, desktop or installed-host acceptance/);
+  const desktopRelay = capacityScope({ relayCandidateStartup: true, desktopContext: {}, candidateStartup: true });
+  assert.match(desktopRelay, /current standard-user desktop fixed prebuilt-relay/);
+  assert.match(desktopRelay, /no offered-rate or installed-host acceptance/);
+  assert.doesNotMatch(desktopRelay, /hosted/);
   assert.match(capacityScope({ desktopContext: {}, candidateStartup: true }), /current standard-user desktop/);
   assert.match(capacityScope({ candidateChannel: true, candidateStartup: true }), /no Broker.start/);
   assert.match(capacityScope({ candidateStorage: true, candidateStartup: true }), /fresh storage prefix/);

@@ -8,13 +8,19 @@ import path from 'node:path';
 const owned = new WeakSet();
 const refuse = () => { throw new Error('desktop-context-refused'); };
 const pins = JSON.parse(readFileSync(new URL('../../tests/fixtures/windows-host-components.json', import.meta.url)));
+export function desktopTaskMode(task) {
+  if (task === 'candidate-compiler') return '--candidate-compiler';
+  if (task === 'candidate-startup') return '--candidate';
+  if (task === 'relay-candidate-startup') return '--relay-candidate';
+  return refuse();
+}
 export function decodeDesktopFrame(bytes) {
   if (!Buffer.isBuffer(bytes) || bytes.length > 4096 || !bytes.length) refuse();
   const text = bytes.toString('utf8');
   if (!Buffer.from(text).equals(bytes)) refuse();
   let value; try { value = JSON.parse(text); } catch { refuse(); }
   if (!value || Object.keys(value).sort().join(',') !== 'nodeArchiveSha256,nodeExecutableSha256,parentPid,root,task,v'
-      || value.v !== 1 || !['candidate-compiler','candidate-startup'].includes(value.task)
+      || value.v !== 1 || !['candidate-compiler','candidate-startup','relay-candidate-startup'].includes(value.task)
       || !Number.isSafeInteger(value.parentPid) || value.parentPid <= 0
       || typeof value.root !== 'string' || value.root.length > 240 || !path.win32.isAbsolute(value.root)
       || value.nodeArchiveSha256 !== pins.node.sha256['win-x64']
