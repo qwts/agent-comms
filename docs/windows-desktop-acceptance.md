@@ -30,6 +30,9 @@ hashes. Fetch that exact commit into a shallow checkout before execution; a
 missing object refuses at archive preparation. The task builds only the
 approved archive's relay inside the bounded outer job, with a 30-second build
 deadline, before the measured fixture/private job starts. The normal artifact
+build establishes `Bypass` for that child PowerShell session explicitly; it
+does not inherit a caller's process policy or change user/machine policy.
+Group Policy still takes precedence. The normal artifact
 manifest, source/binary hashes, release stamp and PE subsystem checks still
 apply. Neither a source nor an artifact path is accepted from the caller. The
 historical compiler/startup tasks and the hosted artifact-input path retain

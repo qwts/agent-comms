@@ -36,7 +36,7 @@ export async function prepareDesktopRelayArtifact(source, { env = process.env, r
   assert.equal(readFileSync(path.join(source, 'RELEASE_COMMIT'), 'utf8').trim(), RELAY_STARTUP_SOURCE.pin);
   try {
     await run(path.join(env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe'),
-      ['-NoLogo', '-NoProfile', '-NonInteractive', '-File', path.join(source, 'scripts/build-windows-relay.ps1')],
+      ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', path.join(source, 'scripts/build-windows-relay.ps1')],
       { env: windowsPowershellEnvironment(env), windowsHide: true, timeout: 30000, maxBuffer: 32768, encoding: 'utf8' });
   } catch { throw new Error('desktop-relay-build-failed'); }
   return (await verifiedRelayContract(source)).artifact;

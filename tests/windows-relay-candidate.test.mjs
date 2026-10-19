@@ -4,6 +4,8 @@ import { mkdtempSync, mkdirSync, copyFileSync, writeFileSync, rmSync, realpathSy
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { RELAY_STARTUP_SOURCE, verifyRelayStartupSource, verifiedRelayContract, installRelayArtifact, prepareDesktopRelayArtifact } from '../tools/acceptance/windows-relay-candidate.mjs';
 import { CORRECTED_STARTUP_SOURCE, verifyCorrectedStartupSource, verifyCandidateComponent } from '../tools/acceptance/windows-corrected-startup.mjs';
 
@@ -65,13 +67,22 @@ test('actual candidate connector contract requires a verified fixed artifact eve
   assert.deepEqual(await prepareDesktopRelayArtifact(root, { env, run: async (file, args, options) => {
     builds++;
     assert.equal(file, path.join(env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe'));
-    assert.deepEqual(args, ['-NoLogo','-NoProfile','-NonInteractive','-File',path.join(root,'scripts/build-windows-relay.ps1')]);
+    assert.deepEqual(args, ['-NoLogo','-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',path.join(root,'scripts/build-windows-relay.ps1')]);
     assert.deepEqual(options.env, { SystemRoot: env.SystemRoot, TEMP: root });
     assert.equal(options.timeout, 30000);
     assert.equal(options.maxBuffer, 32768);
     assert.equal(options.windowsHide, true);
   } }), artifact);
   assert.equal(builds, 1);
+  if (process.platform === 'win32') {
+    await prepareDesktopRelayArtifact(root, { env: { SystemRoot: process.env.SystemRoot, PSExecutionPolicyPreference: 'Restricted' }, run: async (file, args, options) => {
+      // Execute the actual build command's session flags, with an inert policy
+      // query replacing only the final script operand. No registry is changed.
+      const { stdout } = await promisify(execFile)(file, [...args.slice(0, -2), '-Command', '[Console]::Out.WriteLine((Get-ExecutionPolicy -Scope Process).ToString())'], options);
+      assert.equal(stdout.trim(), 'Bypass');
+    } });
+    t.diagnostic('native build flags establish Bypass despite inherited Restricted process preference');
+  }
   await assert.rejects(prepareDesktopRelayArtifact(root, { env, run: async () => { throw new Error('CANARY-private-build-error'); } }), { message: 'desktop-relay-build-failed' });
   writeFileSync(path.join(root, 'RELEASE_COMMIT'), 'a'.repeat(40));
   await assert.rejects(prepareDesktopRelayArtifact(root, { env, run: async () => assert.fail('unapproved source must not compile') }));
