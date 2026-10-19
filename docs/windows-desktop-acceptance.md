@@ -1,9 +1,9 @@
 # Current-user desktop acceptance candidate
 
-Related to #164. This unexecuted development candidate is distinct from the
-disposable CI bootstrap. Its only tasks are `candidate-compiler` and
-`candidate-startup`; it has no engine installation or capacity mode. It does
-not claim a successful Windows run, installed-host acceptance, interactive task
+Related to #164. This development candidate is distinct from the
+disposable CI bootstrap. Its tasks are `candidate-compiler`,
+`candidate-startup` and `relay-candidate-startup`; it has no engine installation or capacity mode. It does
+not claim installed-host acceptance, interactive task
 readiness, shared diagnostic budget acceptance or a cause for historical failures.
 
 The proposed entrypoint is `scripts/windows-desktop-acceptance.ps1 -Task TASK`.
@@ -23,6 +23,37 @@ frame over stdin. Node independently rechecks profile,
 root and actual parent through the fixed verification helper. No disposable CI
 markers are set. A decoded frame alone is not an owned internal context and
 never conveys production authority.
+
+The separate `relay-candidate-startup` task uses the existing immutable
+`RELAY_STARTUP_SOURCE` approval, including its source/tree/archive/component
+hashes. Fetch that exact commit into a shallow checkout before execution; a
+missing object refuses at archive preparation. The task builds only the
+approved archive's relay inside the bounded outer job, with a 30-second build
+deadline, before the measured fixture/private job starts. The normal artifact
+build establishes `Bypass` for that child PowerShell session explicitly; it
+does not inherit a caller's process policy or change user/machine policy.
+Group Policy still takes precedence. The normal artifact
+build child fixes `PATHEXT` to `.EXE`, so classic PowerShell waits for the
+fixed compiler executable and observes its exit code in the sanitized environment.
+The normal artifact
+manifest, source/binary hashes, release stamp and PE subsystem checks still
+apply. Neither a source nor an artifact path is accepted from the caller. The
+historical compiler/startup tasks and the hosted artifact-input path retain
+their existing approvals and behavior.
+
+```powershell
+git fetch origin 260d5dbbd7a27c2b044b3497757ee9b73e649c53
+./scripts/windows-desktop-acceptance.ps1 -Task relay-candidate-startup
+```
+
+The first owner-machine wrapper attempt at merged `0f14a5b2` exited 1 at
+`archive-source`; its shallow checkout lacked the historical pinned source.
+Its retained receipt confirms actual Node terminal, stream closure, empty outer
+job, handle closure and assignment before resume, with no cleanup uncertainty.
+The 26 native desktop safety cases passed independently. Neither observation
+proves Broker startup or delivery. The repaired-relay task is tracked in
+[#272](https://github.com/qwts/agent-comms/issues/272); its actual desktop result
+must be recorded separately.
 
 The existing runner shares its actual source archive verification, compiler
 controls, startup/delivery fixture, supervisor, classification, resource limits,

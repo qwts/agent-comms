@@ -4,7 +4,9 @@ import { mkdtempSync, mkdirSync, copyFileSync, writeFileSync, rmSync, realpathSy
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { RELAY_STARTUP_SOURCE, verifyRelayStartupSource, verifiedRelayContract, installRelayArtifact } from '../tools/acceptance/windows-relay-candidate.mjs';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { RELAY_STARTUP_SOURCE, verifyRelayStartupSource, verifiedRelayContract, installRelayArtifact, prepareDesktopRelayArtifact } from '../tools/acceptance/windows-relay-candidate.mjs';
 import { CORRECTED_STARTUP_SOURCE, verifyCorrectedStartupSource, verifyCandidateComponent } from '../tools/acceptance/windows-corrected-startup.mjs';
 
 test('relay candidate component approval uses pinned bytes, not a mutable CRLF checkout', () => {
@@ -60,6 +62,39 @@ test('actual candidate connector contract requires a verified fixed artifact eve
   assert.deepEqual(result.relayArgs, []);
   assert.deepEqual(result.artifact, artifact);
   assert.equal(result.diagnosticArgs[0], '--input-type=module');
+  const env = { SystemRoot: path.join(root, 'Windows'), PSModulePath: 'must-not-reach-classic-shell', pAtHeXt: '.PS1', TEMP: root };
+  let builds = 0;
+  assert.deepEqual(await prepareDesktopRelayArtifact(root, { env, run: async (file, args, options) => {
+    builds++;
+    assert.equal(file, path.join(env.SystemRoot, 'System32/WindowsPowerShell/v1.0/powershell.exe'));
+    assert.deepEqual(args, ['-NoLogo','-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',path.join(root,'scripts/build-windows-relay.ps1')]);
+    assert.deepEqual(options.env, { SystemRoot: env.SystemRoot, TEMP: root, PATHEXT: '.EXE' });
+    assert.equal(options.timeout, 30000);
+    assert.equal(options.maxBuffer, 32768);
+    assert.equal(options.windowsHide, true);
+  } }), artifact);
+  assert.equal(builds, 1);
+  if (process.platform === 'win32') {
+    await prepareDesktopRelayArtifact(root, { env: { SystemRoot: process.env.SystemRoot, PSExecutionPolicyPreference: 'Restricted' }, run: async (file, args, options) => {
+      // Execute the actual build command's session flags, with an inert policy
+      // query replacing only the final script operand. No registry is changed.
+      const { stdout } = await promisify(execFile)(file, [...args.slice(0, -2), '-Command', '[Console]::Out.WriteLine((Get-ExecutionPolicy -Scope Process).ToString())'], options);
+      assert.equal(stdout.trim(), 'Bypass');
+    } });
+    t.diagnostic('native build flags establish Bypass despite inherited Restricted process preference');
+    await prepareDesktopRelayArtifact(root, { env: { SystemRoot: process.env.SystemRoot }, run: async (file, args, options) => {
+      // The real sanitized environment lacks PATHEXT. Exercise native-command
+      // completion with the actual child flags and an inert fixed .exe command.
+      const command = "& ([IO.Path]::Combine($env:SystemRoot,'System32','cmd.exe')) /d /c exit 7; if ($LASTEXITCODE -ne 7) { exit 3 }; [Console]::Out.WriteLine('native-exit-observed')";
+      const { stdout } = await promisify(execFile)(file, [...args.slice(0, -2), '-Command', command], options);
+      assert.equal(stdout.trim(), 'native-exit-observed');
+    } });
+    t.diagnostic('native build environment observes a fixed executable exit without inherited PATHEXT');
+  }
+  await assert.rejects(prepareDesktopRelayArtifact(root, { env, run: async () => { throw new Error('CANARY-private-build-error'); } }), { message: 'desktop-relay-build-failed' });
+  writeFileSync(path.join(root, 'RELEASE_COMMIT'), 'a'.repeat(40));
+  await assert.rejects(prepareDesktopRelayArtifact(root, { env, run: async () => assert.fail('unapproved source must not compile') }));
+  writeFileSync(path.join(root, 'RELEASE_COMMIT'), RELAY_STARTUP_SOURCE.pin);
   writeFileSync(path.join(input, 'relay-build.json'), JSON.stringify({ format: 1, ...artifact, sourceCommit: 'a'.repeat(40) }));
   await assert.rejects(installRelayArtifact(root, input));
   writeFileSync(path.join(input, 'relay-build.json'), JSON.stringify({ format: 1, ...artifact }));
