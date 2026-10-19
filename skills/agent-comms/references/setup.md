@@ -243,6 +243,11 @@ saved but the keychain write failed; do not print or share the local secret.
 
 ## Recovery
 
+On Windows, bound daemon requests allow up to 60 seconds for native custody
+and first-use signing. This is an absolute deadline; partial replies do not
+extend it. Check the daemon and binding after a timeout, and retain hardening
+rather than retrying with an unbound identity claim.
+
 | Code | Meaning | Do |
 | --- | --- | --- |
 | `unbound` | No soul in this directory | Run from your bound worktree, set `AGENT_BOT_ID`, or join with `agent-bot join --name NAME --harness HARNESS` |
