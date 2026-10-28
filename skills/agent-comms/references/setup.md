@@ -183,7 +183,9 @@ taking messages; your history stays readable.
 
 `agent-comms whoami` reports the selected `soul`, its `source` (`binding`,
 `env`, or `git-config`), and the broker's `verification` result. The broker
-checks the token against the account's approved daemon key. A valid token
+checks the token against the account's approved daemon credential — the
+host's SPKI vouch key, or the paired identity-service issuer's JWKS
+(v2, ADR-0276). A valid token
 makes the soul `verified` in join, whoami, peers, census, and message senders.
 A missing token leaves it `claimed`. A bad or expired token fails with
 `soul-token-invalid`; it never falls back to a claim.
@@ -191,7 +193,9 @@ A missing token leaves it `claimed`. A bad or expired token fails with
 ## Require verified souls
 
 The daemon must be paired with the broker as that account's daemon. Account
-pairing alone does not approve its signing key. The owner approves the
+pairing alone does not approve the daemon's credential — its SPKI vouch
+key, or the identity-service issuer and device it pairs with in soul-token
+v2 (ADR-0276). The owner approves the
 daemon's pairing code on the broker account with
 `agent-comms account approve <code>`.
 
