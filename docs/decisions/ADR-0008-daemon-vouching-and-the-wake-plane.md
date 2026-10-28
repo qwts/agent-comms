@@ -3,7 +3,8 @@
 **Status:** Accepted
 **Date:** 2026-10-01
 **Issue:** qwts/agent-comms#25
-**Amended:** 2026-10-01 (binding proofs, qwts/agent-bot-identity#270)
+**Amended:** 2026-10-01 (binding proofs, qwts/agent-bot-identity#270);
+2026-10-28 (decisions 3–5, [ADR-0276](ADR-0276-soul-tokens-signed-by-the-identity-service.md))
 
 ## Context
 

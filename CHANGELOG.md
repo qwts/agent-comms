@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Accept service-signed soul tokens (v2, ADR-0276). A daemon may pair with
+  `soulTokens: { v: 2, issuer, device }` instead of its host `publicKey`;
+  the broker verifies compact ES256 `soul+jwt` tokens against the paired
+  issuer's cached JWKS (`<issuer>/.well-known/agent-bot/soul-keys.json`),
+  and the paired device id replaces key binding. Issuers come from the
+  broker's `soulTokenIssuers` setting (default `https://agents.true-line.ai`,
+  `AGENT_COMMS_SOUL_TOKEN_ISSUERS` to override; loopback http only when
+  listed). v1 pairings verify unchanged, a token of the wrong version is
+  `soul-token-invalid`, and `AGENT_COMMS_SOUL_TOKEN_V1=0` refuses v1
+  outright (#1196).
+
 ### Fixed
 
 - Read fresh Windows SIDs and filesystem custody through the verified native

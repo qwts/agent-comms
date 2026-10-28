@@ -34,3 +34,4 @@ supersede them instead.
 | [ADR-0028](ADR-0028-cross-machine-hubs-and-federation.md) | Broker federation through explicitly enrolled remote hubs | Accepted |
 | [ADR-0059](ADR-0059-host-apps-embed-agent-comms.md) | Host apps embed agent-comms through a contract and platform seams | Accepted |
 | [ADR-0077](ADR-0077-owner-decisions-through-the-broker.md) | Grant-scoped owner decisions through the broker | Accepted |
+| [ADR-0276](ADR-0276-soul-tokens-signed-by-the-identity-service.md) | The broker accepts service-signed soul tokens | Accepted |
