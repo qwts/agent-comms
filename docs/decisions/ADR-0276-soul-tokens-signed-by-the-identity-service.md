@@ -44,9 +44,13 @@ must accept both credential forms during the transition.
    The service exposes `GET <issuer>/.well-known/agent-bot/soul-keys.json`
    (JWK EC P-256 ES256 keys, current first). The broker caches it in
    memory: refreshed at broker start for every v2-paired issuer, when a
-   v2 pairing is approved, periodically while a v2 pairing exists, and —
+   v2 pairing is approved, every 60 seconds (the published `max-age`)
+   while a v2 pairing exists, and —
    throttled — when a token names an unknown `kid`. A failed refresh
-   keeps the last good keys; nothing on disk learns the key material.
+   keeps the last good keys — but a set untouched for 15 minutes stops
+   verifying anything, so a key the service removed cannot live on
+   while the JWKS is unreachable. Nothing on disk learns the key
+   material.
 3. **Device binding replaces key binding.** A v2 token is a compact JWS
    (`alg: ES256`, `typ: soul+jwt`, `kid`) verified over
    `header.payload` with the paired issuer's key, and its claims must

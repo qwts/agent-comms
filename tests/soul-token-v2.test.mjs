@@ -59,9 +59,10 @@ function v1Token(key, account, agentId) {
   return `v1.${payloadSegment}.${sign(null, Buffer.from(payloadSegment, 'ascii'), key.privateKey).toString('base64url')}`;
 }
 
-async function fixture(run, { issuers = [ISSUER, LOOPBACK], sets, brokerEnv, daemonKind = 'v2' } = {}) {
+async function fixture(run, { issuers = [ISSUER, LOOPBACK], sets, brokerEnv, daemonKind = 'v2', clockBox } = {}) {
   const jwks = sets ?? { [ISSUER]: [jwkOf(service.publicKey, 'sk1')] };
   const fetchImpl = jwksFetch(jwks);
+  const clock = clockBox ?? { t: now };
   return withBroker(async (ctx) => {
     const credential = loadCredential({ dir: path.join(ctx.root, 'client'), credential: path.join(ctx.root, 'client/credential.json') });
     const account = credential.account;
@@ -82,10 +83,10 @@ async function fixture(run, { issuers = [ISSUER, LOOPBACK], sets, brokerEnv, dae
     const v2 = (agentId, extra = {}, key = service, kid = 'sk1') => v2Token(key.privateKey, kid, claims(account, agentId, extra));
     // The approve-triggered warm is fire-and-forget; tests await it directly.
     const warm = () => ctx.broker.soulKeys.refresh(ISSUER);
-    return run({ ...ctx, credential, account, req, wire, pair, pending, approve, v2, fetchImpl, jwks, warm });
+    return run({ ...ctx, credential, account, req, wire, pair, pending, approve, v2, fetchImpl, jwks, warm, clock });
   }, {
     brokerOptions: {
-      now: () => now * 1000,
+      now: () => clock.t * 1000,
       daemonOperation: (request, socket, { account }) => ({ account, op: request.op }),
       soulTokenIssuers: issuers, fetchImpl,
       ...(brokerEnv ? { env: brokerEnv } : {}),
@@ -121,6 +122,7 @@ const refusals = {
   'wrong soul': { sub: `agent_${randomUUID()}` }, 'wrong account': { account: 'other' },
   'wrong audience': { aud: 'other' }, 'wrong version': { v: 1 },
   expired: { iat: now - 400, nbf: now - 400, exp: now - 31 },
+  'exp equal to now': { iat: now, nbf: now, exp: now },
   'iat in future': { iat: now + 31, nbf: now, exp: now + 300 },
   'nbf in future': { iat: now, nbf: now + 31, exp: now + 300 },
   'lifetime > 300': { iat: now, nbf: now, exp: now + 301 },
@@ -148,7 +150,7 @@ test('v2 token: cold cache, malformed token, bad signature, and unknown kid unti
   for (const bad of [null, '', 'x', 'a.b', 'a.b.c.d', 'v2.e30.AA',
     v2Token(rotated.privateKey, 'sk1', claims(account, accounts.alice)) /* wrong signer */,
     `${good.slice(0, -1)}${good.endsWith('A') ? 'B' : 'A'}` /* corrupted signature */]) {
-    await assert.rejects(req({ op: 'join', agentId: accounts.alice, soulToken: bad }), { code: 'soul-token-invalid' }, `bad value ${JSON.stringify(String(bad)).slice(0, 60)}`);
+    await assert.rejects(req({ op: 'join', agentId: accounts.alice, soulToken: bad }), { code: 'soul-token-invalid' }, `bad value ...${JSON.stringify(String(bad)).slice(-50)}`);
   }
   assert.equal((await req({ op: 'join', agentId: accounts.alice, soulToken: good })).verification, 'verified');
   // A key the JWKS does not publish yet refuses; it verifies once served.
@@ -181,6 +183,51 @@ test('v2 on a v1 pairing and v1 on a v2 pairing are invalid; AGENT_COMMS_SOUL_TO
     const v1 = v1Token(ed25519Keys(), account, accounts.alice);
     await assert.rejects(req({ op: 'join', agentId: accounts.alice, soulToken: v1 }), { code: 'soul-token-invalid' });
   }, { daemonKind: 'v1', brokerEnv: { ...process.env, AGENT_COMMS_SOUL_TOKEN_V1: '0' } });
+});
+
+test('a just-expired v2 token refuses while exp = now + 1 verifies', () => fixture(async ({ approve, req, accounts, v2, warm }) => {
+  await approve();
+  await warm();
+  await assert.rejects(
+    req({ op: 'join', agentId: accounts.alice, soulToken: v2(accounts.alice, { iat: now - 1, nbf: now - 1, exp: now }) }),
+    { code: 'soul-token-invalid' }, 'exp equal to now is expired');
+  assert.equal(
+    (await req({ op: 'join', agentId: accounts.bob, soulToken: v2(accounts.bob, { iat: now - 1, nbf: now - 1, exp: now + 1 }) })).verification,
+    'verified');
+}));
+
+test('a stale key set older than 15 minutes stops verifying while the service is unreachable', () => fixture(async ({ approve, req, accounts, v2, broker, jwks, warm, clock }) => {
+  await approve();
+  await warm();
+  const good = v2(accounts.alice);
+  assert.equal((await req({ op: 'join', agentId: accounts.alice, soulToken: good })).verification, 'verified');
+  // The service goes down; within the staleness window the cache still verifies.
+  jwks[ISSUER] = null;
+  clock.t += 60;
+  assert.equal((await req({ op: 'join', agentId: accounts.bob, soulToken: v2(accounts.bob) })).verification, 'verified');
+  // Past 15 minutes without a successful refresh the set is dead.
+  clock.t += 15 * 60;
+  const fresh = v2(accounts.bob, { iat: clock.t - 10, nbf: clock.t - 10, exp: clock.t + 290 });
+  await assert.rejects(req({ op: 'join', agentId: accounts.bob, soulToken: fresh }), { code: 'soul-token-invalid' });
+  // The service recovers and the cache refreshes: verification returns.
+  jwks[ISSUER] = [jwkOf(service.publicKey, 'sk1')];
+  await warm();
+  assert.equal((await req({ op: 'join', agentId: accounts.bob, soulToken: fresh })).verification, 'verified');
+}));
+
+test('the JWKS body cap is enforced on content-length and on a streaming body', async () => {
+  const { createSoulKeyStore } = await import('../lib/broker/soul-keys.mjs');
+  const oversized = 'x'.repeat(64 * 1024 + 1);
+  async function* stream(text) { yield Buffer.from(text.slice(0, 30_000)); yield Buffer.from(text.slice(30_000)); }
+  const declared = createSoulKeyStore({
+    fetchImpl: async () => ({ ok: true, headers: { get: (h) => (h === 'content-length' ? String(oversized.length) : null) }, body: stream('{"issuer":"x"}') }),
+  });
+  await assert.rejects(declared.refresh(ISSUER), /exceeds/);
+  const undeclared = createSoulKeyStore({
+    fetchImpl: async () => ({ ok: true, headers: { get: () => null }, body: stream(oversized) }),
+  });
+  await assert.rejects(undeclared.refresh(ISSUER), /exceeds/);
+  assert.equal(undeclared.hasKeys(ISSUER), false);
 });
 
 test('v2 pairing survives journal replay; a failed refresh keeps the last good keys', () => fixture(async ({ approve, req, accounts, account, broker, paths, v2, fetchImpl, jwks, warm }) => {
