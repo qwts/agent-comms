@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.5] - 2026-10-28
+
 ### Added
 
 - Accept service-signed soul tokens (v2, ADR-0276). A daemon may pair with
