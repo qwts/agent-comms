@@ -22,7 +22,8 @@ class AgentComms < Formula
   def install
     # Older release tags predate source-stamp support. Keep their install path.
     if (buildpath/"RELEASE_COMMIT").exist?
-      (buildpath/"RELEASE_COMMIT").write Utils.safe_popen_read("git", "rev-parse", "HEAD").strip + "\n"
+      commit = Utils.safe_popen_read("git", "rev-parse", "HEAD").strip
+      (buildpath/"RELEASE_COMMIT").atomic_write "#{commit}\n"
       libexec.install "RELEASE_COMMIT"
     end
     libexec.install "bin", "lib", "skills", "package.json"
