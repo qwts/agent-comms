@@ -43,6 +43,8 @@ from this agent-comms release; these receipts are not blanket Windows support.
 - [Principal client API](docs/principal-client.md): embed owner census and chat.
 - [Binding locator inventory](docs/binding-locator-inventory.md): legacy
   binding-secret sites and the cutover matrix for #281.
+- [Authenticity is not authority](docs/authenticity-is-not-authority.md):
+  attribution never grants recipients, operations, or owner approval.
 - [Owner-decision proposal](docs/owner-decisions.md): proposed security contract;
   [evidence and conformance](docs/owner-decision-conformance.md), and
   [private daemon evidence admission](docs/owner-decision-daemon-evidence-admission.md), and
