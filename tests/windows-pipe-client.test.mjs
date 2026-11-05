@@ -90,6 +90,15 @@ test('Windows pipe connector waits for the child connection marker and forwards 
   raw.destroy();
 });
 
+test('Windows relay never reports a failed startup as a clean exit', () => {
+  const source = readFileSync(new URL('../native/windows/AgentCommsPipeRelay.cs', import.meta.url), 'utf8');
+  assert.match(source, /private const int RefusedExitCode = 2;/);
+  assert.match(source, /private const int StartupFailedExitCode = 3;/);
+  assert.match(source, /catch \{\s*Environment\.ExitCode = RefusedExitCode;\s*Console\.Error\.Write\("REFUSED\\n"\);/);
+  assert.match(source, /catch \{\s*if \(Environment\.ExitCode == 0\) Environment\.ExitCode = StartupFailedExitCode;\s*\}/);
+  assert.doesNotMatch(source, /catch \{ \}\s*\}\s*private static void Run/);
+});
+
 test('Windows pipe connector refuses unexpected child status without exposing its output', async () => {
   const child = fakeChild();
   const raw = connectWindowsPipe(PIPE, { spawnProcess: () => child, skipRelayVerificationForTests: true });

@@ -42,7 +42,7 @@ const SUPERVISOR_PHASES = new Set([
   'sample-observer', 'sample-observer-read', 'sample-reply', 'sample-replied', 'query-members', 'close-job',
 ]);
 const SUPERVISOR_CHECKS = new Set([
-  'argv-parse', 'executable', 'compiler-parent', 'compiler-arguments', 'compiler-response', 'owned-parent',
+  'none', 'argv-parse', 'executable', 'compiler-parent', 'compiler-arguments', 'compiler-response', 'owned-parent',
   'argv-count', 'argv-equality', 'pid-reuse', 'history-bound', 'kind-bound',
 ]);
 const FAILURE_CLASSES = new Set([
@@ -308,7 +308,8 @@ test(`${probeMode === 'detached' ? 'DETACHED_PROCESS diagnostic' : 'Production h
     }
   }
 
-  let lastSupervisorCheck = 'unknown';
+  // 'none': the failure did not come from a supervisor request.
+  let lastSupervisorCheck = 'none';
   let lastSupervisorFailureClass = 'other-failure';
 
   assert.ok(['production', 'detached'].includes(probeMode), 'unknown relay probe mode');
