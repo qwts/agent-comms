@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- CI pins qwts-agent-ci at 946d8cd, whose `Action Policy` roster admits the
+  public `trueline-*-agent` Apps that replaced the retired `qwts-*-agent` Apps.
+
 ## [0.5.5] - 2026-10-28
 
 ### Added
