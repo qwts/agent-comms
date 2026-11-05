@@ -81,7 +81,8 @@ export async function withBroker(run, options = {}) {
   };
   let broker;
   try {
-    broker = await new Broker({ paths, mode: options.brokerOptions?.mode ?? 'group', ...options.brokerOptions }).start();
+    // Tests drive the explicit owner-approval path unless they opt in (#280).
+    broker = await new Broker({ paths, mode: options.brokerOptions?.mode ?? 'group', autoApproveOwnDaemon: false, ...options.brokerOptions }).start();
     const cli = (args, soul = accounts.alice, extraEnv = {}) => runCli(args, {
       ...env,
       QWTS_AGENT_ID: soul,
