@@ -22,8 +22,10 @@ test('a single-account broker approves its own account\'s daemon without an owne
     await withBroker(async ({ paths, env, broker }) => {
       const credential = loadCredential(clientPaths(env));
       const first = await daemonPair(paths, credential);
-      assert.deepEqual(first, { ok: true, account: credential.account, kind: 'daemon', state: 'approved', watchesClosed: 0, autoApproved: true });
-      assert.equal(first.code, undefined);
+      assert.equal(first.state, 'approved');
+      assert.equal(first.autoApproved, true);
+      assert.equal(first.account, credential.account);
+      assert.equal(Object.hasOwn(first, 'code'), false);
       assert.equal(broker.state.daemons.get(credential.account).state, 'approved');
       assert.equal(broker.state.daemons.get(credential.account).epoch, 1);
       assert.deepEqual(events.filter(([e]) => e.startsWith('pair-daemon')).map(([e]) => e), ['pair-daemon-pending', 'pair-daemon-approved']);
@@ -32,7 +34,8 @@ test('a single-account broker approves its own account\'s daemon without an owne
       assert.equal(again.state, 'approved');
       assert.equal(broker.state.daemons.get(credential.account).epoch, 2);
       assert.equal((await admin(paths, { op: 'pairings' })).pairings.some(p => p.state === 'pending'), false);
-    }, { brokerOptions: { mode: 'single-account', autoApproveOwnDaemon: true, diagnostic: (...args) => events.push(args) } });
+    // undefined leaves the broker default, which single-account mode turns on.
+    }, { brokerOptions: { mode: 'single-account', autoApproveOwnDaemon: undefined, diagnostic: (...args) => events.push(args) } });
   });
 
 test('a group broker still holds a same-account daemon pairing for explicit owner approval (#280)',
@@ -48,6 +51,9 @@ test('a group broker still holds a same-account daemon pairing for explicit owne
     });
   });
 
-test('only a single-account broker may auto-approve a daemon', () => {
+test('only a single-account broker may auto-approve a daemon, and only by a boolean', () => {
   assert.throws(() => new Broker({ paths: {}, mode: 'group', autoApproveOwnDaemon: true }), { code: 'usage' });
+  for (const value of ['false', 'true', 1, null]) {
+    assert.throws(() => new Broker({ paths: {}, mode: 'single-account', autoApproveOwnDaemon: value }), { code: 'usage' }, String(value));
+  }
 });
