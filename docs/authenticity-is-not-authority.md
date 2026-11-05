@@ -38,7 +38,7 @@ The cases are in
 | A1 | Positive control: an authorized send | Delivered; `from` is the authenticated soul |
 | A2 | Valid sender, recipient's receive rule excludes it | `unknown-recipient`, nothing delivered; allowed again once the rule admits it |
 | A3 | Payload or request claims owner approval, another sender, `verified`, or a grant | Delivered as data with the real `from`; no claimed field kept; owner ops refused as `unknown-operation` |
-| A4 | A list, wildcard, or bare account as `to` | Refused; nothing delivered |
+| A4 | A list, wildcard, or bare account as `to` | `unknown-recipient`; nothing delivered |
 | A5 | Channel post after one subscriber narrows its receive rule | `channel-unavailable`; no copy to any subscriber |
 | A6 | A principal names a soul (`agentId`, `sender`) or a soul outside its grant | `unauthenticated` or `unknown-recipient`; the granted soul still receives |
 | A7 | A delivered `kind: task` message | No task exists until `task-accept` |

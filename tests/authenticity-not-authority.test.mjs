@@ -59,7 +59,7 @@ test('A3 claimed sender, verification, or owner approval in a request or payload
 
 test('A4 one send names one recipient; a list, wildcard, or account target is refused', { skip }, () => fixture(async (c) => {
   for (const target of [[c.to(c.accounts.bob), c.to(c.accounts.alice)], '*', `${c.owner}/*`, c.owner, `${c.owner}/`]) {
-    await assert.rejects(c.soul(c.accounts.alice, { op: 'send', to: target, key: key(), body: 'fan-out' }), JSON.stringify(target));
+    await assert.rejects(c.soul(c.accounts.alice, { op: 'send', to: target, key: key(), body: 'fan-out' }), { code: 'unknown-recipient' }, JSON.stringify(target));
   }
   assert.equal((await c.inbox(c.accounts.bob)).length, 0);
 }));
