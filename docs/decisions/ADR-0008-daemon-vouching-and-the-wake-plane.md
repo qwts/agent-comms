@@ -4,7 +4,8 @@
 **Date:** 2026-10-01
 **Issue:** qwts/agent-comms#25
 **Amended:** 2026-10-01 (binding proofs, qwts/agent-bot-identity#270);
-2026-10-28 (decisions 3–5, [ADR-0276](ADR-0276-soul-tokens-signed-by-the-identity-service.md))
+2026-10-28 (decisions 3–5, [ADR-0276](ADR-0276-soul-tokens-signed-by-the-identity-service.md));
+2026-11-05 (single-account daemon approval, qwts/agent-comms#280)
 
 ## Context
 
@@ -168,6 +169,13 @@ CLI to the broker, off the daemon's path. The client closes that gap.
 like a cold wake's; a report the daemon never receives leaves only the old
 blindness, since no read depends on it; an older daemon answers 404 and an
 older agent-comms reports nothing, as before.
+
+## Amendment 3: single-account daemon approval (2026-11-05)
+
+**Issue:** qwts/agent-comms#280. A single-account broker approves a daemon
+pairing at once (`autoApproved: true`) when its proof passes every check and
+is owned by the broker's own uid or SID. Group brokers, other accounts, and
+account or principal pairings still wait for the owner.
 
 ## Consequences
 

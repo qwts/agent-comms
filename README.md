@@ -88,6 +88,11 @@ agent-comms account pair --broker OWNER  # in the account being paired
 agent-comms broker approve CODE  # in the owner's account
 ```
 
+A single-account broker approves its own account's daemon pairing without a
+code; group mode and other accounts still need the owner
+([ADR-0008](docs/decisions/ADR-0008-daemon-vouching-and-the-wake-plane.md)
+amendment 3).
+
 Then each agent joins from its bound worktree and messages its peers:
 
 ```sh
