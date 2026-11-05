@@ -94,8 +94,10 @@ test('Windows relay never reports a failed startup as a clean exit', () => {
   const source = readFileSync(new URL('../native/windows/AgentCommsPipeRelay.cs', import.meta.url), 'utf8');
   assert.match(source, /private const int RefusedExitCode = 2;/);
   assert.match(source, /private const int StartupFailedExitCode = 3;/);
-  assert.match(source, /catch \{\s*Environment\.ExitCode = RefusedExitCode;\s*Console\.Error\.Write\("REFUSED\\n"\);/);
-  assert.match(source, /catch \{\s*if \(Environment\.ExitCode == 0\) Environment\.ExitCode = StartupFailedExitCode;\s*\}/);
+  assert.match(source, /error is IOException \|\| error is TimeoutException \|\| error is UnauthorizedAccessException\)\) throw;/);
+  assert.match(source, /Environment\.ExitCode = RefusedExitCode;/);
+  assert.match(source, /Console\.Error\.Write\("REFUSED\\n"\);/);
+  assert.match(source, /Environment\.ExitCode = StartupFailedExitCode;/);
   assert.doesNotMatch(source, /catch \{ \}\s*\}\s*private static void Run/);
 });
 

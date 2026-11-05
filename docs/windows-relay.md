@@ -6,8 +6,9 @@ It opens the pipe with `TokenImpersonationLevel.Identification` before the
 broker handshake. Either input EOF or pipe EOF ends the owned relay; the
 JavaScript client still withholds credential-bearing bytes until broker proof.
 
-A relay that ends before `CONNECTED` never exits 0. A pipe refusal writes
-`REFUSED` and exits 2; any other startup failure exits 3. Exit 0 is kept for a
+A relay that ends before `CONNECTED` never exits 0. A pipe that is missing,
+busy, denied, or times out writes `REFUSED` and exits 2; any other startup
+failure, such as a missing pipe name, exits 3 without a marker. Exit 0 is kept for a
 relay that connected and then reached EOF, so the probe's `exitOutcome`
 separates a failed startup from a natural exit (#265).
 

@@ -77,11 +77,16 @@ internal static class AgentCommsPipeRelay {
             pipe = new NamedPipeClientStream(".", name, PipeDirection.InOut,
                 PipeOptions.Asynchronous, TokenImpersonationLevel.Identification);
             pipe.Connect(10000);
-        } catch {
-            Environment.ExitCode = RefusedExitCode;
-            Console.Error.Write("REFUSED\n");
-            Console.Error.Flush();
+        } catch (Exception error) {
             if (pipe != null) pipe.Dispose();
+            // Only a pipe that is missing, busy, denied, or slow is a refusal;
+            // anything else reaches Main as a startup failure.
+            if (!(error is IOException || error is TimeoutException || error is UnauthorizedAccessException)) throw;
+            Environment.ExitCode = RefusedExitCode;
+            try {
+                Console.Error.Write("REFUSED\n");
+                Console.Error.Flush();
+            } catch { }
             return;
         }
 
