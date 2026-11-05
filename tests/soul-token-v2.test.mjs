@@ -138,6 +138,13 @@ for (const [name, patch] of Object.entries(refusals)) {
   }));
 }
 
+// The last base64url character of a 64-byte signature carries padding bits a
+// decoder ignores, so the first signature character is the one to change.
+function corruptSignature(token) {
+  const at = token.lastIndexOf('.') + 1;
+  return `${token.slice(0, at)}${token[at] === 'A' ? 'B' : 'A'}${token.slice(at + 1)}`;
+}
+
 test('v2 token: cold cache, malformed token, bad signature, and unknown kid until refresh', () => fixture(async ({ approve, req, accounts, account, v2, broker, jwks, warm }) => {
   // The JWKS is unavailable: approval's fire-and-forget warm fails, so the
   // cache is cold when the first token arrives.
@@ -149,7 +156,7 @@ test('v2 token: cold cache, malformed token, bad signature, and unknown kid unti
   await warm();
   for (const bad of [null, '', 'x', 'a.b', 'a.b.c.d', 'v2.e30.AA',
     v2Token(rotated.privateKey, 'sk1', claims(account, accounts.alice)) /* wrong signer */,
-    `${good.slice(0, -1)}${good.endsWith('A') ? 'B' : 'A'}` /* corrupted signature */]) {
+    corruptSignature(good)]) {
     await assert.rejects(req({ op: 'join', agentId: accounts.alice, soulToken: bad }), { code: 'soul-token-invalid' }, `bad value ...${JSON.stringify(String(bad)).slice(-50)}`);
   }
   assert.equal((await req({ op: 'join', agentId: accounts.alice, soulToken: good })).verification, 'verified');
