@@ -9,6 +9,9 @@ using System.Threading;
 
 // Built as /target:winexe: inherited binary stdio, no console host or UI.
 internal static class AgentCommsPipeRelay {
+    // A relay that ends before CONNECTED must never read as a clean exit.
+    private const int RefusedExitCode = 2;
+    private const int StartupFailedExitCode = 3;
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, ExactSpelling = true, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool MoveFileExW(string source, string destination, uint flags);
@@ -61,7 +64,9 @@ internal static class AgentCommsPipeRelay {
                 return;
             }
             Run();
-        } catch { }
+        } catch {
+            if (Environment.ExitCode == 0) Environment.ExitCode = StartupFailedExitCode;
+        }
     }
 
     private static void Run() {
@@ -72,10 +77,16 @@ internal static class AgentCommsPipeRelay {
             pipe = new NamedPipeClientStream(".", name, PipeDirection.InOut,
                 PipeOptions.Asynchronous, TokenImpersonationLevel.Identification);
             pipe.Connect(10000);
-        } catch {
-            Console.Error.Write("REFUSED\n");
-            Console.Error.Flush();
+        } catch (Exception error) {
             if (pipe != null) pipe.Dispose();
+            // Only a pipe that is missing, busy, denied, or slow is a refusal;
+            // anything else reaches Main as a startup failure.
+            if (!(error is IOException || error is TimeoutException || error is UnauthorizedAccessException)) throw;
+            Environment.ExitCode = RefusedExitCode;
+            try {
+                Console.Error.Write("REFUSED\n");
+                Console.Error.Flush();
+            } catch { }
             return;
         }
 
