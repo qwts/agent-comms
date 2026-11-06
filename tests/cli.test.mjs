@@ -83,6 +83,7 @@ for (const args of [
   ['send'], ['inbox', 'ack'], ['leave', 'extra'], ['broker', 'approve', 'one', 'two'],
   ['join', '--name'], ['join', '--name', '--harness', 'test'], ['peers', '-x'],
   ['send', 'user/agent_x', '--body', 'hi', '--group', 'staff'], ['broker', 'run', '--body', 'x'],
+  ['setup', 'extra'], ['setup', '--group', 'staff'],
 ]) {
   test(`${args.join(' ')} fails with usage before connecting`, async (t) => {
     // Missing sockets would report broker-unreachable if validation reached transport.
@@ -100,6 +101,7 @@ test('help lists LaunchAgent commands without invoking them', async (t) => {
   assert.match(result.stdout, /agent-comms broker install \[--group VALUE\] \[--single-account\]/);
   assert.match(result.stdout, /agent-comms launch .*\[--brief VALUE\]/);
   assert.match(result.stdout, /agent-comms broker uninstall\n/);
+  assert.match(result.stdout, /agent-comms setup\n/);
   assert.match(result.stdout, /agent-comms broker status \[--group VALUE\]/);
 });
 
