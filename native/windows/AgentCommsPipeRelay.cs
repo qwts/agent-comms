@@ -12,6 +12,9 @@ internal static class AgentCommsPipeRelay {
     // A relay that ends before CONNECTED must never read as a clean exit.
     private const int RefusedExitCode = 2;
     private const int StartupFailedExitCode = 3;
+    // Must stay below the connector's startup timeout so a refused pipe
+    // reports REFUSED rather than racing into startup-timeout (#290).
+    private const int ConnectTimeoutMilliseconds = 5000;
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, ExactSpelling = true, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool MoveFileExW(string source, string destination, uint flags);
@@ -76,7 +79,7 @@ internal static class AgentCommsPipeRelay {
             if (String.IsNullOrEmpty(name)) throw new ArgumentException();
             pipe = new NamedPipeClientStream(".", name, PipeDirection.InOut,
                 PipeOptions.Asynchronous, TokenImpersonationLevel.Identification);
-            pipe.Connect(10000);
+            pipe.Connect(ConnectTimeoutMilliseconds);
         } catch (Exception error) {
             if (pipe != null) pipe.Dispose();
             // Only a pipe that is missing, busy, denied, or slow is a refusal;

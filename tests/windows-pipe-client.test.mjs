@@ -6,7 +6,10 @@ import { fileURLToPath } from 'node:url';
 import { PassThrough } from 'node:stream';
 import { test } from 'node:test';
 
-import { connectWindowsPipe, legacyPowerShellEnv } from '../lib/platform/windows-pipe-client.mjs';
+import { randomUUID } from 'node:crypto';
+
+import { connectWindowsPipe, legacyPowerShellEnv, RELAY_CONNECT_TIMEOUT_MS, STARTUP_TIMEOUT_MS } from '../lib/platform/windows-pipe-client.mjs';
+import { projectWindowsPipeStage } from '../lib/platform/windows-pipe-stage.mjs';
 
 const PIPE = '\\\\.\\pipe\\agent-comms.test.S-1-5-21-123';
 
@@ -99,6 +102,27 @@ test('Windows relay never reports a failed startup as a clean exit', () => {
   assert.match(source, /Console\.Error\.Write\("REFUSED\\n"\);/);
   assert.match(source, /Environment\.ExitCode = StartupFailedExitCode;/);
   assert.doesNotMatch(source, /catch \{ \}\s*\}\s*private static void Run/);
+});
+
+test('Windows relay refuses a missing pipe before the connector startup timeout', () => {
+  const source = readFileSync(new URL('../native/windows/AgentCommsPipeRelay.cs', import.meta.url), 'utf8');
+  const declared = source.match(/\bconst\s+int\s+ConnectTimeoutMilliseconds\s*=\s*(\d+)\s*;/);
+  assert.ok(declared, 'relay connect timeout constant');
+  assert.equal(Number(declared[1]), RELAY_CONNECT_TIMEOUT_MS);
+  assert.match(source, /\.\s*Connect\s*\(\s*ConnectTimeoutMilliseconds\s*\)/);
+  assert.ok(STARTUP_TIMEOUT_MS - RELAY_CONNECT_TIMEOUT_MS >= 3000, 'startup margin for process start and REFUSED');
+});
+
+test('native Windows relay reports a missing pipe as pipe-refused', {
+  skip: process.platform !== 'win32', timeout: STARTUP_TIMEOUT_MS + 10000,
+}, async () => {
+  const raw = connectWindowsPipe(`\\\\.\\pipe\\agent-comms.missing.${randomUUID()}`);
+  raw.on('connect', () => assert.fail('missing pipe connected'));
+  const [error] = await once(raw, 'error');
+  assert.equal(error.code, 'ECONNREFUSED');
+  // A connector timeout would project to startup-timeout, so this stage alone
+  // proves the relay's refusal arrived first; no wall-clock bound is needed.
+  assert.equal(projectWindowsPipeStage(error), 'pipe-refused');
 });
 
 test('Windows pipe connector refuses unexpected child status without exposing its output', async () => {

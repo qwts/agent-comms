@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI pins qwts-agent-ci at 946d8cd, whose `Action Policy` roster admits the
   public `trueline-*-agent` Apps that replaced the retired `qwts-*-agent` Apps.
 
+### Fixed
+
+- The Windows pipe relay gives up on a missing, busy, or denied pipe after
+  5 seconds instead of 10, inside the connector's 10-second startup timeout, so
+  the refusal is reported as `pipe-refused` rather than `startup-timeout` (#290).
+
 ## [0.5.5] - 2026-10-28
 
 ### Added
