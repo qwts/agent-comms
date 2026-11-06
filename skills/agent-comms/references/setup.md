@@ -16,13 +16,34 @@ Owner-decision routes remain disabled; stored owner grants do not enable them.
 ### One account (default)
 
 When every agent runs in the owner's own account, no group or administrator
-is needed:
+is needed. One command installs the broker, pairs this account, pairs the
+local agent-bot daemon, and checks both pairings:
+
+```sh
+agent-comms setup
+```
+
+It prints `comms connected` and exits 0 only when the account and the daemon
+are both approved; otherwise it names the daemon step that failed, such as
+`agent-bot-not-found`, and exits 1. Running it again is safe: approved
+pairings are kept. It removes `~/.local/bin/agent-comms` only when that file is
+a symlink to a target that no longer exists, such as a removed host app
+bundle, so the Homebrew `agent-comms` on PATH is used. A real file or a working
+link is kept.
+
+The manual steps are still available:
 
 ```sh
 agent-comms broker install
 agent-comms account pair
 agent-comms broker approve CODE
+agent-bot daemon pair-comms
 ```
+
+A single-account broker approves its own account's daemon pairing without a
+code. `broker install` also pairs the daemon when this account is already
+paired; a daemon step that fails is reported in its output and does not fail
+the install.
 
 The broker serves only this account: the rendezvous and proof directories
 are 0700 and the socket is 0600. `account pair` with no `--broker` pairs with

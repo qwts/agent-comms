@@ -8,6 +8,7 @@ import { diagnosticExportRange, readDiagnosticExport, writeDiagnosticExportOwned
 import { groupId } from '../lib/platform/account-isolation.mjs';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import os from 'node:os';
 import process from 'node:process';
 
 import { Broker, LIMITS } from '../lib/broker.mjs';
@@ -25,6 +26,7 @@ import { runWorker } from '../lib/worker/index.mjs';
 import { sha256 } from '../lib/broker/shared.mjs';
 import { OWNER_GRANT_LIMITS } from '../lib/owner-scoped-grants.mjs';
 import * as skill from '../lib/skill.mjs';
+import { pairOwnDaemon, repairLauncher, setup, waitForBroker, pairDaemonWithAgentBot } from '../lib/setup.mjs';
 
 const VERSION = '0.5.5';
 
@@ -90,6 +92,7 @@ const COMMANDS = [
   { name: 'account revoke', args: ['ACCOUNT'], flags: ['kind'] },
   { name: 'account harden', args: ['ACCOUNT'], flags: [], booleans: ['off'] },
   { name: 'account status', args: [], flags: [] },
+  { name: 'setup', args: [], flags: [] },
   { name: 'broker run', args: [], flags: ['group', 'limits-file'], booleans: ['single-account'] },
   { name: 'broker install', args: [], flags: ['group'], booleans: ['single-account'] },
   { name: 'broker uninstall', args: [], flags: [] },
@@ -538,7 +541,22 @@ async function run(argv, env) {
       return fail('usage', 'account needs pair, status, pairings, approve, revoke, or harden');
     }
     case 'broker': {
-      if (sub === 'install') return print(install(installOptions({ group: flags.group, mode: flags['single-account'] || !flags.group ? 'single-account' : 'group', host: HOST_CONFIG })));
+      if (sub === 'install') {
+        const mode = flags['single-account'] || !flags.group ? 'single-account' : 'group';
+        const installed = install(installOptions({ group: flags.group, mode, host: HOST_CONFIG }));
+        if (mode !== 'single-account') return print(installed);
+        // #280: a re-install also pairs this account's daemon; failing to is reported, not fatal.
+        const listPairings = () => admin(paths, { op: 'pairings' });
+        let daemon;
+        try {
+          await waitForBroker(listPairings);
+          daemon = await pairOwnDaemon({ account: os.userInfo().username, listPairings,
+            approve: (code) => admin(paths, { op: 'approve', code }), pairDaemon: () => pairDaemonWithAgentBot({ env }) });
+        } catch {
+          daemon = { state: 'unavailable', reason: 'broker-not-answering' };
+        }
+        return print({ ...installed, launcher: repairLauncher(), daemon });
+      }
       if (sub === 'uninstall') return print(uninstall(jobOptions({ host: HOST_CONFIG })));
       if (sub === 'status') return print(await status({
         ...jobOptions({ paths, host: HOST_CONFIG }), group: flags.group,
@@ -563,6 +581,18 @@ async function run(argv, env) {
       if (sub === 'approve') return print(await admin(paths, { op: 'approve', code: rest[0] }));
       if (sub === 'revoke') return print(await admin(paths, { op: 'revoke', account: rest[0] }));
       return fail('usage', 'broker needs run, install, uninstall, status, pairings, approve, or revoke');
+    }
+    case 'setup': {
+      const result = await setup({
+        install: () => install(installOptions({ mode: 'single-account', host: HOST_CONFIG })),
+        listPairings: () => admin(paths, { op: 'pairings' }),
+        pairAccount: () => pair(paths, client, undefined, undefined, 'single-account'),
+        approve: (code) => admin(paths, { op: 'approve', code }),
+        pairDaemon: () => pairDaemonWithAgentBot({ env }),
+      });
+      process.stderr.write(result.connected ? 'comms connected\n' : `comms not connected: daemon ${result.daemon.reason ?? result.daemon.state}\n`);
+      if (!result.connected) process.exitCode = 1;
+      return print(result);
     }
     case 'skill': {
       if (!sub) return process.stdout.write(skill.router());
