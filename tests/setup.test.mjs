@@ -15,9 +15,10 @@ function home(t) {
 
 // A broker double: pairings as the admin socket lists them, and the approvals
 // and requests setup sends it.
-function broker({ account = 'owner', paired = false, daemon = false, daemonAnswer = { state: 'approved', autoApproved: true } } = {}) {
+function broker({ account = 'owner', paired = false, daemon = false, stalePending = null, daemonAnswer = { state: 'approved', autoApproved: true } } = {}) {
   const rows = [];
   if (paired) rows.push({ account, state: 'approved' });
+  if (stalePending) rows.push({ account, state: 'pending', code: stalePending });
   if (daemon) rows.push({ account, kind: 'daemon', state: 'approved' });
   const calls = [];
   return {
@@ -26,6 +27,8 @@ function broker({ account = 'owner', paired = false, daemon = false, daemonAnswe
     listPairings: async () => ({ pairings: rows.map((row) => ({ ...row })) }),
     pairAccount: async () => {
       calls.push('pair-account');
+      // Like the broker, a new account request replaces a pending one.
+      rows.splice(0, rows.length, ...rows.filter((row) => row.kind === 'daemon' || row.account !== account));
       rows.push({ account, state: 'pending', code: 'ACCOUNT-CODE' });
       return { account, code: 'ACCOUNT-CODE', state: 'pending' };
     },
@@ -51,7 +54,7 @@ test('setup on a fresh machine installs, pairs and approves the account, then pa
   assert.deepEqual(fake.calls, ['install', 'pair-account', 'approve ACCOUNT-CODE', 'pair-daemon']);
   assert.equal(result.ok, true);
   assert.equal(result.connected, true);
-  assert.deepEqual(result.account, { name: 'owner', state: 'approved' });
+  assert.deepEqual(result.account, { name: 'owner', state: 'approved', existing: false });
   assert.deepEqual(result.daemon, { state: 'approved', autoApproved: true });
 });
 
@@ -60,7 +63,16 @@ test('setup is idempotent: an already connected machine is only re-installed', a
   const result = await setup({ account: 'owner', repair: noRepair, ...fake });
   assert.deepEqual(fake.calls, ['install']);
   assert.equal(result.connected, true);
+  assert.deepEqual(result.account, { name: 'owner', state: 'approved', existing: true });
   assert.deepEqual(result.daemon, { state: 'approved', existing: true });
+});
+
+test('setup replaces a pending account pairing from an earlier run and approves only its own code', async () => {
+  const fake = broker({ stalePending: 'STALE-CODE' });
+  const result = await setup({ account: 'owner', repair: noRepair, ...fake });
+  assert.deepEqual(fake.calls, ['install', 'pair-account', 'approve ACCOUNT-CODE', 'pair-daemon']);
+  assert.equal(result.connected, true);
+  assert.deepEqual(result.account, { name: 'owner', state: 'approved', existing: false });
 });
 
 test('setup approves a pending daemon pairing from a broker without auto-approval', async () => {
