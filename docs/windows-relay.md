@@ -12,6 +12,11 @@ failure, such as a missing pipe name, exits 3 without a marker. Exit 0 is kept f
 relay that connected and then reached EOF, so the probe's `exitOutcome`
 separates a failed startup from a natural exit (#265).
 
+The relay waits at most 5 seconds for the pipe, and the connector's startup
+timeout is 10 seconds. The margin lets a refused pipe report `pipe-refused`
+instead of `startup-timeout`; `startup-timeout` is left for a relay that never
+writes a marker or exits (#290).
+
 PowerShell with `DETACHED_PROCESS` exits before running the script on the
 pinned Windows tuple. Hidden PowerShell can connect, but the strict private-job
 probe observes an extra executable. The new helper avoids the PowerShell host
