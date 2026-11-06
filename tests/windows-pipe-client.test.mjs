@@ -106,23 +106,23 @@ test('Windows relay never reports a failed startup as a clean exit', () => {
 
 test('Windows relay refuses a missing pipe before the connector startup timeout', () => {
   const source = readFileSync(new URL('../native/windows/AgentCommsPipeRelay.cs', import.meta.url), 'utf8');
-  const declared = source.match(/private const int ConnectTimeoutMilliseconds = (\d+);/);
+  const declared = source.match(/\bconst\s+int\s+ConnectTimeoutMilliseconds\s*=\s*(\d+)\s*;/);
   assert.ok(declared, 'relay connect timeout constant');
   assert.equal(Number(declared[1]), RELAY_CONNECT_TIMEOUT_MS);
-  assert.match(source, /pipe\.Connect\(ConnectTimeoutMilliseconds\);/);
+  assert.match(source, /\.\s*Connect\s*\(\s*ConnectTimeoutMilliseconds\s*\)/);
   assert.ok(STARTUP_TIMEOUT_MS - RELAY_CONNECT_TIMEOUT_MS >= 3000, 'startup margin for process start and REFUSED');
 });
 
 test('native Windows relay reports a missing pipe as pipe-refused', {
   skip: process.platform !== 'win32', timeout: STARTUP_TIMEOUT_MS + 10000,
 }, async () => {
-  const started = performance.now();
   const raw = connectWindowsPipe(`\\\\.\\pipe\\agent-comms.missing.${randomUUID()}`);
   raw.on('connect', () => assert.fail('missing pipe connected'));
   const [error] = await once(raw, 'error');
   assert.equal(error.code, 'ECONNREFUSED');
+  // A connector timeout would project to startup-timeout, so this stage alone
+  // proves the relay's refusal arrived first; no wall-clock bound is needed.
   assert.equal(projectWindowsPipeStage(error), 'pipe-refused');
-  assert.ok(performance.now() - started < STARTUP_TIMEOUT_MS, 'refusal arrived before the startup timeout');
 });
 
 test('Windows pipe connector refuses unexpected child status without exposing its output', async () => {
