@@ -1,7 +1,6 @@
-# Copilot runs its setup on a GitHub-hosted Ubuntu x64 runner. Copilot
-# supports only Ubuntu x64 and Windows x64, so the arm64 self-hosted CI
-# runners cannot take it, and the repository is public, so hosted
-# minutes are free.
+# Copilot runs its setup on a GitHub-hosted Ubuntu x64 runner (Copilot
+# supports only Ubuntu x64 and Windows x64). The repository is public, so
+# hosted minutes are free.
 name: Copilot code review setup
 
 on:
