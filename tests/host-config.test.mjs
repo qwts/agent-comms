@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
+import { readFileSync, readdirSync, writeFileSync, existsSync, mkdtempSync, rmSync, statSync } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import { readHostConfig } from '../lib/host-config.mjs';
 import { brokerPaths, clientPaths } from '../lib/paths.mjs';
@@ -10,7 +14,7 @@ import { withBroker } from './helpers/broker.mjs';
 const defaults = JSON.parse(readFileSync(new URL('../lib/host-defaults.json', import.meta.url), 'utf8'));
 
 test('legacy names and directories remain defaults, including empty overrides', () => {
-  const host = readHostConfig({ AGENT_COMMS_SERVICE_LABEL: '', AGENT_COMMS_LOG_DIR: '' }, '/example');
+  const host = readHostConfig({ AGENT_COMMS_SERVICE_LABEL: '', AGENT_COMMS_LOG_DIR: '' }, '/example', 'darwin');
   assert.equal(host.serviceLabel, 'dev.qwts.agent-comms.broker');
   assert.equal(host.credentialName, 'qwts.GeniusBar.principal');
   assert.equal(host.logDir, '/example/Library/Logs/agent-comms');
@@ -19,6 +23,55 @@ test('legacy names and directories remain defaults, including empty overrides', 
   assert.equal(host.sharedDir, '/Users/Shared/Public/agent-comms');
   assert.deepEqual(host.environment, {});
   assert.ok(Object.isFrozen(host));
+});
+
+test('shared and log directories default per platform; state directories do not', () => {
+  const table = {
+    darwin: { logDir: '/example/Library/Logs/agent-comms', sharedDir: '/Users/Shared/Public/agent-comms' },
+    win32: { logDir: path.resolve('/example/Library/Logs/agent-comms'), sharedDir: path.resolve('/Users/Shared/Public/agent-comms') },
+    linux: { logDir: '/example/.local/state/agent-comms-logs', sharedDir: '/example/.local/state/agent-comms-shared' },
+  };
+  for (const [platform, expected] of Object.entries(table)) {
+    const host = readHostConfig({}, '/example', platform);
+    assert.equal(host.logDir, expected.logDir, platform);
+    assert.equal(host.sharedDir, expected.sharedDir, platform);
+    assert.equal(host.brokerStateDir, path.resolve('/example/.local/state/agent-comms-broker'), platform);
+    assert.equal(host.clientStateDir, path.resolve('/example/.local/state/agent-comms'), platform);
+    assert.notEqual(host.sharedDir, host.clientStateDir, platform);
+    assert.deepEqual(host.environment, {}, platform);
+  }
+  const xdg = readHostConfig({ XDG_STATE_HOME: '/xdg' }, '/example', 'linux');
+  assert.equal(xdg.sharedDir, '/xdg/agent-comms-shared');
+  assert.equal(xdg.logDir, '/xdg/agent-comms-logs');
+  assert.equal(xdg.environment.AGENT_COMMS_SHARED_DIR, '/xdg/agent-comms-shared');
+  assert.deepEqual(readHostConfig(xdg.environment, '/elsewhere', 'linux'), xdg);
+  assert.equal(readHostConfig({ AGENT_COMMS_SHARED_DIR: '/override' }, '/example', 'linux').sharedDir, '/override');
+  assert.equal(readHostConfig({ XDG_STATE_HOME: '/xdg' }, '/example', 'darwin').sharedDir, '/Users/Shared/Public/agent-comms');
+});
+
+test('the source checkout starts a single-account broker on Linux without directory overrides', {
+  skip: process.platform !== 'linux', timeout: 20000,
+}, async (t) => {
+  const home = mkdtempSync(path.join(os.tmpdir(), 'ac-linux-home-'));
+  t.after(() => rmSync(home, { recursive: true, force: true }));
+  const env = Object.fromEntries(Object.entries(process.env)
+    .filter(([key]) => !key.startsWith('AGENT_COMMS_') && key !== 'XDG_STATE_HOME'));
+  const bin = fileURLToPath(new URL('../bin/agent-comms.mjs', import.meta.url));
+  const child = spawn(process.execPath, [bin, 'broker', 'run', '--single-account'],
+    { cwd: home, env: { ...env, HOME: home }, stdio: ['ignore', 'ignore', 'pipe'] });
+  t.after(() => child.kill('SIGKILL'));
+  let stderr = '';
+  child.stderr.setEncoding('utf8');
+  await new Promise((resolve, reject) => {
+    child.stderr.on('data', (chunk) => { stderr += chunk; if (stderr.includes('listening on')) resolve(); });
+    child.on('exit', (code) => reject(new Error(`broker exited ${code}: ${stderr}`)));
+  });
+  const socket = path.join(home, '.local', 'state', 'agent-comms-shared', 'broker.sock');
+  assert.match(stderr, new RegExp(`listening on ${socket.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
+  assert.ok(statSync(socket).isSocket());
+  const exited = once(child, 'exit');
+  child.kill('SIGTERM');
+  assert.deepEqual(await exited, [0, null]);
 });
 
 test('all host directories resolve centrally and survive launchd without its shell environment', () => {
