@@ -104,12 +104,16 @@ names. Unset or empty variables keep existing installations' defaults.
 | --- | --- |
 | `AGENT_COMMS_SERVICE_LABEL` | `dev.qwts.agent-comms.broker` |
 | `AGENT_COMMS_CREDENTIAL_NAME` | `qwts.GeniusBar.principal` |
-| `AGENT_COMMS_LOG_DIR` | `~/Library/Logs/agent-comms` |
-| `AGENT_COMMS_SHARED_DIR` | `/Users/Shared/Public/agent-comms` |
+| `AGENT_COMMS_LOG_DIR` | `~/Library/Logs/agent-comms`; on Linux `$XDG_STATE_HOME/agent-comms-logs` |
+| `AGENT_COMMS_SHARED_DIR` | `/Users/Shared/Public/agent-comms`; on Linux `$XDG_STATE_HOME/agent-comms-shared` |
 | `AGENT_COMMS_BROKER_STATE_DIR` | `$XDG_STATE_HOME/agent-comms-broker` |
 | `AGENT_COMMS_CLIENT_STATE_DIR` | `$XDG_STATE_HOME/agent-comms` |
 
-`XDG_STATE_HOME` defaults to `~/.local/state`. Directory overrides resolve
+`XDG_STATE_HOME` defaults to `~/.local/state`. Linux has no `/Users/Shared`,
+so its shared directory lives in the owner's own state; it suits a
+single-account broker, and persona accounts on Linux need an
+`AGENT_COMMS_SHARED_DIR` they can all reach. A LaunchAgent install always uses
+the macOS defaults, and a Windows install keeps its existing ones. Directory overrides resolve
 relative to the CLI's working directory; use absolute paths for embedded
 hosts. A literal `~` in a variable is not expanded. Service and credential
 names accept letters, digits, dots, underscores and hyphens, starting with a

@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- On Linux, the shared directory defaults to `$XDG_STATE_HOME/agent-comms-shared`
+  and logs to `$XDG_STATE_HOME/agent-comms-logs`, so `broker run` from a source
+  checkout no longer fails with `EACCES` on `/Users/Shared/Public`. macOS and
+  Windows defaults are unchanged (#293).
 - The Windows pipe relay gives up on a missing, busy, or denied pipe after
   5 seconds instead of 10, inside the connector's 10-second startup timeout, so
   the refusal is reported as `pipe-refused` rather than `startup-timeout` (#290).
