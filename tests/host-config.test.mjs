@@ -45,6 +45,7 @@ test('shared and log directories default per platform; state directories do not'
   assert.equal(xdg.logDir, '/xdg/agent-comms-logs');
   assert.equal(xdg.environment.AGENT_COMMS_SHARED_DIR, '/xdg/agent-comms-shared');
   assert.deepEqual(readHostConfig(xdg.environment, '/elsewhere', 'linux'), xdg);
+  assert.deepEqual(readHostConfig({ XDG_STATE_HOME: '/xdg/' }, '/example', 'linux'), xdg);
   assert.equal(readHostConfig({ AGENT_COMMS_SHARED_DIR: '/override' }, '/example', 'linux').sharedDir, '/override');
   assert.equal(readHostConfig({ XDG_STATE_HOME: '/xdg' }, '/example', 'darwin').sharedDir, '/Users/Shared/Public/agent-comms');
 });
@@ -64,6 +65,7 @@ test('the source checkout starts a single-account broker on Linux without direct
   child.stderr.setEncoding('utf8');
   await new Promise((resolve, reject) => {
     child.stderr.on('data', (chunk) => { stderr += chunk; if (stderr.includes('listening on')) resolve(); });
+    child.on('error', reject);
     child.on('exit', (code) => reject(new Error(`broker exited ${code}: ${stderr}`)));
   });
   const socket = path.join(home, '.local', 'state', 'agent-comms-shared', 'broker.sock');
