@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Licensed MIT, copyright True Line AI LLC, like the rest of the platform.
+  The in-repo formula now declares `license "MIT"`.
+- CI takes its policy, installer, runtime and pin-reachability tooling from
+  [true-line/trueline-agent-ci](https://github.com/true-line/trueline-agent-ci)
+  at 8ec38da, and its docs gate from
+  [true-line/trueline-agent-docs-gov](https://github.com/true-line/trueline-agent-docs-gov)
+  at the same 67db7dc. The repository moved to true-line, and the qwts copies
+  no longer recognise it.
+
 ### Added
 
 - Contract codecs for the platform's `task-v1` and `wire-v1` seams (platform
