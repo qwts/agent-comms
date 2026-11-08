@@ -76,8 +76,8 @@ admission. That is Stage 1 work. agent-comms' per-account daemon epoch
   but a release still has to bump them deliberately.
 - The vendored schemas are MIT-licensed by soul-contracts
   ([LICENSE](https://github.com/true-line/soul-contracts/blob/main/LICENSE),
-  added in true-line/soul-contracts#32 after v0.4.1). MIT permits shipping
-  them in this repository with that notice.
+  added in true-line/soul-contracts#32 after v0.4.1). Its notice ships with
+  them in `lib/vendor/soul-contracts/LICENSE`, as MIT requires.
 - The validator is deliberately small. It is not a general JSON Schema
   implementation and must not be used as one.
 - PDR-0024 decision 4 holds: this work changes neither `wire/v1` nor
