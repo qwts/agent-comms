@@ -1,6 +1,6 @@
 # This repository's CI: the governed lifecycle from qwts-agent-sop's ci.yml,
 # consuming the same capabilities at the same pinned commits. The lifecycle
-# contract is the CI execution policy in qwts-agent-ci (docs/ci-execution-policy.md
+# contract is the CI execution policy in trueline-agent-ci (docs/ci-execution-policy.md
 # at the pinned commit). Every capability is pinned to a 40-hex commit, never
 # a branch or tag (ENG-0355, ENG-0282). Delta from qwts-agent-sop: no
 # dependency-inventory lane, which is that repository's own addition (ENG-0015).
@@ -53,7 +53,7 @@ jobs:
       release_gate_mode: ${{ steps.policy.outputs.release_gate_mode }}
     steps:
       - id: policy
-        uses: qwts/qwts-agent-ci/.github/actions/ci-policy@946d8cd4148f18f982c6b1786b70849c6447ce01
+        uses: true-line/trueline-agent-ci/.github/actions/ci-policy@8ec38da39c9b43af2181d1f5e5b7e09226c0bfad
 
   merge-evidence:
     name: Verify merged commit evidence
@@ -191,12 +191,12 @@ jobs:
         with:
           node-version: 22
           package-manager-cache: false
-      # ENG-0269: the installer runs through qwts-agent-ci's bounded
+      # ENG-0269: the installer runs through trueline-agent-ci's bounded
       # dependency-install action, which restores the exact lockfile-bound
       # cache and launches npm through the bounded-command runner at the same
       # pinned commit.
       - name: Install locked dependencies
-        uses: qwts/qwts-agent-ci/.github/actions/bounded-dependency-install@946d8cd4148f18f982c6b1786b70849c6447ce01
+        uses: true-line/trueline-agent-ci/.github/actions/bounded-dependency-install@8ec38da39c9b43af2181d1f5e5b7e09226c0bfad
         env:
           NPM_CONFIG_CACHE: ${{ runner.temp }}/ci-dependency-cache/npm
         with:
@@ -211,7 +211,7 @@ jobs:
           attempts: '2'
           retry-delay-seconds: '5'
       - name: Workflow runtime policy
-        uses: qwts/qwts-agent-ci/.github/actions/ci-runtime-check@946d8cd4148f18f982c6b1786b70849c6447ce01
+        uses: true-line/trueline-agent-ci/.github/actions/ci-runtime-check@8ec38da39c9b43af2181d1f5e5b7e09226c0bfad
       - name: Lint
         run: npm run lint:markdown
       - name: Verify proposed computer-use candidate vectors
@@ -220,16 +220,16 @@ jobs:
         run: npm test
       # ENG-0282: every first-party pin in this repository's workflows must be
       # reachable from its capability repository's default branch. The guard
-      # lives in qwts-agent-ci and is fetched at the same pinned commit.
+      # lives in trueline-agent-ci and is fetched at the same pinned commit.
       - name: Fetch pin-reachability guard
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          repository: qwts/qwts-agent-ci
-          ref: 946d8cd4148f18f982c6b1786b70849c6447ce01
+          repository: true-line/trueline-agent-ci
+          ref: 8ec38da39c9b43af2181d1f5e5b7e09226c0bfad
           path: .ci-tooling
           persist-credentials: false
       - name: Pin reachability
-        run: node .ci-tooling/tools/pins/pin-reachability.mjs
+        run: node .ci-tooling/tools/pins/pin-reachability.mjs --owner true-line
         env:
           GH_DRIFT_TOKEN: ${{ github.token }}
 
@@ -242,7 +242,7 @@ jobs:
     # The pinned commit is written twice on purpose: a called workflow cannot
     # read its own commit from the github context, so tooling-ref names the
     # revision the checks are fetched from and the job fails closed if empty.
-    uses: qwts/qwts-agent-docs-gov/.github/workflows/docs-governance.yml@67db7dc9c20bc29222fb605b7ff9432fd58a2a3f
+    uses: true-line/trueline-agent-docs-gov/.github/workflows/docs-governance.yml@67db7dc9c20bc29222fb605b7ff9432fd58a2a3f
     with:
       tooling-ref: 67db7dc9c20bc29222fb605b7ff9432fd58a2a3f
 
@@ -285,7 +285,7 @@ jobs:
           node-version: 22
           package-manager-cache: false
       - name: Seed trusted default-branch dependency cache
-        uses: qwts/qwts-agent-ci/.github/actions/bounded-dependency-install@946d8cd4148f18f982c6b1786b70849c6447ce01
+        uses: true-line/trueline-agent-ci/.github/actions/bounded-dependency-install@8ec38da39c9b43af2181d1f5e5b7e09226c0bfad
         env:
           NPM_CONFIG_CACHE: ${{ runner.temp }}/ci-dependency-cache/npm
         with:
