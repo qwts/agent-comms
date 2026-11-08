@@ -36,3 +36,4 @@ supersede them instead.
 | [ADR-0077](ADR-0077-owner-decisions-through-the-broker.md) | Grant-scoped owner decisions through the broker | Accepted |
 | [ADR-0276](ADR-0276-soul-tokens-signed-by-the-identity-service.md) | The broker accepts service-signed soul tokens | Accepted |
 | [ADR-0297](ADR-0297-platform-glossary-owns-soul-and-principal.md) | The platform glossary owns "Soul" and "principal"; amends ADR-0003's terms | Proposed |
+| [ADR-0300](ADR-0300-contract-codecs-for-task-v1-and-wire-v1.md) | Contract codecs for task/v1 and wire/v1, checked against pinned soul-contracts fixtures | Proposed |
