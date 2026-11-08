@@ -6,6 +6,14 @@ Harness instruction files live in the user directory
 ([ENG-0384](https://github.com/qwts/qwts-agent-sop/blob/main/docs/decisions/ENG-0384-harness-config-lives-in-the-user-directory.md)),
 not in this repository.
 
+<!-- platform:agent-bot-platform:start -->
+Platform: true-line/agent-bot-platform, read at main.
+This repository's charter, seams and requirements are in the platform's
+registry/repos.yaml entry for agent-comms. Read the platform's AGENTS.md
+at the start of every task, and before changing a seam or anything a
+requirement covers.
+<!-- platform:agent-bot-platform:end -->
+
 ## What this repository is
 
 agent-comms is released harness-independent communications software for the
