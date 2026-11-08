@@ -5,7 +5,7 @@
 # when that run succeeds, this workflow releases that exact commit if its
 # package.json version has no tag yet. Agents never push tags.
 #
-# Per the CI execution policy (qwts-agent-ci docs/ci-execution-policy.md,
+# Per the CI execution policy (trueline-agent-ci docs/ci-execution-policy.md,
 # "Tagging and release workflows"), this consumes the CI run's complete-suite
 # evidence instead of rerunning merge gates, fails closed on provenance, and
 # does only release-specific work: package, checksum, and smoke the packaged

@@ -63,11 +63,11 @@ inherit by default, vary by explicit delta).
 - **Docs gate:** every change under `docs/`, plus this file, `README.md`, and
   `CONTRIBUTING.md`, passes the docs-gov check and `npm run lint:markdown`
   before a PR is opened. The check runs from the pinned
-  `qwts-agent-docs-gov` capability, the same commit `.github/workflows/ci.yml`
+  `trueline-agent-docs-gov` capability, the same commit `.github/workflows/ci.yml`
   calls:
 
   ```bash
-  git clone -q https://github.com/qwts/qwts-agent-docs-gov.git /tmp/docs-gov && git -C /tmp/docs-gov checkout -q 67db7dc9c20bc29222fb605b7ff9432fd58a2a3f && node /tmp/docs-gov/tools/docs-gov/docs-gov.mjs --root .
+  git clone -q https://github.com/true-line/trueline-agent-docs-gov.git /tmp/docs-gov && git -C /tmp/docs-gov checkout -q 67db7dc9c20bc29222fb605b7ff9432fd58a2a3f && node /tmp/docs-gov/tools/docs-gov/docs-gov.mjs --root .
   ```
 
 ## CLI skill development
