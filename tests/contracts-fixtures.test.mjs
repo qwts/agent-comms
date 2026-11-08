@@ -127,6 +127,24 @@ test('a routed message frames to a record its own admission accepts', () => {
     destinationEpoch: 1, expiresAt: Date.now(), payloadSize: 256 * 1024 + 1, wakeClass: 'notify' }), { code: 'frame_too_large' });
 });
 
+test('the builder refuses an expiry that is not a millisecond timestamp, with a typed error', () => {
+  const base = { messageId: 'message_1', destinationSoul: 'agent_0b3f1e2a-7c4d-4e8f-9a1b-2c3d4e5f6a7b',
+    destinationEpoch: 1, payloadSize: 1, wakeClass: 'notify' };
+  for (const expiresAt of [undefined, null, '2026-11-08T18:00:00Z', Number.NaN, 1.5, 8.64e15 + 1]) {
+    assert.throws(() => frameRoutedMessage({ ...base, expiresAt }), { code: 'bad-request' }, String(expiresAt));
+  }
+});
+
+test('inherited names never act as schema properties or formats', () => {
+  const validate = compileSchema({ type: 'object', additionalProperties: false, properties: { a: { type: 'string' } } });
+  for (const key of ['constructor', 'toString', 'hasOwnProperty']) {
+    assert.deepEqual(validate(JSON.parse(`{"${key}":1}`)), [{ path: `/${key}`, keyword: 'additionalProperties' }], key);
+  }
+  assert.deepEqual(validate(JSON.parse('{"__proto__":1}')), [{ path: '/__proto__', keyword: 'additionalProperties' }]);
+  assert.throws(() => compileSchema({ type: 'string', format: 'toString' }), /unsupported format toString/);
+  assert.throws(() => compileSchema({ type: 'string', format: 'constructor' }), /unsupported format constructor/);
+});
+
 test('admission requires a clock and the negotiated capabilities', () => {
   const positive = fixtures.find((f) => f.name === 'wire-frame.notify-unsealed.json').input;
   assert.throws(() => admitFrame(positive, { negotiatedCapabilities: [] }), TypeError);
@@ -149,8 +167,10 @@ test('strict JSON refuses duplicate keys at any depth and keeps JSON.parse seman
 });
 
 test('date-time follows RFC 3339', () => {
-  for (const ok of ['2026-11-08T18:00:00Z', '2026-02-28T23:59:59.5+05:30', '2024-02-29t00:00:00z']) assert.ok(isDateTime(ok), ok);
-  for (const bad of ['2026-11-08', '2026-11-08T18:00Z', '2026-02-29T00:00:00Z', '2026-11-08T24:00:00Z', '2026-11-08T18:00:00+2400']) {
+  for (const ok of ['2026-11-08T18:00:00Z', '2026-02-28T23:59:59.5+05:30', '2024-02-29t00:00:00z',
+    '0000-02-29T00:00:00Z', '2000-02-29T00:00:00Z']) assert.ok(isDateTime(ok), ok);
+  for (const bad of ['2026-11-08', '2026-11-08T18:00Z', '2026-02-29T00:00:00Z', '2026-11-08T24:00:00Z', '2026-11-08T18:00:00+2400',
+    '1900-02-29T00:00:00Z', '0100-02-29T00:00:00Z', '2026-13-01T00:00:00Z', '2026-00-10T00:00:00Z']) {
     assert.ok(!isDateTime(bad), bad);
   }
 });
