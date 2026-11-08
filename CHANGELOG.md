@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Contract codecs for the platform's `task-v1` and `wire-v1` seams (platform
+  PDR-0024). `lib/contracts/task-v1.mjs` validates and mirrors HQ's
+  soul-contracts `task/v1` records unchanged. `lib/contracts/wire-v1.mjs`
+  builds and admits `wire/v1` frames: strict parse, schema, the 256 KiB inline
+  limit, expiry and capability negotiation. A new test runs every `wire/v1` and
+  `task/v1` fixture from soul-contracts v0.4.1. Live deliveries are not framed
+  yet; that waits on HQ installation epochs (#300).
+
 - `agent-comms setup` installs the single-account broker, pairs and approves
   this account, pairs the agent-bot daemon, and reports `comms connected`
   only when both pairings are approved. `broker install --single-account`

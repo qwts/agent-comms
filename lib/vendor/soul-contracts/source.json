@@ -1,0 +1,12 @@
+{
+  "repository": "https://github.com/true-line/soul-contracts",
+  "tag": "v0.4.1",
+  "commit": "d9ca0731fbe7bbf7a29d066c8a23cd92717ee9bd",
+  "files": {
+    "schemas/task/v1/action-record.schema.json": "f01c34bbaf0da722ada7d6de99b96f56fb9af0d2d32920a3b3bf860d90d0e8fb",
+    "schemas/task/v1/task-commitment.schema.json": "02af29d7266e5cc19743db67ec3941ab888864b0fbdd7ef687d46bd6e629a391",
+    "schemas/task/v1/task-record.schema.json": "1bc854510d075e1ad4c711de7d155ca549ef33cf6e6f6613fd58811dfbd04be2",
+    "schemas/wire/v1/directive-or-query.schema.json": "5d363b90bf024ded47d2a259ab1d9a0682b9edea394d7255dd916e23e63a295f",
+    "schemas/wire/v1/wire-frame.schema.json": "b4da419a962c4386a679c577ae7ff94c759aee5674b8f6bd246b009f7cabd0d6"
+  }
+}

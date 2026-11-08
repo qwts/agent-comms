@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://true-line.ai/soul-contracts/wire/v1/wire-frame.schema.json",
+  "title": "wire/v1 outer frame",
+  "description": "0.4 §6 and Appendix A: routing information visible to relays. destination_epoch is the sender's last-known epoch, a routing hint; only commits are fenced, never inbound delivery. The sealed block is opaque to relays; the cryptographic contract defines its encodings. Inline frames are limited to 256 KiB.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "wire_version",
+    "message_id",
+    "destination_soul",
+    "destination_epoch",
+    "expires_at",
+    "payload_size",
+    "wake_class",
+    "required_capabilities"
+  ],
+  "properties": {
+    "wire_version": {
+      "const": 1
+    },
+    "message_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "destination_soul": {
+      "type": "string",
+      "pattern": "^agent_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "destination_epoch": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "The sender's last-known epoch for the destination: a routing hint, never a fence. 0 when the sender has none."
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "payload_size": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 262144
+    },
+    "wake_class": {
+      "type": "string",
+      "enum": [
+        "none",
+        "notify",
+        "task",
+        "owner"
+      ]
+    },
+    "required_capabilities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(-[a-z0-9]+)*-v[0-9]+$"
+      },
+      "uniqueItems": true
+    },
+    "sealed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile",
+        "recipient_key_id",
+        "ciphertext"
+      ],
+      "properties": {
+        "profile": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "recipient_key_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+        },
+        "ciphertext": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

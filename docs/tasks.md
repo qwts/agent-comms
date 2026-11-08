@@ -4,6 +4,18 @@ Tasks record work offered to a soul (account and agent ID) or an approved
 principal. An offer assigns no work until the recipient accepts. Task state
 is the assignee's claim; reads, acknowledgments and execution do not change it.
 
+## Relation to the platform task contract
+
+This page describes agent-comms' own peer-offer workflow. It is **not** the
+platform's `task-v1` seam. Under platform
+[PDR-0024](https://github.com/true-line/agent-bot-platform/blob/main/docs/04-decisions/PDR-0024-comms-mirrors-task-v1-and-frames-wire-v1.md),
+HQ provides `task-v1` and owns its state. agent-comms mirrors HQ's
+soul-contracts `task/v1` task records, commitment requests and action records
+unchanged through `lib/contracts/task-v1.mjs`, and translates nothing between
+the two models. The states, fields and errors below belong to this workflow
+alone. Whether it retires once HQ tasks exist is a later platform decision
+([ADR-0300](decisions/ADR-0300-contract-codecs-for-task-v1-and-wire-v1.md)).
+
 ## CLI and transitions
 
 ```sh
