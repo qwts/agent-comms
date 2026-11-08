@@ -15,7 +15,7 @@ class AgentComms < Formula
       using: :git,
       tag:   "v0.5.5"
   version "0.5.5"
-  license :cannot_represent # proprietary; see LICENSE
+  license "MIT"
 
   depends_on "node"
 
