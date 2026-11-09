@@ -37,3 +37,4 @@ supersede them instead.
 | [ADR-0276](ADR-0276-soul-tokens-signed-by-the-identity-service.md) | The broker accepts service-signed soul tokens | Accepted |
 | [ADR-0297](ADR-0297-platform-glossary-owns-soul-and-principal.md) | The platform glossary owns "Soul" and "principal"; amends ADR-0003's terms | Proposed |
 | [ADR-0300](ADR-0300-contract-codecs-for-task-v1-and-wire-v1.md) | Contract codecs for task/v1 and wire/v1, checked against pinned soul-contracts fixtures | Proposed |
+| [ADR-0306](ADR-0306-broker-mode-as-an-hq-plugin.md) | Broker mode as an HQ plugin, on a vendored agent-bot-hq SDK | Proposed |

@@ -20,6 +20,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Broker mode as an HQ plugin (ADR-0306, #306; agent-bot-hq plan §9 row 13b).
+  `lib/hq-plugin/plugin.mjs` serves HQ's `broker.sock`. It binds each member
+  connection to its runtime through hq-admission's `verifyBinding`, then
+  delivers `task.commit` and every other registered kind with the bound
+  runtime ID alone. The agent-bot-hq SDK is vendored in
+  `lib/vendor/agent-bot-sdk/` with per-file digests. A new test runs the real
+  HQ from the pinned agent-bot-hq revision with this plugin: a bound member
+  commits a task over the socket, a wrong, superseded or expired binding is
+  refused, and T05 holds.
+
 - Contract codecs for the platform's `task-v1` and `wire-v1` seams (platform
   PDR-0024). `lib/contracts/task-v1.mjs` validates and mirrors HQ's
   soul-contracts `task/v1` records unchanged. `lib/contracts/wire-v1.mjs`

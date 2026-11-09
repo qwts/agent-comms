@@ -42,7 +42,7 @@
           },
           {
             "name": "Issue",
-            "pattern": "^qwts/agent-comms#\\d+$"
+            "pattern": "^(qwts/agent-comms|true-line/agent-bot-comms)#\\d+$"
           }
         ]
       }

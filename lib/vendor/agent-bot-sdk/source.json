@@ -1,0 +1,24 @@
+{
+  "repository": "https://github.com/true-line/agent-bot-hq",
+  "path": "sdk",
+  "commit": "d02493af9d6457d8edd4b57cbef3cb9876b527f1",
+  "files": {
+    "sdk/README.md": "aaf6c56a7454acc7f34521ce4baeaabd95d8141b659bf24a4080d8442284dac2",
+    "sdk/conformance.mjs": "5ea5282249f36f674dfdc530d82c650c5f54dd23121180a0d3278ac534ea7da8",
+    "sdk/declarations.mjs": "ac4f16974910585e4dca5f64eb4ddf111d217fdc9ea24003cf2debd948e78692",
+    "sdk/errors.mjs": "8f78c89d539963693acdedd076f1cc78f0319ac6d221e313f31d1817145fe68c",
+    "sdk/host.mjs": "d7a4ae0bc3ec6bd6411c29b9cc81f42b3c30e6951ea7cf173bcca7344a5542a6",
+    "sdk/index.mjs": "1088e439bbe7f8afc5a8a5b2758d461d05a1c350716a1ea3498a40b911c8a981",
+    "sdk/operations.mjs": "c367d5bcc7489c09de0691137192fef2a6dfda3229206d96bcac38d7e44663f4",
+    "sdk/package.json": "59bc71e809b49eb47cb530202efb63768104d743471e7e58ba4bed6a8ab4f34c",
+    "sdk/plugin.mjs": "e4ca5a791734544d6543f5dfc9512199f14397c333fb22d982c660e60a263870",
+    "sdk/semver.mjs": "0fe55e5f9c3075666d029adad0684bb1ba208eef3b8c48848dc86ef4d1af4c5a",
+    "sdk/services.mjs": "fc8318d570ccd6a8db11d7f2ae56e1a400d935a193b3c38e7dac3aaf1eee1a1e",
+    "sdk/test-host.mjs": "88b955db28a6a59cedb3d0055d28df4529c3d06b631696e911d84911c45c0270",
+    "sdk/wire/canonical-json.mjs": "331ffdcb00e287552b38b215a0c5dc19340b86d6503863c30d3785bdddc0580b",
+    "sdk/wire/index.mjs": "1193de4ef34bf1f780d2244a0c6d4dab02ae69197a3a50489e7dff8e09494772",
+    "sdk/wire/schema.mjs": "8bfa39fe56120b7317b08af82f2aca671051f2d48178047679e46de49382b460",
+    "sdk/wire/strict-json.mjs": "2708f4eca2ab24ff761bd216f53d3647fb66c3b196730a2574eb7560c0db4e9e",
+    "sdk/wire/versions.mjs": "b5528e5e25ebe6f5ed13ca54360e4792e2d662ecf59e1161ae6a1475514f5704"
+  }
+}
