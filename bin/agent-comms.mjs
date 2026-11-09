@@ -571,10 +571,11 @@ async function run(argv, env) {
           catch { fail('usage', 'limits-file must be readable broker limits JSON'); }
         }
         const broker = await new Broker({ paths, mode, limits, gid: flags.group === undefined ? null : groupId(flags.group) }).start();
-        process.stderr.write(`agent-comms broker listening on ${paths.socket}\n`);
         const shutdown = () => broker.stop().then(() => process.exit(0));
         process.on('SIGINT', shutdown);
         process.on('SIGTERM', shutdown);
+        // Announced last: a supervisor may signal as soon as it reads this line.
+        process.stderr.write(`agent-comms broker listening on ${paths.socket}\n`);
         return undefined;
       }
       if (sub === 'pairings') return print(await admin(paths, { op: 'pairings' }));

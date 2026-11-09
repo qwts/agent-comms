@@ -52,6 +52,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `agent-comms broker run` installs its SIGINT and SIGTERM handlers before it
+  prints `listening on`. A supervisor that signalled the broker as soon as it
+  read that line could kill it before the clean shutdown was in place.
 - On Linux, the shared directory defaults to `$XDG_STATE_HOME/agent-comms-shared`
   and logs to `$XDG_STATE_HOME/agent-comms-logs`, so `broker run` from a source
   checkout no longer fails with `EACCES` on `/Users/Shared/Public`. macOS and
