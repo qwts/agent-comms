@@ -6,6 +6,8 @@
 // refused; T05 holds over the socket.
 
 import assert from 'node:assert/strict';
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, statSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { pathToFileURL } from 'node:url';
@@ -14,7 +16,8 @@ import { brokerPlugin } from '../lib/hq-plugin/broker.mjs';
 
 const pkg = await import('../package.json', { with: { type: 'json' } }).then((m) => m.default);
 const harness = await import(pathToFileURL(join(agentBotHq(), 'tests/hq-harness.mjs')).href);
-const { hello, SOUL, startHQ } = harness;
+const { DIGEST, hello, SOUL, startHQ } = harness;
+const { bindProof } = await import(pathToFileURL(join(agentBotHq(), 'hq/admission.mjs')).href);
 
 async function setup(options) {
   const t = await startHQ({ plugins: [brokerPlugin(options)] });
@@ -165,3 +168,73 @@ test('closing a connection drops its binding, including one that closes while it
     assert.equal(t.broker.boundConnections(), 0, 'and closed() ran after the second');
   } finally { await t.done(); }
 });
+
+// agent-bot-hq plan §9 row 16a, through this plugin. Two endpoint
+// directories stand in for two member accounts: HQ identifies the caller by
+// the endpoint a connection arrives on. (HQ's own CI proves the kernel side
+// on real accounts.)
+async function withAccounts(run) {
+  const dir = mkdtempSync(join(tmpdir(), 'm-'));
+  chmodSync(dir, 0o755);
+  const accounts = { hqm_a: 61001, hqm_b: 61002 };
+  const gids = {};
+  for (const account of Object.keys(accounts)) {
+    mkdirSync(join(dir, account));
+    chmodSync(join(dir, account), 0o2750);
+    gids[account] = statSync(join(dir, account)).gid;
+  }
+  const t = await startHQ({
+    platform: 'linux',
+    accounts: (name) => ({ uid: accounts[name], gid: gids[name], groupMembers: [] }),
+    config: { acceptedDefinitions: { [SOUL]: [DIGEST] }, members: { dir, accounts: { [SOUL]: { m_lead: 'hqm_a', m_spec: 'hqm_b' } } } },
+    plugins: [brokerPlugin()],
+  });
+  try {
+    const entry = await t.entry();
+    const r = (await entry.request('Hello', hello())).result;
+    const rt = (role) => ({ ...r.admitted_runtimes.find((a) => a.role === role), epoch: r.installation_epoch, generation: r.lease_generation });
+    const on = (account) => t.member(account ? t.status.hq.sockets.members.find((m) => m.account === account).path : undefined);
+    const bind = async (conn, runtime, key = runtime.channel_binding) => {
+      const challenge = await conn.request('bind.challenge', { runtime_id: runtime.runtime_id });
+      assert.equal(challenge.ok, true, JSON.stringify(challenge));
+      return conn.request('bind', { runtime_id: runtime.runtime_id, proof: bindProof(key, challenge.result.nonce, runtime.runtime_id) });
+    };
+    await run({ ...t, lead: rt('lead'), spec: rt('specialist'), on, bind });
+  } finally {
+    await t.done();
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+test('a member with its own account binds by keyed proof from its own endpoint and commits a task', () => withAccounts(async (t) => {
+  const lead = await t.on('hqm_a');
+  const bound = await t.bind(lead, t.lead);
+  assert.equal(bound.ok, true, JSON.stringify(bound));
+  assert.deepEqual(bound.result, { runtime_id: t.lead.runtime_id, member_id: 'm_lead', role: 'lead' });
+  const tasks = t.hq.host.provided('hq-tasks');
+  const { task_id: taskId } = await tasks.offer({ operation_id: 'offer_1', objective: 'Repair the seeded issue.', done_criteria: 'Checks pass.', accountable_soul: SOUL, write_scope: ['workspace:scratch'] }, { from: { kind: 'owner' } });
+  const task = (await tasks.get(taskId)).task;
+  const res = await lead.request('task.commit', { contract: 'task/v1', request_id: 'req_1', task_id: taskId, expected_revision: task.revision, installation_epoch: t.lead.epoch, runtime_id: t.lead.runtime_id, lease_generation: t.lead.generation, operation_id: 'op_1', transition: 'accepted' });
+  assert.equal(res.ok, true, JSON.stringify(res));
+  assert.equal(res.result.outcome, 'committed');
+  const receipt = t.hq.core.receipts.find((x) => x.kind === 'hq.bind');
+  assert.equal(receipt.caller_account, 'hqm_a');
+  assert.equal(JSON.stringify(t.hq.core.receipts).includes(t.lead.channel_binding), false);
+}));
+
+test('T01 through the plugin: a copied binding is refused from another account and from the shared socket', () => withAccounts(async (t) => {
+  const mismatch = (res) => assert.equal(res.refusal?.error, 'caller_mismatch', JSON.stringify(res));
+  // The specialist's account presents the lead's runtime and the lead's binding.
+  const other = await t.on('hqm_b');
+  mismatch(await t.bind(other, t.lead));
+  // The shared socket, with the proof or with the binding in the clear.
+  mismatch(await t.bind(await t.on(), t.lead));
+  mismatch(await (await t.on()).request('bind', { runtime_id: t.lead.runtime_id, channel_binding: t.lead.channel_binding }));
+  // The lead's own endpoint with the binding in the clear, or the wrong key.
+  mismatch(await (await t.on('hqm_a')).request('bind', { runtime_id: t.lead.runtime_id, channel_binding: t.lead.channel_binding }));
+  mismatch(await t.bind(await t.on('hqm_a'), t.lead, t.spec.channel_binding));
+  // A refused connection is not bound, and can still bind as itself.
+  mismatch(await other.request('task.directives', {}));
+  assert.equal((await t.bind(other, t.spec)).ok, true);
+  assert.equal(t.hq.host.provided(pkg.name).boundConnections(), 1);
+}));

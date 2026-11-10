@@ -136,3 +136,54 @@ test('a second bind while the first is in flight is refused, and a close during 
   assert.equal(broker.boundConnections(), 0);
   await assert.rejects(host.brokerAccept('task.commit', { n: 1 }, { connection: 'bc_1' }), code('caller_mismatch'));
 });
+
+// Row 16a (agent-bot-hq): the keyed bind. The plugin's part is to hand
+// hq-admission the connection, for the challenge and for the bind.
+const challengeAdmission = (log) => definePlugin({
+  name: 'hq-admission',
+  version: '0.1.0',
+  hostApi: 1,
+  async init() {
+    return { provides: {
+      async bindChallenge(input, meta) { log.push(['challenge', input, meta]); return { runtime_id: input.runtime_id, nonce: 'n'.repeat(64) }; },
+      async verifyBinding(input, meta) {
+        log.push(['bind', input, meta]);
+        const rt = RUNTIMES[input?.runtime_id];
+        if (!rt || input.proof !== 'p'.repeat(64)) fail('caller_mismatch', 'the caller does not match');
+        return Object.freeze({ runtime_id: input.runtime_id, soul_id: 'agent_x', member_id: rt.member_id, role: rt.role, installation_epoch: 1, lease_generation: 1 });
+      },
+      forgetConnection(connection) { log.push(['forget', connection]); },
+    } };
+  },
+});
+
+test('a keyed bind: the challenge and the bind both carry the connection, and a close is passed on', async () => {
+  const log = [];
+  const host = createTestHost({ plugins: [challengeAdmission(log), brokerPlugin(), consumer([])] });
+  await host.start();
+  const challenge = await host.brokerAccept('bind.challenge', { runtime_id: 'rt_lead' }, { connection: 'bc_1' });
+  assert.equal(challenge.nonce, 'n'.repeat(64));
+  const bound = await host.brokerAccept('bind', { runtime_id: 'rt_lead', proof: 'p'.repeat(64) }, { connection: 'bc_1' });
+  assert.deepEqual(bound, { runtime_id: 'rt_lead', member_id: 'm_lead', role: 'lead' });
+  assert.deepEqual(log, [
+    ['challenge', { runtime_id: 'rt_lead' }, { connection: 'bc_1' }],
+    ['bind', { runtime_id: 'rt_lead', proof: 'p'.repeat(64) }, { connection: 'bc_1' }],
+  ]);
+  // A bound connection asks for no further challenge.
+  await assert.rejects(host.brokerAccept('bind.challenge', { runtime_id: 'rt_lead' }, { connection: 'bc_1' }), code('host.invalid_request'));
+  // A refused bind leaves the connection unbound, free to ask again.
+  await host.brokerAccept('bind.challenge', { runtime_id: 'rt_spec' }, { connection: 'bc_2' });
+  await assert.rejects(host.brokerAccept('bind', { runtime_id: 'rt_spec', proof: 'f'.repeat(64) }, { connection: 'bc_2' }), code('caller_mismatch'));
+  await assert.rejects(host.brokerAccept('task.commit', { n: 1 }, { connection: 'bc_2' }), code('caller_mismatch'));
+  await host.brokerAccept('bind.challenge', { runtime_id: 'rt_spec' }, { connection: 'bc_2' });
+  await host.brokerClosed('bc_2');
+  assert.deepEqual(log.at(-1), ['forget', 'bc_2']);
+});
+
+test('an HQ without bind challenges refuses the challenge and still binds by channel binding', async () => {
+  const host = createTestHost({ plugins: [admission(), brokerPlugin(), consumer([])] });
+  await host.start();
+  await assert.rejects(host.brokerAccept('bind.challenge', { runtime_id: 'rt_lead' }, { connection: 'bc_1' }), code('host.invalid_request'));
+  await host.brokerAccept('bind', { runtime_id: 'rt_lead', channel_binding: RUNTIMES.rt_lead.channel_binding }, { connection: 'bc_1' });
+  await host.brokerClosed('bc_1');
+});

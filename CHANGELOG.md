@@ -29,6 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   HQ from the pinned agent-bot-hq revision with this plugin: a bound member
   commits a task over the socket, a wrong, superseded or expired binding is
   refused, and T05 holds.
+- The HQ plugin serves the keyed bind (agent-bot-hq plan §9 row 16a). It
+  passes `bind.challenge`, and the `bind` that answers it, to hq-admission
+  with the connection they arrived on, so HQ can tell which member account is
+  calling. A member with its own account proves it holds its channel binding
+  without sending it. The vendored SDK moves to agent-bot-hq 318c72d. Members
+  without an account bind as before.
 
 - Contract codecs for the platform's `task-v1` and `wire-v1` seams (platform
   PDR-0024). `lib/contracts/task-v1.mjs` validates and mirrors HQ's
