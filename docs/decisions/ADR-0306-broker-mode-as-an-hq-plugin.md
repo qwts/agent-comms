@@ -45,6 +45,10 @@ Three choices were left here:
      `host.invalid_request`.
    - hq-admission's own refusals pass through unchanged.
    - A connection that closes during its bind is left unbound.
+   - `bind.challenge` goes to hq-admission's `bindChallenge` with the
+     connection, and so does the `bind` that answers it. HQ needs the
+     connection to tell which member account is calling (agent-bot-hq plan
+     §9 row 16a, added 2026-11-10). A bound connection gets no challenge.
 
    Every later frame goes to `ctx.broker.deliver` with the runtime ID. The
    channel binding never leaves the plugin. Deciding whether a runtime is
