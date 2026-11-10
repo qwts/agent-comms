@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
-import { generateKeyPairSync, randomUUID, sign } from 'node:crypto';
+import { createHash, generateKeyPairSync, randomUUID, sign } from 'node:crypto';
+import net from 'node:net';
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 
 import { Broker, sha256 } from '../lib/broker.mjs';
 import { admin, call, loadCredential } from '../lib/client.mjs';
+import { PROTOCOL_VERSION } from '../lib/wire.mjs';
 import { withBroker } from './helpers/broker.mjs';
 
 const now = Math.floor(Date.now() / 1000);
@@ -59,7 +61,7 @@ function v1Token(key, account, agentId) {
   return `v1.${payloadSegment}.${sign(null, Buffer.from(payloadSegment, 'ascii'), key.privateKey).toString('base64url')}`;
 }
 
-async function fixture(run, { issuers = [ISSUER, LOOPBACK], sets, brokerEnv, daemonKind = 'v2', clockBox } = {}) {
+async function fixture(run, { issuers = [ISSUER, LOOPBACK], sets, brokerEnv, daemonKind = 'v2', clockBox, realDaemonOperation = false } = {}) {
   const jwks = sets ?? { [ISSUER]: [jwkOf(service.publicKey, 'sk1')] };
   const fetchImpl = jwksFetch(jwks);
   const clock = clockBox ?? { t: now };
@@ -87,7 +89,7 @@ async function fixture(run, { issuers = [ISSUER, LOOPBACK], sets, brokerEnv, dae
   }, {
     brokerOptions: {
       now: () => clock.t * 1000,
-      daemonOperation: (request, socket, { account }) => ({ account, op: request.op }),
+      ...(realDaemonOperation ? {} : { daemonOperation: (request, socket, { account }) => ({ account, op: request.op }) }),
       soulTokenIssuers: issuers, fetchImpl,
       ...(brokerEnv ? { env: brokerEnv } : {}),
     },
@@ -258,3 +260,37 @@ test('v2 pairing survives journal replay; a failed refresh keeps the last good k
     await replay.stop();
   }
 }));
+
+// The fixture above stubs the daemon dispatcher, which hid this: the real
+// account watch derived its identity from the host key a v2 pairing does not
+// have, and answered `internal` (#309, ADR-0309).
+test('a v2-paired daemon opens the real account watch, bound to its issuer and device', () => fixture(async ({ approve, pending, account, paths }) => {
+  await approve();
+  const events = [];
+  const socket = net.createConnection(paths.socket);
+  try {
+    await new Promise((resolve, reject) => {
+      let buffer = '';
+      socket.setEncoding('utf8');
+      socket.on('error', reject);
+      socket.on('close', () => reject(new Error(`closed before ready: ${JSON.stringify(events)}`)));
+      socket.on('data', (chunk) => {
+        buffer += chunk;
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (const line of lines) if (line) events.push(JSON.parse(line));
+        if (events.length) resolve();
+      });
+      socket.on('connect', () => socket.write(`${JSON.stringify({
+        v: PROTOCOL_VERSION, op: 'account-watch', auth: { daemon: account, secret: pending.secret } })}\n`));
+    });
+  } finally {
+    socket.removeAllListeners('close');
+    socket.destroy();
+  }
+  const ready = events.find((event) => event.event === 'ready');
+  assert.ok(ready, `expected ready, got ${JSON.stringify(events)}`);
+  assert.equal(ready.daemonKey, createHash('sha256')
+    .update(`agent-comms/daemon-identity/v2\n${ISSUER}\n${DEVICE}`).digest('hex'));
+  assert.equal(ready.daemonEpoch, 1);
+}, { realDaemonOperation: true }));
