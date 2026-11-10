@@ -30,7 +30,7 @@ test('real producer records roundtrip closed tuples, exact details, and observed
   const tokens = ['pair-account-pending', 'pair-daemon-pending', 'pair-principal-pending',
     'pair-account-approved', 'pair-daemon-approved', 'pair-principal-approved', 'soul-joined', 'mailbox-admitted', 'mailbox-duplicate', 'mailbox-read', 'mailbox-acked', 'broker-started', 'broker-start-failed',
     'broker-stopped', 'broker-stop-failed', 'transport-ready', 'transport-reconnected', 'request-internal', 'storage-append',
-    'storage-compact', 'maintenance-internal', 'maintenance-storage', 'traceparent-dropped', 'transport-unreachable',
+    'storage-compact', 'maintenance-internal', 'maintenance-storage', 'soul-keys-refresh-failed', 'traceparent-dropped', 'transport-unreachable',
     'transport-timeout', 'transport-custody', 'transport-proof', 'transport-retry'];
   sink.report('request-internal', -1);
   for (const token of tokens) sink.report(token, 1, 2, 500);

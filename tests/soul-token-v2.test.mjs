@@ -61,7 +61,7 @@ function v1Token(key, account, agentId) {
   return `v1.${payloadSegment}.${sign(null, Buffer.from(payloadSegment, 'ascii'), key.privateKey).toString('base64url')}`;
 }
 
-async function fixture(run, { issuers = [ISSUER, LOOPBACK], sets, brokerEnv, daemonKind = 'v2', clockBox, realDaemonOperation = false } = {}) {
+async function fixture(run, { issuers = [ISSUER, LOOPBACK], sets, brokerEnv, daemonKind = 'v2', clockBox, realDaemonOperation = false, diagnostic } = {}) {
   const jwks = sets ?? { [ISSUER]: [jwkOf(service.publicKey, 'sk1')] };
   const fetchImpl = jwksFetch(jwks);
   const clock = clockBox ?? { t: now };
@@ -91,6 +91,7 @@ async function fixture(run, { issuers = [ISSUER, LOOPBACK], sets, brokerEnv, dae
       now: () => clock.t * 1000,
       ...(realDaemonOperation ? {} : { daemonOperation: (request, socket, { account }) => ({ account, op: request.op }) }),
       soulTokenIssuers: issuers, fetchImpl,
+      ...(diagnostic ? { diagnostic } : {}),
       ...(brokerEnv ? { env: brokerEnv } : {}),
     },
   });
@@ -294,3 +295,41 @@ test('a v2-paired daemon opens the real account watch, bound to its issuer and d
     .update(`agent-comms/daemon-identity/v2\n${ISSUER}\n${DEVICE}`).digest('hex'));
   assert.equal(ready.daemonEpoch, 1);
 }, { realDaemonOperation: true }));
+
+// #309: a broker that cannot fetch the service's keys rejects every v2 token,
+// and used to leave no trace of why.
+test('a failing key refresh is reported once per outage, again at the staleness cap, and never changes the outcome', async () => {
+  const { createSoulKeyStore } = await import('../lib/broker/soul-keys.mjs');
+  const sets = { [ISSUER]: null };
+  const clock = { t: 1_000_000 };
+  const reports = [];
+  const store = createSoulKeyStore({ fetchImpl: jwksFetch(sets), now: () => clock.t,
+    onRefreshFailure: (durationMs) => { reports.push(durationMs); throw new Error('a reporter that throws'); } });
+  await assert.rejects(store.refresh(ISSUER), /soul keys refresh failed/);
+  await assert.rejects(store.refresh(ISSUER));
+  assert.deepEqual(reports, [0]);
+  clock.t += 15 * 60_000;
+  await assert.rejects(store.refresh(ISSUER));
+  assert.equal(reports.length, 2);
+  // Recovery ends the outage; the next failure is a new one.
+  sets[ISSUER] = [jwkOf(service.publicKey, 'sk1')];
+  await store.refresh(ISSUER);
+  assert.equal(store.hasKeys(ISSUER), true);
+  sets[ISSUER] = null;
+  clock.t += 1000;
+  await assert.rejects(store.refresh(ISSUER));
+  assert.equal(reports.length, 3);
+  assert.equal(store.hasKeys(ISSUER), true);
+});
+
+test('the broker records a failed key refresh as a diagnostic event', () => {
+  const events = [];
+  return fixture(async ({ approve, warm, jwks }) => {
+    await approve();
+    await warm();
+    assert.deepEqual(events.filter((event) => event === 'soul-keys-refresh-failed'), []);
+    jwks[ISSUER] = null;
+    await assert.rejects(warm());
+    assert.deepEqual(events.filter((event) => event === 'soul-keys-refresh-failed'), ['soul-keys-refresh-failed']);
+  }, { diagnostic: (event) => { events.push(event); } });
+});

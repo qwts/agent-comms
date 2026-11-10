@@ -56,6 +56,7 @@ operation's contract to be consulted rather than an inferred retry policy.
 | `rate-limited`, `mailbox-full` | Existing rate or mailbox capacity limits refused work. Follow the operation's rate/capacity policy; do not create new keys to evade limits or discard unacknowledged messages. |
 | `conflict`, `revision-mismatch`, `invalid-transition` | Retained idempotency content, task revision or state transition disagrees. Read current operation state and retain the original identity; do not silently change content under the same key or force a transition. |
 | `cursor-expired`, `gap-changed`, `message-expired` | Retention or acknowledged-loss state changed. Follow [mailbox retention](mailbox-retention.md): use the bounded resume/gap metadata, reread changed gaps before acknowledgment, and do not infer that expired bodies remain recoverable. |
+| `soul-token-invalid` on a soul-token v2 pairing | The token failed verification. If every token from a correctly paired daemon fails, look for `broker.soul-keys-refresh-failure` in the broker's diagnostics: the broker cannot fetch the identity service's signing keys. Restore its network path to the issuer; it retries by itself, and a restart retries at once. |
 | `internal` | An unexpected handler failure occurred. Preserve the public result and inspect bounded local diagnostics. No generic replay guarantee follows from this code. |
 
 Principal methods do not retry automatically. The account watch has its own
@@ -64,3 +65,10 @@ a general mutation retry mechanism. Mailbox admission, delivery, acknowledgment
 and task completion remain separate states. See [local diagnostics](local-diagnostics.md)
 for best-effort observation limits and [principal client](principal-client.md)
 for the authenticated API.
+
+`broker.soul-keys-refresh-failure` (operation `broker.soul-keys`, stage
+`refresh`, code `soul-keys-unavailable`, outcome `failed`) is recorded when a
+refresh of an issuer's signing keys starts failing, and again every 15 minutes
+while it keeps failing. It names no issuer, URL or error. Cached keys keep
+verifying for 15 minutes after their last successful refresh
+([ADR-0276](decisions/ADR-0276-soul-tokens-signed-by-the-identity-service.md)).

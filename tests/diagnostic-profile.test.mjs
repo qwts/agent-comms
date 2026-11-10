@@ -42,6 +42,7 @@ test('local producer emits the reviewed exact profile subset and every finite br
     ['storage-compact', 'broker.storage-failure', 'broker.storage', 'compact', 'storage-failed', 'recovery-required'],
     ['maintenance-internal', 'broker.maintenance-failure', 'broker.maintenance', 'maintenance', 'internal', 'failed'],
     ['maintenance-storage', 'broker.maintenance-storage', 'broker.maintenance', 'maintenance', 'storage-failed', 'recovery-required'],
+    ['soul-keys-refresh-failed', 'broker.soul-keys-refresh-failure', 'broker.soul-keys', 'refresh', 'soul-keys-unavailable', 'failed'],
     ['traceparent-dropped', 'broker.traceparent-dropped', 'broker.launch', 'propagation', 'traceparent_dropped', 'dropped'],
     ['transport-unreachable', 'transport.unreachable', 'transport.connect', 'connect', 'broker-unreachable', 'failed'],
     ['transport-timeout', 'transport.timeout', 'transport.request', 'deadline', 'broker-timeout', 'failed'],
