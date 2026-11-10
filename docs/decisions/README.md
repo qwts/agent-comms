@@ -38,3 +38,4 @@ supersede them instead.
 | [ADR-0297](ADR-0297-platform-glossary-owns-soul-and-principal.md) | The platform glossary owns "Soul" and "principal"; amends ADR-0003's terms | Proposed |
 | [ADR-0300](ADR-0300-contract-codecs-for-task-v1-and-wire-v1.md) | Contract codecs for task/v1 and wire/v1, checked against pinned soul-contracts fixtures | Proposed |
 | [ADR-0306](ADR-0306-broker-mode-as-an-hq-plugin.md) | Broker mode as an HQ plugin, on a vendored agent-bot-hq SDK | Proposed |
+| [ADR-0309](ADR-0309-daemon-identity-for-soul-token-v2-pairings.md) | A soul-token v2 pairing identifies its daemon by issuer and device; amends ADR-0276 and ADR-0077 | Proposed |

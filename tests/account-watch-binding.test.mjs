@@ -3,6 +3,7 @@ import { createHash, generateKeyPairSync } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import test from 'node:test';
 import { createWatchDelivery } from '../lib/broker/watch.mjs';
+import { DAEMON_IDENTITY_V2_LABEL, daemonIdentityKey } from '../lib/broker/daemon-identity.mjs';
 
 class Socket extends EventEmitter {
   destroyed = false;
@@ -126,4 +127,62 @@ test('account rate holds merge separate windows with conservative sticky trace c
     t.mock.timers.tick(1000);
     assert.equal(wakes().length, 2, 'closing the stream leaves no further wake');
   }
+});
+
+// ADR-0309: a soul-token v2 pairing has no host key; its identity is the
+// paired issuer and device.
+const SOUL_TOKENS = { v: 2, issuer: 'https://agents.true-line.ai', device: 'dev_test-1' };
+function v2Fixture() {
+  const made = fixture();
+  made.broker.state.daemons.set('owner', { state: 'approved', epoch: 1, soulTokens: { ...SOUL_TOKENS } });
+  return made;
+}
+
+test('a soul-token v2 pairing opens an account watch bound to its issuer and device', () => {
+  const { watches, open } = v2Fixture();
+  const socket = open();
+  const expected = createHash('sha256')
+    .update(`${DAEMON_IDENTITY_V2_LABEL}\n${SOUL_TOKENS.issuer}\n${SOUL_TOKENS.device}`).digest('hex');
+  assert.equal(socket.events[0].event, 'ready');
+  assert.equal(socket.events[0].daemonKey, expected);
+  assert.equal(socket.events[0].daemonEpoch, 1);
+  assert.equal(watches.selectAccountWatch('owner').socket, socket);
+});
+
+test('a v2 watch binding is invalidated when the paired device, issuer or credential form changes', () => {
+  for (const mutate of [
+    (d) => { d.soulTokens.device = 'dev_other'; },
+    (d) => { d.soulTokens.issuer = 'https://other.example'; },
+    (d) => { delete d.soulTokens; d.publicKey = generateKeyPairSync('ed25519').publicKey.export({ type: 'spki', format: 'pem' }); },
+  ]) {
+    const { broker, watches, open } = v2Fixture();
+    const socket = open();
+    assert.ok(watches.accountWatchBinding(socket));
+    mutate(broker.state.daemons.get('owner'));
+    assert.equal(watches.accountWatchBinding(socket), null);
+  }
+});
+
+test('daemon identity: one value per credential, null without one, never an exception', () => {
+  const pem = generateKeyPairSync('ed25519').publicKey.export({ type: 'spki', format: 'pem' });
+  const host = daemonIdentityKey({ publicKey: pem });
+  const device = daemonIdentityKey({ soulTokens: SOUL_TOKENS });
+  assert.match(host, /^[a-f0-9]{64}$/);
+  assert.match(device, /^[a-f0-9]{64}$/);
+  assert.notEqual(host, device);
+  assert.equal(daemonIdentityKey({ soulTokens: { ...SOUL_TOKENS } }), device);
+  assert.notEqual(daemonIdentityKey({ soulTokens: { ...SOUL_TOKENS, device: 'dev_test-2' } }), device);
+  // The separator cannot be smuggled: these would collide without the check.
+  assert.equal(daemonIdentityKey({ soulTokens: { v: 2, issuer: 'https://a', device: 'b\nc' } }), null);
+  for (const row of [undefined, null, {}, { publicKey: 'not a key' }, { soulTokens: { v: 1, issuer: 'https://a', device: 'd' } },
+    { soulTokens: { v: 2, issuer: '', device: 'd' } }, { soulTokens: { v: 2, issuer: 'https://a' } },
+    { publicKey: generateKeyPairSync('ec', { namedCurve: 'P-256' }).publicKey.export({ type: 'spki', format: 'pem' }) }]) {
+    assert.equal(daemonIdentityKey(row), null);
+  }
+});
+
+test('an approved daemon row without a usable credential is refused, not an internal error', () => {
+  const { broker, watches } = fixture();
+  broker.state.daemons.set('owner', { state: 'approved', epoch: 1 });
+  assert.throws(() => watches.accountWatch({}, new Socket(), { account: 'owner' }), { code: 'unauthenticated' });
 });

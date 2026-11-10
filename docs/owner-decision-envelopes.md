@@ -8,7 +8,7 @@ control every transition; envelope availability alone grants no authority.
 ## Implemented watch identity prerequisite
 
 Account-watch `ready` now adds UUIDv4 `watchId`, positive safe-integer
-`daemonEpoch` and `daemonKey` (SHA-256 of approved daemon DER SPKI). The daemon
+`daemonEpoch` and `daemonKey` (defined below). The daemon
 compares the key with its own paired vouch key. Joint daemon review confirmed
 additive-field compatibility. Soul-watch ready remains unchanged.
 
@@ -32,7 +32,8 @@ object whose original bytes were lost. `payloadDigest` hashes decoded bytes.
 
 Each account watch receives a broker-generated `watchId` and its current
 `daemonEpoch`/`daemonKey` in its `ready` event. `daemonKey` is SHA-256 of the
-approved daemon Ed25519 public key's DER SPKI. The broker selects exactly one
+approved daemon Ed25519 public key's DER SPKI, or the ADR-0309 digest for a
+v2 pairing. The broker selects exactly one
 live watch for a preparation and durably records those three bindings and its
 acceptance time `acceptedAt` before forwarding. A
 second watch cannot replace it for that request. Disconnect before authorization
