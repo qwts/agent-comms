@@ -6,7 +6,7 @@
 // refused; T05 holds over the socket.
 
 import assert from 'node:assert/strict';
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, statSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -238,3 +238,73 @@ test('T01 through the plugin: a copied binding is refused from another account a
   assert.equal((await t.bind(other, t.spec)).ok, true);
   assert.equal(t.hq.host.provided(pkg.name).boundConnections(), 1);
 }));
+
+// Notice custody on the same pinned HQ host/admission/store. Sharing this
+// test file also shares one contract-pin verification rather than racing
+// separate shallow fetches against HQ's cache.
+const root = agentBotHq();
+const load = (path) => import(pathToFileURL(join(root, path)).href);
+const { createHost } = await load('sdk/host.mjs');
+const { createCore, fakeIdentityService, testClock } = await load('sdk/services.mjs');
+const { openStore } = await load('hq/store.mjs');
+const { admissionPlugin } = await load('hq/admission.mjs');
+const { schemas } = harness;
+const HARNESS = 'test-codex-agent';
+const ID = 'notice-host-restart';
+
+function open(home, { ackFails = false, persistFails = false } = {}) {
+  const disk = openStore(home);
+  let acks = 0;
+  const identity = fakeIdentityService({ routes: {
+    'POST /api/daemon/notices/take': () => ({ body: { harness: HARNESS, notices: [{ id: ID, lease: `${ID}.LEASE_CANARY`, type: ['issue'], title: 'Review request' }] } }),
+    'POST /api/daemon/notices/ack': () => {
+      acks += 1;
+      const saved = readFileSync(join(home, 'store.json'), 'utf8');
+      assert.ok(saved.includes(ID), 'the real HQ store committed before the identity call');
+      assert.equal(saved.includes('LEASE_CANARY'), false);
+      if (ackFails) throw new Error('upstream disconnected after custody');
+      return { body: { acked: [ID], stale: [], missing: [] } };
+    },
+  } });
+  const core = createCore({ clock: testClock(), identity,
+    config: { 'agent-comms': { notices: { harnesses: [HARNESS] } } },
+    persist: () => persistFails ? Promise.reject(new Error('durable storage unavailable')) : disk.persist(),
+  });
+  disk.load(core);
+  const host = createHost({ core, plugins: [admissionPlugin({ schemas }), brokerPlugin()] });
+  return { core, host, acks: () => acks, pump: () => host.provided('agent-comms').notices };
+}
+
+test('plugin reconstruction after durable custody preserves one mailbox sequence and retries only the ack', async () => {
+  const home = mkdtempSync(join(tmpdir(), 'notices-host-'));
+  const a = open(home, { ackFails: true });
+  let b;
+  try {
+    await a.host.start();
+    await assert.rejects(a.pump().pull(), /upstream disconnected/);
+    const [original] = await a.pump().list(HARNESS);
+    assert.equal(original.sequence, 1);
+    await a.host.stop();
+    b = open(home); await b.host.start();
+    const result = await b.pump().pull();
+    assert.deepEqual(result, { received: 1, committed: 0, duplicates: 1, acknowledged: 1 });
+    assert.deepEqual(await b.pump().list(HARNESS), [original]);
+    assert.equal(b.acks(), 1);
+    assert.equal(b.host.status().plugins.find((p) => p.name === 'agent-comms').state, 'running');
+  } finally {
+    if (a.host.mode !== 'stopped') await a.host.stop().catch(() => {});
+    if (b && b.host.mode !== 'stopped') await b.host.stop().catch(() => {});
+    rmSync(home, { recursive: true, force: true });
+  }
+});
+
+test('the actual plugin sends no ack when HQ cannot commit custody', async () => {
+  const home = mkdtempSync(join(tmpdir(), 'notices-host-failure-'));
+  const t = open(home, { persistFails: true });
+  try {
+    await t.host.start();
+    await assert.rejects(t.pump().pull(), /durable storage unavailable/);
+    assert.equal(t.acks(), 0);
+    assert.deepEqual(await t.pump().list(HARNESS), []);
+  } finally { await t.host.stop().catch(() => {}); rmSync(home, { recursive: true, force: true }); }
+});
