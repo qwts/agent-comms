@@ -36,6 +36,8 @@ from this agent-comms release; these receipts are not blanket Windows support.
 - [Tasks](docs/tasks.md): offers, revisions, transitions, and task events.
 - [Mailbox retention](docs/mailbox-retention.md): limits, reader gaps,
   compaction, retry guarantees and recovery.
+- [HQ notice ingestion](docs/hq-notices.md): durable custody before upstream
+  acknowledgement, replay deduplication and bounded storage.
 - [Local broker diagnostics](docs/local-diagnostics.md): safe stderr failures,
   finite buffering and drop accounting.
 - [Local channels](docs/channels.md): invitations, subscription consent, filtered
